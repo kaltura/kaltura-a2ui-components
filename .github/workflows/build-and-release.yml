@@ -1,0 +1,94 @@
+name: build-and-release
+
+# Release flow for the CDN-published bundles.
+#
+# A tag push (v*) triggers a build, commits the freshly built dist/ onto the
+# tagged commit, then FORCE-MOVES the tag onto that commit and pushes it.
+#
+# Why the dist-then-retag dance is load-bearing:
+#   jsDelivr serves exact tags (cdn.jsdelivr.net/gh/<repo>@<tag>/...) as
+#   IMMUTABLE and caches the response — including a 404 — PERMANENTLY for that
+#   exact tag. If any client fetches @<tag>/dist/kaltura-react.mjs before dist/
+#   exists on that commit, the 404 is cached forever and purge.jsdelivr.net is a
+#   no-op on exact tags. So dist/ MUST be present on the commit the tag points at
+#   BEFORE anything fetches the tag URL. We guarantee that by building and
+#   committing dist/ first, and only then moving the tag onto the dist commit.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history, tag ref)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build bundles
+        run: npm run build
+
+      - name: Verify bundles exist
+        run: |
+          test -f dist/kaltura-react.mjs || { echo "::error::dist/kaltura-react.mjs missing"; exit 1; }
+          test -f dist/kaltura-wc.js     || { echo "::error::dist/kaltura-wc.js missing"; exit 1; }
+
+      - name: Commit dist/ and force-move tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Stage the built bundles even though dist/ is gitignored on main.
+          git add --force dist/
+          git commit -m "Build dist/ for ${TAG}"
+
+          # Move the release tag onto the dist commit, then push the tag.
+          # Pushing the tag uploads the dist commit's objects too, so the first
+          # jsDelivr fetch of @${TAG}/dist/... resolves (never caches a 404).
+          # The trigger is a tag push (detached HEAD) — there is no branch to
+          # update here; the tag alone carries the dist commit.
+          git tag -f "${TAG}"
+          git push --force origin "refs/tags/${TAG}"
+
+      - name: Publish to npm (optional — only if NPM_TOKEN secret is set)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "NPM_TOKEN not set — skipping npm publish (jsDelivr/gh release stands alone)."
+            exit 0
+          fi
+          # Sync package.json version to the tag (strip leading v).
+          VERSION="${GITHUB_REF_NAME#v}"
+          npm version "${VERSION}" --no-git-tag-version --allow-same-version
+          npm publish --access public

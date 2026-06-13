@@ -8,11 +8,21 @@
     "type": "git",
     "url": "git+https://github.com/kaltura/kaltura-a2ui-components.git"
   },
-  "keywords": ["a2ui", "kaltura", "agent", "ui", "player", "components"],
-  "files": ["dist", "src"],
+  "keywords": [
+    "a2ui",
+    "kaltura",
+    "agent",
+    "ui",
+    "player",
+    "components"
+  ],
+  "files": [
+    "dist",
+    "src"
+  ],
   "exports": {
     ".": {
-      "types": "./dist/kaltura-react.d.ts",
+      "types": "./dist/types/adapters/react/index.d.ts",
       "import": "./dist/kaltura-react.mjs"
     },
     "./webcomponent": {
@@ -21,12 +31,13 @@
     "./catalog": "./src/catalog/kaltura_catalog.json"
   },
   "module": "./dist/kaltura-react.mjs",
-  "types": "./dist/kaltura-react.d.ts",
+  "types": "./dist/types/adapters/react/index.d.ts",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "npm run build:react && npm run build:wc",
+    "build": "npm run build:react && npm run build:wc && npm run build:types",
     "build:react": "BUILD_TARGET=react vite build",
     "build:wc": "BUILD_TARGET=webcomponent vite build",
+    "build:types": "tsc -p tsconfig.build.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit"

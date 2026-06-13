@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationMap": true,
+    "outDir": "dist/types",
+    "rootDir": "src",
+    "allowImportingTsExtensions": false,
+    "types": ["node"]
+  },
+  "include": ["src/adapters/react", "src/core", "src/schemas", "src/catalog", "src/css.d.ts"],
+  "exclude": ["src/adapters/webcomponent", "test"]
+}

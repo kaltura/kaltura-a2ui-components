@@ -16,7 +16,9 @@ import cssInjectedByJs from 'vite-plugin-css-injected-by-js';
 //
 // Component CSS lives in src/styles/components.css and is imported by the
 // adapter entry so it travels with the package (it lives in the chat-UI's
-// App.css upstream; the package must not render unstyled).
+// App.css upstream; the package must not render unstyled). BOTH builds inject
+// the CSS via JS so a single `import '@kaltura/a2ui-react'` (or one <script>)
+// ships styles too — no separate stylesheet import to forget.
 
 const target = process.env.BUILD_TARGET ?? 'react';
 
@@ -25,10 +27,9 @@ const isReact = target === 'react';
 export default defineConfig({
   plugins: [
     react(),
-    // The web-component bundle is self-contained: fold CSS into the JS so a
-    // single <script> ships styles too. The React ESM build leaves CSS as a
-    // sibling asset the host bundler can handle.
-    ...(isReact ? [] : [cssInjectedByJs()]),
+    // Fold CSS into the JS for BOTH targets so consumers get styles from a
+    // single import / <script> — no orphaned sibling stylesheet to wire up.
+    cssInjectedByJs(),
   ],
   build: {
     outDir: 'dist',
