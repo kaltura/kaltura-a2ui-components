@@ -1,0 +1,389 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kaltura.github.io/a2ui/v1/catalog.json",
+  "title": "Kaltura Experience Components Catalog",
+  "description": "A2UI catalog for Kaltura Experience Components — Player v7, Flashcards, Media Manager, and more. Freestanding schema with all types inlined. Extends the basic A2UI catalog with rich media components backed by the Kaltura platform.",
+  "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json",
+  "components": {
+    "KalturaPlayer": {
+      "type": "object",
+      "description": "Kaltura Player v7 — full-featured video player with DRM, multi-audio, 30+ plugins, captions, analytics tracking, ad insertion, and cue points. Renders as an iframe.",
+      "allOf": [
+        { "$ref": "#/$defs/ComponentCommon" },
+        { "$ref": "#/$defs/CatalogComponentCommon" },
+        {
+          "type": "object",
+          "properties": {
+            "component": { "const": "KalturaPlayer" },
+            "partnerId": {
+              "type": "integer",
+              "description": "Kaltura account/partner ID."
+            },
+            "uiconfId": {
+              "type": "integer",
+              "description": "Player configuration ID (from KMC Studio or uiConf.list)."
+            },
+            "entryId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Media entry ID to play."
+            },
+            "ks": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Session token for access-controlled content. USER KS (type=0)."
+            },
+            "autoplay": {
+              "$ref": "#/$defs/DynamicBoolean",
+              "description": "Auto-start playback. Requires muted=true per browser policy. Default: false.",
+              "default": false
+            },
+            "muted": {
+              "$ref": "#/$defs/DynamicBoolean",
+              "description": "Start muted. Must be true when autoplay is true. Default: false.",
+              "default": false
+            },
+            "startTime": {
+              "$ref": "#/$defs/DynamicNumber",
+              "description": "Seek to this position (seconds) on load."
+            },
+            "clipTo": {
+              "$ref": "#/$defs/DynamicNumber",
+              "description": "Stop playback at this position (seconds)."
+            },
+            "aspectRatio": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Container aspect ratio (e.g. '16/9', '4/3'). Default: '16/9'.",
+              "default": "16/9"
+            }
+          },
+          "required": ["component", "partnerId", "uiconfId", "entryId"]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "KalturaFlashcards": {
+      "type": "object",
+      "description": "Kaltura Flashcards — structured content cards with optional video clips for each card. Ideal for study material, topic summaries, and bite-sized learning derived from video content.",
+      "allOf": [
+        { "$ref": "#/$defs/ComponentCommon" },
+        { "$ref": "#/$defs/CatalogComponentCommon" },
+        {
+          "type": "object",
+          "properties": {
+            "component": { "const": "KalturaFlashcards" },
+            "title": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Title of the flashcard deck."
+            },
+            "summary": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Brief summary or description of the flashcard deck."
+            },
+            "cards": {
+              "type": "array",
+              "description": "Ordered list of flashcard items.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "$ref": "#/$defs/DynamicString",
+                    "description": "Card title (front of card)."
+                  },
+                  "subtitle": {
+                    "$ref": "#/$defs/DynamicString",
+                    "description": "Optional subtitle or category label."
+                  },
+                  "content": {
+                    "$ref": "#/$defs/DynamicString",
+                    "description": "Markdown body content (back of card)."
+                  },
+                  "clips": {
+                    "type": "array",
+                    "description": "Video clips relevant to this card.",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "entryId": {
+                          "type": "string",
+                          "description": "Kaltura media entry ID."
+                        },
+                        "startTime": {
+                          "type": "number",
+                          "description": "Clip start time in seconds."
+                        },
+                        "endTime": {
+                          "type": "number",
+                          "description": "Clip end time in seconds."
+                        },
+                        "title": {
+                          "type": "string",
+                          "description": "Optional clip title."
+                        },
+                        "thumbnail": {
+                          "type": "string",
+                          "description": "Optional thumbnail URL for the clip."
+                        }
+                      },
+                      "required": ["entryId", "startTime", "endTime"],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": ["title", "content"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["component", "title", "cards"]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "KalturaMediaManager": {
+      "type": "object",
+      "description": "Kaltura Media Manager — browsable content library for selecting, previewing, and managing media entries. Supports category-scoped views, selection mode for embedding, and full management mode for content operations.",
+      "allOf": [
+        { "$ref": "#/$defs/ComponentCommon" },
+        { "$ref": "#/$defs/CatalogComponentCommon" },
+        {
+          "type": "object",
+          "properties": {
+            "component": { "const": "KalturaMediaManager" },
+            "partnerId": {
+              "type": "integer",
+              "description": "Kaltura account/partner ID."
+            },
+            "ks": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Session token. ADMIN KS (type=2) for manage mode, USER KS (type=0) for select mode."
+            },
+            "serverUrl": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Unisphere CDN URL (e.g. 'https://cdnapisec.kaltura.com')."
+            },
+            "theme": {
+              "type": "string",
+              "enum": ["dark", "light"],
+              "description": "UI theme mode. Default: follows system preference.",
+              "default": "light"
+            },
+            "mode": {
+              "type": "string",
+              "enum": ["select", "manage"],
+              "description": "Interaction mode. 'select' for content picking, 'manage' for full CRUD operations.",
+              "default": "manage"
+            },
+            "contextType": {
+              "type": "string",
+              "description": "Type of content scope. Default: 'category'.",
+              "default": "category"
+            },
+            "contextId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "ID of the content scope (e.g. category ID to browse)."
+            }
+          },
+          "required": ["component", "partnerId", "ks", "serverUrl"]
+        }
+      ],
+      "unevaluatedProperties": false
+    }
+  },
+  "$defs": {
+    "DataBinding": {
+      "type": "object",
+      "description": "A reference to a value in the data model via JSON Pointer path.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "A JSON Pointer path to a value in the data model."
+        }
+      },
+      "required": ["path"],
+      "additionalProperties": false
+    },
+    "DynamicString": {
+      "description": "A string value — either a literal string or a data-binding reference.",
+      "oneOf": [
+        { "type": "string" },
+        { "$ref": "#/$defs/DataBinding" }
+      ]
+    },
+    "DynamicNumber": {
+      "description": "A numeric value — either a literal number or a data-binding reference.",
+      "oneOf": [
+        { "type": "number" },
+        { "$ref": "#/$defs/DataBinding" }
+      ]
+    },
+    "DynamicBoolean": {
+      "description": "A boolean value — either a literal boolean or a data-binding reference.",
+      "oneOf": [
+        { "type": "boolean" },
+        { "$ref": "#/$defs/DataBinding" }
+      ]
+    },
+    "ComponentId": {
+      "type": "string",
+      "description": "Unique identifier for a component instance within a surface."
+    },
+    "AccessibilityAttributes": {
+      "type": "object",
+      "description": "Attributes for assistive technologies (screen readers, etc.).",
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/DynamicString",
+          "description": "Short accessible label (1-3 words) conveying element purpose."
+        },
+        "description": {
+          "$ref": "#/$defs/DynamicString",
+          "description": "Additional context provided by assistive technologies."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ComponentCommon": {
+      "type": "object",
+      "description": "Base properties shared by all components (from A2UI spec).",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ComponentId"
+        },
+        "accessibility": {
+          "$ref": "#/$defs/AccessibilityAttributes"
+        }
+      },
+      "required": ["id"]
+    },
+    "CatalogComponentCommon": {
+      "type": "object",
+      "description": "Catalog-level properties shared by all Kaltura components.",
+      "properties": {
+        "tooltip": {
+          "$ref": "#/$defs/DynamicString",
+          "description": "Tooltip text shown on hover."
+        },
+        "visible": {
+          "$ref": "#/$defs/DynamicBoolean",
+          "description": "Controls component visibility.",
+          "default": true
+        }
+      }
+    },
+    "anyComponent": {
+      "oneOf": [
+        { "$ref": "#/components/KalturaPlayer" },
+        { "$ref": "#/components/KalturaFlashcards" },
+        { "$ref": "#/components/KalturaMediaManager" }
+      ]
+    },
+    "theme": {
+      "type": "object",
+      "description": "Full theme object for Kaltura surfaces. Includes palette, typography, shape tokens, and flashcard gradients so any A2UI renderer can apply consistent Kaltura branding.",
+      "properties": {
+        "primaryColor": {
+          "type": "string",
+          "description": "Primary brand color (hex). Default: Kaltura Stream Blue #006EFA."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["light", "dark"],
+          "description": "Light or dark theme mode.",
+          "default": "dark"
+        },
+        "palette": {
+          "type": "object",
+          "description": "Color palette tokens resolved per theme mode.",
+          "properties": {
+            "primary": {
+              "type": "object",
+              "properties": {
+                "main": { "type": "string", "description": "Primary interactive color (hex)." },
+                "contrastText": { "type": "string", "description": "Text color on primary surfaces (hex)." }
+              },
+              "required": ["main"],
+              "additionalProperties": false
+            },
+            "secondary": {
+              "type": "object",
+              "properties": {
+                "main": { "type": "string", "description": "Secondary accent color (hex)." }
+              },
+              "required": ["main"],
+              "additionalProperties": false
+            },
+            "danger": {
+              "type": "object",
+              "properties": {
+                "main": { "type": "string", "description": "Error/destructive action color (hex)." }
+              },
+              "required": ["main"],
+              "additionalProperties": false
+            },
+            "warning": {
+              "type": "object",
+              "properties": {
+                "main": { "type": "string", "description": "Warning state color (hex)." }
+              },
+              "required": ["main"],
+              "additionalProperties": false
+            },
+            "surfaces": {
+              "type": "object",
+              "description": "Surface hierarchy colors.",
+              "properties": {
+                "background": { "type": "string", "description": "Page background color (hex)." },
+                "paper": { "type": "string", "description": "Card/panel background color (hex)." },
+                "elevated": { "type": "string", "description": "Elevated surface color — modals, tooltips (hex)." }
+              },
+              "required": ["background", "paper", "elevated"],
+              "additionalProperties": false
+            },
+            "text": {
+              "type": "object",
+              "description": "Text color hierarchy.",
+              "properties": {
+                "primary": { "type": "string", "description": "Primary text color (hex)." },
+                "secondary": { "type": "string", "description": "Secondary/supporting text color (hex)." },
+                "muted": { "type": "string", "description": "De-emphasized text color (hex)." }
+              },
+              "required": ["primary", "secondary", "muted"],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "typography": {
+          "type": "object",
+          "description": "Typography tokens.",
+          "properties": {
+            "fontFamily": { "type": "string", "description": "CSS font-family stack. Default: 'Lato', sans-serif." }
+          },
+          "required": ["fontFamily"],
+          "additionalProperties": false
+        },
+        "shape": {
+          "type": "object",
+          "description": "Border radius tokens (integer pixel values).",
+          "properties": {
+            "roundness1": { "type": "integer", "description": "Small radius (4px)." },
+            "roundness2": { "type": "integer", "description": "Medium radius (8px)." },
+            "roundness3": { "type": "integer", "description": "Large radius (12px)." }
+          },
+          "required": ["roundness1", "roundness2", "roundness3"],
+          "additionalProperties": false
+        },
+        "flashcardGradients": {
+          "type": "array",
+          "description": "CSS gradient strings for flashcard card backgrounds. Cycled by card index.",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["primaryColor", "mode"],
+      "additionalProperties": false
+    },
+    "anyFunction": {
+      "not": {},
+      "description": "Kaltura catalog does not define client-side functions."
+    }
+  }
+}

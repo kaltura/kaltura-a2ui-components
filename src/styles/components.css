@@ -1,0 +1,427 @@
+/*
+ * Kaltura A2UI Experience Components — component styles.
+ *
+ * Extracted verbatim from the chat-UI's App.css so the components render
+ * styled wherever the catalog is registered (upstream they lived in the host
+ * app, which left a fresh consumer rendering them unstyled).
+ *
+ * These rules use CSS custom properties from the Kaltura Design System
+ * (--ds-*, --surface-*, --page-text-*, --border-*, --input-border, --accent).
+ * A host that already defines those tokens gets full theme integration; a host
+ * that does not still renders correctly via the fallbacks below. The fallbacks
+ * mirror the design-system defaults so the package is usable standalone — they
+ * never override a token the host has set.
+ *
+ * The React ESM build emits this as a sibling CSS asset (host bundler handles
+ * it / the adapter imports it). The web-component IIFE build folds it into the
+ * JS via vite-plugin-css-injected-by-js so a single <script> ships styles too.
+ */
+
+:where(.kaltura-player-container, .flashcard-carousel, .kaltura-media-manager-container) {
+  --ds-roundness-1: var(--ds-roundness-1, 4px);
+  --ds-roundness-2: var(--ds-roundness-2, 8px);
+  --ds-roundness-3: var(--ds-roundness-3, 12px);
+  --ds-primary: var(--ds-primary, #006efa);
+  --ds-font-family: var(--ds-font-family, 'Lato', system-ui, sans-serif);
+  --surface-deep: var(--surface-deep, #000);
+  --surface-card: var(--surface-card, #1a1a1a);
+  --surface-elevated: var(--surface-elevated, #242424);
+  --border-color: var(--border-color, rgba(255, 255, 255, 0.12));
+  --border-subtle: var(--border-subtle, rgba(255, 255, 255, 0.08));
+  --page-text: var(--page-text, #f0f0f0);
+  --page-text-secondary: var(--page-text-secondary, #c0c0c0);
+  --page-text-muted: var(--page-text-muted, #909090);
+}
+
+/* ─── Kaltura Player ─── */
+.kaltura-player-container {
+  margin: 12px 0;
+  border-radius: var(--ds-roundness-2);
+  overflow: hidden;
+  background: var(--surface-deep);
+  border: 1px solid var(--border-color);
+}
+
+.kaltura-player-container iframe {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border: 0;
+  display: block;
+  min-height: 280px;
+}
+
+.kaltura-player-label {
+  padding: 10px 14px;
+  font-size: 0.75rem;
+  color: var(--page-text-muted);
+  background: var(--surface-card);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kaltura-player-label .player-title {
+  font-weight: 700;
+  color: var(--page-text);
+  font-size: 0.82rem;
+}
+
+.kaltura-player-label .player-desc {
+  font-size: 0.75rem;
+  color: var(--page-text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ─── KalturaFlashcards Carousel ─── */
+.flashcard-carousel {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  overflow: hidden;
+  border-radius: var(--ds-roundness-2);
+  margin: 12px 0;
+  outline: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.flashcard-carousel:focus-visible {
+  box-shadow: 0 0 0 2px #FFF, 0 0 0 3px var(--ds-primary);
+}
+
+.flashcard-track {
+  position: relative;
+  width: 100%;
+  height: 560px;
+}
+
+.flashcard-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--ds-roundness-2);
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  transition: transform 300ms ease-in-out, opacity 300ms ease-in-out;
+  cursor: default;
+  overflow: hidden;
+}
+
+.flashcard-slide:not(.active) {
+  cursor: pointer;
+}
+
+.flashcard-slide-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.flashcard-subtitle {
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.6px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--ds-font-family);
+}
+
+.flashcard-title {
+  font-family: var(--ds-font-family);
+  font-weight: 700;
+  font-size: 2rem;
+  color: #FFFFFF;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.flashcard-title.cover {
+  font-size: 3rem;
+}
+
+.flashcard-content {
+  font-family: var(--ds-font-family);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.92);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.flashcard-content p { margin-bottom: 8px; }
+.flashcard-content p:last-child { margin-bottom: 0; }
+.flashcard-content strong { font-weight: 700; }
+.flashcard-content a { color: var(--ds-primary); }
+
+.flashcard-clips {
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+.flashcard-clip-player {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border: 0;
+  border-radius: var(--ds-roundness-1);
+  display: block;
+  max-height: 280px;
+}
+
+.flashcard-clip-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.clip-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.clip-dot.active {
+  background: #FFFFFF;
+}
+
+.flashcard-action-btn {
+  position: absolute;
+  right: 0;
+  padding: 8px 20px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--ds-roundness-1);
+  color: #FFFFFF;
+  font-family: var(--ds-font-family);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 200ms ease-in-out, transform 200ms ease-in-out;
+}
+
+.flashcard-action-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.flashcard-action-btn:active {
+  transform: scale(0.98);
+}
+
+.flashcard-controls {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 2.5rem;
+  padding: 0 2rem;
+  margin-top: 0.75rem;
+  flex-shrink: 0;
+}
+
+.flashcard-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  color: #FFFFFF;
+  cursor: pointer;
+  border-radius: var(--ds-roundness-1);
+  transition: background 200ms ease-in-out;
+}
+
+.flashcard-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.flashcard-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.flashcard-nav-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.flashcard-counter {
+  font-family: var(--ds-font-family);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+  min-width: 40px;
+  text-align: center;
+}
+
+/* ─── KalturaMediaManager ─── */
+.kaltura-media-manager-container {
+  margin: 10px -18px -14px;
+  border-radius: 0 0 var(--ds-roundness-3) var(--ds-roundness-3);
+  overflow: auto;
+  width: calc(100% + 36px);
+}
+
+.kaltura-media-manager-widget {
+  width: 100%;
+  height: 540px;
+  display: block;
+  overflow: auto;
+  border-radius: 0 0 var(--ds-roundness-3) var(--ds-roundness-3);
+}
+
+[data-theme="dark"] .kaltura-media-manager-widget div:not(:has(> img)):not(:has(> video)):not(:has(> canvas)),
+[data-theme="dark"] .kaltura-media-manager-widget header,
+[data-theme="dark"] .kaltura-media-manager-widget nav,
+[data-theme="dark"] .kaltura-media-manager-widget section {
+  background-color: var(--surface-card) !important;
+  color: var(--page-text-secondary) !important;
+}
+[data-theme="dark"] .kaltura-media-manager-widget td:first-child div {
+  background-color: transparent !important;
+}
+[data-theme="dark"] .kaltura-media-manager-widget .MuiPaper-root,
+[data-theme="dark"] .kaltura-media-manager-widget .MuiTableContainer-root {
+  background-color: var(--surface-card) !important;
+}
+[data-theme="dark"] .kaltura-media-manager-widget .MuiButtonBase-root {
+  background-color: var(--surface-elevated) !important;
+  color: var(--page-text) !important;
+}
+[data-theme="dark"] .kaltura-media-manager-widget .MuiInputBase-root,
+[data-theme="dark"] .kaltura-media-manager-widget .MuiSelect-select,
+[data-theme="dark"] .kaltura-media-manager-widget input,
+[data-theme="dark"] .kaltura-media-manager-widget select {
+  background-color: var(--surface-elevated) !important;
+  color: var(--page-text) !important;
+  border-color: var(--input-border) !important;
+}
+[data-theme="dark"] .kaltura-media-manager-widget .MuiOutlinedInput-notchedOutline {
+  border-color: var(--input-border) !important;
+}
+[data-theme="dark"] .kaltura-media-manager-widget .MuiTableCell-root {
+  color: var(--page-text-secondary) !important;
+  border-color: var(--border-color) !important;
+}
+[data-theme="dark"] .kaltura-media-manager-widget .MuiTableCell-head {
+  background-color: var(--surface-paper) !important;
+  color: var(--page-text-muted) !important;
+}
+[data-theme="dark"] .kaltura-media-manager-widget .MuiSvgIcon-root,
+[data-theme="dark"] .kaltura-media-manager-widget svg {
+  color: var(--page-text-muted) !important;
+}
+[data-theme="dark"] .kaltura-media-manager-widget a {
+  color: #58a6ff !important;
+}
+
+/* ─── Media Manager Multi-Select ─── */
+.mm-multi-select-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface-elevated);
+  border-top: 1px solid var(--border-color);
+  border-radius: 0 0 var(--ds-roundness-3) var(--ds-roundness-3);
+}
+.mm-selected-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+.mm-selected-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--ds-primary);
+  color: #fff;
+  border-radius: var(--ds-roundness-2);
+  font-size: 0.8rem;
+  font-weight: 500;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mm-chip-remove {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0 2px;
+}
+.mm-chip-remove:hover { color: #fff; }
+.mm-confirm-btn {
+  padding: 8px 16px;
+  background: var(--ds-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--ds-roundness-2);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 200ms ease;
+}
+.mm-confirm-btn:hover { background: #0058cc; }
+.mm-confirm-btn:active { transform: scale(0.98); }
+
+.kaltura-media-manager-widget tr.mm-selected {
+  background: rgba(0, 110, 250, 0.12) !important;
+}
+.kaltura-media-manager-widget tr.mm-selected td {
+  background: transparent !important;
+}
+/* Media rows are clickable (thumbnail or name picks/plays the entry). Signal it
+   without touching any cell background — the widget's cells are opaque MUI
+   surfaces and the thumbnail is a background-image div, so painting the row
+   background fights them and blanks the thumbnail. Instead the hover cue draws
+   ON TOP / on text only: a left accent bar (inset box-shadow on the row) plus
+   an underline on the entry name. Non-destructive, theme-agnostic. */
+.kaltura-media-manager-widget tbody tr {
+  cursor: pointer;
+}
+.kaltura-media-manager-widget tbody tr:hover {
+  box-shadow: inset 3px 0 0 0 var(--accent, #006efa);
+}
+.kaltura-media-manager-widget tbody tr:hover td:nth-child(2) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .flashcard-track { height: 420px; }
+  .flashcard-slide { padding: 1.5rem; }
+  .flashcard-title { font-size: 1.5rem; }
+  .flashcard-title.cover { font-size: 2rem; }
+  .flashcard-content { font-size: 1rem; }
+  .kaltura-media-manager-widget { height: 420px; }
+}
+
+@media (max-width: 480px) {
+  .flashcard-track { height: 500px; }
+  .flashcard-slide { padding: 1.5rem; }
+  .flashcard-action-btn { padding: 8px 20px; }
+}

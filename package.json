@@ -1,0 +1,57 @@
+{
+  "name": "@kaltura/a2ui-react",
+  "version": "0.0.0",
+  "description": "Kaltura's A2UI Experience Components (Player, Flashcards, Media Manager) as a reusable, CDN-publishable catalog for any A2UI client.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaltura/kaltura-a2ui-components.git"
+  },
+  "keywords": ["a2ui", "kaltura", "agent", "ui", "player", "components"],
+  "files": ["dist", "src"],
+  "exports": {
+    ".": {
+      "types": "./dist/kaltura-react.d.ts",
+      "import": "./dist/kaltura-react.mjs"
+    },
+    "./webcomponent": {
+      "default": "./dist/kaltura-wc.js"
+    },
+    "./catalog": "./src/catalog/kaltura_catalog.json"
+  },
+  "module": "./dist/kaltura-react.mjs",
+  "types": "./dist/kaltura-react.d.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "npm run build:react && npm run build:wc",
+    "build:react": "BUILD_TARGET=react vite build",
+    "build:wc": "BUILD_TARGET=webcomponent vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "@a2ui/markdown-it": "^0.0.3",
+    "@a2ui/react": "^0.9.1",
+    "@a2ui/web_core": "^0.9.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "jsdom": "^29.0.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.10",
+    "vite-plugin-css-injected-by-js": "^3.5.0",
+    "vitest": "^4.1.8"
+  }
+}

@@ -1,0 +1,10 @@
+node_modules/
+*.log
+.DS_Store
+.vite/
+*.tsbuildinfo
+
+# dist/ is built and committed ONLY on release tags by build-and-release.yml.
+# jsDelivr serves it from the tagged commit. On main it stays ignored so the
+# working tree never carries stale bundles.
+dist/
