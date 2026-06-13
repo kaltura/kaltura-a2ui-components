@@ -1,5 +1,25 @@
 import { describe, it, expect } from 'vitest';
 import { deriveLoaderUrl, buildRuntimes } from '../src/core/media-manager';
+// Source-as-text via Vite's ?raw — robust under the jsdom test env, where
+// import.meta.url is an http URL and fileURLToPath() throws.
+import CORE_SRC from '../src/core/media-manager.tsx?raw';
+
+describe('row-click behavior (manage mode)', () => {
+  // In manage mode there is no per-row "Select" button (only the "…" menu), so
+  // the click handler must derive the entry from a click on the row/thumbnail —
+  // not bail whenever the click was not on a button labelled "Select" (which
+  // made every row unclickable in manage mode). This guard moved here with the
+  // renderer from the chat UI (kaltura/kaltura-adk-agent#55).
+  it('derives the entry from the clicked row thumbnail', () => {
+    expect(CORE_SRC).toContain('thumbMatch');
+  });
+
+  it('does not hard-bail on a non-"Select" button (rows clickable in manage mode)', () => {
+    // The old regression: `if (btnText !== 'Select') return;` ran before any
+    // row lookup, so manage-mode rows (no Select button) were dead.
+    expect(CORE_SRC).not.toMatch(/btnText\s*!==\s*'Select'/);
+  });
+});
 
 describe('deriveLoaderUrl', () => {
   it('replaces /v1 suffix (no trailing slash)', () => {
@@ -33,6 +53,23 @@ describe('buildRuntimes', () => {
   it('uses the fixed manifest runtimeName', () => {
     const [runtime] = buildRuntimes(baseProps) as Array<{ runtimeName: string }>;
     expect(runtime.runtimeName).toBe('kaltura-items-media-manager');
+  });
+
+  it('keeps runtimeName fixed across instances (never per-instance)', () => {
+    // The regression this locks: a per-instance runtimeName (e.g.
+    // `media-manager-${instanceId}`) can't resolve to any bundle in the
+    // Unisphere manifest → "Failed to resolve element runtime url" and the
+    // widget silently never loads. Instances are isolated by the visual
+    // `target` container id (asserted above), NOT by the runtime id, so the
+    // runtimeName must be byte-identical regardless of instanceId.
+    const [a] = buildRuntimes({ ...baseProps, instanceId: 'mm-aaa' }) as Array<{
+      runtimeName: string;
+    }>;
+    const [b] = buildRuntimes({ ...baseProps, instanceId: 'mm-bbb' }) as Array<{
+      runtimeName: string;
+    }>;
+    expect(a.runtimeName).toBe(b.runtimeName);
+    expect(a.runtimeName).not.toContain('mm-aaa');
   });
 
   it('sets contextType to category in settings', () => {
