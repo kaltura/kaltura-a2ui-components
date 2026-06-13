@@ -5,9 +5,9 @@ and Media Manager — packaged as a reusable, versioned, CDN-publishable catalog
 so any A2UI client that registers a catalog can render them without
 re-implementation.
 
-> **Status:** scaffold. Components, adapters, CI release, and docs are built out
-> across the work units tracked in
-> [kaltura/kaltura-adk-agent#55](https://github.com/kaltura/kaltura-adk-agent/issues/55).
+Tracked in
+[kaltura/kaltura-adk-agent#55](https://github.com/kaltura/kaltura-adk-agent/issues/55).
+KalturaChart is deferred to #45.
 
 ## Why this exists
 
@@ -24,6 +24,42 @@ that catalog, distributed two ways:
 
 Clients that cannot register a catalog (Gemini Enterprise, generic basic/text)
 are handled by the agent's negotiation layer, not this package — see issue #55.
+
+## Use it
+
+### Catalog-registering React client
+
+```ts
+import { kalturaReactCatalog } from '@kaltura/a2ui-react';
+import { basicCatalog } from '@a2ui/react/v0_9';
+import { MessageProcessor } from '@a2ui/web_core/v0_9';
+
+// kalturaReactCatalog already merges the basic catalog's components +
+// functions, so registering it alone is enough; pass basicCatalog too only
+// if your host expects a separate basic entry.
+const processor = new MessageProcessor([kalturaReactCatalog]);
+```
+
+`buildKalturaCatalog(id?)` builds the same catalog under a custom id, and
+`loadKalturaCatalog(url)` fetches a catalog descriptor and builds keyed to its
+id. React is an external peer — the host provides it.
+
+### Plain-HTML host
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.1.0/dist/kaltura-wc.js"></script>
+<kaltura-player id="p"></kaltura-player>
+<script>
+  document.getElementById('p').config = { partnerId: 123, uiconfId: 456, entryId: '1_abc' };
+</script>
+```
+
+The IIFE registers `<kaltura-player>`, `<kaltura-flashcards>`, and
+`<kaltura-media-manager>` on load. Use the SRI `integrity` hash published in the
+catalog's `x-kaltura-adapters.webcomponent` block.
+
+The catalog's `x-kaltura-adapters` block is the machine-readable source for the
+exact CDN URLs, npm package, and SRI hash per release.
 
 ## Layout
 

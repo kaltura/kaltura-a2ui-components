@@ -1,6 +1,6 @@
 {
   "name": "@kaltura/a2ui-react",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Kaltura's A2UI Experience Components (Player, Flashcards, Media Manager) as a reusable, CDN-publishable catalog for any A2UI client.",
   "license": "AGPL-3.0-only",
   "type": "module",

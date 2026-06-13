@@ -59,7 +59,27 @@ jobs:
           test -f dist/kaltura-react.mjs || { echo "::error::dist/kaltura-react.mjs missing"; exit 1; }
           test -f dist/kaltura-wc.js     || { echo "::error::dist/kaltura-wc.js missing"; exit 1; }
 
-      - name: Commit dist/ and force-move tag
+      - name: Stamp catalog adapter descriptor (tag + real SRI)
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # Compute the Subresource Integrity hash of the freshly built IIFE so
+          # the published catalog's webcomponent integrity matches the exact byte
+          # stream jsDelivr will serve from this tagged commit.
+          SRI="sha384-$(openssl dgst -sha384 -binary dist/kaltura-wc.js | openssl base64 -A)"
+          CATALOG="src/catalog/kaltura_catalog.json"
+          node -e '
+            const fs = require("fs");
+            const f = process.argv[1], tag = process.argv[2], sri = process.argv[3];
+            let s = fs.readFileSync(f, "utf8");
+            s = s.split("__RELEASE_TAG__").join(tag).split("__WC_SRI__").join(sri);
+            JSON.parse(s); // fail loudly if substitution broke the JSON
+            fs.writeFileSync(f, s);
+          ' "$CATALOG" "$TAG" "$SRI"
+          echo "Stamped ${CATALOG} with tag ${TAG} and SRI ${SRI}"
+
+      - name: Commit dist/ + stamped catalog and force-move tag
         env:
           TAG: ${{ github.ref_name }}
         run: |
@@ -67,9 +87,11 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Stage the built bundles even though dist/ is gitignored on main.
+          # Stage the built bundles even though dist/ is gitignored on main,
+          # plus the catalog with release-time placeholders resolved.
           git add --force dist/
-          git commit -m "Build dist/ for ${TAG}"
+          git add src/catalog/kaltura_catalog.json
+          git commit -m "Build dist/ + stamp catalog for ${TAG}"
 
           # Move the release tag onto the dist commit, then push the tag.
           # Pushing the tag uploads the dist commit's objects too, so the first
