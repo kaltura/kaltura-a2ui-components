@@ -135,6 +135,7 @@ export function MediaManagerCore(props: MediaManagerCoreProps) {
         return loader({
           serverUrl: props.serverUrl,
           appId: `kaltura-agent-${instanceId}`,
+          workspace: instanceId,
           appVersion: '0.3.0',
           session: { ks: props.ks, partnerId: props.partnerId },
           ui: { theme, language: 'en' },
