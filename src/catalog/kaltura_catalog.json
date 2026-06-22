@@ -5,21 +5,21 @@
   "description": "A2UI catalog for Kaltura Experience Components — Player v7, Flashcards, Media Manager, and more. Freestanding schema with all types inlined. Extends the basic A2UI catalog with rich media components backed by the Kaltura platform.",
   "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json",
   "x-kaltura-adapters": {
-    "description": "Where tier-1 A2UI clients can load the renderers backing this catalog's components. Published from github.com/kaltura/kaltura-a2ui-components. URLs and the web-component SRI hash are filled in at release time by that repo's build-and-release workflow; the __RELEASE_TAG__/__WC_SRI__ placeholders in source are replaced on the tagged commit.",
+    "description": "Where tier-1 A2UI clients can load the renderers backing this catalog's components. Published from github.com/kaltura/kaltura-a2ui-components. URLs and the web-component SRI hash are filled in at release time by that repo's build-and-release workflow; the v0.1.3/sha384-b+0OnlgcvyxLj/x//t19MR6CsE+Ew4f47uIT00dHDI6etshkngc8hXkDJ7RvhxO3 placeholders in source are replaced on the tagged commit.",
     "package": "@kaltura/a2ui-react",
     "repository": "https://github.com/kaltura/kaltura-a2ui-components",
     "react": {
       "description": "ESM bundle. React is an external peer — the host provides it. Register the Kaltura components by merging them into the host's catalog (see buildKalturaCatalog / kalturaReactCatalog).",
       "format": "esm",
       "npm": "@kaltura/a2ui-react",
-      "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@__RELEASE_TAG__/dist/kaltura-react.mjs",
+      "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.1.3/dist/kaltura-react.mjs",
       "exports": ["kalturaReactCatalog", "buildKalturaCatalog", "loadKalturaCatalog", "kalturaComponentImpls", "kalturaClientFunctions"]
     },
     "webcomponent": {
       "description": "Self-contained IIFE (React inlined, CSS-in-JS). Drop in via <script> on plain-HTML hosts; registers all Kaltura custom elements on load. Verify with the integrity hash.",
       "format": "iife",
-      "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@__RELEASE_TAG__/dist/kaltura-wc.js",
-      "integrity": "__WC_SRI__",
+      "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.1.3/dist/kaltura-wc.js",
+      "integrity": "sha384-b+0OnlgcvyxLj/x//t19MR6CsE+Ew4f47uIT00dHDI6etshkngc8hXkDJ7RvhxO3",
       "crossorigin": "anonymous",
       "customElements": [
         "kaltura-player",

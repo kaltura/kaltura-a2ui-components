@@ -212,14 +212,14 @@ export declare const KalturaPlayerApi: {
             returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
         }>]>>;
     }, "strip", z.ZodTypeAny, {
-        entryId: string | {
+        partnerId: number | {
             path: string;
         } | {
             call: string;
             args: Record<string, any>;
             returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
         };
-        partnerId: number | {
+        entryId: string | {
             path: string;
         } | {
             call: string;
@@ -233,14 +233,21 @@ export declare const KalturaPlayerApi: {
             args: Record<string, any>;
             returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
         };
-        startTime?: number | {
+        ks?: string | {
             path: string;
         } | {
             call: string;
             args: Record<string, any>;
             returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
         } | undefined;
-        ks?: string | {
+        aspectRatio?: string | {
+            path: string;
+        } | {
+            call: string;
+            args: Record<string, any>;
+            returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
+        } | undefined;
+        startTime?: number | {
             path: string;
         } | {
             call: string;
@@ -262,13 +269,6 @@ export declare const KalturaPlayerApi: {
             returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
         } | undefined;
         clipTo?: number | {
-            path: string;
-        } | {
-            call: string;
-            args: Record<string, any>;
-            returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
-        } | undefined;
-        aspectRatio?: string | {
             path: string;
         } | {
             call: string;
@@ -290,14 +290,14 @@ export declare const KalturaPlayerApi: {
             returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
         } | undefined;
     }, {
-        entryId: string | {
+        partnerId: number | {
             path: string;
         } | {
             call: string;
             args: Record<string, any>;
             returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
         };
-        partnerId: number | {
+        entryId: string | {
             path: string;
         } | {
             call: string;
@@ -311,14 +311,21 @@ export declare const KalturaPlayerApi: {
             args: Record<string, any>;
             returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
         };
-        startTime?: number | {
+        ks?: string | {
             path: string;
         } | {
             call: string;
             args: Record<string, any>;
             returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
         } | undefined;
-        ks?: string | {
+        aspectRatio?: string | {
+            path: string;
+        } | {
+            call: string;
+            args: Record<string, any>;
+            returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
+        } | undefined;
+        startTime?: number | {
             path: string;
         } | {
             call: string;
@@ -340,13 +347,6 @@ export declare const KalturaPlayerApi: {
             returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
         } | undefined;
         clipTo?: number | {
-            path: string;
-        } | {
-            call: string;
-            args: Record<string, any>;
-            returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
-        } | undefined;
-        aspectRatio?: string | {
             path: string;
         } | {
             call: string;

@@ -217,6 +217,8 @@ export declare const KalturaFlashcardsApi: {
                 thumbnail?: string | undefined;
             }[] | undefined;
         }[];
+        partnerId?: number | undefined;
+        ks?: string | undefined;
         summary?: string | {
             path: string;
         } | {
@@ -224,9 +226,7 @@ export declare const KalturaFlashcardsApi: {
             args: Record<string, any>;
             returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
         } | undefined;
-        partnerId?: number | undefined;
         uiconfId?: number | undefined;
-        ks?: string | undefined;
     }, {
         title: string | {
             path: string;
@@ -265,6 +265,8 @@ export declare const KalturaFlashcardsApi: {
                 thumbnail?: string | undefined;
             }[] | undefined;
         }[];
+        partnerId?: number | undefined;
+        ks?: string | undefined;
         summary?: string | {
             path: string;
         } | {
@@ -272,9 +274,7 @@ export declare const KalturaFlashcardsApi: {
             args: Record<string, any>;
             returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
         } | undefined;
-        partnerId?: number | undefined;
         uiconfId?: number | undefined;
-        ks?: string | undefined;
     }>;
 };
 //# sourceMappingURL=flashcards.d.ts.map

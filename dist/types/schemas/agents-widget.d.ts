@@ -1,5 +1,5 @@
 import { z } from 'zod';
-export declare const KalturaMediaManagerApi: {
+export declare const KalturaAgentsWidgetApi: {
     name: string;
     schema: z.ZodObject<{
         partnerId: z.ZodNumber;
@@ -41,48 +41,7 @@ export declare const KalturaMediaManagerApi: {
             args: Record<string, any>;
             returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
         }>]>;
-        theme: z.ZodOptional<z.ZodEnum<["dark", "light"]>>;
-        mode: z.ZodOptional<z.ZodEnum<["select", "manage"]>>;
-        multiSelect: z.ZodOptional<z.ZodBoolean>;
-        contextType: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodObject<{
-            path: z.ZodString;
-        }, "strip", z.ZodTypeAny, {
-            path: string;
-        }, {
-            path: string;
-        }>, z.ZodObject<{
-            call: z.ZodString;
-            args: z.ZodRecord<z.ZodString, z.ZodAny>;
-            returnType: z.ZodDefault<z.ZodEnum<["string", "number", "boolean", "array", "object", "any", "void"]>>;
-        }, "strip", z.ZodTypeAny, {
-            call: string;
-            args: Record<string, any>;
-            returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
-        }, {
-            call: string;
-            args: Record<string, any>;
-            returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
-        }>]>>;
-        contextId: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodObject<{
-            path: z.ZodString;
-        }, "strip", z.ZodTypeAny, {
-            path: string;
-        }, {
-            path: string;
-        }>, z.ZodObject<{
-            call: z.ZodString;
-            args: z.ZodRecord<z.ZodString, z.ZodAny>;
-            returnType: z.ZodDefault<z.ZodEnum<["string", "number", "boolean", "array", "object", "any", "void"]>>;
-        }, "strip", z.ZodTypeAny, {
-            call: string;
-            args: Record<string, any>;
-            returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
-        }, {
-            call: string;
-            args: Record<string, any>;
-            returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
-        }>]>>;
-        userId: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodObject<{
+        agentId: z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodObject<{
             path: z.ZodString;
         }, "strip", z.ZodTypeAny, {
             path: string;
@@ -117,24 +76,7 @@ export declare const KalturaMediaManagerApi: {
             args: Record<string, any>;
             returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
         };
-        mode?: "select" | "manage" | undefined;
-        theme?: "dark" | "light" | undefined;
-        contextType?: string | {
-            path: string;
-        } | {
-            call: string;
-            args: Record<string, any>;
-            returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
-        } | undefined;
-        multiSelect?: boolean | undefined;
-        contextId?: string | {
-            path: string;
-        } | {
-            call: string;
-            args: Record<string, any>;
-            returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
-        } | undefined;
-        userId?: string | {
+        agentId?: string | {
             path: string;
         } | {
             call: string;
@@ -157,24 +99,7 @@ export declare const KalturaMediaManagerApi: {
             args: Record<string, any>;
             returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
         };
-        mode?: "select" | "manage" | undefined;
-        theme?: "dark" | "light" | undefined;
-        contextType?: string | {
-            path: string;
-        } | {
-            call: string;
-            args: Record<string, any>;
-            returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
-        } | undefined;
-        multiSelect?: boolean | undefined;
-        contextId?: string | {
-            path: string;
-        } | {
-            call: string;
-            args: Record<string, any>;
-            returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
-        } | undefined;
-        userId?: string | {
+        agentId?: string | {
             path: string;
         } | {
             call: string;
@@ -183,4 +108,4 @@ export declare const KalturaMediaManagerApi: {
         } | undefined;
     }>;
 };
-//# sourceMappingURL=media-manager.d.ts.map
+//# sourceMappingURL=agents-widget.d.ts.map
