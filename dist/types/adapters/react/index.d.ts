@@ -36,5 +36,5 @@ export { kalturaClientFunctions };
 export { kalturaPlayerReactImpl, flashcardsReactImpl, mediaManagerReactImpl };
 export { PlayerCore, buildPlayerUrl, type PlayerCoreProps } from '../../core/player';
 export { FlashcardsCore, buildClipUrl, buildAllCards, type FlashcardsCoreProps, type FlashCard, type Clip, } from '../../core/flashcards';
-export { MediaManagerCore, deriveLoaderUrl, buildRuntimes, type MediaManagerCoreProps, } from '../../core/media-manager';
+export { MediaManagerCore, deriveLoaderUrl, buildWorkspaceConfig, type MediaManagerCoreProps, } from '../../core/media-manager';
 //# sourceMappingURL=index.d.ts.map

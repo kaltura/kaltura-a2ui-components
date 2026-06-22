@@ -81,6 +81,6 @@ export {
 export {
   MediaManagerCore,
   deriveLoaderUrl,
-  buildRuntimes,
+  buildWorkspaceConfig,
   type MediaManagerCoreProps,
 } from '../../core/media-manager';

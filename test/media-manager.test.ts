@@ -1,25 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { deriveLoaderUrl, buildRuntimes } from '../src/core/media-manager';
-// Source-as-text via Vite's ?raw — robust under the jsdom test env, where
-// import.meta.url is an http URL and fileURLToPath() throws.
-import CORE_SRC from '../src/core/media-manager.tsx?raw';
-
-describe('row-click behavior (manage mode)', () => {
-  // In manage mode there is no per-row "Select" button (only the "…" menu), so
-  // the click handler must derive the entry from a click on the row/thumbnail —
-  // not bail whenever the click was not on a button labelled "Select" (which
-  // made every row unclickable in manage mode). This guard moved here with the
-  // renderer from the chat UI (kaltura/kaltura-adk-agent#55).
-  it('derives the entry from the clicked row thumbnail', () => {
-    expect(CORE_SRC).toContain('thumbMatch');
-  });
-
-  it('does not hard-bail on a non-"Select" button (rows clickable in manage mode)', () => {
-    // The old regression: `if (btnText !== 'Select') return;` ran before any
-    // row lookup, so manage-mode rows (no Select button) were dead.
-    expect(CORE_SRC).not.toMatch(/btnText\s*!==\s*'Select'/);
-  });
-});
+import { deriveLoaderUrl, buildWorkspaceConfig } from '../src/core/media-manager';
 
 describe('deriveLoaderUrl', () => {
   it('replaces /v1 suffix (no trailing slash)', () => {
@@ -37,92 +17,57 @@ describe('deriveLoaderUrl', () => {
   });
 });
 
-describe('buildRuntimes', () => {
-  const instanceId = 'unisphere-mm-test-123';
+describe('buildWorkspaceConfig', () => {
   const baseProps = {
     ks: 'test-ks',
     partnerId: 1234567,
-    instanceId,
+    instanceId: 'unisphere-mm-test-123',
+    theme: 'dark' as const,
   };
 
-  it('returns a single runtime entry', () => {
-    const runtimes = buildRuntimes(baseProps);
-    expect(runtimes).toHaveLength(1);
+  it('sets workspaceName to the instanceId', () => {
+    const cfg = buildWorkspaceConfig(baseProps);
+    expect(cfg.workspaceName).toBe(baseProps.instanceId);
   });
 
-  it('uses the fixed manifest runtimeName', () => {
-    const [runtime] = buildRuntimes(baseProps) as Array<{ runtimeName: string }>;
-    expect(runtime.runtimeName).toBe('kaltura-items-media-manager');
+  it('produces unique workspaceNames for different instances (no collision)', () => {
+    // Regression lock: ensures each instance gets its own named workspace,
+    // preventing "workspace already reserved" when multiple MM surfaces coexist.
+    const a = buildWorkspaceConfig({ ...baseProps, instanceId: 'mm-aaa' });
+    const b = buildWorkspaceConfig({ ...baseProps, instanceId: 'mm-bbb' });
+    expect(a.workspaceName).not.toBe(b.workspaceName);
   });
 
-  it('keeps runtimeName fixed across instances (never per-instance)', () => {
-    // The regression this locks: a per-instance runtimeName (e.g.
-    // `media-manager-${instanceId}`) can't resolve to any bundle in the
-    // Unisphere manifest → "Failed to resolve element runtime url" and the
-    // widget silently never loads. Instances are isolated by the visual
-    // `target` container id (asserted above), NOT by the runtime id, so the
-    // runtimeName must be byte-identical regardless of instanceId.
-    const [a] = buildRuntimes({ ...baseProps, instanceId: 'mm-aaa' }) as Array<{
-      runtimeName: string;
-    }>;
-    const [b] = buildRuntimes({ ...baseProps, instanceId: 'mm-bbb' }) as Array<{
-      runtimeName: string;
-    }>;
-    expect(a.runtimeName).toBe(b.runtimeName);
-    expect(a.runtimeName).not.toContain('mm-aaa');
+  it('embeds ks and partnerId in the media-manager experience settings', () => {
+    const cfg = buildWorkspaceConfig(baseProps);
+    const settings = cfg.config.experiences['media-manager']['kaltura-media-manager'].settings;
+    expect(settings.ks).toBe('test-ks');
+    expect(settings.partnerId).toBe(1234567);
   });
 
-  it('sets contextType to category in settings', () => {
-    const [runtime] = buildRuntimes(baseProps) as Array<{
-      settings: { contextType: string };
-    }>;
-    expect(runtime.settings.contextType).toBe('category');
+  it('sets supportDocuments to true in the experience settings', () => {
+    const cfg = buildWorkspaceConfig(baseProps);
+    const settings = cfg.config.experiences['media-manager']['kaltura-media-manager'].settings;
+    expect(settings.supportDocuments).toBe(true);
   });
 
-  it('sets visuals[0].target to the passed instanceId', () => {
-    const [runtime] = buildRuntimes(baseProps) as Array<{
-      visuals: Array<{ target: string }>;
-    }>;
-    expect(runtime.visuals[0].target).toBe(instanceId);
+  it('propagates theme into ui config', () => {
+    const cfg = buildWorkspaceConfig(baseProps);
+    expect(cfg.config.ui.theme).toBe('dark');
   });
 
-  it('defaults visuals[0].settings.mode to select when mode is omitted', () => {
-    const [runtime] = buildRuntimes(baseProps) as Array<{
-      visuals: Array<{ settings: { mode: string } }>;
-    }>;
-    expect(runtime.visuals[0].settings.mode).toBe('select');
+  it('propagates light theme correctly', () => {
+    const cfg = buildWorkspaceConfig({ ...baseProps, theme: 'light' });
+    expect(cfg.config.ui.theme).toBe('light');
   });
 
-  it('uses the provided mode when set', () => {
-    const [runtime] = buildRuntimes({ ...baseProps, mode: 'manage' }) as Array<{
-      visuals: Array<{ settings: { mode: string } }>;
-    }>;
-    expect(runtime.visuals[0].settings.mode).toBe('manage');
+  it('sets language to en', () => {
+    const cfg = buildWorkspaceConfig(baseProps);
+    expect(cfg.config.ui.language).toBe('en');
   });
 
-  it('includes contextId in settings when provided', () => {
-    const [runtime] = buildRuntimes({ ...baseProps, contextId: '42' }) as Array<{
-      settings: { contextId?: string };
-    }>;
-    expect(runtime.settings.contextId).toBe('42');
-  });
-
-  it('omits contextId from settings when not provided', () => {
-    const [runtime] = buildRuntimes(baseProps) as Array<{
-      settings: { contextId?: string };
-    }>;
-    expect(runtime.settings.contextId).toBeUndefined();
-  });
-
-  it('sets supportDocuments to true', () => {
-    const [runtime] = buildRuntimes(baseProps) as Array<{
-      settings: { supportDocuments: boolean };
-    }>;
-    expect(runtime.settings.supportDocuments).toBe(true);
-  });
-
-  it('uses the fixed widgetName', () => {
-    const [runtime] = buildRuntimes(baseProps) as Array<{ widgetName: string }>;
-    expect(runtime.widgetName).toBe('unisphere.widget.media-manager');
+  it('includes the instanceId in appId', () => {
+    const cfg = buildWorkspaceConfig(baseProps);
+    expect(cfg.config.appId).toContain(baseProps.instanceId);
   });
 });

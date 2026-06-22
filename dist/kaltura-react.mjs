@@ -9542,142 +9542,119 @@ function Ju(e) {
 	return e.replace(/\/v1\/?$/, "/v1/loader/index.esm.js");
 }
 function Yu(e) {
-	let t = {
-		ks: e.ks,
-		partnerId: e.partnerId,
-		contextType: "category",
-		supportDocuments: !0
+	return {
+		config: {
+			appId: `kaltura-agent-${e.instanceId}`,
+			appVersion: "0.3.0",
+			experiences: { "media-manager": { "kaltura-media-manager": { settings: {
+				ks: e.ks,
+				partnerId: e.partnerId,
+				supportDocuments: !0
+			} } } },
+			ui: {
+				theme: e.theme,
+				language: "en"
+			}
+		},
+		workspaceName: e.instanceId
 	};
-	return e.contextId && (t.contextId = e.contextId), [{
-		widgetName: "unisphere.widget.media-manager",
-		runtimeName: "kaltura-items-media-manager",
-		settings: t,
-		visuals: [{
-			type: "table",
-			target: e.instanceId,
-			settings: { mode: e.mode || "select" }
-		}]
-	}];
 }
 function Xu(e) {
-	let t = s(null), n = s(null), [r, i] = c([]), o = e.multiSelect === !0;
+	let t = s(null), n = s(null), r = s(null), [i, o] = c([]), l = e.multiSelect === !0;
 	a(() => {
-		let r = t.current;
-		if (!r) return;
+		let i = t.current;
+		if (!i) return;
 		let a = `unisphere-mm-${crypto.randomUUID()}`;
-		r.id = a;
-		let s = !1, c = document.documentElement.getAttribute("data-theme") || "dark", l = Ju(e.serverUrl), u = (e) => {
-			let t = e.target, n = t.closest("button"), r = n?.textContent?.trim() === "Select";
-			if (n && !r) return;
-			let a = (r ? n : t).closest("tr");
-			if (!a || !a.closest("tbody")) return;
-			let s = (a.querySelector("img")?.getAttribute("src") || "").match(/entry_id\/(\d_[a-zA-Z0-9]+)/);
-			if (!s?.[1]) return;
-			e.stopPropagation(), e.preventDefault();
-			let c = (a.querySelectorAll("td")[1]?.textContent || "").trim(), l = s[1], u = c || l;
-			o ? i((e) => e.some((e) => e.entryId === l) ? (a.classList.remove("mm-selected"), e.filter((e) => e.entryId !== l)) : e.length >= 5 ? e : (a.classList.add("mm-selected"), [...e, {
-				entryId: l,
-				name: u
-			}])) : document.dispatchEvent(new CustomEvent("kaltura-entry-selected", { detail: {
-				entryId: l,
-				name: u
-			} }));
-		};
-		r.addEventListener("click", u, !0);
-		let d = a;
+		i.id = a;
+		let s = !1, c = e.theme ?? document.documentElement.getAttribute("data-theme") ?? "dark", u = Ju(e.serverUrl), d = e.contextId ? {
+			type: "category",
+			initialCategoryId: e.contextId
+		} : { type: "myMedia" };
 		return import(
 			/* @vite-ignore */
-			l
-).then((t) => {
+			u
+).then(async (t) => {
 			if (s) return;
-			let { loader: n } = t;
-			if (n) return n({
-				serverUrl: e.serverUrl,
-				appId: `kaltura-agent-${d}`,
-				workspace: d,
-				appVersion: "0.3.0",
-				session: {
-					ks: e.ks,
-					partnerId: e.partnerId
-				},
-				ui: {
-					theme: c,
-					language: "en"
-				},
-				runtimes: Yu({
-					ks: e.ks,
-					partnerId: e.partnerId,
-					contextId: e.contextId,
-					mode: e.mode,
-					instanceId: d
-				})
-			});
-		}).then((e) => {
-			if (!(s || !e)) {
-				n.current = e;
-				try {
-					(e.getRuntime?.("unisphere.widget.media-manager", "kaltura-items-media-manager"))?.onRowSelected?.subscribe?.((e) => {
-						if (!e?.id) return;
-						let t = e.id, n = e.name || t;
-						o ? i((e) => e.some((e) => e.entryId === t) || e.length >= 5 ? e : [...e, {
-							entryId: t,
-							name: n
-						}]) : document.dispatchEvent(new CustomEvent("kaltura-entry-selected", { detail: {
-							entryId: t,
-							name: n
-						} }));
-					});
-				} catch (e) {
-					console.warn("[MediaManager] onRowSelected unavailable, using DOM fallback", e);
+			let { createWorkspace: i } = t;
+			if (!i) return;
+			let u = await i(Yu({
+				ks: e.ks,
+				partnerId: e.partnerId,
+				instanceId: a,
+				theme: c
+			}));
+			if (s) return;
+			let f = await u.getRuntimeAsync("unisphere.widget.media-manager", "kaltura-items-media-manager");
+			if (s) return;
+			n.current = f;
+			let p = await f.mountVisual({
+				type: "table",
+				target: a,
+				settings: {
+					mode: e.mode ?? "select",
+					context: d,
+					rowActions: { buttons: [{
+						type: "select",
+						onClick: (e) => {
+							if (!e?.id) return;
+							let t = e.id, n = e.name || t;
+							l ? o((e) => e.some((e) => e.entryId === t) || e.length >= 5 ? e : [...e, {
+								entryId: t,
+								name: n
+							}]) : document.dispatchEvent(new CustomEvent("kaltura-entry-selected", { detail: {
+								entryId: t,
+								name: n
+							} }));
+						}
+					}] }
 				}
-			}
+			});
+			s || (r.current = p);
 		}).catch((e) => {
-			s || (console.error("[MediaManager] Load failed:", e), r.innerHTML = `<div style="padding:20px;color:#ff6b6b;text-align:center">Failed to load Media Manager: ${e.message ?? String(e)}</div>`);
+			s || (console.error("[MediaManager] Load failed:", e), i && (i.innerHTML = `<div style="padding:20px;color:#ff6b6b;text-align:center">Failed to load Media Manager: ${e.message ?? String(e)}</div>`));
 		}), () => {
-			s = !0, r.removeEventListener("click", u, !0), n.current?.kill?.(), n.current = null;
+			s = !0;
+			let e = n.current, t = r.current;
+			e?.unmountVisual && t && e.unmountVisual(t), n.current = null, r.current = null;
 		};
 	}, []);
-	let l = () => {
-		if (r.length === 0) return;
-		let e = r.map((e) => e.name === e.entryId ? e.entryId : `"${e.name}" (${e.entryId})`);
+	let u = () => {
+		if (i.length === 0) return;
+		let e = i.map((e) => e.name === e.entryId ? e.entryId : `"${e.name}" (${e.entryId})`);
 		document.dispatchEvent(new CustomEvent("kaltura-entry-selected", { detail: {
-			entryId: r.map((e) => e.entryId).join(","),
+			entryId: i.map((e) => e.entryId).join(","),
 			name: e.join(", "),
-			entries: r
-		} })), i([]);
-	}, u = (e) => {
-		i((t) => t.filter((t) => t.entryId !== e));
-		let n = t.current;
-		n && n.querySelectorAll("tr.mm-selected").forEach((t) => {
-			(t.querySelector("img")?.getAttribute("src") || "").includes(e) && t.classList.remove("mm-selected");
-		});
+			entries: i
+		} })), o([]);
+	}, p = (e) => {
+		o((t) => t.filter((t) => t.entryId !== e));
 	};
 	return /* @__PURE__ */ f("div", {
 		className: "kaltura-media-manager-container",
 		children: [/* @__PURE__ */ d("div", {
 			ref: t,
 			className: "kaltura-media-manager-widget"
-		}), o && r.length > 0 && /* @__PURE__ */ f("div", {
+		}), l && i.length > 0 && /* @__PURE__ */ f("div", {
 			className: "mm-multi-select-bar",
 			children: [/* @__PURE__ */ d("div", {
 				className: "mm-selected-items",
-				children: r.map((e) => /* @__PURE__ */ f("span", {
+				children: i.map((e) => /* @__PURE__ */ f("span", {
 					className: "mm-selected-chip",
 					children: [e.name, /* @__PURE__ */ d("button", {
 						className: "mm-chip-remove",
-						onClick: () => u(e.entryId),
+						onClick: () => p(e.entryId),
 						"aria-label": `Remove ${e.name}`,
 						children: "×"
 					})]
 				}, e.entryId))
 			}), /* @__PURE__ */ f("button", {
 				className: "mm-confirm-btn",
-				onClick: l,
+				onClick: u,
 				children: [
 					"Use ",
-					r.length,
+					i.length,
 					" entr",
-					r.length === 1 ? "y" : "ies"
+					i.length === 1 ? "y" : "ies"
 				]
 			})]
 		})]
@@ -9707,6 +9684,6 @@ async function rd(e) {
 	return td((await t.json()).id ?? "https://kaltura.github.io/a2ui/v1/catalog.json");
 }
 //#endregion
-export { Gu as FlashcardsCore, $u as KALTURA_CATALOG_ID, Xu as MediaManagerCore, ia as PlayerCore, Hu as buildAllCards, Vu as buildClipUrl, td as buildKalturaCatalog, ra as buildPlayerUrl, Yu as buildRuntimes, Ju as deriveLoaderUrl, Ku as flashcardsReactImpl, Qu as kalturaClientFunctions, ed as kalturaComponentImpls, aa as kalturaPlayerReactImpl, nd as kalturaReactCatalog, rd as loadKalturaCatalog, Zu as mediaManagerReactImpl };
+export { Gu as FlashcardsCore, $u as KALTURA_CATALOG_ID, Xu as MediaManagerCore, ia as PlayerCore, Hu as buildAllCards, Vu as buildClipUrl, td as buildKalturaCatalog, ra as buildPlayerUrl, Yu as buildWorkspaceConfig, Ju as deriveLoaderUrl, Ku as flashcardsReactImpl, Qu as kalturaClientFunctions, ed as kalturaComponentImpls, aa as kalturaPlayerReactImpl, nd as kalturaReactCatalog, rd as loadKalturaCatalog, Zu as mediaManagerReactImpl };
 
 //# sourceMappingURL=kaltura-react.mjs.map

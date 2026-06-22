@@ -11,13 +11,33 @@ export interface MediaManagerCoreProps {
 }
 /** Derives the Unisphere loader URL from the base serverUrl. */
 export declare function deriveLoaderUrl(serverUrl: string): string;
-/** Builds the runtimes array passed to the Unisphere loader. */
-export declare function buildRuntimes(props: {
+/** Builds the createWorkspace config for an isolated Media Manager instance. */
+export declare function buildWorkspaceConfig(props: {
     ks: string;
     partnerId: number;
-    contextId?: string;
-    mode?: 'select' | 'manage';
     instanceId: string;
-}): unknown[];
+    theme: 'dark' | 'light';
+}): {
+    config: {
+        appId: string;
+        appVersion: string;
+        experiences: {
+            'media-manager': {
+                'kaltura-media-manager': {
+                    settings: {
+                        ks: string;
+                        partnerId: number;
+                        supportDocuments: boolean;
+                    };
+                };
+            };
+        };
+        ui: {
+            theme: 'dark' | 'light';
+            language: string;
+        };
+    };
+    workspaceName: string;
+};
 export declare function MediaManagerCore(props: MediaManagerCoreProps): import("react").JSX.Element;
 //# sourceMappingURL=media-manager.d.ts.map
