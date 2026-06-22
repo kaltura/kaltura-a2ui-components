@@ -17,7 +17,20 @@
  * JS via vite-plugin-css-injected-by-js so a single <script> ships styles too.
  */
 
-:where(.kaltura-player-container, .flashcard-carousel, .kaltura-media-manager-container) {
+:where(
+  .kaltura-player-container,
+  .flashcard-carousel,
+  .kaltura-media-manager-container,
+  .kaltura-analytics-container,
+  .kaltura-captions-editor-container,
+  .kaltura-recorder-container,
+  .kaltura-avatar-container,
+  .kaltura-genie-container,
+  .kaltura-content-lab-container,
+  .kaltura-agents-container,
+  .kaltura-vod-avatar-container,
+  .kaltura-chart-container
+) {
   --ds-roundness-1: var(--ds-roundness-1, 4px);
   --ds-roundness-2: var(--ds-roundness-2, 8px);
   --ds-roundness-3: var(--ds-roundness-3, 12px);
@@ -408,6 +421,384 @@
 .kaltura-media-manager-widget tbody tr:hover td:nth-child(2) {
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* ─── KalturaAnalytics ─── */
+.kaltura-analytics-container {
+  margin: 12px 0;
+  border-radius: var(--ds-roundness-2);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--surface-deep);
+}
+
+.kaltura-analytics-container iframe {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border: 0;
+  display: block;
+  min-height: 400px;
+}
+
+/* ─── KalturaCaptionsEditor ─── */
+.kaltura-captions-editor-container {
+  margin: 12px 0;
+  border-radius: var(--ds-roundness-2);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--surface-deep);
+}
+
+.kaltura-captions-editor-container iframe {
+  width: 100%;
+  min-height: 600px;
+  border: 0;
+  display: block;
+}
+
+/* ─── KalturaRecorder ─── */
+.kaltura-recorder-container {
+  margin: 12px 0;
+  border-radius: var(--ds-roundness-2);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--surface-deep);
+}
+
+.kaltura-recorder-container iframe {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border: 0;
+  display: block;
+  min-height: 280px;
+}
+
+/* ─── KalturaAvatar ─── */
+.kaltura-avatar-container {
+  margin: 12px 0;
+  border-radius: var(--ds-roundness-2);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--surface-deep);
+  min-height: 400px;
+}
+
+/* ─── Unisphere Widgets (Genie, ContentLab, AgentsWidget, VodAvatar) ─── */
+.kaltura-kaltura-genie-container,
+.kaltura-genie-container,
+.kaltura-kaltura-content-lab-container,
+.kaltura-content-lab-container,
+.kaltura-kaltura-agents-container,
+.kaltura-agents-container,
+.kaltura-kaltura-vod-avatar-container,
+.kaltura-vod-avatar-container {
+  margin: 12px 0;
+  border-radius: var(--ds-roundness-2);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--surface-deep);
+  min-height: 500px;
+}
+
+/* ─── KalturaChart ─── */
+.kaltura-chart-container {
+  width: 100%;
+  padding: 16px 0;
+}
+
+.kaltura-chart-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--page-text);
+  margin: 0 0 12px 0;
+  padding: 0 4px;
+}
+
+.kaltura-chart-body {
+  width: 100%;
+  border-radius: var(--ds-roundness-2);
+}
+
+.kaltura-chart-body svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* ─── Chart Legend ─── */
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 12px;
+  padding: 0 4px;
+}
+
+.chart-legend--vertical {
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 0;
+  padding: 0;
+  max-width: 180px;
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--page-text-secondary);
+  padding: 4px 8px;
+  border-radius: var(--ds-roundness-1);
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.chart-legend-item:hover,
+.chart-legend-item--active {
+  background: var(--surface-elevated);
+}
+
+.chart-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.chart-legend-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-legend-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--page-text);
+  font-size: 11px;
+}
+
+/* ─── Chart Tooltip ─── */
+.chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: var(--ds-font-family);
+  background: var(--surface-card);
+  color: var(--page-text);
+  border: 1px solid var(--border-color);
+  border-radius: var(--ds-roundness-2);
+  white-space: nowrap;
+  z-index: 100;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  backdrop-filter: blur(8px);
+}
+
+.chart-tooltip strong { font-weight: 700; font-size: 12px; }
+
+.chart-tooltip-content {
+  font-family: var(--ds-font-family);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chart-tooltip-header {
+  font-weight: 700;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.chart-tooltip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chart-tooltip-row .chart-tooltip-label {
+  flex: 1;
+  color: var(--page-text-secondary);
+}
+
+.chart-tooltip-row .chart-tooltip-value {
+  font-weight: 600;
+  color: var(--page-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.visx-tooltip {
+  font-family: var(--ds-font-family) !important;
+  font-size: 12px !important;
+  border-radius: var(--ds-roundness-2) !important;
+  border: 1px solid var(--border-color) !important;
+  background: var(--surface-card) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* ─── GeoMap ─── */
+.geo-map-wrapper { width: 100%; }
+
+.geo-map-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 0 4px;
+}
+
+.geo-map-legend-label {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--page-text-muted);
+  min-width: 28px;
+}
+
+.geo-map-legend-label:first-child { text-align: right; }
+
+/* ─── Chart Loading ─── */
+.chart-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 120px;
+  color: var(--page-text-muted);
+  font-size: 13px;
+}
+
+.chart-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--ds-primary);
+  border-radius: 50%;
+  animation: chart-spin 0.8s linear infinite;
+}
+
+@keyframes chart-spin { to { transform: rotate(360deg); } }
+
+/* ─── Source Data Table ─── */
+.chart-source-data {
+  margin-top: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--ds-roundness-2);
+  overflow: hidden;
+}
+
+.chart-source-data summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--page-text-muted);
+  cursor: pointer;
+  background: var(--surface-elevated);
+  user-select: none;
+  list-style: none;
+}
+
+.chart-source-data summary::-webkit-details-marker { display: none; }
+
+.chart-source-data summary::after {
+  content: '';
+  margin-left: auto;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  transition: transform 0.15s;
+}
+
+.chart-source-data[open] summary::after { transform: rotate(180deg); }
+.chart-source-data[open] summary { border-bottom: 1px solid var(--border-color); }
+
+.chart-source-data-icon { flex-shrink: 0; opacity: 0.6; }
+.chart-source-data-count { font-weight: 400; opacity: 0.7; font-size: 11px; }
+
+.chart-source-data-scroll { max-height: 240px; overflow: auto; }
+
+.chart-source-data table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-source-data th,
+.chart-source-data td {
+  padding: 6px 10px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.chart-source-data th {
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--page-text-muted);
+  background: var(--surface-elevated);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.chart-source-data td { color: var(--page-text); }
+.chart-source-data td.numeric { text-align: right; }
+.chart-source-data tr:nth-child(even) td { background: var(--surface-elevated); }
+.chart-source-data tr:hover td { background: var(--surface-card); }
+
+.chart-source-data-truncated td {
+  text-align: center;
+  font-style: italic;
+  color: var(--page-text-muted);
+  padding: 8px;
+}
+
+.chart-source-data-actions {
+  padding: 6px 12px 4px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.chart-source-data-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--page-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.chart-source-data-download:hover {
+  color: var(--ds-primary);
+  border-color: var(--ds-primary);
 }
 
 /* ─── Responsive ─── */

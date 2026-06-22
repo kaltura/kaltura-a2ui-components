@@ -3,8 +3,23 @@ import catalog from '../src/catalog/kaltura_catalog.json';
 
 // The published catalog is the contract tier-1 A2UI clients negotiate against.
 // These tests lock the invariants that other agents/clients depend on: the
-// canonical id, the three shipped components (Chart deferred to #45), and the
-// x-kaltura-adapters descriptor that tells clients where to load the renderers.
+// canonical id, all 12 shipped components, and the x-kaltura-adapters descriptor
+// that tells clients where to load the renderers.
+
+const ALL_COMPONENTS = [
+  'KalturaPlayer',
+  'KalturaFlashcards',
+  'KalturaMediaManager',
+  'KalturaAnalytics',
+  'KalturaCaptionsEditor',
+  'KalturaRecorder',
+  'KalturaAvatar',
+  'KalturaGenie',
+  'KalturaContentLab',
+  'KalturaAgentsWidget',
+  'KalturaVodAvatar',
+  'KalturaChart',
+] as const;
 
 describe('kaltura_catalog.json', () => {
   it('is keyed by the canonical catalog id in both $id and catalogId', () => {
@@ -13,11 +28,11 @@ describe('kaltura_catalog.json', () => {
     expect(catalog.catalogId).toBe(id);
   });
 
-  it('declares the three shipped components and not KalturaChart (deferred to #45)', () => {
+  it('declares all 12 Experience Components', () => {
     expect(Object.keys(catalog.components)).toEqual(
-      expect.arrayContaining(['KalturaPlayer', 'KalturaFlashcards', 'KalturaMediaManager']),
+      expect.arrayContaining([...ALL_COMPONENTS]),
     );
-    expect(catalog.components).not.toHaveProperty('KalturaChart');
+    expect(Object.keys(catalog.components)).toHaveLength(ALL_COMPONENTS.length);
   });
 });
 
@@ -37,14 +52,26 @@ describe('x-kaltura-adapters', () => {
     expect(adapters.react.exports).toContain('buildKalturaCatalog');
   });
 
-  it('describes the web-component IIFE adapter with an SRI slot and custom elements', () => {
+  it('describes the web-component IIFE adapter with an SRI slot and all custom elements', () => {
     expect(adapters.webcomponent.format).toBe('iife');
     expect(adapters.webcomponent.cdn).toContain('/dist/kaltura-wc.js');
-    expect(adapters.webcomponent.customElements).toEqual([
-      'kaltura-player',
-      'kaltura-flashcards',
-      'kaltura-media-manager',
-    ]);
+    expect(adapters.webcomponent.customElements).toEqual(
+      expect.arrayContaining([
+        'kaltura-player',
+        'kaltura-flashcards',
+        'kaltura-media-manager',
+        'kaltura-analytics',
+        'kaltura-captions-editor',
+        'kaltura-recorder',
+        'kaltura-avatar',
+        'kaltura-genie-widget',
+        'kaltura-content-lab',
+        'kaltura-agents-widget',
+        'kaltura-vod-avatar-wc',
+        'kaltura-chart',
+      ]),
+    );
+    expect(adapters.webcomponent.customElements).toHaveLength(12);
   });
 
   // The committed source carries placeholders; build-and-release.yml stamps the

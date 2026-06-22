@@ -16,12 +16,25 @@
       "exports": ["kalturaReactCatalog", "buildKalturaCatalog", "loadKalturaCatalog", "kalturaComponentImpls", "kalturaClientFunctions"]
     },
     "webcomponent": {
-      "description": "Self-contained IIFE (React inlined, CSS-in-JS). Drop in via <script> on plain-HTML hosts; registers <kaltura-player>, <kaltura-flashcards>, <kaltura-media-manager> custom elements on load. Verify with the integrity hash.",
+      "description": "Self-contained IIFE (React inlined, CSS-in-JS). Drop in via <script> on plain-HTML hosts; registers all Kaltura custom elements on load. Verify with the integrity hash.",
       "format": "iife",
       "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@__RELEASE_TAG__/dist/kaltura-wc.js",
       "integrity": "__WC_SRI__",
       "crossorigin": "anonymous",
-      "customElements": ["kaltura-player", "kaltura-flashcards", "kaltura-media-manager"]
+      "customElements": [
+        "kaltura-player",
+        "kaltura-flashcards",
+        "kaltura-media-manager",
+        "kaltura-analytics",
+        "kaltura-captions-editor",
+        "kaltura-recorder",
+        "kaltura-avatar",
+        "kaltura-genie-widget",
+        "kaltura-content-lab",
+        "kaltura-agents-widget",
+        "kaltura-vod-avatar-wc",
+        "kaltura-chart"
+      ]
     }
   },
   "components": {
@@ -206,6 +219,374 @@
         }
       ],
       "unevaluatedProperties": false
+    },
+    "KalturaAnalytics": {
+      "type": "object",
+      "description": "Kaltura Analytics Dashboard — embedded KMC analytics iframe with optional entry, report type, and date range filters.",
+      "allOf": [
+        { "$ref": "#/$defs/ComponentCommon" },
+        { "$ref": "#/$defs/CatalogComponentCommon" },
+        {
+          "type": "object",
+          "properties": {
+            "component": { "const": "KalturaAnalytics" },
+            "partnerId": {
+              "type": "integer",
+              "description": "Kaltura account/partner ID."
+            },
+            "ks": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Session token (KMC ADMIN KS required for analytics access)."
+            },
+            "entryId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Optional media entry ID to pre-filter the report."
+            },
+            "reportType": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Analytics report type to display on load."
+            },
+            "fromDate": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Start date for the analytics date range (ISO 8601 or YYYY-MM-DD)."
+            },
+            "toDate": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "End date for the analytics date range (ISO 8601 or YYYY-MM-DD)."
+            }
+          },
+          "required": ["component", "partnerId", "ks"]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "KalturaCaptionsEditor": {
+      "type": "object",
+      "description": "Kaltura Caption Studio — full-featured in-browser captions editor for a specific media entry.",
+      "allOf": [
+        { "$ref": "#/$defs/ComponentCommon" },
+        { "$ref": "#/$defs/CatalogComponentCommon" },
+        {
+          "type": "object",
+          "properties": {
+            "component": { "const": "KalturaCaptionsEditor" },
+            "partnerId": {
+              "type": "integer",
+              "description": "Kaltura account/partner ID."
+            },
+            "ks": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Session token with captions edit permission."
+            },
+            "entryId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Media entry ID whose captions to edit."
+            },
+            "uiconfId": {
+              "type": "integer",
+              "description": "Optional uiConf ID for the captions editor player."
+            }
+          },
+          "required": ["component", "partnerId", "ks", "entryId"]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "KalturaRecorder": {
+      "type": "object",
+      "description": "Kaltura Express Recorder — in-browser webcam/screen recording widget that uploads directly to the Kaltura account.",
+      "allOf": [
+        { "$ref": "#/$defs/ComponentCommon" },
+        { "$ref": "#/$defs/CatalogComponentCommon" },
+        {
+          "type": "object",
+          "properties": {
+            "component": { "const": "KalturaRecorder" },
+            "partnerId": {
+              "type": "integer",
+              "description": "Kaltura account/partner ID."
+            },
+            "ks": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Session token with media upload permission."
+            },
+            "uiconfId": {
+              "type": "integer",
+              "description": "Optional uiConf ID for the recorder widget."
+            },
+            "category": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Category path to assign new recordings to."
+            },
+            "entryName": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Default entry name pre-filled in the recorder."
+            },
+            "allowScreen": {
+              "$ref": "#/$defs/DynamicBoolean",
+              "description": "Allow screen capture. Default: true."
+            },
+            "allowCamera": {
+              "$ref": "#/$defs/DynamicBoolean",
+              "description": "Allow camera capture. Default: true."
+            }
+          },
+          "required": ["component", "partnerId", "ks"]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "KalturaAvatar": {
+      "type": "object",
+      "description": "Kaltura AI Avatar — interactive conversational avatar widget powered by Kaltura's avatar platform.",
+      "allOf": [
+        { "$ref": "#/$defs/ComponentCommon" },
+        { "$ref": "#/$defs/CatalogComponentCommon" },
+        {
+          "type": "object",
+          "properties": {
+            "component": { "const": "KalturaAvatar" },
+            "avatarId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Avatar identifier from the Kaltura Avatar platform."
+            },
+            "projectId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Optional avatar project ID."
+            },
+            "language": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Avatar language code (e.g. 'en', 'he'). Default: 'en'."
+            },
+            "autoStart": {
+              "$ref": "#/$defs/DynamicBoolean",
+              "description": "Auto-start the avatar conversation. Default: false."
+            },
+            "allowInterrupt": {
+              "$ref": "#/$defs/DynamicBoolean",
+              "description": "Allow user to interrupt the avatar mid-speech. Default: true."
+            }
+          },
+          "required": ["component", "avatarId"]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "KalturaGenie": {
+      "type": "object",
+      "description": "Kaltura Genie — AI-powered content discovery and Q&A widget backed by Unisphere.",
+      "allOf": [
+        { "$ref": "#/$defs/ComponentCommon" },
+        { "$ref": "#/$defs/CatalogComponentCommon" },
+        {
+          "type": "object",
+          "properties": {
+            "component": { "const": "KalturaGenie" },
+            "partnerId": {
+              "type": "integer",
+              "description": "Kaltura account/partner ID."
+            },
+            "ks": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Session token."
+            },
+            "serverUrl": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Unisphere CDN URL (e.g. 'https://cdnapisec.kaltura.com')."
+            },
+            "categoryId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Optional category ID to scope the Genie content context."
+            },
+            "language": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "UI language code. Default: 'en'."
+            }
+          },
+          "required": ["component", "partnerId", "ks", "serverUrl"]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "KalturaContentLab": {
+      "type": "object",
+      "description": "Kaltura Content Lab — AI-powered content creation and enrichment studio for media entries.",
+      "allOf": [
+        { "$ref": "#/$defs/ComponentCommon" },
+        { "$ref": "#/$defs/CatalogComponentCommon" },
+        {
+          "type": "object",
+          "properties": {
+            "component": { "const": "KalturaContentLab" },
+            "partnerId": {
+              "type": "integer",
+              "description": "Kaltura account/partner ID."
+            },
+            "ks": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Session token."
+            },
+            "serverUrl": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Unisphere CDN URL (e.g. 'https://cdnapisec.kaltura.com')."
+            },
+            "entryId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Optional media entry ID to open Content Lab focused on a specific entry."
+            }
+          },
+          "required": ["component", "partnerId", "ks", "serverUrl"]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "KalturaAgentsWidget": {
+      "type": "object",
+      "description": "Kaltura AI Agents Widget — embedded Kaltura AI agents interface via Unisphere.",
+      "allOf": [
+        { "$ref": "#/$defs/ComponentCommon" },
+        { "$ref": "#/$defs/CatalogComponentCommon" },
+        {
+          "type": "object",
+          "properties": {
+            "component": { "const": "KalturaAgentsWidget" },
+            "partnerId": {
+              "type": "integer",
+              "description": "Kaltura account/partner ID."
+            },
+            "ks": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Session token."
+            },
+            "serverUrl": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Unisphere CDN URL (e.g. 'https://cdnapisec.kaltura.com')."
+            },
+            "agentId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Optional agent ID to launch a specific agent."
+            }
+          },
+          "required": ["component", "partnerId", "ks", "serverUrl"]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "KalturaVodAvatar": {
+      "type": "object",
+      "description": "Kaltura VOD Avatar — avatar overlay on a video-on-demand entry, powered by Unisphere.",
+      "allOf": [
+        { "$ref": "#/$defs/ComponentCommon" },
+        { "$ref": "#/$defs/CatalogComponentCommon" },
+        {
+          "type": "object",
+          "properties": {
+            "component": { "const": "KalturaVodAvatar" },
+            "partnerId": {
+              "type": "integer",
+              "description": "Kaltura account/partner ID."
+            },
+            "ks": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Session token."
+            },
+            "serverUrl": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Unisphere CDN URL (e.g. 'https://cdnapisec.kaltura.com')."
+            },
+            "entryId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Media entry ID for the VOD content the avatar overlays."
+            },
+            "avatarStyle": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Optional avatar visual style preset."
+            }
+          },
+          "required": ["component", "partnerId", "ks", "serverUrl", "entryId"]
+        }
+      ],
+      "unevaluatedProperties": false
+    },
+    "KalturaChart": {
+      "type": "object",
+      "description": "Kaltura Chart — data visualization component supporting 12 chart types: line, bar, area, pie, scatter, geo, wordcloud, treemap, heatmap, radar, sankey, funnel.",
+      "allOf": [
+        { "$ref": "#/$defs/ComponentCommon" },
+        { "$ref": "#/$defs/CatalogComponentCommon" },
+        {
+          "type": "object",
+          "properties": {
+            "component": { "const": "KalturaChart" },
+            "chartType": {
+              "type": "string",
+              "enum": ["line", "bar", "area", "pie", "scatter", "geo", "wordcloud", "treemap", "heatmap", "radar", "sankey", "funnel"],
+              "description": "Chart visualization type."
+            },
+            "data": {
+              "type": "array",
+              "items": { "type": "object" },
+              "description": "Array of data record objects. Keys used as x/y axes."
+            },
+            "sourceData": {
+              "type": "array",
+              "items": { "type": "object" },
+              "description": "Full dataset for table/export view when chart shows a summary subset."
+            },
+            "title": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Chart title displayed above the visualization."
+            },
+            "xKey": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Data key for the x-axis / category dimension. Auto-detected if omitted."
+            },
+            "yKeys": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Data keys for the y-axis / value dimensions. Auto-detected if omitted."
+            },
+            "yLabels": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Human-readable labels for the yKeys series (legend labels)."
+            },
+            "xLabel": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Label for the x-axis."
+            },
+            "yLabel": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Label for the y-axis."
+            },
+            "colors": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Optional color overrides for chart series (hex or CSS color strings)."
+            },
+            "height": {
+              "$ref": "#/$defs/DynamicNumber",
+              "description": "Chart height in pixels. Default: 300."
+            },
+            "annotations": {
+              "type": "array",
+              "description": "Vertical annotation markers on cartesian charts (line, bar, area, scatter).",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "x": { "type": "string", "description": "x-axis value to annotate." },
+                  "label": { "type": "string", "description": "Annotation label text." },
+                  "color": { "type": "string", "description": "Annotation color (hex or CSS). Default: accent color." }
+                },
+                "required": ["x", "label"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["component", "chartType", "data"]
+        }
+      ],
+      "unevaluatedProperties": false
     }
   },
   "$defs": {
@@ -293,7 +674,16 @@
       "oneOf": [
         { "$ref": "#/components/KalturaPlayer" },
         { "$ref": "#/components/KalturaFlashcards" },
-        { "$ref": "#/components/KalturaMediaManager" }
+        { "$ref": "#/components/KalturaMediaManager" },
+        { "$ref": "#/components/KalturaAnalytics" },
+        { "$ref": "#/components/KalturaCaptionsEditor" },
+        { "$ref": "#/components/KalturaRecorder" },
+        { "$ref": "#/components/KalturaAvatar" },
+        { "$ref": "#/components/KalturaGenie" },
+        { "$ref": "#/components/KalturaContentLab" },
+        { "$ref": "#/components/KalturaAgentsWidget" },
+        { "$ref": "#/components/KalturaVodAvatar" },
+        { "$ref": "#/components/KalturaChart" }
       ]
     },
     "theme": {

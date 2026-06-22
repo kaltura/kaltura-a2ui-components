@@ -9,19 +9,30 @@ import {
 } from '../src/adapters/react/index';
 import { basicCatalog } from '@a2ui/react/v0_9';
 
+const ALL_COMPONENTS = [
+  'KalturaPlayer',
+  'KalturaFlashcards',
+  'KalturaMediaManager',
+  'KalturaAnalytics',
+  'KalturaCaptionsEditor',
+  'KalturaRecorder',
+  'KalturaAvatar',
+  'KalturaGenie',
+  'KalturaContentLab',
+  'KalturaAgentsWidget',
+  'KalturaVodAvatar',
+  'KalturaChart',
+] as const;
+
 describe('kalturaReactCatalog', () => {
   it('is keyed by the canonical Kaltura catalog id', () => {
     expect(kalturaReactCatalog.id).toBe(KALTURA_CATALOG_ID);
   });
 
-  it('registers all three Kaltura Experience Components', () => {
-    expect(kalturaReactCatalog.components.has('KalturaPlayer')).toBe(true);
-    expect(kalturaReactCatalog.components.has('KalturaFlashcards')).toBe(true);
-    expect(kalturaReactCatalog.components.has('KalturaMediaManager')).toBe(true);
-  });
-
-  it('does NOT register KalturaChart (deferred to issue #45)', () => {
-    expect(kalturaReactCatalog.components.has('KalturaChart')).toBe(false);
+  it('registers all 12 Kaltura Experience Components', () => {
+    for (const name of ALL_COMPONENTS) {
+      expect(kalturaReactCatalog.components.has(name)).toBe(true);
+    }
   });
 
   it('includes every basic-catalog component (merged, not replaced)', () => {
@@ -37,8 +48,8 @@ describe('kalturaReactCatalog', () => {
     }
   });
 
-  it('exposes exactly three component implementations and one client function', () => {
-    expect(kalturaComponentImpls).toHaveLength(3);
+  it('exposes exactly 12 component implementations and one client function', () => {
+    expect(kalturaComponentImpls).toHaveLength(12);
     expect(kalturaClientFunctions).toHaveLength(1);
   });
 });
