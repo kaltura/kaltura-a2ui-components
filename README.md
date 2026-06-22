@@ -1,29 +1,43 @@
 # @kaltura/a2ui-react
 
-Kaltura's [A2UI](https://a2ui.org) Experience Components — Player, Flashcards,
-and Media Manager — packaged as a reusable, versioned, CDN-publishable catalog
-so any A2UI client that registers a catalog can render them without
-re-implementation.
-
-Tracked in
-[kaltura/kaltura-adk-agent#55](https://github.com/kaltura/kaltura-adk-agent/issues/55).
-KalturaChart is deferred to #45.
+Kaltura's [A2UI](https://a2ui.org) Experience Components — all 12 Kaltura
+components packaged as a reusable, versioned, CDN-publishable catalog so any
+A2UI client that registers a catalog can render them without re-implementation.
 
 ## Why this exists
 
 A2UI clients render only the component implementations they have registered
 ahead of time — there is no runtime code-loading in the protocol. So a Kaltura
-component (a real Player v7 embed, the Media Manager widget, study Flashcards)
-only appears in a client that has the Kaltura catalog built in. This package is
-that catalog, distributed two ways:
+component (a real Player v7 embed, the Media Manager widget, study Flashcards,
+Analytics dashboards, and more) only appears in a client that has the Kaltura
+catalog built in. This package is that catalog, distributed two ways:
 
 | Consumer | Artifact | How |
 |----------|----------|-----|
 | Catalog-registering A2UI clients (chat-UIs, partner apps) | `dist/kaltura-react.mjs` (ESM, React peer) | `import { kalturaReactCatalog } from '@kaltura/a2ui-react'` → `new MessageProcessor([kalturaReactCatalog, basicCatalog])` |
-| Plain-HTML hosts | `dist/kaltura-wc.js` (IIFE, self-contained) | `<script src=…>` + `<kaltura-player>` custom elements |
+| Plain-HTML hosts | `dist/kaltura-wc.js` (IIFE, self-contained) | `<script src=…>` + Kaltura custom elements |
 
 Clients that cannot register a catalog (Gemini Enterprise, generic basic/text)
-are handled by the agent's negotiation layer, not this package — see issue #55.
+are handled by the agent's negotiation layer, not this package.
+
+## Components
+
+All 12 Kaltura Experience Components are included:
+
+| Component type | Custom element | Embed technology |
+|---|---|---|
+| `KalturaPlayer` | `<kaltura-player>` | iframe (Player v7) |
+| `KalturaFlashcards` | `<kaltura-flashcards>` | Native React carousel |
+| `KalturaMediaManager` | `<kaltura-media-manager>` | Unisphere ES module |
+| `KalturaAnalytics` | `<kaltura-analytics>` | iframe |
+| `KalturaCaptionsEditor` | `<kaltura-captions-editor>` | iframe |
+| `KalturaRecorder` | `<kaltura-recorder>` | JS script |
+| `KalturaAvatar` | `<kaltura-avatar>` | JS script |
+| `KalturaGenie` | `<kaltura-genie-widget>` | Unisphere ES module |
+| `KalturaContentLab` | `<kaltura-content-lab>` | Unisphere ES module |
+| `KalturaAgentsWidget` | `<kaltura-agents-widget>` | Unisphere ES module |
+| `KalturaVodAvatar` | `<kaltura-vod-avatar-wc>` | Unisphere ES module |
+| `KalturaChart` | `<kaltura-chart>` | visx (React) |
 
 ## Use it
 
@@ -47,19 +61,19 @@ id. React is an external peer — the host provides it.
 ### Plain-HTML host
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.1.0/dist/kaltura-wc.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.1.3/dist/kaltura-wc.js"
+        integrity="<SRI from catalog x-kaltura-adapters block>"
+        crossorigin="anonymous"></script>
 <kaltura-player id="p"></kaltura-player>
 <script>
   document.getElementById('p').config = { partnerId: 123, uiconfId: 456, entryId: '1_abc' };
 </script>
 ```
 
-The IIFE registers `<kaltura-player>`, `<kaltura-flashcards>`, and
-`<kaltura-media-manager>` on load. Use the SRI `integrity` hash published in the
-catalog's `x-kaltura-adapters.webcomponent` block.
-
-The catalog's `x-kaltura-adapters` block is the machine-readable source for the
-exact CDN URLs, npm package, and SRI hash per release.
+The IIFE registers all 12 Kaltura custom elements on load. Use the SRI
+`integrity` hash published in the catalog's `x-kaltura-adapters.webcomponent`
+block — it is the machine-readable source for the exact CDN URL and SRI per
+release.
 
 ## Layout
 
