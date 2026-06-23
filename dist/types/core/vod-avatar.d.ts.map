@@ -1,0 +1,1 @@
+{"version":3,"file":"vod-avatar.d.ts","sourceRoot":"","sources":["../../../src/core/vod-avatar.tsx"],"names":[],"mappings":"AAEA,MAAM,WAAW,kBAAkB;IACjC,SAAS,EAAE,MAAM,CAAC;IAClB,EAAE,EAAE,MAAM,CAAC;IACX,SAAS,EAAE,MAAM,CAAC;IAClB,OAAO,EAAE,MAAM,CAAC;IAChB,WAAW,CAAC,EAAE,MAAM,CAAC;CACtB;AAED,wBAAgB,aAAa,CAAC,KAAK,EAAE,kBAAkB,+BAetD"}

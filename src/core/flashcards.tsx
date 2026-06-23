@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FC, type Keyboa
 import { renderMarkdown } from '@a2ui/markdown-it';
 
 const CDN_EMBED = 'https://cdnapisec.kaltura.com';
+const CDN_THUMB = 'https://cfvod.kaltura.com';
 
 const GRADIENTS = [
   'radial-gradient(315% 315% at 50% 214%, rgba(0,110,250,0) 0%, rgba(0,110,250,0.5) 100%), #000',
@@ -58,6 +59,17 @@ export function buildClipUrl(
   });
   if (ks) params.set('ks', ks);
   return `${base}?${params}`;
+}
+
+/**
+ * CDN thumbnail URL for a clip — seeks to startTime+1s for a meaningful frame.
+ * Falls back to the clip's own thumbnail field if set, otherwise empty string.
+ */
+export function buildThumbnailUrl(clip: Clip, partnerId?: number): string {
+  if (clip.thumbnail) return clip.thumbnail;
+  if (!partnerId) return '';
+  const sec = Math.round(clip.startTime) + 1;
+  return `${CDN_THUMB}/p/${partnerId}/thumbnail/entry_id/${clip.entryId}/width/200/vid_sec/${sec}`;
 }
 
 /**
@@ -145,6 +157,63 @@ function ClipPlayer({
   );
 }
 
+/** Thumbnail strip + player for multi-clip cards. */
+function ClipGallery({
+  clips,
+  partnerId,
+  uiconfId,
+  ks,
+  cardActive,
+}: {
+  clips: Clip[];
+  partnerId?: number;
+  uiconfId?: number;
+  ks?: string;
+  cardActive: boolean;
+}) {
+  const [activeClipIdx, setActiveClipIdx] = useState(0);
+  const activeClip = clips[activeClipIdx] ?? clips[0];
+
+  return (
+    <div className="flashcard-clips">
+      <ClipPlayer
+        clip={activeClip}
+        partnerId={partnerId}
+        uiconfId={uiconfId}
+        ks={ks}
+        active={cardActive}
+      />
+      {clips.length > 1 && (
+        <div className="flashcard-clip-thumbs">
+          {clips.map((clip, ci) => {
+            const thumbUrl = buildThumbnailUrl(clip, partnerId);
+            return (
+              <button
+                key={ci}
+                className={`clip-thumb-btn ${ci === activeClipIdx ? 'active' : ''}`}
+                onClick={() => setActiveClipIdx(ci)}
+                aria-label={clip.title ?? `Clip ${ci + 1}`}
+                title={clip.title ?? `Clip ${ci + 1}`}
+              >
+                {thumbUrl ? (
+                  <img
+                    src={thumbUrl}
+                    alt={clip.title ?? `Clip ${ci + 1}`}
+                    className="clip-thumb-img"
+                  />
+                ) : (
+                  <span className="clip-thumb-fallback" />
+                )}
+                {ci === activeClipIdx && <span className="clip-thumb-active-bar" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export const FlashcardsCore: FC<FlashcardsCoreProps> = ({
   title,
   summary,
@@ -200,11 +269,12 @@ export const FlashcardsCore: FC<FlashcardsCoreProps> = ({
           const isActive = i === currentIndex;
           const offset = (i - currentIndex) * 100;
           const gap = (i - currentIndex) * 1.5;
+          const hasClips = card.clips && card.clips.length > 0;
 
           return (
             <div
               key={i}
-              className={`flashcard-slide ${isActive ? 'active' : ''}`}
+              className={`flashcard-slide ${isActive ? 'active' : ''} ${hasClips ? 'has-clips' : ''}`}
               role="group"
               aria-roledescription="slide"
               aria-label={`Card ${i + 1} of ${total}`}
@@ -224,23 +294,14 @@ export const FlashcardsCore: FC<FlashcardsCoreProps> = ({
                   {String(card.title)}
                 </h3>
                 {card.content && <CardContentInner content={String(card.content)} />}
-                {card.clips && card.clips.length > 0 && (
-                  <div className="flashcard-clips">
-                    <ClipPlayer
-                      clip={card.clips[0]}
-                      partnerId={partnerId}
-                      uiconfId={uiconfId}
-                      ks={ks}
-                      active={isActive}
-                    />
-                    {card.clips.length > 1 && (
-                      <div className="flashcard-clip-dots">
-                        {card.clips.map((_, ci) => (
-                          <span key={ci} className={`clip-dot ${ci === 0 ? 'active' : ''}`} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                {hasClips && card.clips && (
+                  <ClipGallery
+                    clips={card.clips}
+                    partnerId={partnerId}
+                    uiconfId={uiconfId}
+                    ks={ks}
+                    cardActive={isActive}
+                  />
                 )}
               </div>
             </div>

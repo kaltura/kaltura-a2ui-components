@@ -117,9 +117,8 @@ export declare const KalturaMediaManagerApi: {
             args: Record<string, any>;
             returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
         };
-        theme?: "dark" | "light" | undefined;
         mode?: "select" | "manage" | undefined;
-        multiSelect?: boolean | undefined;
+        theme?: "dark" | "light" | undefined;
         contextType?: string | {
             path: string;
         } | {
@@ -127,6 +126,7 @@ export declare const KalturaMediaManagerApi: {
             args: Record<string, any>;
             returnType: "string" | "number" | "boolean" | "object" | "array" | "void" | "any";
         } | undefined;
+        multiSelect?: boolean | undefined;
         contextId?: string | {
             path: string;
         } | {
@@ -157,9 +157,8 @@ export declare const KalturaMediaManagerApi: {
             args: Record<string, any>;
             returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
         };
-        theme?: "dark" | "light" | undefined;
         mode?: "select" | "manage" | undefined;
-        multiSelect?: boolean | undefined;
+        theme?: "dark" | "light" | undefined;
         contextType?: string | {
             path: string;
         } | {
@@ -167,6 +166,7 @@ export declare const KalturaMediaManagerApi: {
             args: Record<string, any>;
             returnType?: "string" | "number" | "boolean" | "object" | "array" | "void" | "any" | undefined;
         } | undefined;
+        multiSelect?: boolean | undefined;
         contextId?: string | {
             path: string;
         } | {

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { buildClipUrl, buildAllCards } from '../src/core/flashcards';
+import { buildClipUrl, buildAllCards, buildThumbnailUrl } from '../src/core/flashcards';
 
 // ── buildClipUrl ─────────────────────────────────────────────────────────────
 
@@ -42,6 +42,31 @@ describe('buildClipUrl', () => {
     const url = buildClipUrl(intClip, 1, 2);
     expect(url).toContain('kalturaSeekFrom=30');
     expect(url).toContain('kalturaClipTo=60');
+  });
+});
+
+// ── buildThumbnailUrl ─────────────────────────────────────────────────────────
+
+describe('buildThumbnailUrl', () => {
+  const clip = { entryId: '1_abc123', startTime: 10.7, endTime: 45.2 };
+
+  it('returns empty string when partnerId is missing', () => {
+    expect(buildThumbnailUrl(clip, undefined)).toBe('');
+  });
+
+  it('returns clip.thumbnail when set (overrides CDN)', () => {
+    const clipWithThumb = { ...clip, thumbnail: 'https://example.com/thumb.jpg' };
+    expect(buildThumbnailUrl(clipWithThumb, 99999)).toBe('https://example.com/thumb.jpg');
+  });
+
+  it('builds CDN thumbnail URL at startTime+1', () => {
+    const url = buildThumbnailUrl(clip, 99999);
+    expect(url).toContain('/p/99999/thumbnail/entry_id/1_abc123/width/200/vid_sec/12');
+  });
+
+  it('uses vid_sec=1 when startTime=0', () => {
+    const url = buildThumbnailUrl({ ...clip, startTime: 0 }, 99999);
+    expect(url).toContain('vid_sec/1');
   });
 });
 
