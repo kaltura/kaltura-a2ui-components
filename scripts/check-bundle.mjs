@@ -2,7 +2,7 @@
 //
 // CHECK_BUNDLE_KNOWN_FAILURES=1 turns the rules listed in KNOWN_FAILURES into
 // warnings so CI can stay green until the fix lands. Default is strict.
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,7 +10,7 @@ const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 const bundles = { esm: 'kaltura-react.mjs', iife: 'kaltura-wc.js' };
 
 // Rule ids that may fail while a fix is pending. Remove each when fixed.
-const KNOWN_FAILURES = new Set(['E2E-01']);
+const KNOWN_FAILURES = new Set();
 const allowKnown = process.env.CHECK_BUNDLE_KNOWN_FAILURES === '1';
 
 const failures = [];
@@ -37,6 +37,17 @@ if (sources.iife !== undefined) {
   const hits = sources.iife.match(/\bprocess\.env\b/g)?.length ?? 0;
   if (hits > 0) {
     fail('E2E-01', `dist/${bundles.iife} has ${hits} bare process.env reference(s). The IIFE would throw ReferenceError on a bare page.`);
+  }
+}
+
+// Declarations must not import CSS: the CSS is not shipped under dist/types.
+const typesDir = join(dist, 'types');
+if (existsSync(typesDir)) {
+  for (const entry of readdirSync(typesDir, { recursive: true })) {
+    if (!entry.endsWith('.d.ts')) continue;
+    if (/\.css['"]/.test(readFileSync(join(typesDir, entry), 'utf8'))) {
+      fail('TYPES-CSS', `dist/types/${entry} imports a CSS file that is not shipped.`);
+    }
   }
 }
 

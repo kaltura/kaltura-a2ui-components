@@ -38,7 +38,8 @@ async function deriveFor(url: string) {
 }
 
 async function run(Comp: string, serverUrl: string) {
-  const loaderUrl = await deriveFor(serverUrl);
+  // A rejected serverUrl has no loader URL. Spy on the naive one to prove import() is never reached.
+  const loaderUrl = await deriveFor(serverUrl).catch(() => serverUrl.replace(/\/v1\/?$/, '/v1/loader/index.esm.js'));
   vi.doMock(loaderUrl, () => {
     loaded.push(serverUrl);
     return { createWorkspace: async () => { throw new Error('mock'); }, loader: async () => { throw new Error('mock'); } };

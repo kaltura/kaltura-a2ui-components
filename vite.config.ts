@@ -25,6 +25,10 @@ const target = process.env.BUILD_TARGET ?? 'react';
 const isReact = target === 'react';
 
 export default defineConfig({
+  // Browsers have no `process`. The self-contained bundle must not leave
+  // `process.env.NODE_ENV` behind (vite lib mode does not replace it). The
+  // ESM build keeps it: the host's bundler replaces it.
+  define: isReact ? {} : { 'process.env.NODE_ENV': '"production"' },
   plugins: [
     react(),
     // Fold CSS into the JS for BOTH targets so consumers get styles from a

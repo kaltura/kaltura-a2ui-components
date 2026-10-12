@@ -65,10 +65,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run build
-      # Remove the env flag when the web component bundle fix (E2E-01) lands.
       - run: npm run check:bundle
-        env:
-          CHECK_BUNDLE_KNOWN_FAILURES: '1'
       - run: npm run size
       - run: npm run check:package
 

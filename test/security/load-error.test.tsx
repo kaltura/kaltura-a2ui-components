@@ -8,7 +8,7 @@ import { mount, findUnsafe } from '../helpers/render';
 
 const state = vi.hoisted(() => ({ thrown: undefined as unknown }));
 
-vi.mock('https://mock.example/v1/loader/index.esm.js', () => {
+vi.mock('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js', () => {
   const m: Record<string, unknown> = {};
   for (const k of ['createWorkspace', 'loader']) {
     Object.defineProperty(m, k, {
@@ -21,7 +21,7 @@ vi.mock('https://mock.example/v1/loader/index.esm.js', () => {
   return m;
 });
 
-const SERVER_URL = 'https://mock.example/v1';
+const SERVER_URL = 'https://unisphere.nvp1.ovp.kaltura.com/v1';
 const PAYLOAD_MSG = '<img src=x onerror="window.__pwned=1">';
 
 afterEach(() => {
@@ -80,5 +80,15 @@ describe('SEC-06: loader error message must be rendered as text, not HTML', () =
     const { container } = await mount(Comp, { ...props });
     expect(container.querySelector('script')).toBeNull();
     expect(container.textContent).toContain('<script>window.__pwned=1</script>');
+  });
+});
+
+describe('SEC-01: a rejected serverUrl is shown as a text error', () => {
+  it('SEC-01: GenieCore: markup inside serverUrl creates no element', async () => {
+    const list = await components();
+    const [, Comp, props] = list.find(([n]) => n === 'GenieCore')!;
+    const { container } = await mount(Comp, { ...props, serverUrl: 'https://evil.example/<img src=x onerror=window.__pwned=1>' });
+    expect(findUnsafe(container)).toEqual([]);
+    expect(container.textContent).toContain('not an allowed Unisphere origin');
   });
 });

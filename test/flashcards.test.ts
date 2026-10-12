@@ -54,9 +54,9 @@ describe('buildThumbnailUrl', () => {
     expect(buildThumbnailUrl(clip, undefined)).toBe('');
   });
 
-  it('returns clip.thumbnail when set (overrides CDN)', () => {
-    const clipWithThumb = { ...clip, thumbnail: 'https://example.com/thumb.jpg' };
-    expect(buildThumbnailUrl(clipWithThumb, 99999)).toBe('https://example.com/thumb.jpg');
+  it('returns clip.thumbnail when set on a Kaltura CDN host (overrides CDN)', () => {
+    const clipWithThumb = { ...clip, thumbnail: 'https://cdn.kaltura.com/thumb.jpg' };
+    expect(buildThumbnailUrl(clipWithThumb, 99999)).toBe('https://cdn.kaltura.com/thumb.jpg');
   });
 
   it('builds CDN thumbnail URL at startTime+1', () => {

@@ -91,3 +91,33 @@ describe('loadKalturaCatalog', () => {
     }
   });
 });
+
+describe('setExtraAllowedOrigins export', () => {
+  it('SEC-01: the React adapter exports the host-only origin setters', async () => {
+    const react = await import('../src/adapters/react/index');
+    const loader = await import('../src/core/unisphere-loader');
+    expect([react.setExtraAllowedOrigins, react.getExtraAllowedOrigins]).toEqual([
+      loader.setExtraAllowedOrigins,
+      loader.getExtraAllowedOrigins,
+    ]);
+  });
+
+  it('SEC-01: the web component adapter exports the host-only origin setters', async () => {
+    const wc = await import('../src/adapters/webcomponent/index');
+    const loader = await import('../src/core/unisphere-loader');
+    expect([wc.setExtraAllowedOrigins, wc.getExtraAllowedOrigins]).toEqual([
+      loader.setExtraAllowedOrigins,
+      loader.getExtraAllowedOrigins,
+    ]);
+  });
+
+  it('SEC-01: an added origin is stored and can be cleared', async () => {
+    const { setExtraAllowedOrigins, getExtraAllowedOrigins } = await import('../src/adapters/react/index');
+    try {
+      setExtraAllowedOrigins(['https://unisphere.example.com']);
+      expect(getExtraAllowedOrigins()).toEqual(['https://unisphere.example.com']);
+    } finally {
+      setExtraAllowedOrigins([]);
+    }
+  });
+});

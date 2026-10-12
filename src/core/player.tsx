@@ -1,5 +1,8 @@
 import { useMemo } from 'react';
 import type { FC } from 'react';
+import { isEntryId, isPositiveInt } from './ids';
+import { KalturaPlayerApi } from '../schemas/player';
+import { withValidatedProps } from './validate-props';
 
 const CDN_EMBED = 'https://cdnapisec.kaltura.com';
 const PLAYER_PLUGINS = 'uiManagers,youtube,dualscreen,timeline,kalturaCuepoints,ivq,kava';
@@ -19,6 +22,9 @@ export interface PlayerCoreProps {
 }
 
 export function buildPlayerUrl(p: PlayerCoreProps): string {
+  if (!isPositiveInt(p.partnerId)) throw new Error('Invalid partnerId');
+  if (!isPositiveInt(p.uiconfId)) throw new Error('Invalid uiconfId');
+  if (!isEntryId(p.entryId)) throw new Error('Invalid entryId');
   const base =
     `${CDN_EMBED}/p/${p.partnerId}/embedPlaykitJs` +
     `/partner_id/${p.partnerId}/uiconf_id/${p.uiconfId}`;
@@ -35,11 +41,17 @@ export function buildPlayerUrl(p: PlayerCoreProps): string {
   return `${base}?${params}`;
 }
 
-export const PlayerCore: FC<PlayerCoreProps> = (props) => {
+const PlayerView: FC<PlayerCoreProps> = (props) => {
   const aspectRatio = props.aspectRatio || '16/9';
 
   const playerUrl = useMemo(
-    () => buildPlayerUrl(props),
+    () => {
+      try {
+        return buildPlayerUrl(props);
+      } catch (e) {
+        return e as Error;
+      }
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       props.partnerId,
@@ -62,6 +74,10 @@ export const PlayerCore: FC<PlayerCoreProps> = (props) => {
     return props.entryDescription.replace(/<[^>]*>/g, '').trim();
   }, [props.entryDescription]);
 
+  if (playerUrl instanceof Error) {
+    return <div className="kaltura-load-error">Failed to load player: {playerUrl.message}</div>;
+  }
+
   return (
     <div className="kaltura-player-container">
       <iframe
@@ -78,3 +94,5 @@ export const PlayerCore: FC<PlayerCoreProps> = (props) => {
     </div>
   );
 };
+
+export const PlayerCore = withValidatedProps(KalturaPlayerApi.schema, 'player', PlayerView);
