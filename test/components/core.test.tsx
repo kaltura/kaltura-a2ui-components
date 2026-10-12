@@ -1,0 +1,95 @@
+// Covers: QA-18 (every core component has a happy render, a hostile input
+// case and an unmount cleanup case). Green since plan item 2.12.
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
+import { createElement, act } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { CASES, PAYLOAD, installRemote, remote, sdk, resetFakes, settle, expectInert, type Case } from './cases';
+
+// The first import of a core loads its libraries, which is slow on a busy machine.
+vi.setConfig({ testTimeout: 30000, hookTimeout: 60000 });
+
+let root: Root;
+let host: HTMLElement;
+let errors: ReturnType<typeof vi.spyOn>;
+
+beforeAll(() => installRemote());
+beforeEach(() => {
+  resetFakes();
+  errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  host = document.body.appendChild(document.createElement('div'));
+  root = createRoot(host);
+});
+afterEach(() => {
+  act(() => root.unmount());
+  document.body.innerHTML = '';
+  vi.restoreAllMocks();
+});
+
+async function mount(c: Case, props: Record<string, unknown>) {
+  const Core = await c.load();
+  await act(async () => root.render(createElement(Core, props as never)));
+  await settle();
+}
+
+describe.each(CASES)('QA-18: $name core', c => {
+  it(`QA-18: ${c.name} renders its happy path`, async () => {
+    await mount(c, c.valid);
+    c.happy(host);
+    c.effect?.();
+  });
+
+  it(`QA-18: ${c.name} shows a plain-text alert for invalid props`, async () => {
+    await mount(c, c.invalid);
+    const alerts = host.querySelectorAll('[role="alert"]');
+    expect([alerts.length, alerts[0]?.textContent?.startsWith('Failed to load'), host.querySelector('iframe')]).toEqual([1, true, null]);
+    expectInert(host);
+    expect(remote.log).toEqual([]);
+  });
+
+  it(`QA-18: ${c.name} keeps hostile text inert`, async () => {
+    await mount(c, c.hostile);
+    expectInert(host);
+  });
+
+  it(`QA-18: ${c.name} cleans up on unmount`, async () => {
+    await mount(c, c.valid);
+    const wrapper = host.firstElementChild!;
+    await act(async () => root.unmount());
+    await settle();
+    root = createRoot(host);
+    expect([host.innerHTML, errors.mock.calls.length]).toEqual(['', 0]);
+    if (c.clearsWrapper) expect(wrapper.childElementCount).toBe(0);
+    c.afterUnmount?.();
+  });
+});
+
+describe.each(CASES.filter(c => c.remoteFailure))('QA-18: $name remote failure', c => {
+  it(`QA-18: ${c.name} shows hostile remote error text as plain text`, async () => {
+    remote.failWith = PAYLOAD;
+    await mount(c, c.valid);
+    const box = host.querySelector('[role="alert"]');
+    expect([box?.children.length, box?.textContent?.includes(PAYLOAD)]).toEqual([0, true]);
+    expectInert(host);
+  });
+});
+
+describe('QA-18: avatar SDK timing', () => {
+  it('QA-18: unmount before the SDK loads never creates an avatar', async () => {
+    vi.resetModules();
+    const { AvatarCore } = await import('../../src/core/avatar');
+    await act(async () => root.render(createElement(AvatarCore, { avatarId: 'a' })));
+    await act(async () => root.unmount());
+    root = createRoot(host);
+    await settle();
+    expect(sdk.create).not.toHaveBeenCalled();
+  });
+
+  it('QA-18: a hostile avatarId reaches the SDK as data, not markup', async () => {
+    vi.resetModules();
+    const { AvatarCore } = await import('../../src/core/avatar');
+    await act(async () => root.render(createElement(AvatarCore, { avatarId: PAYLOAD })));
+    await settle();
+    expect([sdk.create.mock.calls[0]?.[0]?.avatarId, host.querySelector('img')]).toEqual([PAYLOAD, null]);
+  });
+});

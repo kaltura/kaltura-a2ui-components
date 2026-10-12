@@ -166,7 +166,7 @@ function ClipPlayer({
     <iframe
       src={url}
       className="flashcard-clip-player"
-      allow="autoplay *; fullscreen *; encrypted-media *; camera *; microphone *; display-capture *"
+      allow="autoplay *; fullscreen *; encrypted-media *"
       allowFullScreen
       title={clip.title ?? 'Video clip'}
     />

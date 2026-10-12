@@ -8,9 +8,5 @@ export const KalturaRecorderApi = {
     ks: CommonSchemas.DynamicString.optional(),
     // 0 means the default recorder uiConf.
     uiconfId: z.number().int().nonnegative().optional(),
-    category: CommonSchemas.DynamicString.optional(),
-    entryName: CommonSchemas.DynamicString.optional(),
-    allowScreen: z.boolean().optional(),
-    allowCamera: z.boolean().optional(),
   }),
 };

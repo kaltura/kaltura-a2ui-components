@@ -86,6 +86,14 @@
               "$ref": "#/$defs/DynamicString",
               "description": "Container aspect ratio (e.g. '16/9', '4/3'). Default: '16/9'.",
               "default": "16/9"
+            },
+            "entryName": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Optional entry name shown in the player title."
+            },
+            "entryDescription": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Optional entry description shown under the player. HTML tags are stripped."
             }
           },
           "required": ["component", "partnerId", "uiconfId", "entryId"]
@@ -103,6 +111,18 @@
           "type": "object",
           "properties": {
             "component": { "const": "KalturaFlashcards" },
+            "partnerId": {
+              "type": "integer",
+              "description": "Kaltura account/partner ID. Needed to play the clips."
+            },
+            "uiconfId": {
+              "type": "integer",
+              "description": "Player configuration ID used to play the clips."
+            },
+            "ks": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Player guide lists, for example setrole:PLAYBACK_BASE_ROLE and sview:<entryId>."
+            },
             "title": {
               "$ref": "#/$defs/DynamicString",
               "description": "Title of the flashcard deck."
@@ -196,19 +216,18 @@
             "theme": {
               "type": "string",
               "enum": ["dark", "light"],
-              "description": "UI theme mode. Default: follows system preference.",
-              "default": "light"
+              "description": "UI theme mode. Default: the host page's data-theme attribute, else 'dark'."
             },
             "mode": {
               "type": "string",
               "enum": ["select", "manage"],
-              "description": "Interaction mode. 'select' for content picking, 'manage' for full CRUD operations.",
-              "default": "manage"
+              "description": "Interaction mode. 'select' for content picking, 'manage' for full CRUD operations. Default: 'select'.",
+              "default": "select"
             },
-            "contextType": {
-              "type": "string",
-              "description": "Type of content scope. Default: 'category'.",
-              "default": "category"
+            "multiSelect": {
+              "type": "boolean",
+              "description": "Allow picking up to 5 entries. Default: false.",
+              "default": false
             },
             "contextId": {
               "$ref": "#/$defs/DynamicString",
@@ -313,22 +332,6 @@
             "uiconfId": {
               "type": "integer",
               "description": "Optional uiConf ID for the recorder widget."
-            },
-            "category": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Category path to assign new recordings to."
-            },
-            "entryName": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Default entry name pre-filled in the recorder."
-            },
-            "allowScreen": {
-              "$ref": "#/$defs/DynamicBoolean",
-              "description": "Allow screen capture. Default: true."
-            },
-            "allowCamera": {
-              "$ref": "#/$defs/DynamicBoolean",
-              "description": "Allow camera capture. Default: true."
             }
           },
           "required": ["component", "partnerId"]

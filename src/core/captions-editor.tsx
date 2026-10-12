@@ -38,7 +38,7 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = (props) => {
       <iframe
         src={src}
         style={{ width: '100%', height: '100%', minHeight: '600px', border: 0 }}
-        allow="autoplay *; fullscreen *; encrypted-media *; camera *; microphone *"
+        allow="autoplay *; fullscreen *; encrypted-media *"
         allowFullScreen
         title="Kaltura Captions Editor"
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"

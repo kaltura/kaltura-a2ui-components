@@ -14,10 +14,12 @@ export function SourceDataTable({ data, sourceData }: SourceDataTableProps) {
 
   function downloadCsv() {
     const escape = (v: unknown) => {
-      const s = v == null ? '' : String(v);
-      return s.includes(',') || s.includes('"') || s.includes('\n')
-        ? `"${s.replace(/"/g, '""')}"`
-        : s;
+      const text = v == null ? '' : String(v);
+      // A leading = + - @ (or their fullwidth forms), after any whitespace, or a
+      // leading tab or CR makes a spreadsheet read the cell as a formula.
+      // Numbers cannot carry one, so a negative number keeps its sign.
+      const s = typeof v !== 'number' && /^[\t\r]|^\s*[=+\-@\uFF1D\uFF0B\uFF0D\uFF20]/.test(text) ? `'${text}` : text;
+      return /[",;\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const header = keys.map(escape).join(',');
     const body = allRows.map(row => keys.map(k => escape(row[k])).join(',')).join('\n');
@@ -73,7 +75,7 @@ export function SourceDataTable({ data, sourceData }: SourceDataTableProps) {
             {truncated && (
               <tr className="chart-source-data-truncated">
                 <td colSpan={keys.length}>
-                  Showing {MAX_VISIBLE_ROWS} of {allRows.length} rows — download CSV for full dataset
+                  Showing first {MAX_VISIBLE_ROWS} of {allRows.length} rows. Download the CSV for all rows.
                 </td>
               </tr>
             )}

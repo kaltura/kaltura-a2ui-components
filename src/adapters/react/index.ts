@@ -63,7 +63,7 @@ export const kalturaReactCatalog: Catalog<ReactComponentImplementation> = buildK
 
 /**
  * Fetches a catalog descriptor from `url` and builds a Kaltura catalog keyed by
- * the fetched descriptor's `id` (falling back to the canonical id). The fetched
+ * the fetched descriptor's `catalogId` (then `$id`, then the canonical id). The fetched
  * JSON is used only for its id and to validate availability — the component
  * implementations are always the locally-bundled ones, since A2UI clients never
  * load component code at runtime.
@@ -77,8 +77,8 @@ export async function loadKalturaCatalog(
       `Failed to load catalog from ${url}: ${response.status} ${response.statusText}`,
     );
   }
-  const descriptor = (await response.json()) as { id?: string };
-  return buildKalturaCatalog(descriptor.id ?? KALTURA_CATALOG_ID);
+  const descriptor = (await response.json()) as { catalogId?: string; $id?: string };
+  return buildKalturaCatalog(descriptor.catalogId ?? descriptor.$id ?? KALTURA_CATALOG_ID);
 }
 
 export { kalturaClientFunctions };

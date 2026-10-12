@@ -17,10 +17,10 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/core/**', 'src/adapters/**'],
       reporter: ['text-summary', 'lcov', 'json-summary'],
-      // Gate = measured baseline minus 2 points, rounded down. Measured on
-      // the 53 original tests: lines 10.46, statements 10.09,
-      // functions 6.08, branches 6.72. Raise per phase.
-      thresholds: { lines: 8, statements: 8, functions: 4, branches: 4 },
+      // Gate = measured baseline minus 2 points, rounded down. Measured after
+      // plan item 2.12 (1304 tests): lines 93.06, statements 90.46,
+      // functions 88.46, branches 75.5. Raise per phase.
+      thresholds: { lines: 91, statements: 88, functions: 86, branches: 73 },
     },
   },
 });

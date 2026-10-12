@@ -84,7 +84,7 @@ const PlayerView: FC<PlayerCoreProps> = (props) => {
       <iframe
         src={playerUrl}
         style={{ width: '100%', aspectRatio, border: 0, display: 'block', minHeight: 280 }}
-        allow="autoplay *; fullscreen *; encrypted-media *; camera *; microphone *; display-capture *"
+        allow="autoplay *; fullscreen *; encrypted-media *"
         allowFullScreen
         title="Kaltura Player v7"
       />

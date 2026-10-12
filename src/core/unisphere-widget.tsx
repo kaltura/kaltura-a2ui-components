@@ -16,50 +16,60 @@ export interface UnisphereWidgetCoreProps {
   label: string;
 }
 
+/** Kills a remote workspace. A throwing remote must not break React's unmount. */
+function killWorkspace(workspace: unknown): void {
+  try {
+    (workspace as { kill?: () => void } | null)?.kill?.();
+  } catch {
+    // The workspace is gone either way.
+  }
+}
+
 export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const workspaceRef = useRef<unknown>(null);
+  const { partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label } = props;
+  // Settings objects are rebuilt on every render. Compare them by value.
+  const settingsKey = JSON.stringify([props.runtimeSettings, props.visualSettings]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    let killed = false;
+    let cancelled = false;
+    let workspace: unknown = null;
+    container.replaceChildren();
 
-    const id = `unisphere-${props.runtimeName}-${crypto.randomUUID()}`;
+    const id = `unisphere-${runtimeName}-${crypto.randomUUID()}`;
     container.id = id;
 
     const theme =
       (document.documentElement.getAttribute('data-theme') as 'dark' | 'light') || 'dark';
+    const [runtimeSettings, visualSettings] = JSON.parse(settingsKey) as [
+      Record<string, unknown> | undefined,
+      Record<string, unknown> | undefined,
+    ];
 
-    loadUnisphereModule<{ loader?: (cfg: unknown) => Promise<unknown> }>(props.serverUrl)
+    loadUnisphereModule<{ loader?: (cfg: unknown) => Promise<unknown> }>(serverUrl)
       .then(mod => {
-        if (killed) return;
+        if (cancelled) return;
         const { loader } = mod;
-        if (!loader) return;
-
-        const runtimeSettings: Record<string, unknown> = {
-          ks: props.ks,
-          partnerId: props.partnerId,
-          ...props.runtimeSettings,
-        };
+        if (typeof loader !== 'function') throw new Error('Unisphere loader is missing');
 
         return loader({
-          serverUrl: props.serverUrl,
+          serverUrl,
           appId: `kaltura-agent-${id}`,
           workspace: id,
-          appVersion: '0.3.0',
-          session: { ks: props.ks, partnerId: props.partnerId },
+          session: { ks, partnerId },
           ui: { theme, language: 'en' },
           runtimes: [
             {
-              widgetName: props.widgetName,
-              runtimeName: props.runtimeName,
-              settings: runtimeSettings,
+              widgetName,
+              runtimeName,
+              settings: { ks, partnerId, ...runtimeSettings },
               visuals: [
                 {
-                  type: props.visualType || 'default',
+                  type: visualType || 'default',
                   target: id,
-                  settings: props.visualSettings || {},
+                  settings: visualSettings || {},
                 },
               ],
             },
@@ -67,22 +77,22 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
         });
       })
       .then(ws => {
-        if (killed || !ws) return;
-        workspaceRef.current = ws;
+        if (!ws) return;
+        workspace = ws;
+        // The effect was cleaned up while the load ran: nobody else will kill it.
+        if (cancelled) killWorkspace(ws);
       })
       .catch(err => {
-        if (killed) return;
-        renderLoadError(container, props.label, err);
+        if (cancelled) return;
+        renderLoadError(container, label, err);
       });
 
     return () => {
-      killed = true;
-      const ws = workspaceRef.current as { kill?: () => void } | null;
-      ws?.kill?.();
-      workspaceRef.current = null;
+      cancelled = true;
+      killWorkspace(workspace);
+      workspace = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Mount once: the remote runtime cannot be updated in place.
-  }, []);
+  }, [partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label, settingsKey]);
 
   return (
     <div

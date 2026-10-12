@@ -83,7 +83,7 @@ function PieChartInner({ data, xKey, yKeys, colors, height, width }: PieChartPro
               const isActive = activeIndex === i;
               return (
                 <g
-                  key={arc.data.label}
+                  key={`${i}-${arc.data.label}`}
                   onMouseMove={(e) => handleMouseMove(e, arc.data, i)}
                   onMouseLeave={handleMouseLeave}
                   style={{ cursor: 'pointer' }}
@@ -128,7 +128,7 @@ function PieChartInner({ data, xKey, yKeys, colors, height, width }: PieChartPro
             fontSize={13}
             fontWeight={700}
             fontFamily="Lato, sans-serif"
-            fill="var(--page-text)"
+            fill="var(--page-text, currentColor)"
             y={-4}
           >
             {formatNumber(total)}
@@ -138,7 +138,7 @@ function PieChartInner({ data, xKey, yKeys, colors, height, width }: PieChartPro
             dominantBaseline="middle"
             fontSize={10}
             fontFamily="Lato, sans-serif"
-            fill="var(--page-text-muted)"
+            fill="var(--page-text-muted, currentColor)"
             y={12}
           >
             total
@@ -150,7 +150,7 @@ function PieChartInner({ data, xKey, yKeys, colors, height, width }: PieChartPro
       <div className="chart-legend chart-legend--vertical">
         {pieData.map((d, i) => (
           <button
-            key={d.label}
+            key={`${i}-${d.label}`}
             className={`chart-legend-item ${activeIndex === i ? 'chart-legend-item--active' : ''}`}
             onMouseEnter={() => setActiveIndex(i)}
             onMouseLeave={() => setActiveIndex(null)}

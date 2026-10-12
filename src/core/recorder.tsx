@@ -9,10 +9,6 @@ export interface RecorderCoreProps {
   partnerId: number;
   ks: string;
   uiconfId?: number;
-  category?: string;
-  entryName?: string;
-  allowScreen?: boolean;
-  allowCamera?: boolean;
 }
 
 const RUNTIME_SCHEMA = KalturaRecorderApi.schema.required({ ks: true });
