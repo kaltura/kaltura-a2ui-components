@@ -1,13 +1,31 @@
-import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef, useId } from 'react';
 import { Mercator } from '@visx/geo';
-import { scaleLinear } from '@visx/scale';
 import * as topojson from 'topojson-client';
 import type { Topology, GeometryCollection } from 'topojson-specification';
 import { CHART_COLORS, useThemeColors } from './theme';
 import { formatNumber } from './utils';
 import { resolveCountryValue, normalizeCountryCode } from './countryCodes';
 
-const WORLD_TOPO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+// Exact version, so the map data cannot change under a released build.
+const WORLD_TOPO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json';
+// Lowest fill opacity of a country that has data. Works for any CSS colour.
+const MIN_OPACITY = 0.1;
+
+// Module-level cache. Only a successful load is stored, so a failure is retried.
+let worldCache: CountryFeature[] | null = null;
+
+async function loadWorld(signal: AbortSignal): Promise<CountryFeature[]> {
+  if (worldCache) return worldCache;
+  const response = await fetch(WORLD_TOPO_URL, { signal });
+  if (!response.ok) throw new Error(`Map data request failed: ${response.status}`);
+  const topo = (await response.json()) as Topology;
+  const geo = topojson.feature(
+    topo,
+    topo.objects.countries as GeometryCollection,
+  ) as unknown as GeoJSON.FeatureCollection;
+  worldCache = geo.features as unknown as CountryFeature[];
+  return worldCache;
+}
 
 interface GeoMapProps {
   data: Record<string, unknown>[];
@@ -33,23 +51,21 @@ interface TooltipState {
 }
 
 function GeoMapInner({ data, xKey, yKeys, colors, height, width }: GeoMapProps & { width: number }) {
-  const [world, setWorld] = useState<CountryFeature[] | null>(null);
+  const [world, setWorld] = useState<CountryFeature[] | null>(worldCache);
+  const gradientId = `geo-legend-grad-${useId().replace(/:/g, '')}`;
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const themeColors = useThemeColors();
   const valueKey = yKeys[0] || 'value';
   const primaryColor = colors?.[0] || CHART_COLORS[0];
 
   useEffect(() => {
-    fetch(WORLD_TOPO_URL)
-      .then(r => r.json())
-      .then((topo: Topology) => {
-        const geo = topojson.feature(
-          topo,
-          topo.objects.countries as GeometryCollection
-        ) as unknown as GeoJSON.FeatureCollection;
-        setWorld(geo.features as unknown as CountryFeature[]);
-      })
-      .catch(() => setWorld([]));
+    const controller = new AbortController();
+    loadWorld(controller.signal)
+      .then(setWorld)
+      .catch(() => {
+        if (!controller.signal.aborted) setWorld([]);
+      });
+    return () => controller.abort();
   }, []);
 
   const dataMap = useMemo(() => {
@@ -69,11 +85,6 @@ function GeoMapInner({ data, xKey, yKeys, colors, height, width }: GeoMapProps &
     for (const v of dataMap.values()) { if (v > max) max = v; }
     return max;
   }, [dataMap]);
-
-  const colorScale = useMemo(() =>
-    scaleLinear<string>({ domain: [0, maxValue], range: [primaryColor + '18', primaryColor] }),
-    [maxValue, primaryColor],
-  );
 
   const handleMouseMove = useCallback((e: React.MouseEvent, name: string, value: number) => {
     if (value > 0) {
@@ -120,16 +131,18 @@ function GeoMapInner({ data, xKey, yKeys, colors, height, width }: GeoMapProps &
               {mercator.features.map(({ feature, path }) => {
                 const name = (feature as CountryFeature).properties?.name || '';
                 const value = resolveCountryValue(dataMap, name);
-                const fill = value > 0 ? colorScale(value) : themeColors.emptyFill;
+                const fill = value > 0 ? primaryColor : themeColors.emptyFill;
+                const fillOpacity = value > 0 ? MIN_OPACITY + (1 - MIN_OPACITY) * (value / maxValue) : 1;
 
                 return (
                   <path
                     key={`map-${(feature as CountryFeature).id || name}`}
                     d={path || ''}
                     fill={fill}
+                    fillOpacity={fillOpacity}
                     stroke={themeColors.stroke}
                     strokeWidth={0.5}
-                    style={{ cursor: value > 0 ? 'pointer' : 'default', transition: 'fill 200ms ease' }}
+                    style={{ cursor: value > 0 ? 'pointer' : 'default', transition: 'fill 200ms ease, fill-opacity 200ms ease' }}
                     onMouseMove={(e) => handleMouseMove(e, name, value)}
                     onMouseLeave={handleMouseLeave}
                     tabIndex={value > 0 ? 0 : undefined}
@@ -149,8 +162,8 @@ function GeoMapInner({ data, xKey, yKeys, colors, height, width }: GeoMapProps &
         <span className="geo-map-legend-label">0</span>
         <svg width={legendWidth} height={legendHeight} aria-hidden="true">
           <defs>
-            <linearGradient id="geo-legend-grad">
-              <stop offset="0%" stopColor={primaryColor + '18'} />
+            <linearGradient id={gradientId}>
+              <stop offset="0%" stopColor={primaryColor} stopOpacity={MIN_OPACITY} />
               <stop offset="100%" stopColor={primaryColor} />
             </linearGradient>
           </defs>
@@ -158,7 +171,7 @@ function GeoMapInner({ data, xKey, yKeys, colors, height, width }: GeoMapProps &
             width={legendWidth}
             height={legendHeight}
             rx={legendHeight / 2}
-            fill="url(#geo-legend-grad)"
+            fill={`url(#${gradientId})`}
           />
         </svg>
         <span className="geo-map-legend-label">{formatNumber(maxValue)}</span>

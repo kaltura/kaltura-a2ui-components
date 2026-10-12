@@ -65,7 +65,7 @@ function WordCloudInner({ data, xKey, yKeys, colors, height, width }: WordCloudP
     >
       {(cloudWords: WordCloudWord[]) => cloudWords.map((w: WordCloudWord, i: number) => (
         <Text
-          key={w.text}
+          key={`${i}-${w.text}`}
           fill={palette[i % palette.length]}
           textAnchor="middle"
           transform={`translate(${w.x}, ${w.y}) rotate(${w.rotate})`}

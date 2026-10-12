@@ -14,9 +14,15 @@ export interface MediaManagerCoreProps {
   theme?: 'dark' | 'light';
   mode?: 'select' | 'manage';
   multiSelect?: boolean;
-  contextType?: string;
   contextId?: string;
-  userId?: string;
+  /**
+   * Host option, not part of the A2UI schema. The React adapter always sets
+   * it to `true`, so an agent cannot change it. Default `true`: the selection
+   * event fires on the host element and bubbles up to `document`, as before.
+   * `false` lets it bubble up to the host element only. The default flips in
+   * the next release.
+   */
+  legacyDocumentEvents?: boolean;
 }
 
 interface SelectedEntry {
@@ -33,7 +39,6 @@ export function buildWorkspaceConfig(props: {
 }): {
   config: {
     appId: string;
-    appVersion: string;
     experiences: {
       'media-manager': {
         'kaltura-media-manager': {
@@ -48,7 +53,6 @@ export function buildWorkspaceConfig(props: {
   return {
     config: {
       appId: `kaltura-agent-${props.instanceId}`,
-      appVersion: '0.3.0',
       experiences: {
         'media-manager': {
           'kaltura-media-manager': {
@@ -68,124 +72,154 @@ export function buildWorkspaceConfig(props: {
   };
 }
 
+/** Kills a remote workspace. A throwing remote must not break React's unmount. */
+function safely(fn: () => void): void {
+  try {
+    fn();
+  } catch {
+    // The remote is gone either way.
+  }
+}
+
+interface RemoteWorkspace {
+  kill?: () => void;
+  getRuntimeAsync: (widgetName: string, runtimeName: string) => Promise<unknown>;
+}
+
+interface RemoteRuntime {
+  mountVisual: (opts: unknown) => Promise<string>;
+  unmountVisual?: (id: string) => void;
+}
+
 function MediaManagerView(props: MediaManagerCoreProps) {
+  const hostRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const runtimeRef = useRef<unknown>(null);
-  const visualIdRef = useRef<string | null>(null);
+  const instanceIdRef = useRef('');
   const [selected, setSelected] = useState<SelectedEntry[]>([]);
+  const { partnerId, ks, serverUrl, mode, contextId } = props;
   const isMultiSelect = props.multiSelect === true;
+  const legacy = props.legacyDocumentEvents !== false;
+  const themeProp = props.theme;
+
+  /**
+   * `kaltura-entry-selected` fires on the host element (the web component tag,
+   * or the wrapper div in React) with the instance id. Legacy mode bubbles it
+   * to `document` as before. Otherwise it fires on the wrapper inside the host
+   * and bubbles up to the host element, and stops there. `name` is text from
+   * the media library or the agent: treat it as untrusted.
+   */
+  const announce = (detail: Record<string, unknown>) => {
+    const wrapper = hostRef.current;
+    if (!wrapper) return;
+    const host = wrapper.closest('kaltura-media-manager');
+    const event = new CustomEvent('kaltura-entry-selected', {
+      detail: { ...detail, instanceId: instanceIdRef.current },
+      bubbles: true,
+      composed: true,
+    });
+    if (legacy) {
+      (host ?? wrapper).dispatchEvent(event);
+      return;
+    }
+    const boundary = host ?? wrapper.parentElement ?? wrapper;
+    const stop = (e: Event) => e.stopPropagation();
+    boundary.addEventListener(event.type, stop);
+    wrapper.dispatchEvent(event);
+    boundary.removeEventListener(event.type, stop);
+  };
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    container.replaceChildren();
 
     const instanceId = `unisphere-mm-${crypto.randomUUID()}`;
     container.id = instanceId;
+    instanceIdRef.current = instanceId;
 
     let cancelled = false;
-    const theme =
-      props.theme ??
-      (document.documentElement.getAttribute('data-theme') as 'dark' | 'light') ??
-      'dark';
+    let workspace: RemoteWorkspace | undefined;
+    let runtime: RemoteRuntime | undefined;
+    let visualId: string | undefined;
+    // Safe to call twice: it clears what it released.
+    const dispose = () => {
+      const [rt, vid, ws] = [runtime, visualId, workspace];
+      runtime = visualId = workspace = undefined;
+      if (rt?.unmountVisual && vid) safely(() => rt.unmountVisual?.(vid));
+      if (ws) safely(() => ws.kill?.());
+    };
 
-    const context = props.contextId
-      ? { type: 'category', initialCategoryId: props.contextId }
-      : { type: 'myMedia' };
+    const theme = themeProp ?? (document.documentElement.getAttribute('data-theme') as 'dark' | 'light') ?? 'dark';
 
-    loadUnisphereModule<{ createWorkspace?: (cfg: unknown) => Promise<unknown> }>(props.serverUrl)
-      .then(async mod => {
-        if (cancelled) return;
-        const { createWorkspace } = mod;
-        if (!createWorkspace) return;
+    const context = contextId ? { type: 'category', initialCategoryId: contextId } : { type: 'myMedia' };
 
-        const workspace = await createWorkspace(
-          buildWorkspaceConfig({ ks: props.ks, partnerId: props.partnerId, instanceId, theme }),
+    const onSelect = (row: { id?: string; name?: string }) => {
+      if (cancelled || !row?.id) return;
+      const entryId = row.id;
+      const name = row.name || entryId;
+      if (isMultiSelect) {
+        setSelected(prev =>
+          prev.some(s => s.entryId === entryId) || prev.length >= 5 ? prev : [...prev, { entryId, name }],
         );
-        if (cancelled) return;
+      } else {
+        announce({ entryId, name });
+      }
+    };
 
-        const ws = workspace as {
-          getRuntimeAsync: (widgetName: string, runtimeName: string) => Promise<unknown>;
-        };
-        // runtimeName MUST be the fixed manifest id 'kaltura-items-media-manager'.
-        // A per-instance name can't resolve to any bundle in /v1/runtime.json.
-        const runtime = await ws.getRuntimeAsync(
-          'unisphere.widget.media-manager',
-          'kaltura-items-media-manager',
-        );
-        if (cancelled) return;
+    (async () => {
+      const { createWorkspace } = await loadUnisphereModule<{
+        createWorkspace?: (cfg: unknown) => Promise<unknown>;
+      }>(serverUrl);
+      if (cancelled) return;
+      if (typeof createWorkspace !== 'function') throw new Error('Unisphere createWorkspace is missing');
 
-        runtimeRef.current = runtime;
+      workspace = (await createWorkspace(buildWorkspaceConfig({ ks, partnerId, instanceId, theme }))) as RemoteWorkspace;
+      // The effect was cleaned up while this ran: nobody else will kill it.
+      if (cancelled) return dispose();
 
-        const rt = runtime as {
-          mountVisual: (opts: unknown) => Promise<string>;
-        };
-        const visualId = await rt.mountVisual({
-          type: 'table',
-          target: instanceId,
-          settings: {
-            mode: props.mode ?? 'select',
-            context,
-            rowActions: {
-              buttons: [
-                {
-                  type: 'select',
-                  onClick: (row: { id?: string; name?: string }) => {
-                    if (!row?.id) return;
-                    const entryId = row.id;
-                    const name = row.name || entryId;
-                    if (isMultiSelect) {
-                      setSelected(prev =>
-                        prev.some(s => s.entryId === entryId) || prev.length >= 5
-                          ? prev
-                          : [...prev, { entryId, name }],
-                      );
-                    } else {
-                      document.dispatchEvent(
-                        new CustomEvent('kaltura-entry-selected', {
-                          detail: { entryId, name },
-                        }),
-                      );
-                    }
-                  },
-                },
-              ],
-            },
-          },
-        });
-        if (cancelled) return;
-        visualIdRef.current = visualId;
-      })
-      .catch(err => {
-        if (cancelled) return;
-        console.error('[MediaManager] Load failed:', err);
-        renderLoadError(container, 'Media Manager', err);
+      // runtimeName MUST be the fixed manifest id 'kaltura-items-media-manager'.
+      // A per-instance name can't resolve to any bundle in /v1/runtime.json.
+      const rt = (await workspace.getRuntimeAsync(
+        'unisphere.widget.media-manager',
+        'kaltura-items-media-manager',
+      )) as RemoteRuntime;
+      if (cancelled) return;
+      runtime = rt;
+
+      // After a cleanup mid-mount the workspace is already killed: nothing is left to undo.
+      visualId = await rt.mountVisual({
+        type: 'table',
+        target: instanceId,
+        settings: {
+          mode: mode ?? 'select',
+          context,
+          rowActions: { buttons: [{ type: 'select', onClick: onSelect }] },
+        },
       });
+    })().catch(err => {
+      if (cancelled) return;
+      console.error('[MediaManager] Load failed:', err);
+      renderLoadError(container, 'Media Manager', err);
+    });
 
     return () => {
       cancelled = true;
-      const rt = runtimeRef.current as { unmountVisual?: (id: string) => void } | null;
-      const vid = visualIdRef.current;
-      if (rt?.unmountVisual && vid) rt.unmountVisual(vid);
-      runtimeRef.current = null;
-      visualIdRef.current = null;
+      dispose();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Mount once: the remote runtime cannot be updated in place.
-  }, []);
+    // announce reads only refs and the stable legacy flag.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partnerId, ks, serverUrl, themeProp, mode, contextId, isMultiSelect, legacy]);
 
   const handleConfirmSelection = () => {
     if (selected.length === 0) return;
     const details = selected.map(s =>
       s.name !== s.entryId ? `"${s.name}" (${s.entryId})` : s.entryId,
     );
-    document.dispatchEvent(
-      new CustomEvent('kaltura-entry-selected', {
-        detail: {
-          entryId: selected.map(s => s.entryId).join(','),
-          name: details.join(', '),
-          entries: selected,
-        },
-      }),
-    );
+    announce({
+      entryId: selected.map(s => s.entryId).join(','),
+      name: details.join(', '),
+      entries: selected,
+    });
     setSelected([]);
   };
 
@@ -194,7 +228,7 @@ function MediaManagerView(props: MediaManagerCoreProps) {
   };
 
   return (
-    <div className="kaltura-media-manager-container">
+    <div ref={hostRef} className="kaltura-media-manager-container">
       <div ref={containerRef} className="kaltura-media-manager-widget" />
       {isMultiSelect && selected.length > 0 && (
         <div className="mm-multi-select-bar">

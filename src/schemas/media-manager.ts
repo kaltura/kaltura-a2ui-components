@@ -10,8 +10,6 @@ export const KalturaMediaManagerApi = {
     theme: z.enum(['dark', 'light']).optional(),
     mode: z.enum(['select', 'manage']).optional(),
     multiSelect: z.boolean().optional(),
-    contextType: CommonSchemas.DynamicString.optional(),
     contextId: CommonSchemas.DynamicString.optional(),
-    userId: CommonSchemas.DynamicString.optional(),
   }),
 };

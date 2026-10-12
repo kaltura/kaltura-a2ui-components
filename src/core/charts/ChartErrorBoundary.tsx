@@ -1,7 +1,8 @@
 import { Component, type ReactNode } from 'react';
 
 interface Props {
-  title?: string;
+  /** When this value changes after an error, the boundary tries to render again. */
+  resetKey?: unknown;
   children: ReactNode;
 }
 
@@ -14,6 +15,12 @@ export class ChartErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(): State {
     return { hasError: true };
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false });
+    }
   }
 
   render() {

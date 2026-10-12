@@ -63,10 +63,10 @@ describe('buildKalturaCatalog', () => {
 });
 
 describe('loadKalturaCatalog', () => {
-  it('builds a catalog keyed by the fetched descriptor id', async () => {
+  it('builds a catalog keyed by the fetched descriptor catalogId', async () => {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = (async () =>
-      new Response(JSON.stringify({ id: 'https://fetched.example/catalog.json' }), {
+      new Response(JSON.stringify({ catalogId: 'https://fetched.example/catalog.json' }), {
         status: 200,
       })) as typeof fetch;
     try {

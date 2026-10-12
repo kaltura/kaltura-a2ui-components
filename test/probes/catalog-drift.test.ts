@@ -1,6 +1,6 @@
 // Covers: E2E-02 / QA-05 (catalog and zod drift, catalog serverUrl example
 // lacks /v1) and QA-10 (loadKalturaCatalog always returns the default id).
-// Turns green: plan items 2.4 (drift), 1.2 (catalog example) and 2.11 (QA-10).
+// Green since plan items 2.4 (drift), 1.2 (catalog example) and 2.11 (QA-10).
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import catalog from '../../src/catalog/kaltura_catalog.json';
 import { KalturaPlayerApi } from '../../src/schemas/player';
@@ -43,6 +43,12 @@ describe('QA-05: zod schema and catalog list the same props', () => {
     expect(Object.keys(api.schema.shape).sort()).toEqual(catalogKeys(name).sort());
   });
 
+  it('QA-05: the Media Manager mode default matches the core default (select)', () => {
+    const component = (catalog.components as unknown as Record<string, CatalogComponent>).KalturaMediaManager;
+    const props = Object.assign({}, ...component.allOf.map(part => part.properties ?? {})) as Record<string, { default?: string }>;
+    expect(props.mode.default).toBe('select');
+  });
+
   it('QA-05: every serverUrl example in the catalog ends with /v1', () => {
     const examples = JSON.stringify(catalog).match(/e\.g\. '(https:\/\/[^']+)'/g) ?? [];
     expect(examples.filter(e => !/\/v1'$/.test(e))).toEqual([]);
@@ -62,6 +68,12 @@ describe('QA-10: loadKalturaCatalog', () => {
   it('QA-10: uses catalogId from the fetched descriptor', async () => {
     const { loadKalturaCatalog } = await import('../../src/adapters/react/index');
     serve({ ...catalog, catalogId: 'https://example.test/other/catalog.json' });
+    expect((await loadKalturaCatalog('https://x/c.json')).id).toBe('https://example.test/other/catalog.json');
+  });
+
+  it('QA-10: falls back to $id when the descriptor has no catalogId', async () => {
+    const { loadKalturaCatalog } = await import('../../src/adapters/react/index');
+    serve({ $id: 'https://example.test/other/catalog.json' });
     expect((await loadKalturaCatalog('https://x/c.json')).id).toBe('https://example.test/other/catalog.json');
   });
 

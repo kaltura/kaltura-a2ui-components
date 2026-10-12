@@ -74,7 +74,7 @@ function TreemapInner({ data, xKey, yKeys, colors, height, width }: TreemapProps
         >
           {treemap => (
             <Group>
-              {treemap.descendants().filter(n => n.depth === 1).map(node => {
+              {treemap.descendants().filter(n => n.depth === 1).map((node, i) => {
                 const nodeData = node.data as TreeNode;
                 const w = (node.x1 || 0) - (node.x0 || 0);
                 const h = (node.y1 || 0) - (node.y0 || 0);
@@ -82,7 +82,7 @@ function TreemapInner({ data, xKey, yKeys, colors, height, width }: TreemapProps
 
                 return (
                   <g
-                    key={nodeData.name}
+                    key={`${i}-${nodeData.name}`}
                     style={{ cursor: 'pointer' }}
                     onMouseMove={(e) => handleMouseMove(e, nodeData)}
                     onMouseLeave={() => setTooltip(null)}
