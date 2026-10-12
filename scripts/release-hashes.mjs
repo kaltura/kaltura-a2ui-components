@@ -1,6 +1,6 @@
 // Writes hashes.json and SHA256SUMS for a release. Run after `npm run build`, the
 // catalog stamp and after the other assets are in --out.
-//   node scripts/release-hashes.mjs --version 0.2.0 --out "$RUNNER_TEMP/release/assets"
+//   node scripts/release-hashes.mjs --version 0.2.0 --out "$RUNNER_TEMP/release/assets" [--root DIR]
 // hashes.json: SRI of the files jsDelivr serves from the tag (checked by verify-cdn.mjs).
 // SHA256SUMS: every file in --out, for people who download the assets.
 import { createHash } from 'node:crypto';
@@ -25,8 +25,8 @@ export function sha256sums(files) {
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   try {
-    const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-    const { values } = parseArgs({ options: { version: { type: 'string' }, out: { type: 'string' } } });
+    const { values } = parseArgs({ options: { version: { type: 'string' }, out: { type: 'string' }, root: { type: 'string' } } });
+    const root = values.root ?? join(dirname(fileURLToPath(import.meta.url)), '..');
     if (!values.version || !values.out) throw new Error('Usage: --version X.Y.Z --out DIR');
     const hashes = buildHashes({ version: values.version, read: path => readFileSync(join(root, path)) });
     writeFileSync(join(values.out, 'hashes.json'), `${JSON.stringify(hashes, null, 2)}\n`);

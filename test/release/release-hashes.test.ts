@@ -3,7 +3,7 @@
 // The CLI runs on temp files.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
@@ -38,16 +38,21 @@ describe('QA-09: release-hashes CLI', () => {
   const out = mkdtempSync(join(tmpdir(), 'hashes-'));
   writeFileSync(join(out, 'dist.tar.gz'), 'archive');
   writeFileSync(join(out, 'sbom.cdx.json'), '{}');
-  const result = spawnSync('node', ['scripts/release-hashes.mjs', '--version', '0.2.0', '--out', out], { encoding: 'utf8' });
+  const root = mkdtempSync(join(tmpdir(), 'hashes-root-'));
+  for (const path of hashes.CDN_FILES) {
+    mkdirSync(join(root, path, '..'), { recursive: true });
+    writeFileSync(join(root, path), `bytes of ${path}`);
+  }
+  const result = spawnSync('node', ['scripts/release-hashes.mjs', '--version', '0.2.0', '--out', out, '--root', root], { encoding: 'utf8' });
 
   it('QA-09: writes hashes.json and a SHA256SUMS that lists every other file', () => {
     const sums = readFileSync(join(out, 'SHA256SUMS'), 'utf8').trim().split('\n').map(line => line.split('  ')[1]);
     expect([result.status, sums]).toEqual([0, ['dist.tar.gz', 'hashes.json', 'sbom.cdx.json']]);
   });
 
-  it('SEC-19: hashes.json holds the SRI of the files in the working tree', () => {
+  it('SEC-19: hashes.json holds the SRI of the files under --root', () => {
     const written = JSON.parse(readFileSync(join(out, 'hashes.json'), 'utf8')) as { cdn: Record<string, string> };
-    expect(written.cdn['src/catalog/kaltura_catalog.json']).toBe(stamp.sri(readFileSync('src/catalog/kaltura_catalog.json')));
+    expect(written.cdn['src/catalog/kaltura_catalog.json']).toBe(stamp.sri(readFileSync(join(root, 'src/catalog/kaltura_catalog.json'))));
   });
 
   it('QA-09: needs --version and --out', () => {
