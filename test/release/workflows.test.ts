@@ -174,6 +174,19 @@ describe('SEC-19: publish is verified before the Release', () => {
   });
 });
 
+describe('ci.yml Node matrix', () => {
+  const unit = jobs(workflows['ci.yml'] ?? '')['unit'] ?? '';
+  const nvmrc = readFileSync('.nvmrc', 'utf8').trim();
+
+  it('unit tests run on the .nvmrc major and on Node 26', () => {
+    expect(unit).toContain(`node: ['${nvmrc}', '26']`);
+  });
+
+  it('only the .nvmrc leg can fail the workflow', () => {
+    expect(unit).toContain(`continue-on-error: \${{ matrix.node != '${nvmrc}' }}`);
+  });
+});
+
 describe('SEC-09: nightly-live.yml', () => {
   it('SEC-09: runs on a schedule and by hand', () => {
     expect([nightly.includes('schedule:'), nightly.includes('workflow_dispatch:')]).toEqual([true, true]);
