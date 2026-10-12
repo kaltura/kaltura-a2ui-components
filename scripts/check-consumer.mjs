@@ -1,8 +1,11 @@
 // Packs the package, installs the tarball in a clean temp directory and checks
 // that a fresh consumer can load it. Run after "npm run build".
 //
-// 1. Every bare import left in dist/ (ESM, IIFE and .d.ts files) must name a
-//    package in dependencies or peerDependencies.
+// 1. Every bare import left in the ESM, the IIFE and the .d.ts files a
+//    consumer can load (reachable from the "types" entries in exports) must
+//    name a package in dependencies or peerDependencies. Chart libraries are
+//    inlined, so they are devDependencies; an unreachable .d.ts may still name
+//    them.
 // 2. The ESM entry imports in plain Node, with no bundler.
 // 3. The web component entry runs in a bare jsdom window and registers every
 //    custom element listed in the catalog.
@@ -13,10 +16,10 @@
 //    clear npm message (`npm ls` "missing", or an ERESOLVE error that names
 //    the peer), and the ESM entry fails on import with the package name.
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { builtinModules, createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 
@@ -51,8 +54,16 @@ function checkDeclared(file, source) {
 for (const file of ['kaltura-react.mjs', 'kaltura-wc.js']) {
   checkDeclared(`dist/${file}`, readFileSync(join(root, 'dist', file), 'utf8'));
 }
-for (const entry of readdirSync(join(root, 'dist', 'types'), { recursive: true })) {
-  if (entry.endsWith('.d.ts')) checkDeclared(`dist/types/${entry}`, readFileSync(join(root, 'dist', 'types', entry), 'utf8'));
+const typeFiles = Object.values(pkg.exports).flatMap((target) => (target.types ? [resolve(root, target.types)] : []));
+const seenTypes = new Set();
+for (const file of typeFiles) {
+  if (seenTypes.has(file)) continue;
+  seenTypes.add(file);
+  const source = readFileSync(file, 'utf8');
+  checkDeclared(file.slice(root.length + 1), source);
+  for (const [, , specifier] of [...source.matchAll(staticImport), ...source.matchAll(dynamicImport)]) {
+    if (specifier.startsWith('.')) typeFiles.push(resolve(dirname(file), specifier.replace(/\.js$/, '.d.ts')));
+  }
 }
 
 const work = mkdtempSync(join(tmpdir(), 'a2ui-consumer-'));
