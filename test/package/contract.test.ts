@@ -12,7 +12,7 @@ const pkg = JSON.parse(read('package.json')) as {
   license: string;
   description: string;
   exports: Record<string, string | Record<string, string>>;
-  dependencies: Record<string, string>;
+  dependencies?: Record<string, string>;
   devDependencies: Record<string, string>;
   peerDependencies: Record<string, string>;
 };
@@ -27,7 +27,7 @@ describe('QA-08: shared libraries are peers of the ESM build', () => {
   });
 
   it.each(SHARED_PEERS)('QA-08: %s is not also a regular dependency (one copy only)', (name) => {
-    expect(pkg.dependencies[name]).toBeUndefined();
+    expect(pkg.dependencies?.[name]).toBeUndefined();
   });
 
   it.each(SHARED_PEERS)('QA-08: %s is a devDependency with the same range, for tests and the IIFE bundle', (name) => {

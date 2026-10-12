@@ -51,6 +51,8 @@ Install contract, host API, release pipeline and docs. Breaking for hosts that r
 
 ### Dependencies
 
+- **Chart libraries are `devDependencies`.** `@visx/*` and `topojson-client` are inlined in both bundles, so the package has no runtime `dependencies`. A host install of the tarball plus peers drops from 111 to 27 packages. `check:consumer` fails if a bundle or a reachable `.d.ts` imports a package that is not a dependency or a peer.
+- **CI audit covers the full tree** (`npm audit --audit-level=high`). The libraries inlined in the bundles (DOMPurify, markdown-it, `@a2ui/*`) are dev-only in the lockfile, so `--omit=dev` checked none of them.
 - **`@react-spring/web` stays out of `peerDependencies`.** `@visx/xychart` asks for it, but no bundle contains or imports it (the animated parts are tree-shaken out).
 - **Tooling:** vitest and `@vitest/coverage-v8` 4.1.11 to 5.0.4, `vite-plugin-css-injected-by-js` 3.5.2 to 5.0.2 and, through `npm update`, `typescript-eslint` 8.71.1 to 8.71.2 and `postcss` 8.5.29 to 8.5.30. Bundle output is the same apart from one moved newline in the injected CSS.
 - **Not upgraded:** TypeScript 7 (`typescript-eslint` 8.71.2 supports `<6.1.0` and stops with "does not support TS 7.0", and TS 7 has no compiler API for the API snapshot test). jsdom 30 needs Node `^24.15.0`. CI resolves `.nvmrc` 24 to 24.21.0, but it was not gated on a local Node 24.13. zod 4 (`@a2ui/*` 0.11 and 0.13 need zod `^3.25.76`). `@types/node` 26 (Node 24 is the supported runtime).
