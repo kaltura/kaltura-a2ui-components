@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security issue (private)
+    url: https://github.com/kaltura/kaltura-a2ui-components/security/advisories/new
+    about: Use the private advisory form. Do not open a public issue or add detail here.

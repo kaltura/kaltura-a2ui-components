@@ -8,3 +8,9 @@ node_modules/
 # jsDelivr serves it from the tagged commit. On main it stays ignored so the
 # working tree never carries stale bundles.
 dist/
+
+# test and tooling output
+coverage/
+test-results/
+playwright-report/
+blob-report/
