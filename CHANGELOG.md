@@ -49,6 +49,13 @@ Install contract, host API, release pipeline and docs. Breaking for hosts that r
 - **Internal signature changes.** `renderLoadError` and `withValidatedProps` take a widget name as their last argument. `LoadError` takes a `widget` prop and a string child.
 - The web component bundle has no `setExtraMediaOrigins`, since it has no basic media components.
 
+### Dependencies
+
+- **`@react-spring/web` stays out of `peerDependencies`.** `@visx/xychart` asks for it, but no bundle contains or imports it (the animated parts are tree-shaken out).
+- **Tooling:** vitest and `@vitest/coverage-v8` 4.1.11 to 5.0.4, `vite-plugin-css-injected-by-js` 3.5.2 to 5.0.2 and, through `npm update`, `typescript-eslint` 8.71.1 to 8.71.2 and `postcss` 8.5.29 to 8.5.30. Bundle output is the same apart from one moved newline in the injected CSS.
+- **Not upgraded:** TypeScript 7 (`typescript-eslint` 8.71.2 supports `<6.1.0` and stops with "does not support TS 7.0", and TS 7 has no compiler API for the API snapshot test). jsdom 30 needs Node `^24.15.0`. CI resolves `.nvmrc` 24 to 24.21.0, but it was not gated on a local Node 24.13. zod 4 (`@a2ui/*` 0.11 and 0.13 need zod `^3.25.76`). `@types/node` 26 (Node 24 is the supported runtime).
+- **CI:** unit tests run on Node 24 (required) and Node 26 (not required). The check names are now `unit tests (node 24)` and `unit tests (node 26)`. Update the branch rules, see [docs/release.md](docs/release.md#required-checks).
+
 ## 0.1.6 (not tagged): robustness
 
 Phase 2. Components follow their props, clean up after themselves and match the catalog.

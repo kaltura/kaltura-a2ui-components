@@ -35,11 +35,23 @@ Not code. The workflow cannot do these. Do them in this order.
 
 1. **GitHub, Settings, Environments:** create `release`. Add required reviewers. Limit deployment to `v*` tags. Do this first: GitHub creates an unprotected environment on first use, so a job that names `release` before this step runs without approval.
 2. **GitHub, Settings, Rules:** tag ruleset for `v*`: block deletion, updates and non-admin creation.
-3. **GitHub, Settings, Branches:** protect `main` (pull request, required checks). `verify-tag` trusts that everything on `main` was reviewed.
+3. **GitHub, Settings, Branches:** protect `main` (pull request, the [required checks](#required-checks)). `verify-tag` trusts that everything on `main` was reviewed.
 4. **npm:** own the `@kaltura` scope. Add a trusted publisher for `@kaltura/a2ui-react`: repo `kaltura/kaltura-a2ui-components`, workflow file `release.yml`, environment `release`. Needs npm 11.5.1 or later (the job checks this).
 5. **GitHub, Settings, Variables:** set repo variable `NPM_PUBLISH` = `true`. Only after steps 1 to 4.
 
 The workflow does not check step 1 itself. Reading the environment rules would need more token scope on `publish`, which should hold `id-token: write` only. Check it by hand.
+
+### Required checks
+
+Branch protection matches checks by job name. A matrix job reports one check per leg.
+
+| Workflow | Required | Not required |
+|---|---|---|
+| `ci.yml` | `lint and types`, `unit tests (node 24)`, `bundle and package checks`, `npm audit`, `dependency review` | `unit tests (node 26)` |
+| `e2e.yml` | `e2e (chromium)`, `e2e (firefox)`, `e2e (webkit)` | |
+| `security.yml` | `CodeQL`, `actionlint and zizmor`, `gitleaks` | |
+
+`unit tests (node 26)` has `continue-on-error`, so a red run does not fail the workflow. The old single check `unit tests` no longer exists: replace it in the branch rules. When `.nvmrc` moves to a new major, update the matrix in `ci.yml` and this table.
 
 ## Fallback: `NPM_PUBLISH` is not `true`
 
