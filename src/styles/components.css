@@ -46,6 +46,29 @@
   --page-text-muted: var(--page-text-muted, #909090);
 }
 
+/* ─── Plain-text error (load failures, invalid props, bad clips) ─── */
+/* Own light surface with literal colours (7a1710 on fdecea is about 9:1), so it
+   stays readable on any host background even when the --ds-* tokens are missing.
+   Hosts that set data-theme="dark" on the root get the dark pair (about 12:1). */
+.kaltura-load-error {
+  padding: 12px 16px;
+  margin: 8px 0;
+  border: 1px solid #d93025;
+  border-radius: 8px;
+  background: #fdecea;
+  color: #7a1710;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+[data-theme='dark'] .kaltura-load-error {
+  border-color: #ff8a80;
+  background: #3b1512;
+  color: #ffd9d4;
+}
+
 /* ─── Kaltura Player ─── */
 .kaltura-player-container {
   margin: 12px 0;
@@ -91,6 +114,11 @@
 }
 
 /* ─── KalturaFlashcards Carousel ─── */
+/* The slide sizes assume border-box, also on a host page with no reset. */
+:where(.flashcard-carousel, .flashcard-carousel *, .flashcard-carousel ::before, .flashcard-carousel ::after) {
+  box-sizing: border-box;
+}
+
 .flashcard-carousel {
   position: relative;
   width: 100%;

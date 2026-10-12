@@ -81,6 +81,8 @@ export {
 
 // Host option for private cloud or on-prem Unisphere hosts. Call it before the widgets load.
 export { setExtraAllowedOrigins, getExtraAllowedOrigins } from '../../core/unisphere-loader';
+// Host option: supplies the KS so it never goes through agent output. Call it before the widgets mount.
+export { setKsProvider, type KsProvider, type KsWidget } from '../../core/ks';
 
 // Auto-define on import — the IIFE bundle is meant to be dropped into a page via
 // a <script> tag, after which the custom elements are immediately usable.

@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
 import type { AnalyticsCoreProps } from '../../core/analytics';
 import { AnalyticsCore } from '../../core/analytics';
+import { StrictPendingContext } from '../../core/validate-props';
 
 export const ANALYTICS_TAG = 'kaltura-analytics';
 
@@ -13,7 +14,7 @@ export function defineAnalyticsWebComponent(): void {
 
     connectedCallback(): void {
       const root = createRoot(this);
-      root.render(createElement(AnalyticsCore, this.config as AnalyticsCoreProps));
+      root.render(createElement(StrictPendingContext.Provider, { value: true }, createElement(AnalyticsCore, this.config as AnalyticsCoreProps)));
     }
   }
 

@@ -3,6 +3,7 @@ import { loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
 import { KalturaMediaManagerApi } from '../schemas/media-manager';
 import { withValidatedProps } from './validate-props';
+import { withKs } from './ks';
 
 export { deriveLoaderUrl } from './unisphere-loader';
 
@@ -168,6 +169,7 @@ function MediaManagerView(props: MediaManagerCoreProps) {
       runtimeRef.current = null;
       visualIdRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Mount once: the remote runtime cannot be updated in place.
   }, []);
 
   const handleConfirmSelection = () => {
@@ -219,4 +221,7 @@ function MediaManagerView(props: MediaManagerCoreProps) {
   );
 }
 
-export const MediaManagerCore = withValidatedProps(KalturaMediaManagerApi.schema, 'Media Manager', MediaManagerView);
+export const MediaManagerCore = withKs(
+  'media-manager',
+  withValidatedProps(KalturaMediaManagerApi.schema.required({ ks: true }), 'Media Manager', MediaManagerView),
+);

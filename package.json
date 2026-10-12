@@ -42,12 +42,13 @@
     "build:types": "tsc -p tsconfig.build.json && node scripts/finalize-types.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint .",
+    "lint": "eslint . && node scripts/check-lint-rules.mjs",
     "check": "npm run typecheck && npm run lint && npm test",
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
     "check:bundle": "node scripts/check-bundle.mjs",
     "check:package": "publint && attw --pack . --profile esm-only",
+    "check:consumer": "node scripts/check-consumer.mjs",
     "size": "size-limit"
   },
   "peerDependencies": {

@@ -5,7 +5,7 @@ export const KalturaRecorderApi = {
   name: 'KalturaRecorder',
   schema: z.object({
     partnerId: z.number().int().positive(),
-    ks: CommonSchemas.DynamicString,
+    ks: CommonSchemas.DynamicString.optional(),
     // 0 means the default recorder uiConf.
     uiconfId: z.number().int().nonnegative().optional(),
     category: CommonSchemas.DynamicString.optional(),

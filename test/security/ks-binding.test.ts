@@ -1,5 +1,5 @@
-// Covers: SEC-05 (a literal KS in agent output), plus the serverUrl example fix from 1.2.
-// Plan item 1.6b: ks is always a DynamicString and the catalog tells agents to bind it.
+// Covers: SEC-05 (a KS in agent output or the data model), plus the serverUrl example fix from 1.2.
+// Plan items 1.6b and 3.1: ks is an optional DynamicString, the host supplies it and agents never set it.
 import { describe, it, expect } from 'vitest';
 import catalog from '../../src/catalog/kaltura_catalog.json';
 import { deriveLoaderUrl } from '../../src/core/unisphere-loader';
@@ -28,7 +28,7 @@ const WITH_KS = [
 ] as const;
 
 type Prop = { description?: string };
-type Component = { allOf: Array<{ properties?: Record<string, Prop> }> };
+type Component = { allOf: Array<{ properties?: Record<string, Prop>; required?: string[] }> };
 
 function catalogProps(name: string): Record<string, Prop> {
   const component = (catalog.components as unknown as Record<string, Component>)[name];
@@ -41,10 +41,20 @@ const withProp = (prop: string) =>
     return description === undefined ? [] : [[name, description] as const];
   });
 
-describe('SEC-05: ks accepts a data binding in every schema', () => {
-  it.each(WITH_KS.map(api => [api.name, api] as const))('SEC-05: %s ks takes {"path":"/session/ks"}', (_name, api) => {
-    const shape = api.schema.shape as Record<string, { safeParse(v: unknown): { success: boolean } }>;
-    expect(shape.ks.safeParse({ path: '/session/ks' }).success).toBe(true);
+type Field = { safeParse(v: unknown): { success: boolean } };
+
+describe('SEC-05: ks is optional in every schema', () => {
+  it.each(WITH_KS.map(api => [api.name, api] as const))('SEC-05: %s accepts a component without ks', (_name, api) => {
+    expect((api.schema.shape as Record<string, Field>).ks.safeParse(undefined).success).toBe(true);
+  });
+
+  it.each(WITH_KS.map(api => [api.name, api] as const))('SEC-05: %s ks still takes a binding, for older hosts', (_name, api) => {
+    expect((api.schema.shape as Record<string, Field>).ks.safeParse({ path: '/session/ks' }).success).toBe(true);
+  });
+
+  it.each(Object.keys(catalog.components))('SEC-05: catalog %s does not require ks', name => {
+    const component = (catalog.components as unknown as Record<string, Component>)[name];
+    expect(component.allOf.flatMap(part => part.required ?? [])).not.toContain('ks');
   });
 });
 
@@ -55,8 +65,12 @@ describe('SEC-05: catalog ks descriptions', () => {
     expect(ksDescriptions.length).toBeGreaterThanOrEqual(9);
   });
 
-  it.each(ksDescriptions)('SEC-05: %s tells agents to bind ks and never write it', (_name, description) => {
-    expect([description.includes('"/session/ks"'), description.includes('Never write a literal KS')]).toEqual([true, true]);
+  it.each(ksDescriptions)('SEC-05: %s says the host supplies ks and agents never set or ask for it', (_name, description) => {
+    expect([
+      description.includes('The host supplies it'),
+      description.includes('Agents must never set this prop or ask for a KS'),
+      description.includes('/session/ks'),
+    ]).toEqual([true, true, false]);
   });
 
   it.each(ksDescriptions.filter(([name]) => name !== 'KalturaAnalytics'))(

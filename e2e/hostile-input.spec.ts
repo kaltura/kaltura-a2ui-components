@@ -1,5 +1,5 @@
 // Hostile input group (plan 6.4). Case numbers match the permanent case list in e2e/README.md.
-// Titles with "[pending SEC-xx]" fail until that fix lands. Do not weaken them.
+// A case that waits for a fix gets the title prefix "[pending SEC-xx]". None are left.
 import { test, expect, type Harness } from './fixtures/harness';
 import { ALLOWED_HOSTS, ORIGIN_A, ORIGIN_B } from './fixtures/constants';
 
@@ -37,7 +37,7 @@ const hostText = (h: Harness) => h.page.locator('#host').innerText();
 test.describe('case 1 and 2: loader error text is inert', () => {
   for (const tag of UNISPHERE_TAGS) {
     for (const mode of ['throw', 'throwstr'] as const) {
-      test(`[pending SEC-06] ${tag}: ${mode} on an approved origin`, async ({ harness: h }) => {
+      test(`${tag}: ${mode} on an approved origin`, async ({ harness: h }) => {
         h.kalturaMode = mode;
         await h.open();
         await h.mount(tag, unisphereConfig(`${ALLOWED}/v1`));
@@ -47,7 +47,7 @@ test.describe('case 1 and 2: loader error text is inert', () => {
         expect(await h.pwned()).toEqual([]);
       });
 
-      test(`[pending SEC-06] ${tag}: ${mode} on a foreign origin`, async ({ harness: h }) => {
+      test(`${tag}: ${mode} on a foreign origin`, async ({ harness: h }) => {
         await h.open();
         await h.mount(tag, unisphereConfig(h.hostileServerUrl(mode)));
         await h.settle();
@@ -89,7 +89,7 @@ test.describe('case 4: serverUrl allowlist rejects before import()', () => {
 
   for (const tag of ['kaltura-media-manager', 'kaltura-genie-widget']) {
     for (const [name, build] of Object.entries(hostile)) {
-      test(`[pending SEC-01] ${tag}: ${name}`, async ({ harness: h }) => {
+      test(`${tag}: ${name}`, async ({ harness: h }) => {
         await h.open();
         await h.mount(tag, unisphereConfig(build(h)));
         await h.settle();
@@ -127,7 +127,7 @@ test.describe('case 12 and 13: recorder iframe', () => {
   };
 
   for (const [name, ids] of Object.entries(hostileIds)) {
-    test(`[pending SEC-03] hostile ids: ${name}`, async ({ harness: h }) => {
+    test(`hostile ids: ${name}`, async ({ harness: h }) => {
       await h.open();
       await h.mount('kaltura-recorder', { ks: 'DUMMY_KS_NOT_REAL', ...ids });
       await h.settle();
@@ -156,15 +156,20 @@ test.describe('case 12 and 13: recorder iframe', () => {
 test.describe('flashcards payloads', () => {
   const hostileHtml = (tag: string) => `<img src=x onerror="window.__pwned.push('${tag}')">`;
 
-  test('[pending SEC-04] case 7: raw content never reaches the DOM before sanitising', async ({ harness: h }) => {
+  test('case 7: raw content never reaches the DOM before sanitising', async ({ harness: h }) => {
+    // Only watch inside #host. The browser's own parse of the harness page adds
+    // a <script> and must not count.
     await h.page.addInitScript(() => {
-      (window as unknown as { __unsafeSeen: string[] }).__unsafeSeen = [];
+      const seen: string[] = [];
+      (window as unknown as { __unsafeSeen: string[] }).__unsafeSeen = seen;
       new MutationObserver((records) => {
-        for (const r of records)
-          for (const n of r.addedNodes)
-            if (n instanceof Element && n.querySelector('[onerror], script')) {
-              (window as unknown as { __unsafeSeen: string[] }).__unsafeSeen.push(n.outerHTML.slice(0, 120));
-            }
+        for (const r of records) {
+          if (!(r.target instanceof Element) || !r.target.closest('#host')) continue;
+          for (const n of r.addedNodes) {
+            if (!(n instanceof Element)) continue;
+            if (n.matches('[onerror], script') || n.querySelector('[onerror], script')) seen.push(n.outerHTML.slice(0, 120));
+          }
+        }
       }).observe(document, { childList: true, subtree: true });
     });
     await h.open();
@@ -178,7 +183,7 @@ test.describe('flashcards payloads', () => {
     expect(await h.pwned()).toEqual([]);
   });
 
-  test('[pending SEC-05] markdown image from a foreign origin is not fetched', async ({ harness: h }) => {
+  test('markdown image from a foreign origin is not fetched', async ({ harness: h }) => {
     await h.open();
     await h.mount('kaltura-flashcards', {
       title: 'Deck',
@@ -192,7 +197,7 @@ test.describe('flashcards payloads', () => {
 
 test.describe('case 16: no remote code from a foreign origin', () => {
   for (const tag of UNISPHERE_TAGS) {
-    test(`[pending SEC-01] ${tag}: module on origin B is never requested or run`, async ({ harness: h }) => {
+    test(`${tag}: module on origin B is never requested or run`, async ({ harness: h }) => {
       await h.open();
       await h.mount(tag, unisphereConfig(h.hostileServerUrl('codeload')));
       await h.settle();

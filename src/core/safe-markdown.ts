@@ -36,11 +36,14 @@ const ALLOWED_TAGS = new Set([
 const ALLOWED_ATTRS: Record<string, string[]> = {
   a: ['href', 'title'],
   img: ['src', 'alt', 'title'],
+  code: ['class'],
   ol: ['start'],
   th: ['style'],
   td: ['style'],
 };
 
+// markdown-it writes the fence language as a class on code. Nothing else is kept.
+const CODE_CLASS = /^language-[A-Za-z0-9_-]+$/;
 // markdown-it writes table alignment as an inline style. Nothing else is kept.
 const ALIGN_STYLE = /^text-align:\s*(left|right|center);?$/i;
 const LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:']);
@@ -70,7 +73,9 @@ export function sanitizeMarkdownHtml(html: string): string {
     if (tag === 'img') {
       const src = toKalturaCdnUrl(el.getAttribute('src'));
       if (src) el.setAttribute('src', src);
-      else el.remove();
+      else el.replaceWith(doc.createTextNode(el.getAttribute('alt') ?? ''));
+    } else if (tag === 'code') {
+      if (!CODE_CLASS.test(el.getAttribute('class') ?? '')) el.removeAttribute('class');
     } else if (tag === 'a') {
       const href = el.getAttribute('href');
       if (href !== null && !isSafeLink(href)) el.removeAttribute('href');

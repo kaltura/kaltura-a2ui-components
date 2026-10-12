@@ -6,6 +6,7 @@
 // inspect the DOM at the "first render" moment.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act } from 'react';
+import { createElement } from 'react';
 import { mount, findUnsafe } from '../helpers/render';
 
 const md = vi.hoisted(() => ({
@@ -114,6 +115,12 @@ describe('SEC-04: FlashcardsCore: empty or failed render', () => {
     const { container } = await render(PAYLOADS['img onerror']);
     expect(findUnsafe(contentOf(container))).toEqual([]);
   });
+  it('SEC-04: sanitised result is empty: the text stays as plain text', async () => {
+    md.impl = () => Promise.resolve('');
+    const { container } = await render('<b>hi</b>');
+    const content = container.querySelector('.flashcard-content')!;
+    expect([content.children.length, content.textContent]).toEqual([0, '<b>hi</b>']);
+  });
   it('SEC-04: rejection shows the text as plain text', async () => {
     md.impl = () => Promise.reject(new Error('markdown failed'));
     const { container } = await render('<b>hi</b>');
@@ -157,7 +164,7 @@ describe('SEC-11: flashcards URL builders: valid and invalid ids', () => {
     });
     const start = container.querySelector<HTMLButtonElement>('.flashcard-action-btn');
     await act(async () => start?.click());
-    expect([container.querySelectorAll('iframe').length, container.querySelectorAll('.flashcard-clip-error').length]).toEqual([0, 1]);
+    expect([container.querySelectorAll('iframe').length, container.querySelector('[role="alert"]')?.textContent]).toEqual([0, 'This clip cannot be shown.']);
   });
 });
 
@@ -191,5 +198,112 @@ describe('SEC-12: clip.thumbnail only on Kaltura CDN hosts', () => {
   ])('SEC-12: %j is accepted', async t => {
     const { buildThumbnailUrl } = await import('../../src/core/flashcards');
     expect(buildThumbnailUrl({ ...base, thumbnail: t }, 1)).toMatch(/^https:\/\/[a-z.]+\.kaltura\.com\//);
+  });
+});
+
+describe('SEC-04: FlashcardsCore: plain text while markdown renders, then sanitised HTML', () => {
+  const sizes = { scroll: 200, client: 100 };
+  const proto = HTMLElement.prototype;
+  const realScroll = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollHeight')!;
+  const realClient = Object.getOwnPropertyDescriptor(Element.prototype, 'clientHeight')!;
+  const first = (c: Element) => c.querySelector<HTMLElement>('.flashcard-content')!;
+
+  const pending = () => {
+    const resolvers: Array<(html: string) => void> = [];
+    md.impl = () => new Promise<string>(resolve => resolvers.push(resolve));
+    return (html: string) => act(async () => resolvers.forEach(resolve => resolve(html)));
+  };
+
+  afterEach(() => {
+    Object.defineProperty(proto, 'scrollHeight', realScroll);
+    Object.defineProperty(proto, 'clientHeight', realClient);
+  });
+
+  const fakeSizes = () => {
+    Object.defineProperty(proto, 'scrollHeight', { configurable: true, get: () => sizes.scroll });
+    Object.defineProperty(proto, 'clientHeight', { configurable: true, get: () => sizes.client });
+  };
+
+  it('SEC-04: the first render shows the content as one plain text node', async () => {
+    pending();
+    const { container } = await render('**bold** text');
+    const content = first(container);
+    expect([content.children.length, content.textContent]).toEqual([0, '**bold** text']);
+  });
+
+  it('SEC-04: the text is swapped for sanitised HTML when markdown is ready', async () => {
+    const finish = pending();
+    const { container } = await render('**bold** text');
+    await finish('<p><strong>bold</strong> text</p><script>window.__pwned=1</script>');
+    expect(first(container).innerHTML).toBe('<p><strong>bold</strong> text</p>');
+  });
+
+  it('SEC-04: the fade mask is set in both states and follows the size of each', async () => {
+    fakeSizes();
+    sizes.scroll = 200;
+    const finish = pending();
+    const { container } = await render('long text');
+    const before = first(container).style.maskImage;
+    sizes.scroll = 50;
+    await finish('<p>short</p>');
+    const after = first(container).style.maskImage;
+    expect([before.includes('linear-gradient'), after]).toEqual([true, '']);
+  });
+
+  it('SEC-04: new content while markdown is still pending recomputes the fade mask', async () => {
+    fakeSizes();
+    sizes.scroll = 50;
+    md.impl = () => new Promise<string>(() => {});
+    const { FlashcardsCore } = await import('../../src/core/flashcards');
+    const { container, root } = await mount(FlashcardsCore, { title: 'Deck', summary: 'short', cards: [] });
+    sizes.scroll = 200;
+    await act(async () => root.render(createElement(FlashcardsCore, { title: 'Deck', summary: 'long text', cards: [] })));
+    expect(first(container).style.maskImage).toContain('linear-gradient');
+  });
+
+  it('SEC-04: new content shows as plain text again, never the old HTML', async () => {
+    const finish = pending();
+    const { FlashcardsCore } = await import('../../src/core/flashcards');
+    const { container, root } = await mount(FlashcardsCore, { title: 'Deck', summary: 'one', cards: [] });
+    await finish('<p>ONE</p>');
+    md.impl = () => new Promise<string>(() => {});
+    await act(async () => root.render(createElement(FlashcardsCore, { title: 'Deck', summary: 'two', cards: [] })));
+    const content = first(container);
+    expect([content.children.length, content.textContent]).toEqual([0, 'two']);
+  });
+});
+
+describe('SEC-11: one bad clip does not fail the deck', () => {
+  const clips = [
+    { entryId: '../x', startTime: 0, endTime: 1, title: 'bad' },
+    { entryId: '1_good', startTime: 0, endTime: 1, title: 'good' },
+  ];
+  const deck = { title: 'Deck', partnerId: 1, uiconfId: 2, cards: [{ title: 'C', content: 'x', clips }] };
+
+  async function openCard(props: Record<string, unknown>) {
+    const { FlashcardsCore } = await import('../../src/core/flashcards');
+    const { container } = await mount(FlashcardsCore, props);
+    await act(async () => container.querySelector<HTMLButtonElement>('.flashcard-action-btn')!.click());
+    return container;
+  }
+
+  it('SEC-11: the deck renders and the bad clip says it cannot be shown', async () => {
+    const container = await openCard(deck);
+    expect([
+      container.querySelector('.flashcard-title')?.textContent,
+      container.querySelector('[role="alert"]')?.textContent,
+      container.querySelectorAll('iframe').length,
+    ]).toEqual(['Deck', 'This clip cannot be shown.', 0]);
+  });
+
+  it('SEC-11: the good clip next to it still plays', async () => {
+    const container = await openCard(deck);
+    await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="good"]')!.click());
+    expect([container.querySelectorAll('iframe').length, container.querySelectorAll('[role="alert"]').length]).toEqual([1, 0]);
+  });
+
+  it.each([7, null, '', 'a b', 'x'.repeat(65)])('SEC-11: clip entryId %j fails that clip only', async entryId => {
+    const container = await openCard({ ...deck, cards: [{ title: 'C', content: 'x', clips: [{ ...clips[0], entryId }] }] });
+    expect([container.querySelector('.kaltura-load-error')?.textContent, container.querySelectorAll('iframe').length]).toEqual(['This clip cannot be shown.', 0]);
   });
 });

@@ -1,6 +1,7 @@
 import { UnisphereWidgetCore } from './unisphere-widget';
 import { KalturaContentLabApi } from '../schemas/content-lab';
 import { withValidatedProps } from './validate-props';
+import { withKs } from './ks';
 
 export interface ContentLabCoreProps {
   partnerId: number;
@@ -25,4 +26,4 @@ function ContentLabView(props: ContentLabCoreProps) {
   );
 }
 
-export const ContentLabCore = withValidatedProps(KalturaContentLabApi.schema, 'Kaltura Content Lab', ContentLabView);
+export const ContentLabCore = withKs('content-lab', withValidatedProps(KalturaContentLabApi.schema.required({ ks: true }), 'Kaltura Content Lab', ContentLabView));

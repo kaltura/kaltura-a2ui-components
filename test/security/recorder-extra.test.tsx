@@ -24,12 +24,10 @@ describe('SEC-03: RecorderCore input validation', () => {
     ['Infinity partnerId', { partnerId: Infinity, ks: 'k' }],
     ['unsafe-integer partnerId', { partnerId: 2 ** 60, ks: 'k' }],
     ['exponent-form partnerId string', { partnerId: '1e3', ks: 'k' }],
-    ['missing partnerId', { ks: 'k' }],
     ['string uiconfId', { partnerId: 1, uiconfId: '5', ks: 'k' }],
     ['negative uiconfId', { partnerId: 1, uiconfId: -1, ks: 'k' }],
     ['float uiconfId', { partnerId: 1, uiconfId: 0.5, ks: 'k' }],
     ['null uiconfId', { partnerId: 1, uiconfId: null, ks: 'k' }],
-    ['missing ks', { partnerId: 1 }],
     ['empty ks', { partnerId: 1, ks: '' }],
     ['number ks', { partnerId: 1, ks: 5 }],
     ['ks with newline', { partnerId: 1, ks: 'a\nb' }],
@@ -43,6 +41,14 @@ describe('SEC-03: RecorderCore input validation', () => {
     const { container } = await render(props);
     expect(container.querySelector('iframe')).toBeNull();
     expect(container.querySelector('.kaltura-load-error')?.textContent).toContain('Failed to load recorder');
+  });
+
+  it.each([
+    ['missing partnerId', { ks: 'k' }],
+    ['missing ks', { partnerId: 1 }],
+  ])('SEC-03: %s is pending: no iframe and no error', async (_name, props) => {
+    const { container } = await render(props);
+    expect([container.querySelectorAll('iframe, [role="alert"]').length, container.textContent]).toEqual([0, '']);
   });
 
   it('SEC-03: error text does not echo hostile input and adds no elements besides the box', async () => {

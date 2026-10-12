@@ -1,6 +1,7 @@
 import { UnisphereWidgetCore } from './unisphere-widget';
 import { KalturaVodAvatarApi } from '../schemas/vod-avatar';
 import { withValidatedProps } from './validate-props';
+import { withKs } from './ks';
 
 export interface VodAvatarCoreProps {
   partnerId: number;
@@ -27,4 +28,4 @@ function VodAvatarView(props: VodAvatarCoreProps) {
   );
 }
 
-export const VodAvatarCore = withValidatedProps(KalturaVodAvatarApi.schema, 'Kaltura VOD Avatar', VodAvatarView);
+export const VodAvatarCore = withKs('vod-avatar', withValidatedProps(KalturaVodAvatarApi.schema.required({ ks: true }), 'Kaltura VOD Avatar', VodAvatarView));

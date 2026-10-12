@@ -11,18 +11,12 @@ test('KALTURA_WC_TAGS lists 12 tags', () => {
   expect(tags).toHaveLength(12);
 });
 
-test('defines all tags when the host provides process.env', async ({ harness: h }) => {
+test('loads on a bare page with no process shim', async ({ harness: h }) => {
   await h.open();
   expect(h.pageErrors).toEqual([]);
-  expect(await undefinedTags(h.page)).toEqual([]);
 });
 
-test('[pending E2E-01] loads on a bare page with no process shim', async ({ harness: h }) => {
-  await h.open({ noshim: true });
-  expect(h.pageErrors).toEqual([]);
-});
-
-test('[pending E2E-01] defines all tags on a bare page', async ({ harness: h }) => {
-  await h.open({ noshim: true });
+test('defines all tags on a bare page', async ({ harness: h }) => {
+  await h.open();
   expect(await undefinedTags(h.page)).toEqual([]);
 });

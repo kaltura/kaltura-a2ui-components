@@ -1,6 +1,10 @@
 // Covers: SEC-08 / QA-04 (Avatar SDK: `latest` URL, no SRI, id-keyed script
 // tag breaks StrictMode and multi-instance).
-// Turns green: plan item 1.9 (avatar).
+// Plan item 1.9 (avatar). The QA-04 tests are green. SEC-08 is vendor-blocked
+// (status "blocked" in docs/security/internal-review.md): the avatar team has not
+// published a versioned SDK URL and an SRI hash, so the SEC-08 pin test is
+// skipped. Remove `.skip` when `SDK_SRC` and `SDK_INTEGRITY` in
+// src/core/avatar.tsx are set.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { StrictMode, createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -38,7 +42,8 @@ afterEach(() => {
 });
 
 describe('SEC-08 / QA-04: AvatarCore SDK loading', () => {
-  it('SEC-08: SDK script is pinned (not `latest`) and has integrity + crossorigin', async () => {
+  // Vendor block: needs the SDK versioned URL and SRI hash from the avatar team.
+  it.skip('SEC-08 (vendor block: SDK versioned URL and SRI hash from the avatar team): SDK script is pinned (not `latest`) and has integrity + crossorigin', async () => {
     await render(await avatar('av1'));
     const script = document.querySelector('script');
     expect([script?.src.includes('/latest/'), script?.hasAttribute('integrity'), script?.crossOrigin]).toEqual([

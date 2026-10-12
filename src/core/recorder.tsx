@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { renderLoadError } from './render-load-error';
 import { KalturaRecorderApi } from '../schemas/recorder';
-import { invalidProps } from './validate-props';
+import { checkProps, StrictPendingContext } from './validate-props';
+import { withKs } from './ks';
 
 export interface RecorderCoreProps {
   partnerId: number;
@@ -14,22 +15,28 @@ export interface RecorderCoreProps {
   allowCamera?: boolean;
 }
 
-export const RecorderCore: FC<RecorderCoreProps> = (props) => {
+const RUNTIME_SCHEMA = KalturaRecorderApi.schema.required({ ks: true });
+
+const RecorderView: FC<RecorderCoreProps> = (props) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const strict = useContext(StrictPendingContext);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     // The error goes inside the container, so the shared wrapper is not used here.
-    const bad = invalidProps(KalturaRecorderApi.schema, {
+    const { invalid, pending } = checkProps(RUNTIME_SCHEMA, {
       partnerId: props.partnerId,
       ks: props.ks,
       uiconfId: props.uiconfId,
-    });
-    if (bad.length) {
-      renderLoadError(container, 'recorder', new Error(`Invalid ${bad.join(', ')}`));
-      return;
+    }, strict);
+    if (invalid.length) {
+      renderLoadError(container, 'recorder', new Error(`Invalid ${invalid.join(', ')}`));
+      return () => {
+        container.replaceChildren();
+      };
     }
+    if (pending) return;
 
     const iframe = document.createElement('iframe');
     iframe.src =
@@ -51,7 +58,7 @@ export const RecorderCore: FC<RecorderCoreProps> = (props) => {
     return () => {
       container.replaceChildren();
     };
-  }, [props.partnerId, props.ks, props.uiconfId]);
+  }, [props.partnerId, props.ks, props.uiconfId, strict]);
 
   return (
     <div
@@ -61,3 +68,5 @@ export const RecorderCore: FC<RecorderCoreProps> = (props) => {
     />
   );
 };
+
+export const RecorderCore = withKs('recorder', RecorderView);

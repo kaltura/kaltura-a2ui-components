@@ -1,5 +1,5 @@
 // Covers: SEC-01 / QA-03 (allowlist part). Unit tests for core/unisphere-loader.ts.
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   deriveLoaderUrl,
   loadUnisphereModule,
@@ -70,6 +70,42 @@ describe('SEC-01: deriveLoaderUrl rejects', () => {
   });
   it('SEC-01: non-string input', () => {
     expect(() => deriveLoaderUrl(undefined as unknown as string)).toThrow();
+  });
+});
+
+describe('SEC-01: a rejected serverUrl is not echoed', () => {
+  afterEach(() => vi.restoreAllMocks());
+  const hostile = `https://evil.example/<img src=x onerror=1>/${'a'.repeat(300)}`;
+  const reject = (value: unknown) => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    let message = '';
+    try {
+      deriveLoaderUrl(value as string);
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    return { message, warn };
+  };
+
+  it('SEC-01: the thrown message is generic', () => {
+    expect(reject(hostile).message).toBe('serverUrl is not an allowed Unisphere origin');
+  });
+
+  it('SEC-01: console.warn gets the value cut to 100 characters', () => {
+    const { warn } = reject(hostile);
+    expect(warn.mock.calls.map(call => call.map(String).join(' ')).join('\n')).toContain(hostile.slice(0, 100));
+    expect(warn.mock.calls.join('\n')).not.toContain(hostile.slice(0, 101));
+  });
+
+  it('SEC-01: a non-string value is warned about and refused', () => {
+    const { message, warn } = reject({ toString: () => 'x'.repeat(500) });
+    expect([message, warn.mock.calls.length]).toEqual(['serverUrl is not an allowed Unisphere origin', 1]);
+  });
+
+  it('SEC-01: an accepted serverUrl does not warn', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    deriveLoaderUrl(`${HOST}/v1`);
+    expect(warn).not.toHaveBeenCalled();
   });
 });
 

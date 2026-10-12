@@ -62,7 +62,7 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Player guide lists, for example setrole:PLAYBACK_BASE_ROLE and sview:<entryId>."
+              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Player guide lists, for example setrole:PLAYBACK_BASE_ROLE and sview:<entryId>."
             },
             "autoplay": {
               "$ref": "#/$defs/DynamicBoolean",
@@ -187,7 +187,7 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Media Manager widget guide lists."
+              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Media Manager widget guide lists."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
@@ -215,7 +215,7 @@
               "description": "ID of the content scope (e.g. category ID to browse)."
             }
           },
-          "required": ["component", "partnerId", "ks", "serverUrl"]
+          "required": ["component", "partnerId", "serverUrl"]
         }
       ],
       "unevaluatedProperties": false
@@ -236,7 +236,7 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. The Analytics guide requires an ADMIN KS (type=2). The host must mint it on the server with a short TTL and narrow privileges, for example setrole and iprestrict."
+              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: the Analytics guide requires an ADMIN KS (type=2). The host must mint it on the server with a short TTL and narrow privileges, for example setrole and iprestrict."
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
@@ -255,7 +255,7 @@
               "description": "End date for the analytics date range (ISO 8601 or YYYY-MM-DD)."
             }
           },
-          "required": ["component", "partnerId", "ks"]
+          "required": ["component", "partnerId"]
         }
       ],
       "unevaluatedProperties": false
@@ -276,7 +276,7 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Captions Studio guide lists, including caption edit permission."
+              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Captions Studio guide lists, including caption edit permission."
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
@@ -287,7 +287,7 @@
               "description": "Optional uiConf ID for the captions editor player."
             }
           },
-          "required": ["component", "partnerId", "ks", "entryId"]
+          "required": ["component", "partnerId", "entryId"]
         }
       ],
       "unevaluatedProperties": false
@@ -308,7 +308,7 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Express Recorder guide lists, for example editadmintags:*."
+              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Express Recorder guide lists, for example editadmintags:*."
             },
             "uiconfId": {
               "type": "integer",
@@ -331,7 +331,7 @@
               "description": "Allow camera capture. Default: true."
             }
           },
-          "required": ["component", "partnerId", "ks"]
+          "required": ["component", "partnerId"]
         }
       ],
       "unevaluatedProperties": false
@@ -388,7 +388,7 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Genie widget guide lists, for example setrole:PLAYBACK_BASE_ROLE."
+              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Genie widget guide lists, for example setrole:PLAYBACK_BASE_ROLE."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
@@ -403,7 +403,7 @@
               "description": "UI language code. Default: 'en'."
             }
           },
-          "required": ["component", "partnerId", "ks", "serverUrl"]
+          "required": ["component", "partnerId", "serverUrl"]
         }
       ],
       "unevaluatedProperties": false
@@ -424,7 +424,7 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Content Lab widget guide lists."
+              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Content Lab widget guide lists."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
@@ -435,7 +435,7 @@
               "description": "Optional media entry ID to open Content Lab focused on a specific entry."
             }
           },
-          "required": ["component", "partnerId", "ks", "serverUrl"]
+          "required": ["component", "partnerId", "serverUrl"]
         }
       ],
       "unevaluatedProperties": false
@@ -456,7 +456,7 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Agents widget guide lists."
+              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Agents widget guide lists."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
@@ -467,7 +467,7 @@
               "description": "Optional agent ID to launch a specific agent."
             }
           },
-          "required": ["component", "partnerId", "ks", "serverUrl"]
+          "required": ["component", "partnerId", "serverUrl"]
         }
       ],
       "unevaluatedProperties": false
@@ -488,7 +488,7 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the VOD Avatar widget guide lists."
+              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the VOD Avatar widget guide lists."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
@@ -503,7 +503,7 @@
               "description": "Optional avatar visual style preset."
             }
           },
-          "required": ["component", "partnerId", "ks", "serverUrl", "entryId"]
+          "required": ["component", "partnerId", "serverUrl", "entryId"]
         }
       ],
       "unevaluatedProperties": false
@@ -574,7 +574,7 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "x": { "type": "string", "description": "x-axis value to annotate." },
+                  "x": { "type": ["string", "number"], "description": "x-axis value to annotate." },
                   "label": { "type": "string", "description": "Annotation label text." },
                   "color": { "type": "string", "description": "Annotation color (hex or CSS). Default: accent color." }
                 },

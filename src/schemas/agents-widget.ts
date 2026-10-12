@@ -5,7 +5,7 @@ export const KalturaAgentsWidgetApi = {
   name: 'KalturaAgentsWidget',
   schema: z.object({
     partnerId: z.number().int().positive(),
-    ks: CommonSchemas.DynamicString,
+    ks: CommonSchemas.DynamicString.optional(),
     serverUrl: CommonSchemas.DynamicString,
     agentId: CommonSchemas.DynamicString.optional(),
   }),

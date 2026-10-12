@@ -130,3 +130,56 @@ describe('SEC-05: sanitizeMarkdownHtml keeps normal markdown', () => {
     expect(out).toMatch(/<h1>T<\/h1>[\s\S]*<ul>[\s\S]*<strong>a<\/strong>[\s\S]*<code>b<\/code>[\s\S]*<em>c<\/em>/);
   });
 });
+
+describe('SEC-05: code language classes', () => {
+  const codeClass = (html: string) => parse(sanitizeMarkdownHtml(html)).querySelector('code')?.getAttribute('class') ?? null;
+  it.each(['language-js', 'language-c_sharp', 'language-objective-c', 'language-X9'])('SEC-05: keeps class %j on code', name => {
+    expect(codeClass(`<pre><code class="${name}">x</code></pre>`)).toBe(name);
+  });
+  it.each([
+    'evil',
+    'language-',
+    'language-js onload',
+    'language-js evil',
+    'language-a.b',
+    'xlanguage-js',
+    'language-js\n',
+    'LANGUAGE-js',
+    'language-é',
+  ])('SEC-05: drops class %j from code', name => {
+    expect(codeClass(`<pre><code class="${name}">x</code></pre>`)).toBeNull();
+  });
+  it('SEC-05: class stays off every other tag', () => {
+    const out = parse(sanitizeMarkdownHtml('<p class="language-js">a</p><span class="language-js">b</span><pre class="language-js">c</pre>'));
+    expect(out.querySelectorAll('[class]').length).toBe(0);
+  });
+  it('SEC-05: a fenced block from markdown keeps its language class', async () => {
+    expect(await renderSafeMarkdown('```js\nlet a = 1;\n```')).toContain('<code class="language-js">');
+  });
+});
+
+describe('SEC-05: removed images keep their alt text', () => {
+  const clean = (html: string) => parse(sanitizeMarkdownHtml(html));
+  it('SEC-05: a foreign image becomes its alt text', () => {
+    const out = clean('<p>see <img src="https://evil.example/a?k=1" alt="a cat"> here</p>');
+    expect([out.querySelectorAll('img').length, out.textContent]).toEqual([0, 'see a cat here']);
+  });
+  it('SEC-05: an image with no alt leaves nothing', () => {
+    expect(clean('<p>a<img src="https://evil.example/a">b</p>').textContent).toBe('ab');
+  });
+  it('SEC-05: alt text stays text, markup in it is escaped', () => {
+    const out = clean('<img src="https://evil.example/a" alt="<b>x</b>">');
+    expect([out.querySelectorAll('b').length, out.textContent]).toEqual([0, '<b>x</b>']);
+  });
+  it('SEC-05: an image with a bad src and alt but no src value is replaced too', () => {
+    expect(clean('<img alt="only alt">').textContent).toBe('only alt');
+  });
+  it('SEC-05: markdown image syntax gives the alt text and no foreign URL', async () => {
+    const html = await renderSafeMarkdown('![a cat](https://evil.example/a?ks=SECRET)');
+    expect([html.includes('evil.example'), parse(html).textContent]).toEqual([false, 'a cat\n']);
+  });
+  it('SEC-05: a Kaltura CDN image stays an image with its alt attribute', () => {
+    const img = clean('<img src="https://cfvod.kaltura.com/a.png" alt="a cat">').querySelector('img');
+    expect([img?.getAttribute('src'), img?.getAttribute('alt')]).toEqual(['https://cfvod.kaltura.com/a.png', 'a cat']);
+  });
+});

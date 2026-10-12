@@ -26,8 +26,11 @@ export function loadScriptOnce(src: string, integrity?: string): Promise<void> {
   const promise = new Promise<void>((resolve, reject) => {
     const script = document.createElement('script');
     script.src = src;
-    script.crossOrigin = 'anonymous';
-    if (integrity) script.setAttribute('integrity', integrity);
+    // crossorigin without an integrity hash only makes the request fail on a host without CORS headers.
+    if (integrity) {
+      script.crossOrigin = 'anonymous';
+      script.setAttribute('integrity', integrity);
+    }
     script.onload = () => resolve();
     script.onerror = () => {
       script.remove();

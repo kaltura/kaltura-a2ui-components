@@ -45,7 +45,9 @@ export function deriveLoaderUrl(serverUrl: string): string {
   const allowed = origin !== undefined && [...BUILT_IN_ORIGINS, ...extraOrigins].includes(origin);
   const exact = origin !== undefined && [origin, `${origin}/`, `${origin}/v1`, `${origin}/v1/`].includes(serverUrl);
   if (!origin || !allowed || !exact) {
-    throw new Error(`serverUrl is not an allowed Unisphere origin: ${JSON.stringify(serverUrl)}`);
+    // The value comes from agent output: keep it out of the UI and the thrown message.
+    console.warn('serverUrl rejected:', String(serverUrl).slice(0, 100));
+    throw new Error('serverUrl is not an allowed Unisphere origin');
   }
   return `${origin}/v1/loader/index.esm.js`;
 }
