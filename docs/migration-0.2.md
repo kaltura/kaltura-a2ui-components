@@ -1,13 +1,13 @@
 # Migrate from 0.1.x to 0.2.0
 
-0.1.5 and 0.1.6 fix security and robustness bugs. 0.2.0 changes the install and host contract. Do the checklist, then read the details you need. The full list is in [CHANGELOG.md](../CHANGELOG.md).
+0.2.0 fixes security and robustness bugs and changes the install and host contract. It is served from jsDelivr and git tags only, not npm. Do the checklist, then read the details you need. The full list is in [CHANGELOG.md](../CHANGELOG.md).
 
 ## Checklist
 
 | # | Who | Do | Why |
 |---|---|---|---|
-| 1 | npm users | Install the peers: `npm i @a2ui/react@^0.11.1 @a2ui/web_core@^0.11.0 zod@^3.25.76`. Add a `dompurify` override ([DOMPurify](#dompurify)) | The ESM no longer bundles them. `@a2ui/react` brings in a DOMPurify with advisories |
-| 2 | CDN users | Pin `@kaltura/a2ui-react@0.2.0` in the URL (npm path) and add the SRI hash from the Release | `gh/...@tag/dist` is not used for new releases |
+| 1 | ESM users | Install from the git tag with the peers ([Install contract](#install-contract)). Add a `dompurify` override ([DOMPurify](#dompurify)) | The ESM no longer bundles the peers. `@a2ui/react` brings in a DOMPurify with advisories |
+| 2 | CDN users | Change the tag in the URL to `@v0.2.0` and add the SRI hash from the Release ([CDN URLs](#cdn-urls)) | Tags up to `v0.1.4` serve the old bundle |
 | 3 | Everyone | Call `setKsProvider` and stop passing `ks` in agent output | The KS must not pass through the agent |
 | 4 | Hosts with a private cloud | Call `setExtraAllowedOrigins([...])` | Other `serverUrl` hosts are rejected |
 | 5 | Hosts with a non-US region | Call `setRegion(code)` | Captions editor and flashcard thumbnails follow it |
@@ -18,12 +18,12 @@
 
 ## Install contract
 
-Before: `npm i @kaltura/a2ui-react react react-dom` (React was the only peer). The ESM carried its own `@a2ui/react`, `@a2ui/web_core` and `zod`.
+Before: React was the only peer. The ESM carried its own `@a2ui/react`, `@a2ui/web_core` and `zod`.
 
 After:
 
 ```bash
-npm i @kaltura/a2ui-react @a2ui/react @a2ui/web_core zod react react-dom
+npm i github:kaltura/kaltura-a2ui-components#v0.2.0 @a2ui/react @a2ui/web_core zod react react-dom
 ```
 
 Peers: `@a2ui/react ^0.11.1`, `@a2ui/web_core ^0.11.0`, `zod ^3.25.76`, `react ^19`, `react-dom ^19`. A conflicting version stops the install with `ERESOLVE` that names the peer. With `--legacy-peer-deps`, the ESM import fails with "Cannot find package".
@@ -44,9 +44,9 @@ The script-tag bundle (`kaltura-wc.js`) is unchanged: self-contained, no peers.
 
 | | Before | After |
 |---|---|---|
-| Script | `https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.1.4/dist/kaltura-wc.js` | `https://cdn.jsdelivr.net/npm/@kaltura/a2ui-react@0.2.0/dist/kaltura-wc.js` |
+| Script | `https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.1.4/dist/kaltura-wc.js` | `https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js` |
 
-The npm URL works only after 0.2.0 is published to npm. Until then it returns 404. Old `gh` URLs for tags up to v0.1.4 keep working, but they serve the 0.1.4 bundle, which has none of the 0.2.0 fixes and none of the host functions. SRI: the Release has a `hashes.json`. Its `cdn["dist/kaltura-wc.js"]` value is the `integrity` string.
+Only the tag changes. Old URLs for tags up to v0.1.4 keep working, but they serve the 0.1.4 bundle, which has none of the 0.2.0 fixes and none of the host functions. SRI: copy the script tag from the Release notes, or take the `cdn["dist/kaltura-wc.js"]` value from the Release's `hashes.json`. More checks: [verify-release.md](verify-release.md).
 
 ## Kaltura Session
 
@@ -105,13 +105,13 @@ Show errors to developers with `setErrorHandler` ([host-api.md](host-api.md#erro
 ## Web component only hosts
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@kaltura/a2ui-react@0.2.0/dist/kaltura-wc.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js" integrity="sha384-…" crossorigin="anonymous"></script>
 <script>
   KalturaA2UIWebComponents.setKsProvider(widget => getKsFor(widget));
 </script>
 ```
 
-This URL works after 0.2.0 is on npm ([CDN URLs](#cdn-urls)).
+Take the `integrity` value from the Release ([CDN URLs](#cdn-urls)).
 
 The script-tag bundle has `setKsProvider`, `setExtraAllowedOrigins`, `setRegion`, `setErrorHandler` and `setEventHandler`. It has no `setExtraMediaOrigins`, because it has no basic media components.
 

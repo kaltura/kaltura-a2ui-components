@@ -14,7 +14,7 @@ Findings: QA-08, SEC-02. Code: `vite.config.ts`, `package.json`. Checks: `script
 
 | Bundle | `@a2ui/react`, `@a2ui/web_core`, `zod` | `@a2ui/markdown-it`, DOMPurify |
 |---|---|---|
-| `kaltura-react.mjs` (npm) | External. Peers: `^0.11.1`, `^0.11.0`, `^3.25.76`, plus `react` and `react-dom` 19 | Inlined, with DOMPurify 3.4.17 |
+| `kaltura-react.mjs` (ESM, git install) | External. Peers: `^0.11.1`, `^0.11.0`, `^3.25.76`, plus `react` and `react-dom` 19 | Inlined, with DOMPurify 3.4.17 |
 | `kaltura-wc.js` (script tag) | Inlined | Inlined |
 
 - The peer ranges are one 0.x line (caret on 0.x), so a new minor of `@a2ui/*` needs a review and a release.

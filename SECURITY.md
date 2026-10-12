@@ -4,16 +4,29 @@
 
 | Version | Supported |
 |---|---|
-| Latest minor release | Yes |
-| Older releases | No |
+| 0.2.x | Yes |
+| 0.1.x and older | No. Upgrade with [docs/migration-0.2.md](docs/migration-0.2.md) |
+
+Fixes ship in a new patch release of the latest minor. A released tag never changes.
 
 ## Report a vulnerability
 
-Use GitHub private vulnerability reporting for this repository: open the **Security** tab and choose **Report a vulnerability**.
+Report it privately: <https://github.com/kaltura/kaltura-a2ui-components/security/advisories/new> (Security tab, **Report a vulnerability**).
 
 Do not open public issues, pull requests or discussions for vulnerabilities. Do not put exploit steps in commits, tests or docs.
 
-Reports are handled on a best-effort basis. There is no fixed response or fix time.
+## Disclosure timeline
+
+Targets, on a best-effort basis:
+
+| Step | Target |
+|---|---|
+| We confirm we got the report | 5 business days |
+| We tell you if we accept it, and the severity | 15 business days |
+| Fix released | 90 days after the report, sooner for high or critical |
+| Public advisory (GitHub Security Advisory, with a CVE if it applies) | When the fix is released, or at 90 days if we agree on that with you |
+
+We credit reporters in the advisory unless they ask us not to. Please keep the details private until the advisory is public.
 
 ## Trust model
 
@@ -52,4 +65,9 @@ A CSP is a second layer. It does not make agent output trusted.
 
 ## Releases
 
-Releases come from CI on a `v*` tag from `main`, with npm provenance and SRI hashes in the GitHub Release ([docs/release.md](docs/release.md), [ADR 0004](docs/adr/0004-npm-first-distribution.md)). Pin the exact version and the SRI hash when you load from a CDN.
+Releases come only from [`release.yml`](.github/workflows/release.yml) on `main`. jsDelivr serves each release from its git tag. There is no npm package: a package on npm with this name is not ours. Each GitHub Release has SRI hashes, `SHA256SUMS`, an SBOM and a GitHub build provenance attestation ([docs/release.md](docs/release.md), [ADR 0004](docs/adr/0004-npm-first-distribution.md)).
+
+Verify a release before you use it ([docs/verify-release.md](docs/verify-release.md)):
+
+- Pin the full tag (`@v0.2.0`) in the jsDelivr URL and set the `integrity` value from the Release notes, with `crossorigin="anonymous"`.
+- Check a downloaded file with `gh attestation verify <file> --repo kaltura/kaltura-a2ui-components`.

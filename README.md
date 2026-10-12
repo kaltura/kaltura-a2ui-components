@@ -2,7 +2,40 @@
 
 Kaltura's [A2UI](https://a2ui.org) Experience Components. All 12 components ship as one versioned catalog, so any A2UI client that registers a catalog can render them without re-implementing them.
 
-Next release: **0.2.0** (see [CHANGELOG.md](CHANGELOG.md)). Not on npm yet. Until the first publish, use a [GitHub release](https://github.com/kaltura/kaltura-a2ui-components/releases).
+Version **0.2.0** (see [CHANGELOG.md](CHANGELOG.md)). Served by jsDelivr from the git tag. There is no npm package: a package on npm with this name is not ours.
+
+## Quick start
+
+Pick one. All three pin the tag `v0.2.0`.
+
+**1. Script tag (plain HTML).** Defines all 12 custom elements.
+
+<!-- check-examples: expect kaltura-chart h4.kaltura-chart-title -->
+```html
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
+
+<kaltura-chart id="chart"></kaltura-chart>
+
+<script>
+  document.getElementById('chart').config = { chartType: 'bar', title: 'Visits', data: [{ day: 'Mon', visits: 12 }], xKey: 'day', yKeys: ['visits'] };
+</script>
+```
+
+For production, copy the same tag with its `integrity` value from the [v0.2.0 Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases/tag/v0.2.0).
+
+**2. ESM (React, A2UI clients).** Install from the git tag with the peers, then register the catalog as in [A2UI client (React)](#a2ui-client-react).
+
+```bash
+npm i github:kaltura/kaltura-a2ui-components#v0.2.0 @a2ui/react @a2ui/web_core zod react react-dom
+```
+
+**3. Catalog JSON.** For A2UI tooling that reads a catalog by URL:
+
+```
+https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/src/catalog/kaltura_catalog.json
+```
+
+Check a release before you use it: [docs/verify-release.md](docs/verify-release.md).
 
 ## Why this exists
 
@@ -17,11 +50,13 @@ Clients that cannot register a catalog (Gemini Enterprise, generic text clients)
 
 ## Install
 
-### npm (React, A2UI clients)
+### Git tag (React, A2UI clients)
 
 ```bash
-npm i @kaltura/a2ui-react @a2ui/react @a2ui/web_core zod react react-dom
+npm i github:kaltura/kaltura-a2ui-components#v0.2.0 @a2ui/react @a2ui/web_core zod react react-dom
 ```
+
+npm installs it as `@kaltura/a2ui-react`, so imports use that name. Your `package.json` gets `"@kaltura/a2ui-react": "github:kaltura/kaltura-a2ui-components#v0.2.0"`. The tag holds the built `dist/`, so nothing builds on install.
 
 The package needs these peers: `@a2ui/react ^0.11.1`, `@a2ui/web_core ^0.11.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`. Entries: `@kaltura/a2ui-react` (React), `@kaltura/a2ui-react/webcomponent` (script bundle) and `@kaltura/a2ui-react/catalog` (the catalog JSON).
 
@@ -34,12 +69,13 @@ The package needs these peers: `@a2ui/react ^0.11.1`, `@a2ui/web_core ^0.11.0`, 
 ### CDN (plain HTML)
 
 ```
-https://cdn.jsdelivr.net/npm/@kaltura/a2ui-react@0.2.0/dist/kaltura-wc.js
+https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js
+https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-react.mjs
 ```
 
-This URL works after 0.2.0 is published to npm. Until then it returns 404, and `https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.1.4/dist/kaltura-wc.js` serves the old 0.1.4 bundle, without the 0.2.0 fixes or host functions.
+Pin the full tag. jsDelivr also resolves `@0.2` and `@latest`, but those change under you and break SRI. Each GitHub Release lists the SRI string (`sha384-…`) of every file in its notes and in `hashes.json`. Add it as `integrity` with `crossorigin="anonymous"`.
 
-Pin the exact version. Each GitHub release has a `hashes.json`. Its `cdn["dist/kaltura-wc.js"]` value is the SRI string (`sha384-…`). Add it as `integrity` with `crossorigin="anonymous"`.
+Tags up to `v0.1.4` serve the old bundles, without the 0.2.0 fixes or host functions.
 
 ## Components
 
@@ -104,7 +140,7 @@ A full page: [examples/react](examples/react).
 
 <!-- check-examples: expect kaltura-chart h4.kaltura-chart-title; kaltura-player iframe -->
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@kaltura/a2ui-react@0.2.0/dist/kaltura-wc.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
 
 <kaltura-chart id="chart"></kaltura-chart>
 <kaltura-player id="player"></kaltura-player>
@@ -124,7 +160,7 @@ A full page: [examples/react](examples/react).
 </script>
 ```
 
-The `@0.2.0` URL works after the first 0.2.0 release on npm. Before that, see [CDN](#cdn-plain-html).
+Add the `integrity` value from the Release, see [CDN](#cdn-plain-html).
 
 A full page with a KS provider and an error handler: [examples/plain-html](examples/plain-html). Both examples run against `dist/` with `npm run check:examples`.
 
@@ -168,7 +204,7 @@ examples/       plain-html and react pages that run against dist/
 docs/           guides, security notes and decision records (docs/adr)
 ```
 
-`dist/` is never committed. [`release.yml`](.github/workflows/release.yml) builds it on a `v*` tag and publishes it to npm ([docs/release.md](docs/release.md)).
+`dist/` is never committed to `main`. [`release.yml`](.github/workflows/release.yml) builds it and commits it only in the release commit that the `v*` tag points to ([docs/release.md](docs/release.md)).
 
 ## Develop
 

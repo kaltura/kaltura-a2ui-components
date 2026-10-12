@@ -1,7 +1,7 @@
 // @vitest-environment node
 // Covers: QA-09 (the stamped catalog has no placeholder left, bytes match the build), SEC-19 (both
-// bundles carry the real SRI). Chains the REAL stamp script onto the REAL catalog source, in both
-// modes, then runs the same check release.yml runs (scripts/release-verify-stamp.mjs).
+// bundles carry the real SRI). Chains the REAL stamp script onto the REAL catalog source, then runs
+// the same check release.yml runs (scripts/release-verify-stamp.mjs).
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -12,8 +12,7 @@ import { loadScripts } from './scripts';
 const { stamp, verifyStamp } = await loadScripts();
 const SOURCE_PATH = 'src/catalog/kaltura_catalog.json';
 const SOURCE = readFileSync(SOURCE_PATH, 'utf8');
-const TAG = 'v0.1.4';
-const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { name: string };
+const TAG = 'v0.2.0';
 
 /** Fake dist + a copy of the real catalog source in a temp dir. */
 function workspace() {
@@ -23,15 +22,14 @@ function workspace() {
   copyFileSync(SOURCE_PATH, join(dir, 'catalog.json'));
   return { dir, catalog: join(dir, 'catalog.json') };
 }
-const cli = (script: string, dir: string, catalog: string, mode: string) =>
-  spawnSync('node', [script, '--dist', dir, '--catalog', catalog, '--mode', mode, '--tag', TAG], { encoding: 'utf8' });
+const cli = (script: string, dir: string, catalog: string) => spawnSync('node', [script, '--dist', dir, '--catalog', catalog, '--tag', TAG], { encoding: 'utf8' });
 
-describe.each(['npm', 'gh'])('QA-09: real stamp script on the real catalog (%s mode)', mode => {
+describe('QA-09: real stamp script on the real catalog', () => {
   const { dir, catalog } = workspace();
-  const stampResult = cli('scripts/stamp-catalog.mjs', dir, catalog, mode);
+  const stampResult = cli('scripts/stamp-catalog.mjs', dir, catalog);
   const stamped = readFileSync(catalog, 'utf8');
   const expected = {
-    base: stamp.cdnBase(mode, { name: pkg.name, version: '0.1.4', tag: TAG }),
+    tag: TAG,
     wcSri: stamp.sri('wc bytes'),
     reactSri: stamp.sri('react bytes'),
   };
@@ -54,19 +52,19 @@ describe.each(['npm', 'gh'])('QA-09: real stamp script on the real catalog (%s m
   });
 
   it('QA-09: the release check CLI exits 0 on the stamped file', () => {
-    const result = cli('scripts/release-verify-stamp.mjs', dir, catalog, mode);
-    expect([result.status, result.stdout]).toEqual([0, expect.stringContaining('is stamped for v0.1.4')]);
+    const result = cli('scripts/release-verify-stamp.mjs', dir, catalog);
+    expect([result.status, result.stdout]).toEqual([0, expect.stringContaining('is stamped for v0.2.0')]);
   });
 
   it('QA-09: the release check CLI exits 1 when the bundle changed after stamping', () => {
     writeFileSync(join(dir, 'kaltura-react.mjs'), 'other bytes');
-    const result = cli('scripts/release-verify-stamp.mjs', dir, catalog, mode);
+    const result = cli('scripts/release-verify-stamp.mjs', dir, catalog);
     expect([result.status, result.stderr]).toEqual([1, expect.stringContaining('FAIL react.integrity')]);
   });
 });
 
 describe('QA-09: the release check is not blind', () => {
-  const expected = { base: 'https://cdn.example/', wcSri: 'sha384-wc', reactSri: 'sha384-react' };
+  const expected = { tag: TAG, wcSri: 'sha384-wc', reactSri: 'sha384-react' };
 
   it('QA-09: the unstamped source fails it', () => {
     expect(verifyStamp.checkStamped(SOURCE, expected).length).toBeGreaterThan(0);
@@ -75,5 +73,10 @@ describe('QA-09: the release check is not blind', () => {
   it('QA-09: a placeholder in a description is caught', () => {
     const stamped = stamp.stampCatalog(SOURCE, expected).replace('"description": "Where', '"description": "__RELEASE_TAG__ Where');
     expect(verifyStamp.checkStamped(stamped, expected)).toEqual([expect.stringContaining('__RELEASE_TAG__')]);
+  });
+
+  it('QA-09: an install line for another tag is caught', () => {
+    const stamped = stamp.stampCatalog(SOURCE, expected).replace('#v0.2.0"', '#v0.1.4"');
+    expect(verifyStamp.checkStamped(stamped, expected)).toEqual([expect.stringContaining('react.install is npm i github:kaltura/kaltura-a2ui-components#v0.1.4')]);
   });
 });

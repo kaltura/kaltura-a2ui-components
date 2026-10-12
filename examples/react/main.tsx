@@ -1,5 +1,5 @@
 // A2UI messages in, Kaltura components out. Needs a build: npm run build.
-// In your own app, import from '@kaltura/a2ui-react' (npm i @kaltura/a2ui-react).
+// In your own app, import from '@kaltura/a2ui-react' (npm i github:kaltura/kaltura-a2ui-components#v0.2.0).
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { A2uiSurface } from '@a2ui/react/v0_9';

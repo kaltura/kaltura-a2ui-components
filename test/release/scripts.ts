@@ -11,32 +11,36 @@ export interface Retry {
 export interface Hashes {
   version: string;
   cdn: Record<string, string>;
-  tarball: { name: string; integrity: string };
 }
 
 export interface ReleaseScripts {
   check: {
-    parseTag(tag: string): { version: string; npmTag: string };
-    checkRelease(tag: string, pkg: { version: string; private?: boolean }): { version: string; npmTag: string };
+    parseVersion(version: string): { version: string; tag: string; prerelease: boolean };
+    parseTag(tag: string): { version: string; tag: string; prerelease: boolean };
+    changelogSection(changelog: string, version: string): { date: string; body: string };
+    checkRelease(version: string, inputs: { pkg: { version: string; private?: boolean }; changelog: string }): { version: string; tag: string; prerelease: boolean };
+  };
+  notes: {
+    releaseNotes(options: { changelog: string; version: string; hashes: Hashes }): string;
   };
   stamp: {
+    GH_REPO: string;
     sri(bytes: Uint8Array | string, algorithm?: string): string;
-    cdnBase(mode: string, parts: { name: string; version: string; tag: string }): string;
-    stampCatalog(text: string, options: { base: string; wcSri: string; reactSri: string }): string;
+    cdnBase(tag: string, origin?: string): string;
+    stampCatalog(text: string, options: { tag: string; base?: string; wcSri: string; reactSri: string }): string;
   };
   verifyStamp: {
-    checkStamped(text: string, options: { base: string; wcSri: string; reactSri: string }): string[];
+    checkStamped(text: string, options: { tag: string; base?: string; wcSri: string; reactSri: string }): string[];
   };
   hashes: {
     CDN_FILES: string[];
-    buildHashes(options: { version: string; read(path: string): Uint8Array; tarballName: string; tarballBytes: Uint8Array }): Hashes;
+    buildHashes(options: { version: string; read(path: string): Uint8Array }): Hashes;
     sha256sums(files: { name: string; bytes: Uint8Array }[]): string;
   };
   verify: {
     getWithRetry(url: string, retry?: Retry): Promise<{ bytes: Buffer; headers: Headers }>;
-    resolveLatest(options: { name: string; registryUrl: string }): Promise<{ version: string } | undefined>;
-    verifyRegistry(options: { registryUrl: string; name: string; version: string; integrity: string; retry?: Retry }): Promise<string[]>;
-    verifyCdn(options: { base: string; expected?: Record<string, string>; retry?: Retry }): Promise<string[]>;
+    resolveLatest(options: { apiUrl: string; repo: string; token?: string }): Promise<{ tag: string; hashesUrl?: string } | undefined>;
+    verifyCdn(options: { base: string; catalogBase?: string; expected?: Record<string, string>; retry?: Retry }): Promise<string[]>;
   };
   smoke: {
     REGIONS: string[];
@@ -47,13 +51,14 @@ export interface ReleaseScripts {
 const load = <T>(name: string) => import(/* @vite-ignore */ pathToFileURL(resolve(process.cwd(), 'scripts', name)).href) as Promise<T>;
 
 export async function loadScripts(): Promise<ReleaseScripts> {
-  const [check, stamp, verifyStamp, hashes, verify, smoke] = await Promise.all([
+  const [check, notes, stamp, verifyStamp, hashes, verify, smoke] = await Promise.all([
     load<ReleaseScripts['check']>('release-check.mjs'),
+    load<ReleaseScripts['notes']>('release-notes.mjs'),
     load<ReleaseScripts['stamp']>('stamp-catalog.mjs'),
     load<ReleaseScripts['verifyStamp']>('release-verify-stamp.mjs'),
     load<ReleaseScripts['hashes']>('release-hashes.mjs'),
     load<ReleaseScripts['verify']>('verify-cdn.mjs'),
     load<ReleaseScripts['smoke']>('release-unisphere-smoke.mjs'),
   ]);
-  return { check, stamp, verifyStamp, hashes, verify, smoke };
+  return { check, notes, stamp, verifyStamp, hashes, verify, smoke };
 }

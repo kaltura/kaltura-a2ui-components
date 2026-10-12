@@ -44,9 +44,9 @@ describe('x-kaltura-adapters', () => {
     expect(adapters.repository).toBe('https://github.com/kaltura/kaltura-a2ui-components');
   });
 
-  it('describes the react ESM adapter (npm + jsDelivr) keyed to the release tag', () => {
+  it('describes the react ESM adapter (git install + jsDelivr) keyed to the release tag', () => {
     expect(adapters.react.format).toBe('esm');
-    expect(adapters.react.npm).toBe('@kaltura/a2ui-react');
+    expect(adapters.react.install).toBe('npm i github:kaltura/kaltura-a2ui-components#__RELEASE_TAG__');
     expect(adapters.react.cdn).toContain('cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@');
     expect(adapters.react.cdn).toContain('/dist/kaltura-react.mjs');
     expect(adapters.react.exports).toContain('buildKalturaCatalog');

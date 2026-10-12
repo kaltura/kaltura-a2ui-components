@@ -5,13 +5,13 @@
   "description": "A2UI catalog for Kaltura Experience Components — Player v7, Flashcards, Media Manager, and more. Freestanding schema with all types inlined. Extends the basic A2UI catalog with rich media components backed by the Kaltura platform.",
   "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json",
   "x-kaltura-adapters": {
-    "description": "Where tier-1 A2UI clients can load the renderers backing this catalog's components. Published from github.com/kaltura/kaltura-a2ui-components. The CDN URLs and the SRI hashes are placeholders in source. That repo's release workflow fills them in the CI build workspace only and never commits the result.",
+    "description": "Where tier-1 A2UI clients can load the renderers backing this catalog's components. Served by jsDelivr from the git tags of github.com/kaltura/kaltura-a2ui-components. Not on npm. In source, the tag and the SRI hashes are placeholders. The release workflow fills them in and commits the result only in the release commit the tag points to.",
     "package": "@kaltura/a2ui-react",
     "repository": "https://github.com/kaltura/kaltura-a2ui-components",
     "react": {
       "description": "ESM bundle. React is an external peer — the host provides it. Register the Kaltura components by merging them into the host's catalog (see buildKalturaCatalog / kalturaReactCatalog).",
       "format": "esm",
-      "npm": "@kaltura/a2ui-react",
+      "install": "npm i github:kaltura/kaltura-a2ui-components#__RELEASE_TAG__",
       "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@__RELEASE_TAG__/dist/kaltura-react.mjs",
       "integrity": "__REACT_SRI__",
       "exports": ["kalturaReactCatalog", "buildKalturaCatalog", "loadKalturaCatalog", "kalturaComponentImpls", "kalturaClientFunctions"]

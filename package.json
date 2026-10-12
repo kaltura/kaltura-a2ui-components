@@ -1,6 +1,7 @@
 {
   "name": "@kaltura/a2ui-react",
-  "version": "0.1.4",
+  "version": "0.2.0",
+  "private": true,
   "description": "Kaltura Experience Components for A2UI: Player, Flashcards, Media Manager, Recorder, Captions Editor, Analytics, Genie, Content Lab, Avatar, VOD Avatar, Agents Widget and Chart. A React catalog for A2UI clients and a self-contained web component bundle for plain HTML pages.",
   "license": "AGPL-3.0-only",
   "type": "module",
@@ -58,6 +59,7 @@
     "release:check": "node scripts/release-check.mjs",
     "release:stamp": "node scripts/stamp-catalog.mjs",
     "release:hashes": "node scripts/release-hashes.mjs",
+    "release:notes": "node scripts/release-notes.mjs",
     "release:verify": "node scripts/verify-cdn.mjs",
     "release:smoke": "node scripts/release-unisphere-smoke.mjs"
   },

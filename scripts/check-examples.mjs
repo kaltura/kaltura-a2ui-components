@@ -22,7 +22,7 @@ import { chromium } from '@playwright/test';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const work = join(root, 'node_modules', '.cache', 'check-examples');
-const CDN_SCRIPT = /https:\/\/cdn\.jsdelivr\.net\/npm\/@kaltura\/a2ui-react@[^/"']+\/dist\/kaltura-wc\.js/g;
+const CDN_SCRIPT = /https:\/\/cdn\.jsdelivr\.net\/gh\/kaltura\/kaltura-a2ui-components@[^/"']+\/dist\/kaltura-wc\.js/g;
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.map': 'application/json' };
 
 const failures = [];
@@ -103,7 +103,7 @@ for (const [index, block] of blocks.entries()) {
   const dir = join(work, `readme-${index}`);
   mkdirSync(dir, { recursive: true });
   if (block.lang === 'html') {
-    if (block.code.search(CDN_SCRIPT) === -1) fail(`${name}: the page must load the CDN script https://cdn.jsdelivr.net/npm/@kaltura/a2ui-react@<version>/dist/kaltura-wc.js`);
+    if (block.code.search(CDN_SCRIPT) === -1) fail(`${name}: the page must load the CDN script https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v<version>/dist/kaltura-wc.js`);
     writeFileSync(join(dir, 'index.html'), block.code.replace(CDN_SCRIPT, '/dist/kaltura-wc.js').replace(/\s+integrity="[^"]*"/g, '').replace(/\s+crossorigin="[^"]*"/g, ''));
     pages.push({ name, path: `/node_modules/.cache/check-examples/readme-${index}/index.html`, expect: block.expect });
   } else {

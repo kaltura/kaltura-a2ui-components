@@ -4,8 +4,9 @@ node_modules/
 .vite/
 *.tsbuildinfo
 
-# dist/ is never committed. release.yml builds it on a v* tag and publishes it
-# to npm. jsDelivr serves the npm package. CI fails if dist/ is tracked.
+# dist/ is never committed to main. release.yml force-adds the CI build only in
+# the release commit a v* tag points to. jsDelivr serves that tag. CI fails if
+# dist/ is tracked.
 dist/
 
 # test and tooling output
