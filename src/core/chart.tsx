@@ -12,6 +12,8 @@ import {
   SourceDataTable,
   ChartErrorBoundary,
 } from './charts';
+import { KalturaChartApi } from '../schemas/chart';
+import { withValidatedProps } from './validate-props';
 
 export type ChartType =
   | 'line' | 'bar' | 'area' | 'pie' | 'scatter'
@@ -39,7 +41,7 @@ export interface ChartCoreProps {
   annotations?: ChartAnnotation[];
 }
 
-export function ChartCore(props: ChartCoreProps) {
+function ChartView(props: ChartCoreProps) {
   const height = props.height || 300;
 
   const { xKey, yKeys } = useMemo(() => {
@@ -120,3 +122,5 @@ export function ChartCore(props: ChartCoreProps) {
     </div>
   );
 }
+
+export const ChartCore = withValidatedProps(KalturaChartApi.schema, 'chart', ChartView);

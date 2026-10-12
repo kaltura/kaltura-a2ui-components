@@ -62,7 +62,7 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session token for access-controlled content. USER KS (type=0)."
+              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Player guide lists, for example setrole:PLAYBACK_BASE_ROLE and sview:<entryId>."
             },
             "autoplay": {
               "$ref": "#/$defs/DynamicBoolean",
@@ -187,11 +187,11 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session token. ADMIN KS (type=2) for manage mode, USER KS (type=0) for select mode."
+              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Media Manager widget guide lists."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Unisphere CDN URL (e.g. 'https://cdnapisec.kaltura.com')."
+              "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "theme": {
               "type": "string",
@@ -236,7 +236,7 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session token (KMC ADMIN KS required for analytics access)."
+              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. The Analytics guide requires an ADMIN KS (type=2). The host must mint it on the server with a short TTL and narrow privileges, for example setrole and iprestrict."
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
@@ -276,7 +276,7 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session token with captions edit permission."
+              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Captions Studio guide lists, including caption edit permission."
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
@@ -308,7 +308,7 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session token with media upload permission."
+              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Express Recorder guide lists, for example editadmintags:*."
             },
             "uiconfId": {
               "type": "integer",
@@ -388,11 +388,11 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session token."
+              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Genie widget guide lists, for example setrole:PLAYBACK_BASE_ROLE."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Unisphere CDN URL (e.g. 'https://cdnapisec.kaltura.com')."
+              "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "categoryId": {
               "$ref": "#/$defs/DynamicString",
@@ -424,11 +424,11 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session token."
+              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Content Lab widget guide lists."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Unisphere CDN URL (e.g. 'https://cdnapisec.kaltura.com')."
+              "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
@@ -456,11 +456,11 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session token."
+              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the Agents widget guide lists."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Unisphere CDN URL (e.g. 'https://cdnapisec.kaltura.com')."
+              "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "agentId": {
               "$ref": "#/$defs/DynamicString",
@@ -488,11 +488,11 @@
             },
             "ks": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session token."
+              "description": "Kaltura Session (KS). Bind it from the host session, for example {\"path\": \"/session/ks\"}. Never write a literal KS. Use a USER KS (type=0) with only the privileges the VOD Avatar widget guide lists."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Unisphere CDN URL (e.g. 'https://cdnapisec.kaltura.com')."
+              "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",

@@ -1,4 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { loadUnisphereModule } from './unisphere-loader';
+import { renderLoadError } from './render-load-error';
+import { KalturaMediaManagerApi } from '../schemas/media-manager';
+import { withValidatedProps } from './validate-props';
+
+export { deriveLoaderUrl } from './unisphere-loader';
 
 export interface MediaManagerCoreProps {
   partnerId: number;
@@ -15,11 +21,6 @@ export interface MediaManagerCoreProps {
 interface SelectedEntry {
   entryId: string;
   name: string;
-}
-
-/** Derives the Unisphere loader URL from the base serverUrl. */
-export function deriveLoaderUrl(serverUrl: string): string {
-  return serverUrl.replace(/\/v1\/?$/, '/v1/loader/index.esm.js');
 }
 
 /** Builds the createWorkspace config for an isolated Media Manager instance. */
@@ -66,7 +67,7 @@ export function buildWorkspaceConfig(props: {
   };
 }
 
-export function MediaManagerCore(props: MediaManagerCoreProps) {
+function MediaManagerView(props: MediaManagerCoreProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const runtimeRef = useRef<unknown>(null);
   const visualIdRef = useRef<string | null>(null);
@@ -85,14 +86,13 @@ export function MediaManagerCore(props: MediaManagerCoreProps) {
       props.theme ??
       (document.documentElement.getAttribute('data-theme') as 'dark' | 'light') ??
       'dark';
-    const loaderUrl = deriveLoaderUrl(props.serverUrl);
 
     const context = props.contextId
       ? { type: 'category', initialCategoryId: props.contextId }
       : { type: 'myMedia' };
 
-    import(/* @vite-ignore */ loaderUrl)
-      .then(async (mod: { createWorkspace?: (cfg: unknown) => Promise<unknown> }) => {
+    loadUnisphereModule<{ createWorkspace?: (cfg: unknown) => Promise<unknown> }>(props.serverUrl)
+      .then(async mod => {
         if (cancelled) return;
         const { createWorkspace } = mod;
         if (!createWorkspace) return;
@@ -157,10 +157,7 @@ export function MediaManagerCore(props: MediaManagerCoreProps) {
       .catch(err => {
         if (cancelled) return;
         console.error('[MediaManager] Load failed:', err);
-        const loadErr = err as { message?: string };
-        if (container) {
-          container.innerHTML = `<div style="padding:20px;color:#ff6b6b;text-align:center">Failed to load Media Manager: ${loadErr.message ?? String(err)}</div>`;
-        }
+        renderLoadError(container, 'Media Manager', err);
       });
 
     return () => {
@@ -221,3 +218,5 @@ export function MediaManagerCore(props: MediaManagerCoreProps) {
     </div>
   );
 }
+
+export const MediaManagerCore = withValidatedProps(KalturaMediaManagerApi.schema, 'Media Manager', MediaManagerView);

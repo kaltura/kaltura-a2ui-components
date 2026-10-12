@@ -1,0 +1,287 @@
+// Covers: SEC-03, SEC-07, SEC-11, SEC-12 root cause (core components trusted raw agent props).
+// Plan item 1.5: every core component checks its resolved props and shows a plain-text error.
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { createElement, act } from 'react';
+import { createRoot } from 'react-dom/client';
+import { MessageProcessor } from '@a2ui/web_core/v0_9';
+import { A2uiSurface } from '@a2ui/react/v0_9';
+import { mount } from '../helpers/render';
+import { invalidProps } from '../../src/core/validate-props';
+import { isEntryId } from '../../src/core/ids';
+import { kalturaReactCatalog, KALTURA_CATALOG_ID } from '../../src/adapters/react/index';
+import { KalturaPlayerApi } from '../../src/schemas/player';
+import { KalturaFlashcardsApi } from '../../src/schemas/flashcards';
+import { KalturaMediaManagerApi } from '../../src/schemas/media-manager';
+import { KalturaAnalyticsApi } from '../../src/schemas/analytics';
+import { KalturaCaptionsEditorApi } from '../../src/schemas/captions-editor';
+import { KalturaRecorderApi } from '../../src/schemas/recorder';
+import { KalturaAvatarApi } from '../../src/schemas/avatar';
+import { KalturaGenieApi } from '../../src/schemas/genie';
+import { KalturaContentLabApi } from '../../src/schemas/content-lab';
+import { KalturaAgentsWidgetApi } from '../../src/schemas/agents-widget';
+import { KalturaVodAvatarApi } from '../../src/schemas/vod-avatar';
+import { KalturaChartApi } from '../../src/schemas/chart';
+
+const SERVER_URL = 'https://unisphere.nvp1.ovp.kaltura.com/v1';
+const calls = vi.hoisted(() => ({ loader: 0, createWorkspace: 0 }));
+
+// A harmless loader, so valid Unisphere widgets can start without network.
+vi.mock('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js', () => ({
+  loader: async () => {
+    calls.loader++;
+    return { kill() {} };
+  },
+  createWorkspace: async () => {
+    calls.createWorkspace++;
+    return new Promise(() => {});
+  },
+}));
+
+(globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
+  observe() {}
+  disconnect() {}
+  unobserve() {}
+};
+
+afterEach(() => {
+  document.body.innerHTML = '';
+  calls.loader = 0;
+  calls.createWorkspace = 0;
+});
+
+const base = { partnerId: 1, ks: 'dummy-ks' };
+const unisphere = { ...base, serverUrl: SERVER_URL };
+
+type Entry = {
+  label: string;
+  load: () => Promise<unknown>;
+  api: { name: string; schema: never };
+  valid: Record<string, unknown>;
+};
+
+const ENTRIES: Entry[] = [
+  { label: 'player', load: async () => (await import('../../src/core/player')).PlayerCore, api: KalturaPlayerApi as never, valid: { ...base, uiconfId: 2, entryId: '0_abc' } },
+  { label: 'flashcards', load: async () => (await import('../../src/core/flashcards')).FlashcardsCore, api: KalturaFlashcardsApi as never, valid: { title: 'Deck', cards: [{ title: 'C', content: 'x', clips: [{ entryId: '0_abc', startTime: 0, endTime: 1 }] }] } },
+  { label: 'Media Manager', load: async () => (await import('../../src/core/media-manager')).MediaManagerCore, api: KalturaMediaManagerApi as never, valid: unisphere },
+  { label: 'analytics', load: async () => (await import('../../src/core/analytics')).AnalyticsCore, api: KalturaAnalyticsApi as never, valid: base },
+  { label: 'captions editor', load: async () => (await import('../../src/core/captions-editor')).CaptionsEditorCore, api: KalturaCaptionsEditorApi as never, valid: { ...base, entryId: '0_abc' } },
+  { label: 'recorder', load: async () => (await import('../../src/core/recorder')).RecorderCore, api: KalturaRecorderApi as never, valid: base },
+  { label: 'avatar', load: async () => (await import('../../src/core/avatar')).AvatarCore, api: KalturaAvatarApi as never, valid: { avatarId: 'a1' } },
+  { label: 'Kaltura Genie', load: async () => (await import('../../src/core/genie')).GenieCore, api: KalturaGenieApi as never, valid: unisphere },
+  { label: 'Kaltura Content Lab', load: async () => (await import('../../src/core/content-lab')).ContentLabCore, api: KalturaContentLabApi as never, valid: unisphere },
+  { label: 'Kaltura AI Agents', load: async () => (await import('../../src/core/agents-widget')).AgentsWidgetCore, api: KalturaAgentsWidgetApi as never, valid: unisphere },
+  { label: 'Kaltura VOD Avatar', load: async () => (await import('../../src/core/vod-avatar')).VodAvatarCore, api: KalturaVodAvatarApi as never, valid: { ...unisphere, entryId: '0_abc' } },
+  { label: 'chart', load: async () => (await import('../../src/core/chart')).ChartCore, api: KalturaChartApi as never, valid: { chartType: 'bar', data: [{ n: 'a', v: 1 }] } },
+];
+
+const byLabel = (label: string) => ENTRIES.find(e => e.label === label)!;
+const HOSTILE = '<img src=x onerror="window.__pwned=1">';
+
+describe('SEC-03: valid props still render every component', () => {
+  it.each(ENTRIES.map(e => [e.label] as const))('SEC-03: %s renders without an error box', async label => {
+    const entry = byLabel(label);
+    const { container } = await mount(await entry.load(), entry.valid);
+    expect([container.querySelector('.kaltura-load-error'), container.firstElementChild === null]).toEqual([null, false]);
+  });
+
+  it('SEC-03: valid Unisphere props reach the loader', async () => {
+    const entry = byLabel('Kaltura Genie');
+    await mount(await entry.load(), entry.valid);
+    expect(calls.loader).toBe(1);
+  });
+});
+
+// [component label, props, the one prop that must be named in the error]
+const BAD: Array<[string, Record<string, unknown>, string]> = [
+  ['player', { ...base, uiconfId: 2, entryId: '0_abc', partnerId: '1/../x' }, 'partnerId'],
+  ['player', { ...base, uiconfId: 1.5, entryId: '0_abc' }, 'uiconfId'],
+  ['player', { ...base, uiconfId: 2, entryId: 'a/b' }, 'entryId'],
+  ['player', { ...base, uiconfId: 2, entryId: { path: '/not/resolved' } }, 'entryId'],
+  ['player', { ...base, uiconfId: 2, entryId: '0_abc', ks: 'a\nb' }, 'ks'],
+  ['player', { ...base, uiconfId: 2, entryId: '0_abc', autoplay: 'yes' }, 'autoplay'],
+  ['flashcards', { title: 'D', cards: 'not an array' }, 'cards'],
+  ['flashcards', { title: 'D', cards: [{ title: 'C', content: 'x', clips: [{ entryId: '../x', startTime: 0, endTime: 1 }] }] }, 'cards.0.clips.0.entryId'],
+  ['flashcards', { title: 'D', cards: [{ title: 'C' }] }, 'cards.0.content'],
+  ['flashcards', { title: 'D', cards: [], ks: { path: '/x' } }, 'ks'],
+  ['Media Manager', { ...unisphere, partnerId: -1 }, 'partnerId'],
+  ['Media Manager', { partnerId: 1, serverUrl: SERVER_URL }, 'ks'],
+  ['Media Manager', { ...unisphere, mode: 'admin' }, 'mode'],
+  ['Media Manager', { ...unisphere, theme: 'neon' }, 'theme'],
+  ['analytics', { ...base, partnerId: '1&serviceurl=https://evil.example' }, 'partnerId'],
+  ['analytics', { ...base, entryId: 'a b' }, 'entryId'],
+  ['analytics', { ...base, ks: '' }, 'ks'],
+  ['captions editor', base, 'entryId'],
+  ['captions editor', { ...base, entryId: '0_abc', uiconfId: 0 }, 'uiconfId'],
+  ['recorder', { ...base, uiconfId: null }, 'uiconfId'],
+  ['avatar', {}, 'avatarId'],
+  ['avatar', { avatarId: 7 }, 'avatarId'],
+  ['avatar', { avatarId: 'a1', autoStart: 'true' }, 'autoStart'],
+  ['Kaltura Genie', { ...unisphere, ks: undefined }, 'ks'],
+  ['Kaltura Genie', { ...unisphere, partnerId: 0 }, 'partnerId'],
+  ['Kaltura Content Lab', { ...unisphere, entryId: '../x' }, 'entryId'],
+  ['Kaltura AI Agents', { ...unisphere, agentId: 5 }, 'agentId'],
+  ['Kaltura VOD Avatar', unisphere, 'entryId'],
+  ['chart', { chartType: 'pie-of-doom', data: [{ a: 1 }] }, 'chartType'],
+  ['chart', { chartType: 'bar', data: [null] }, 'data.0'],
+  ['chart', { chartType: 'bar', data: 'rows' }, 'data'],
+  ['chart', { chartType: 'bar', data: [{ a: 1 }], height: '300' }, 'height'],
+];
+
+describe('SEC-03: invalid props show a plain-text error and never the widget', () => {
+  it.each(BAD.map(([label, props, field]) => [label, field, props] as const))(
+    'SEC-03: %s with bad %s',
+    async (label, field, props) => {
+      const entry = byLabel(label);
+      const { container } = await mount(await entry.load(), props as Record<string, unknown>);
+      // Recorder keeps its error inside its own container, the others render the box alone.
+      const box = container.querySelector('.kaltura-load-error');
+      expect(box?.textContent).toBe(`Failed to load ${label}: Invalid ${field}`);
+      expect([container.querySelectorAll('iframe').length, calls.loader, calls.createWorkspace]).toEqual([0, 0, 0]);
+    },
+  );
+
+  it('SEC-03: the error names props only and never echoes the value', async () => {
+    const entry = byLabel('player');
+    const { container } = await mount(await entry.load(), { ...base, uiconfId: 2, entryId: HOSTILE });
+    expect([container.textContent, container.querySelectorAll('*').length]).toEqual(['Failed to load player: Invalid entryId', 1]);
+  });
+
+  it('SEC-03: hostile prop names in the payload are not echoed', async () => {
+    const entry = byLabel('analytics');
+    const { container } = await mount(await entry.load(), { ...base, [HOSTILE]: 1, partnerId: 'x' });
+    expect(container.textContent).not.toContain('<img');
+  });
+
+  it('SEC-03: a bad flashcards partnerId still shows the deck (clips are checked on their own, SEC-11)', async () => {
+    const entry = byLabel('flashcards');
+    const { container } = await mount(await entry.load(), { ...entry.valid, partnerId: '1/../x' });
+    expect(container.querySelector('.kaltura-load-error')).toBeNull();
+  });
+
+  it('SEC-03: a prop that turns bad after the first render replaces the widget with the error', async () => {
+    const entry = byLabel('analytics');
+    const Component = (await entry.load()) as never;
+    const { container, root } = await mount(Component, base);
+    await act(async () => root.render(createElement(Component, { ...base, partnerId: 'x' })));
+    expect([container.querySelectorAll('iframe').length, container.querySelectorAll('.kaltura-load-error').length]).toEqual([0, 1]);
+  });
+});
+
+describe('SEC-03: resolved props never carry bindings or function calls', () => {
+  const dynamicKeys = (api: Entry['api']) => {
+    const shape = (api.schema as { shape: Record<string, { _def: Record<string, unknown> }> }).shape;
+    return Object.entries(shape)
+      .filter(([, field]) => {
+        const inner = (field._def.innerType ?? field) as { _def: { description?: string } };
+        return String(inner._def.description ?? '').includes('$defs/Dynamic');
+      })
+      .map(([key]) => key);
+  };
+
+  const cases = ENTRIES.flatMap(e => dynamicKeys(e.api).map(key => [e.label, key] as const));
+
+  it('SEC-03: the schemas have dynamic props to check', () => {
+    expect(cases.length).toBeGreaterThan(30);
+  });
+
+  it.each(cases)('SEC-03: %s: %s rejects a path binding and a function call', (label, key) => {
+    const entry = byLabel(label);
+    const schema = entry.api.schema;
+    // A literal passes where a binding does not. Leave the prop unset first, so the base stays valid.
+    expect(invalidProps(schema, entry.valid)).toEqual([]);
+    expect(invalidProps(schema, { ...entry.valid, [key]: { path: '/x' } })).toContain(key);
+    expect(invalidProps(schema, { ...entry.valid, [key]: { call: 'now', args: {} } })).toContain(key);
+  });
+});
+
+describe('SEC-11: schema ids and the core id check agree', () => {
+  const clipSchema = (KalturaFlashcardsApi.schema.shape.cards.element.shape.clips.unwrap().element) as {
+    shape: { entryId: { safeParse(v: unknown): { success: boolean } } };
+  };
+  const ids = ['0_abc', '1_abc12345', 'a', '_', '0'.repeat(64), '0'.repeat(65), '', 'a/b', '../x', 'a b', '1_a\n', 'é', '１_abc', 'a-b', '1_a?x=1'];
+
+  it.each(ids.map(id => [id] as const))('SEC-11: clip entryId %j matches isEntryId', id => {
+    expect(clipSchema.shape.entryId.safeParse(id).success).toBe(isEntryId(id));
+  });
+
+  it.each([0, -1, 1.5, NaN, Infinity, '1', null])('SEC-03: plain partnerId schemas reject %j', value => {
+    expect(KalturaGenieApi.schema.shape.partnerId.safeParse(value).success).toBe(false);
+  });
+});
+
+describe('SEC-03: real A2UI pipeline, bound values resolve before the check', () => {
+  async function renderSurface(component: Record<string, unknown>, data: Record<string, unknown>) {
+    const processor = new MessageProcessor([kalturaReactCatalog]);
+    processor.processMessages([
+      { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
+      { version: 'v0.9', updateDataModel: { surfaceId: 's', path: '/', value: data } },
+      { version: 'v0.9', updateComponents: { surfaceId: 's', components: [{ id: 'root', ...component }] } },
+    ] as never);
+    const surface = processor.model.getSurface('s');
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    await act(async () => {
+      createRoot(container).render(createElement(A2uiSurface, { surface: surface! }));
+    });
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 30));
+    });
+    return container;
+  }
+
+  const session = { session: { ks: 'ks-from-host' } };
+  const bound = { ks: { path: '/session/ks' } };
+
+  it('SEC-03: a KS bound from the host session renders the player', async () => {
+    const container = await renderSurface(
+      { component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: '0_abc', ...bound },
+      session,
+    );
+    expect(container.querySelector('iframe')!.getAttribute('src')).toContain('ks=ks-from-host');
+  });
+
+  it('SEC-03: an unset optional binding does not fail the component', async () => {
+    const container = await renderSurface(
+      { component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: '0_abc', entryName: { path: '/missing' } },
+      session,
+    );
+    expect(container.querySelector('.kaltura-load-error')).toBeNull();
+  });
+
+  it('SEC-03: a required binding with no data shows the error, not the widget', async () => {
+    const container = await renderSurface(
+      { component: 'KalturaAnalytics', partnerId: 1, ...bound },
+      {},
+    );
+    expect([container.querySelectorAll('iframe').length, container.textContent]).toEqual([0, 'Failed to load analytics: Invalid ks']);
+  });
+
+  it('SEC-03: a hostile entryId arriving through the data model is refused', async () => {
+    const container = await renderSurface(
+      { component: 'KalturaCaptionsEditor', partnerId: 1, ...bound, entryId: { path: '/entry' } },
+      { ...session, entry: '1_abc&serviceurl=https://evil.example' },
+    );
+    expect([container.querySelectorAll('iframe').length, container.textContent]).toEqual([0, 'Failed to load captions editor: Invalid entryId']);
+  });
+
+  it('SEC-03: flashcards with a bound KS and nested bound text render', async () => {
+    const container = await renderSurface(
+      {
+        component: 'KalturaFlashcards',
+        title: { path: '/title' },
+        cards: [{ title: { path: '/title' }, content: 'x', clips: [{ entryId: '0_abc', startTime: 0, endTime: 1 }] }],
+        ...bound,
+      },
+      { ...session, title: 'Deck' },
+    );
+    expect([container.querySelector('.kaltura-load-error'), container.textContent]).toEqual([null, expect.stringContaining('Deck')]);
+  });
+
+  it('SEC-03: a Genie widget with a bound KS reaches the loader', async () => {
+    await renderSurface(
+      { component: 'KalturaGenie', partnerId: 1, serverUrl: SERVER_URL, ...bound },
+      session,
+    );
+    expect(calls.loader).toBe(1);
+  });
+});

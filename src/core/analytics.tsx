@@ -1,4 +1,7 @@
 import type { FC } from 'react';
+import { isEntryId, isPositiveInt } from './ids';
+import { KalturaAnalyticsApi } from '../schemas/analytics';
+import { withValidatedProps } from './validate-props';
 
 export interface AnalyticsCoreProps {
   partnerId: number;
@@ -10,18 +13,23 @@ export interface AnalyticsCoreProps {
 }
 
 export function buildAnalyticsUrl(p: AnalyticsCoreProps): string {
-  let src =
-    `https://kmc.kaltura.com/index.php/kmcng/analytics` +
-    `?ks=${encodeURIComponent(p.ks)}&partnerId=${p.partnerId}`;
-  if (p.entryId) src += `&entryId=${encodeURIComponent(p.entryId)}`;
-  if (p.reportType) src += `&reportType=${encodeURIComponent(p.reportType)}`;
-  if (p.fromDate) src += `&fromDate=${encodeURIComponent(p.fromDate)}`;
-  if (p.toDate) src += `&toDate=${encodeURIComponent(p.toDate)}`;
-  return src;
+  if (!isPositiveInt(p.partnerId)) throw new Error('Invalid partnerId');
+  if (p.entryId && !isEntryId(p.entryId)) throw new Error('Invalid entryId');
+  const params = new URLSearchParams({ ks: p.ks, partnerId: String(p.partnerId) });
+  if (p.entryId) params.set('entryId', p.entryId);
+  if (p.reportType) params.set('reportType', p.reportType);
+  if (p.fromDate) params.set('fromDate', p.fromDate);
+  if (p.toDate) params.set('toDate', p.toDate);
+  return `https://kmc.kaltura.com/index.php/kmcng/analytics?${params}`;
 }
 
-export const AnalyticsCore: FC<AnalyticsCoreProps> = (props) => {
-  const src = buildAnalyticsUrl(props);
+const AnalyticsView: FC<AnalyticsCoreProps> = (props) => {
+  let src: string;
+  try {
+    src = buildAnalyticsUrl(props);
+  } catch (e) {
+    return <div className="kaltura-load-error">Failed to load analytics: {(e as Error).message}</div>;
+  }
   return (
     <div className="kaltura-analytics-container" style={{ width: '100%', aspectRatio: '16/9' }}>
       <iframe
@@ -34,3 +42,5 @@ export const AnalyticsCore: FC<AnalyticsCoreProps> = (props) => {
     </div>
   );
 };
+
+export const AnalyticsCore = withValidatedProps(KalturaAnalyticsApi.schema, 'analytics', AnalyticsView);

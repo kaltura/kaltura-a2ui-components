@@ -4,9 +4,9 @@ import { CommonSchemas } from '@a2ui/web_core/v0_9';
 export const KalturaCaptionsEditorApi = {
   name: 'KalturaCaptionsEditor',
   schema: z.object({
-    partnerId: z.number(),
+    partnerId: z.number().int().positive(),
     ks: CommonSchemas.DynamicString,
     entryId: CommonSchemas.DynamicString,
-    uiconfId: z.number().optional(),
+    uiconfId: z.number().int().positive().optional(),
   }),
 };

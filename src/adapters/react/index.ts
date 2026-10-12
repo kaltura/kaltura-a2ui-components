@@ -19,7 +19,7 @@ import { contentLabReactImpl } from './content-lab';
 import { agentsWidgetReactImpl } from './agents-widget';
 import { vodAvatarReactImpl } from './vod-avatar';
 import { chartReactImpl } from './chart';
-import { kalturaClientFunctions } from '../../catalog/client-functions';
+import { kalturaClientFunctions, SafeOpenUrlImplementation } from '../../catalog/client-functions';
 
 export const KALTURA_CATALOG_ID = 'https://kaltura.github.io/a2ui/v1/catalog.json';
 
@@ -50,7 +50,8 @@ export function buildKalturaCatalog(
   return new Catalog<ReactComponentImplementation>(
     id,
     [...basicCatalog.components.values(), ...kalturaComponentImpls],
-    [...basicCatalog.functions.values(), ...kalturaClientFunctions],
+    // Later entries win, so the safe openUrl replaces the basic one.
+    [...basicCatalog.functions.values(), ...kalturaClientFunctions, SafeOpenUrlImplementation],
   );
 }
 
@@ -111,6 +112,8 @@ export {
   type MediaManagerCoreProps,
 } from '../../core/media-manager';
 export { UnisphereWidgetCore, type UnisphereWidgetCoreProps } from '../../core/unisphere-widget';
+// Host option only. Never call this from agent output.
+export { setExtraAllowedOrigins, getExtraAllowedOrigins } from '../../core/unisphere-loader';
 export { AnalyticsCore, buildAnalyticsUrl, type AnalyticsCoreProps } from '../../core/analytics';
 export { CaptionsEditorCore, type CaptionsEditorCoreProps } from '../../core/captions-editor';
 export { RecorderCore, type RecorderCoreProps } from '../../core/recorder';

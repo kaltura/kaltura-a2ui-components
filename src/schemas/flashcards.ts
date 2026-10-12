@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { CommonSchemas } from '@a2ui/web_core/v0_9';
 
 const ClipSchema = z.object({
-  entryId: z.string(),
+  // Same rule as isEntryId in core/ids.ts. A test keeps both in step.
+  entryId: z.string().regex(/^[A-Za-z0-9_]{1,64}$/),
   startTime: z.number(),
   endTime: z.number(),
   title: z.string().optional(),
@@ -22,8 +23,8 @@ export const KalturaFlashcardsApi = {
     title: CommonSchemas.DynamicString,
     summary: CommonSchemas.DynamicString.optional(),
     cards: z.array(CardSchema),
-    partnerId: z.number().optional(),
-    uiconfId: z.number().optional(),
-    ks: z.string().optional(),
+    partnerId: z.number().int().positive().optional(),
+    uiconfId: z.number().int().positive().optional(),
+    ks: CommonSchemas.DynamicString.optional(),
   }),
 };

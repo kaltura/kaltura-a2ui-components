@@ -79,6 +79,9 @@ export {
   defineChartWebComponent,
 };
 
+// Host option for private cloud or on-prem Unisphere hosts. Call it before the widgets load.
+export { setExtraAllowedOrigins, getExtraAllowedOrigins } from '../../core/unisphere-loader';
+
 // Auto-define on import — the IIFE bundle is meant to be dropped into a page via
 // a <script> tag, after which the custom elements are immediately usable.
 defineKalturaWebComponents();

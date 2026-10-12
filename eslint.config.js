@@ -1,10 +1,15 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import { defineConfig } from 'eslint/config';
+import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 // switch to error when Phase 1 lands
 const SECURITY_RULE_LEVEL = 'warn';
+
+// RadarChart calls a hook conditionally (QA-06, Phase 2). Switch to error
+// when that fix lands.
+const HOOKS_RULE_LEVEL = 'warn';
 
 // Banned patterns (SECF-30837 plan 6.3). Each entry is one selector.
 const DYNAMIC_IMPORT = {
@@ -45,26 +50,22 @@ export default defineConfig([
   js.configs.recommended,
   tseslint.configs.recommended,
   {
-    // src/core/player.tsx has an eslint-disable for a react-hooks rule.
-    // eslint-plugin-react-hooks is not installed, so register a no-op rule
-    // to keep ESLint from reporting an unknown rule. Replace with the real
-    // plugin when it is added. The stub never reports, so unused-directive
-    // reporting is off until then.
-    linterOptions: { reportUnusedDisableDirectives: 'off' },
-    plugins: {
-      'react-hooks': { rules: { 'exhaustive-deps': { meta: { schema: [] }, create: () => ({}) } } },
-    },
+    linterOptions: { reportUnusedDisableDirectives: 'error' },
+    plugins: { 'react-hooks': reactHooks },
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
     rules: {
+      'react-hooks/rules-of-hooks': HOOKS_RULE_LEVEL,
+      'react-hooks/exhaustive-deps': 'warn',
       'no-restricted-syntax': [SECURITY_RULE_LEVEL, ...BANNED_EVERYWHERE, DYNAMIC_IMPORT, DANGEROUS_HTML],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
   {
     // Tests, e2e fixtures and scripts build hostile strings and DOM on
-    // purpose. The banned-pattern rules guard shipped code only.
+    // purpose. The banned-pattern rules guard shipped code only. Playwright
+    // fixtures call `use`, which is not a React hook.
     files: ['test/**', 'e2e/**', 'scripts/**', '*.config.*'],
-    rules: { 'no-restricted-syntax': 'off' },
+    rules: { 'no-restricted-syntax': 'off', 'react-hooks/rules-of-hooks': 'off' },
   },
   {
     // These files will legitimately own the loader import() and the

@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { deriveLoaderUrl } from './media-manager';
+import { loadUnisphereModule } from './unisphere-loader';
+import { renderLoadError } from './render-load-error';
 
-export { deriveLoaderUrl };
+export { deriveLoaderUrl } from './unisphere-loader';
 
 export interface UnisphereWidgetCoreProps {
   partnerId: number;
@@ -29,10 +30,9 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
 
     const theme =
       (document.documentElement.getAttribute('data-theme') as 'dark' | 'light') || 'dark';
-    const loaderUrl = deriveLoaderUrl(props.serverUrl);
 
-    import(/* @vite-ignore */ loaderUrl)
-      .then((mod: { loader?: (cfg: unknown) => Promise<unknown> }) => {
+    loadUnisphereModule<{ loader?: (cfg: unknown) => Promise<unknown> }>(props.serverUrl)
+      .then(mod => {
         if (killed) return;
         const { loader } = mod;
         if (!loader) return;
@@ -72,10 +72,7 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
       })
       .catch(err => {
         if (killed) return;
-        const loadErr = err as { message?: string };
-        if (container) {
-          container.innerHTML = `<div style="padding:20px;color:#ff6b6b;text-align:center">Failed to load ${props.label}: ${loadErr.message ?? String(err)}</div>`;
-        }
+        renderLoadError(container, props.label, err);
       });
 
     return () => {
