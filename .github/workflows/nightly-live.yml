@@ -1,8 +1,9 @@
 name: nightly-live
 
 # Read-only smoke test against the live services. It opens no issues: a red run is the signal.
-# 1. The latest npm version on jsDelivr: bytes match its own catalog (SRI) and CORS is set.
-#    Until the package is on npm this prints a notice and passes. A mismatch once a version exists is red.
+# 1. The latest GitHub Release (read with the read-only job token): jsDelivr serves the bytes in its
+#    hashes.json asset at cdn.jsdelivr.net/gh/<repo>@<tag>/ and CORS is set. Until a Release has
+#    hashes.json this prints a notice and passes. A mismatch is red.
 # 2. The Unisphere loader in every allowed region is reachable and exports what the widgets use.
 # Not covered: mounting widgets with a test partner (needs secrets).
 
@@ -32,6 +33,8 @@ jobs:
         with:
           node-version-file: .nvmrc
       - name: jsDelivr bundle and catalog
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: node scripts/verify-cdn.mjs --latest --attempts 3 --delay-ms 20000
       - name: Unisphere loader
         if: ${{ !cancelled() }}

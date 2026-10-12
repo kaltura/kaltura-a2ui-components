@@ -54,6 +54,12 @@ describe('QA-16: docs name real things', () => {
     expect(missing).toEqual([]);
   });
 
+  it('QA-16: README pins the package.json version in every jsDelivr URL and git install line', () => {
+    const { version } = readJson<{ version: string }>('package.json');
+    const pins = [...(text['README.md'] ?? '').matchAll(/kaltura\/kaltura-a2ui-components[@#]([^/\s"'`]+)/g)].map(match => match[1]);
+    expect([pins.length > 0, pins.filter(tag => tag !== `v${version}`)]).toEqual([true, []]);
+  });
+
   it('QA-16: docs/host-api.md names every error code', () => {
     const type = read('src/core/host-hooks.ts').match(/type KalturaErrorCode =([^;]+);/)?.[1] ?? '';
     const codes = [...type.matchAll(/'([a-z-]+)'/g)].map(match => match[1] ?? '');

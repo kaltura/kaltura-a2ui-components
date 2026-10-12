@@ -1,6 +1,6 @@
 // @vitest-environment node
-// Covers: SEC-09 (least privilege, pinned actions, no long-lived npm token), QA-09 (tags never move,
-// dist/ is never committed), SEC-19 (publish is verified against the CDN before the Release).
+// Covers: SEC-09 (least privilege, pinned actions, no npm), QA-09 (tags never move, dist/ is only in
+// the release commit), SEC-19 (jsDelivr bytes are checked against the build).
 // Text checks on .github/workflows. `actionlint` and `zizmor` run in security.yml.
 import { readFileSync, readdirSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
@@ -54,70 +54,100 @@ describe('SEC-09: workflow files', () => {
 });
 
 describe('SEC-09: release.yml jobs', () => {
-  it('SEC-09: runs on v* tags only', () => {
-    expect(release).toMatch(/on:\n {2}push:\n {4}tags:\n {6}- 'v\*'\n/);
+  it('SEC-09: runs by hand only, with a version input', () => {
+    expect(release).toMatch(/\non:\n {2}workflow_dispatch:\n {4}inputs:\n {6}version:\n(?: {8}.*\n)*? {8}type: string\n {8}required: true\n/);
   });
 
-  it('SEC-09: the first job requires the tag commit to be an ancestor of origin/main', () => {
-    expect(releaseJobs['verify-tag']).toContain('git merge-base --is-ancestor "$GITHUB_SHA" origin/main');
+  it('SEC-09: has no push or tag trigger', () => {
+    expect(release.slice(release.indexOf('\non:\n'), release.indexOf('\npermissions:'))).not.toMatch(/^ {2}(push|pull_request|release|schedule):/m);
   });
 
-  it('SEC-09: ci and e2e run again on the tag and the build waits for them', () => {
-    expect(releaseJobs['build']).toMatch(/needs: \[verify-tag, ci, e2e\]/);
+  it('SEC-09: one release at a time, never cancelled', () => {
+    expect(release).toContain('concurrency:\n  group: release\n  cancel-in-progress: false\n');
+  });
+
+  it('SEC-09: the first job requires main and the head of origin/main', () => {
+    const job = releaseJobs['verify-inputs'] ?? '';
+    expect([job.includes(`[ "$GITHUB_REF" = 'refs/heads/main' ]`), job.includes('[ "$head" = "$GITHUB_SHA" ]')]).toEqual([true, true]);
+  });
+
+  it('SEC-09: the first job checks the version and that the tag exists neither locally nor on GitHub', () => {
+    const job = releaseJobs['verify-inputs'] ?? '';
+    expect(['node scripts/release-check.mjs "$VERSION"', 'git rev-parse -q --verify "refs/tags/${TAG}"', 'git ls-remote --tags origin "refs/tags/${TAG}"'].filter(text => !job.includes(text))).toEqual([]);
+  });
+
+  it('SEC-09: ci and e2e run again and the build waits for them', () => {
+    expect(releaseJobs['build']).toMatch(/needs: \[verify-inputs, ci, e2e\]/);
   });
 
   it('SEC-09: the build job is read-only and installs without scripts', () => {
     expect([releaseJobs['build']?.includes('permissions:\n      contents: read\n'), releaseJobs['build']?.includes('npm ci --ignore-scripts')]).toEqual([true, true]);
   });
 
-  it('SEC-09: only publish can mint an OIDC token, and it runs under the release environment', () => {
-    const withToken = Object.entries(releaseJobs).filter(([, job]) => job.includes('id-token: write')).map(([id]) => id);
-    expect([withToken, releaseJobs['publish']?.includes('environment: release')]).toEqual([['publish'], true]);
+  it.each(['contents: write', 'id-token: write', 'attestations: write', 'environment: release'])('SEC-09: only the release job has %s', text => {
+    expect(Object.entries(releaseJobs).filter(([, job]) => job.includes(text)).map(([id]) => id)).toEqual(['release']);
   });
 
-  it('SEC-09: publish runs no repository code: no checkout, no npm scripts', () => {
-    expect(releaseJobs['publish']).not.toMatch(/actions\/checkout|npm (ci|run|install)|npx /);
+  it('SEC-09: the release job runs no repository code', () => {
+    expect(releaseJobs['release']).not.toMatch(/npm |npx |node /);
   });
 
-  it('SEC-09: publish uses provenance and publishes the built tarball', () => {
-    expect(releaseJobs['publish']).toContain('npm publish "$tarball" --access public --provenance --tag "$NPM_TAG"');
+  it('SEC-09: the release job checks the artifact against SHA256SUMS and hashes.json before it commits', () => {
+    const job = releaseJobs['release'] ?? '';
+    const order = ['sha256sum --check --strict SHA256SUMS', 'openssl dgst -sha384 -binary', 'git commit'].map(text => job.indexOf(text));
+    expect([order.includes(-1), order.join() === [...order].sort((x, y) => x - y).join()]).toEqual([false, true]);
   });
 
-  it('SEC-09: only the Release job can write to the repository', () => {
-    const writers = Object.entries(releaseJobs).filter(([, job]) => job.includes('contents: write')).map(([id]) => id);
-    expect(writers).toEqual(['release']);
+  it('SEC-09: the release job attests the bundles, the catalog and the archive', () => {
+    expect(['actions/attest-build-provenance@', 'dist/kaltura-wc.js', 'dist/kaltura-react.mjs', 'src/catalog/kaltura_catalog.json', 'dist.tar.gz'].filter(text => !releaseJobs['release']?.includes(text))).toEqual([]);
   });
 
-  it('SEC-09: publish and the CDN check are skipped unless NPM_PUBLISH is true', () => {
-    expect([releaseJobs['publish'], releaseJobs['verify-cdn']].map(job => job?.includes("needs.build.outputs.npm_publish == 'true'"))).toEqual([true, true]);
+  it('SEC-09: there is no npm publish, no npm token and no registry', () => {
+    expect(release).not.toMatch(/npm publish|NPM_TOKEN|NPM_PUBLISH|registry/);
   });
 
-  it('SEC-09: publish uses the Node major from .nvmrc', () => {
-    expect(releaseJobs['publish']).toContain(`node-version: ${readFileSync('.nvmrc', 'utf8').trim()}\n`);
+  it('SEC-09: package.json is private, so npm publish refuses to run', () => {
+    expect((JSON.parse(readFileSync('package.json', 'utf8')) as { private?: unknown }).private).toBe(true);
   });
 });
 
-describe('QA-09: tags never move and dist/ is never committed', () => {
-  it('QA-09: release.yml has no git write command and no force flag', () => {
-    expect(release).not.toMatch(/git (push|tag|add|commit|config)|--force|-f "/);
+describe('QA-09: tags never move and dist/ is never committed to main', () => {
+  it('QA-09: the only push is the tag', () => {
+    expect([...release.matchAll(/git push[^\n]*/g)].map(match => match[0])).toEqual(['git push origin "refs/tags/$TAG"']);
+  });
+
+  it('QA-09: release.yml has no force flag and never names main in a git write', () => {
+    expect(release).not.toMatch(/--force|\bpush -f\b|\+refs\/|git push[^\n]*main|git tag -f/);
+  });
+
+  it('QA-09: dist/ is force-added only in the release job', () => {
+    expect(Object.entries(releaseJobs).filter(([, job]) => job.includes('git add -f dist')).map(([id]) => id)).toEqual(['release']);
+  });
+
+  it('QA-09: an existing tag on another commit fails the run instead of moving', () => {
+    expect(releaseJobs['release']).toMatch(/elif \[ "\$remote" = "\$commit" \]; then[\s\S]*?else\n[\s\S]*?exit 1/);
+  });
+
+  it('QA-09: the release commit has fixed dates, so a re-run makes the same commit', () => {
+    expect(['date="$(git log -1 --format=%cI "$SHA")"', 'export GIT_AUTHOR_DATE="$date" GIT_COMMITTER_DATE="$date"'].filter(text => !releaseJobs['release']?.includes(text))).toEqual([]);
   });
 
   it('QA-09: the catalog is stamped in the build job from the tag', () => {
-    expect(releaseJobs['build']).toContain('node scripts/stamp-catalog.mjs --mode "$MODE" --tag "$TAG"');
+    expect(releaseJobs['build']).toContain('node scripts/stamp-catalog.mjs --tag "$TAG"');
   });
 
   it('QA-09: the stamped catalog is checked by a script that cannot pass by running nothing', () => {
-    expect(releaseJobs['build']).toContain('node scripts/release-verify-stamp.mjs --mode "$MODE" --tag "$TAG"');
+    expect(releaseJobs['build']).toContain('node scripts/release-verify-stamp.mjs --tag "$TAG"');
   });
 
   it('QA-09: release.yml has no vitest call with a name filter that can match zero tests', () => {
     expect(release).not.toMatch(/vitest|RELEASE_STAMPED/);
   });
 
-  it('QA-09: the stamp check runs after the stamp and before the artifact is packed', () => {
+  it('QA-09: the stamp check runs after the stamp and before the hashes', () => {
     const build = releaseJobs['build'] ?? '';
-    const [stamped, checked, packed] = ['stamp-catalog.mjs', 'release-verify-stamp.mjs', 'release-hashes.mjs'].map(text => build.indexOf(text));
-    expect(stamped !== undefined && checked !== undefined && packed !== undefined && stamped >= 0 && stamped < checked && checked < packed).toBe(true);
+    const [stamped, checked, hashed] = ['stamp-catalog.mjs', 'release-verify-stamp.mjs', 'release-hashes.mjs'].map(text => build.indexOf(text));
+    expect(stamped !== undefined && checked !== undefined && hashed !== undefined && stamped >= 0 && stamped < checked && checked < hashed).toBe(true);
   });
 
   it.each(['ci.yml', 'release.yml'])('QA-09: %s fails when dist/ is tracked', name => {
@@ -129,48 +159,31 @@ describe('QA-09: tags never move and dist/ is never committed', () => {
   });
 });
 
-describe('SEC-09: fallback (NPM_PUBLISH is not true) and dry run', () => {
-  it('SEC-09: can be run by hand with a dry_run input that defaults to true', () => {
-    expect(release).toMatch(/workflow_dispatch:\n {4}inputs:\n {6}dry_run:\n(?: {8}.*\n)*? {8}type: boolean\n {8}default: true\n/);
+describe('SEC-09: dry run', () => {
+  it('SEC-09: the dry_run input defaults to true', () => {
+    expect(release).toMatch(/ {6}dry_run:\n(?: {8}.*\n)*? {8}type: boolean\n {8}default: true\n/);
   });
 
-  it('SEC-09: a dry run turns publish off and skips the Release', () => {
-    const buildJob = releaseJobs['build'] ?? '';
-    expect([
-      buildJob.includes('DRY_RUN: ${{ inputs.dry_run }}'),
-      /if \[ "\$DRY_RUN" = 'true' \]; then[\s\S]*?publish=false/.test(buildJob),
-      releaseJobs['release']?.includes("needs.build.outputs.dry_run != 'true'"),
-    ]).toEqual([true, true, true]);
+  it('SEC-09: a dry run skips the release job, so nothing is committed, tagged or released', () => {
+    expect(releaseJobs['release']).toContain('if: ${{ !inputs.dry_run }}');
   });
 
-  it('SEC-09: without npm the Release is always a prerelease and never Latest', () => {
-    expect(releaseJobs['release']).toMatch(/if \[ "\$NPM_PUBLISHED" = 'true' \] && \[ "\$NPM_TAG" = 'latest' \]; then\n\s+flags=\(\)\n\s+else\n\s+flags=\(--prerelease --latest=false\)\n/);
-  });
-
-  it('SEC-09: the flags also apply when the Release already exists', () => {
-    expect(releaseJobs['release']).toContain('gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" "${flags[@]}"');
-  });
-
-  it('SEC-09: the fallback notes say it is not on npm or a CDN', () => {
-    expect(releaseJobs['release']).toContain('This version is not on npm and not on a CDN.');
+  it('SEC-09: a prerelease version is never Latest', () => {
+    expect(releaseJobs['release']).toContain(`[ "$PRERELEASE" != 'true' ] || flags=(--prerelease --latest=false)`);
   });
 });
 
-describe('SEC-19: publish is verified before the Release', () => {
-  it('SEC-19: the CDN check runs after publish with the build hashes', () => {
-    expect([releaseJobs['verify-cdn']?.includes('needs: [verify-tag, build, publish]'), releaseJobs['verify-cdn']?.includes('--hashes')]).toEqual([true, true]);
+describe('SEC-19: the release is verified on jsDelivr', () => {
+  it('SEC-19: the CDN check runs after the release job with the build hashes', () => {
+    expect([releaseJobs['verify-cdn']?.includes('needs: [verify-inputs, release]'), releaseJobs['verify-cdn']?.includes('verify-cdn.mjs --tag "$TAG" --hashes')]).toEqual([true, true]);
   });
 
-  it('SEC-19: the Release waits for the CDN check', () => {
-    expect(releaseJobs['release']).toMatch(/needs: \[verify-tag, build, publish, verify-cdn\]/);
+  it('SEC-19: the Release attaches every asset of the build artifact', () => {
+    expect(releaseJobs['release']).toContain('gh release create "$TAG" "$out"/assets/*');
   });
 
-  it('SEC-19: the Release attaches every file of the build artifact', () => {
-    expect(releaseJobs['release']).toContain('gh release create "$TAG" "$out"/*');
-  });
-
-  it('SEC-19: the build makes an SBOM, a dist archive and hashes', () => {
-    expect(['npm sbom --sbom-format cyclonedx', 'dist.tar.gz', 'release-hashes.mjs'].filter(text => !releaseJobs['build']?.includes(text))).toEqual([]);
+  it('SEC-19: the build makes an SBOM, a dist archive, hashes and notes', () => {
+    expect(['npm sbom --sbom-format cyclonedx', 'dist.tar.gz', 'release-hashes.mjs', 'release-notes.mjs'].filter(text => !releaseJobs['build']?.includes(text))).toEqual([]);
   });
 });
 
@@ -199,5 +212,9 @@ describe('SEC-09: nightly-live.yml', () => {
 
   it('SEC-09: checks the CDN and the Unisphere loader', () => {
     expect(['verify-cdn.mjs --latest', 'release-unisphere-smoke.mjs'].filter(text => !nightly.includes(text))).toEqual([]);
+  });
+
+  it('SEC-09: reads the latest Release with the read-only job token', () => {
+    expect([nightly.includes('GH_TOKEN: ${{ github.token }}'), nightly.includes('contents: read')]).toEqual([true, true]);
   });
 });
