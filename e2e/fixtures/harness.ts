@@ -1,10 +1,17 @@
-import { test as base, expect, type Page, type Request } from '@playwright/test';
+import { test as base, expect, type ConsoleMessage, type Page, type Request } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { ORIGIN_A, ORIGIN_B } from './constants';
 
+export type KsProviderMode = 'sync' | 'async' | 'throw' | 'reject';
 export type LoaderMode = 'throw' | 'throwstr' | 'codeload' | 'ok' | 'slow' | 'notfound';
 interface LogEntry { token: string; path: string }
 interface HarnessWindow { __mount(tag: string, config: unknown): void; __pwned: unknown[] }
+interface KsWindow {
+  KalturaA2UIWebComponents: { setKsProvider(provider: (widget: string) => string | Promise<string>): void };
+  __ksCalls?: { count: number; widgets: string[] };
+  __loaderCfgs?: unknown[];
+  __workspaceCfgs?: unknown[];
+}
 
 const KALTURA_HOST = /^https?:\/\/[^/]*\.kaltura\.com\//;
 const LOADER_PATH = /\/loader\/index\.esm\.js(\?|$)/;
@@ -18,12 +25,15 @@ export class Harness {
   /** Requests the page made. Includes those aborted or blocked by the network. */
   readonly requests: string[] = [];
   readonly pageErrors: string[] = [];
+  /** Every console message the page printed, for "no secret in logs" checks. */
+  readonly consoleText: string[] = [];
   /** What stubbed *.kaltura.com hosts serve. Real Kaltura hosts are never contacted. */
   kalturaMode: LoaderMode = 'ok';
 
   constructor(readonly page: Page) {
     page.on('request', (r: Request) => this.requests.push(r.url()));
     page.on('pageerror', (e) => this.pageErrors.push(e.message));
+    page.on('console', (m: ConsoleMessage) => this.consoleText.push(m.text()));
   }
 
   /** Base serverUrl on origin B. The loader module is chosen by `mode`. */
@@ -31,7 +41,7 @@ export class Harness {
     return `${ORIGIN_B}/${this.token}/${mode}/v1`;
   }
 
-  async open(opts: { noshim?: boolean } = {}): Promise<void> {
+  async open(): Promise<void> {
     await this.page.route(KALTURA_HOST, async (route) => {
       const res = await this.page.request.get(
         `${ORIGIN_B}/${this.token}-stub/${this.kalturaMode}/v1/loader/index.esm.js`,
@@ -43,7 +53,59 @@ export class Harness {
         body: await res.body(),
       });
     });
-    await this.page.goto(`${ORIGIN_A}/harness.html${opts.noshim ? '?noshim=1' : ''}`);
+    await this.page.goto(`${ORIGIN_A}/harness.html`);
+  }
+
+  /**
+   * Host side of the KS contract: calls `setKsProvider` on the bundle global.
+   * `async` resolves after 300 ms. `throw` and `reject` put the KS in the error
+   * message, so a leak into the page would show.
+   */
+  async setKsProvider(mode: KsProviderMode, ks: string): Promise<void> {
+    await this.page.evaluate(
+      ([m, value]) => {
+        const api = (window as unknown as KsWindow).KalturaA2UIWebComponents;
+        const calls = ((window as unknown as KsWindow).__ksCalls = { count: 0, widgets: [] as string[] });
+        const provider = {
+          sync: () => value,
+          async: () => new Promise<string>((resolve) => setTimeout(() => resolve(value), 300)),
+          throw: () => {
+            throw new Error(`provider failed for ${value}`);
+          },
+          reject: () => Promise.reject(new Error(`provider failed for ${value}`)),
+        }[m];
+        api.setKsProvider((widget) => {
+          calls.count += 1;
+          calls.widgets.push(widget);
+          return provider();
+        });
+      },
+      [mode, ks] as const,
+    );
+  }
+
+  /** How many times the page called the provider set by `setKsProvider`. */
+  providerCalls(): Promise<number> {
+    return this.page.evaluate(() => (window as unknown as KsWindow).__ksCalls?.count ?? 0);
+  }
+
+  /** Widget names the provider received, sorted. */
+  providerWidgets(): Promise<string[]> {
+    return this.page.evaluate(() => [...((window as unknown as KsWindow).__ksCalls?.widgets ?? [])].sort());
+  }
+
+  /** Values the 'ok' loader module received, set by e2e/fixtures/servers.mjs. */
+  loaderConfigs(): Promise<unknown[]> {
+    return this.page.evaluate(() => (window as unknown as KsWindow).__loaderCfgs ?? []);
+  }
+
+  workspaceConfigs(): Promise<unknown[]> {
+    return this.page.evaluate(() => (window as unknown as KsWindow).__workspaceCfgs ?? []);
+  }
+
+  /** Text of the mounted components. Attributes such as iframe `src` are not text. */
+  hostText(): Promise<string> {
+    return this.page.locator('#host').innerText();
   }
 
   async mount(tag: string, config: Record<string, unknown>): Promise<void> {

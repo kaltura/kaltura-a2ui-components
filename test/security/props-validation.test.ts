@@ -6,8 +6,7 @@ import { createRoot } from 'react-dom/client';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
 import { A2uiSurface } from '@a2ui/react/v0_9';
 import { mount } from '../helpers/render';
-import { invalidProps } from '../../src/core/validate-props';
-import { isEntryId } from '../../src/core/ids';
+import { checkProps } from '../../src/core/validate-props';
 import { kalturaReactCatalog, KALTURA_CATALOG_ID } from '../../src/adapters/react/index';
 import { KalturaPlayerApi } from '../../src/schemas/player';
 import { KalturaFlashcardsApi } from '../../src/schemas/flashcards';
@@ -95,32 +94,28 @@ describe('SEC-03: valid props still render every component', () => {
 const BAD: Array<[string, Record<string, unknown>, string]> = [
   ['player', { ...base, uiconfId: 2, entryId: '0_abc', partnerId: '1/../x' }, 'partnerId'],
   ['player', { ...base, uiconfId: 1.5, entryId: '0_abc' }, 'uiconfId'],
+  ['player', { ...base, uiconfId: 2, entryId: '0_abc', partnerId: '123' }, 'partnerId'],
   ['player', { ...base, uiconfId: 2, entryId: 'a/b' }, 'entryId'],
   ['player', { ...base, uiconfId: 2, entryId: { path: '/not/resolved' } }, 'entryId'],
   ['player', { ...base, uiconfId: 2, entryId: '0_abc', ks: 'a\nb' }, 'ks'],
   ['player', { ...base, uiconfId: 2, entryId: '0_abc', autoplay: 'yes' }, 'autoplay'],
   ['flashcards', { title: 'D', cards: 'not an array' }, 'cards'],
-  ['flashcards', { title: 'D', cards: [{ title: 'C', content: 'x', clips: [{ entryId: '../x', startTime: 0, endTime: 1 }] }] }, 'cards.0.clips.0.entryId'],
-  ['flashcards', { title: 'D', cards: [{ title: 'C' }] }, 'cards.0.content'],
   ['flashcards', { title: 'D', cards: [], ks: { path: '/x' } }, 'ks'],
   ['Media Manager', { ...unisphere, partnerId: -1 }, 'partnerId'],
-  ['Media Manager', { partnerId: 1, serverUrl: SERVER_URL }, 'ks'],
   ['Media Manager', { ...unisphere, mode: 'admin' }, 'mode'],
   ['Media Manager', { ...unisphere, theme: 'neon' }, 'theme'],
   ['analytics', { ...base, partnerId: '1&serviceurl=https://evil.example' }, 'partnerId'],
+  ['analytics', { ...base, partnerId: '123' }, 'partnerId'],
   ['analytics', { ...base, entryId: 'a b' }, 'entryId'],
   ['analytics', { ...base, ks: '' }, 'ks'],
-  ['captions editor', base, 'entryId'],
   ['captions editor', { ...base, entryId: '0_abc', uiconfId: 0 }, 'uiconfId'],
   ['recorder', { ...base, uiconfId: null }, 'uiconfId'],
-  ['avatar', {}, 'avatarId'],
   ['avatar', { avatarId: 7 }, 'avatarId'],
   ['avatar', { avatarId: 'a1', autoStart: 'true' }, 'autoStart'],
-  ['Kaltura Genie', { ...unisphere, ks: undefined }, 'ks'],
+  ['Kaltura Genie', { ...unisphere, ks: null }, 'ks'],
   ['Kaltura Genie', { ...unisphere, partnerId: 0 }, 'partnerId'],
   ['Kaltura Content Lab', { ...unisphere, entryId: '../x' }, 'entryId'],
   ['Kaltura AI Agents', { ...unisphere, agentId: 5 }, 'agentId'],
-  ['Kaltura VOD Avatar', unisphere, 'entryId'],
   ['chart', { chartType: 'pie-of-doom', data: [{ a: 1 }] }, 'chartType'],
   ['chart', { chartType: 'bar', data: [null] }, 'data.0'],
   ['chart', { chartType: 'bar', data: 'rows' }, 'data'],
@@ -167,6 +162,112 @@ describe('SEC-03: invalid props show a plain-text error and never the widget', (
   });
 });
 
+// [component label, props with one required prop still undefined]
+const PENDING_CASES: Array<[string, Record<string, unknown>, string]> = [
+  ['flashcards', { title: 'D' }, 'cards'],
+  ['Media Manager', { partnerId: 1, serverUrl: SERVER_URL }, 'ks'],
+  ['captions editor', base, 'entryId'],
+  ['avatar', {}, 'avatarId'],
+  ['Kaltura Genie', { ...unisphere, ks: undefined }, 'ks'],
+  ['Kaltura VOD Avatar', unisphere, 'entryId'],
+  ['analytics', { partnerId: 1 }, 'ks'],
+  ['player', { ...base, uiconfId: 2 }, 'entryId'],
+  ['chart', { chartType: 'bar' }, 'data'],
+];
+
+describe('SEC-03: a required prop that is still undefined is pending, not an error', () => {
+  it.each(PENDING_CASES.map(([label, props, field]) => [label, field, props] as const))(
+    'SEC-03: %s with %s undefined renders nothing',
+    async (label, _field, props) => {
+      const entry = byLabel(label);
+      const { container } = await mount(await entry.load(), props as Record<string, unknown>);
+      expect([container.textContent, container.querySelectorAll('iframe, [role="alert"]').length, calls.loader, calls.createWorkspace]).toEqual(['', 0, 0, 0]);
+    },
+  );
+
+  it('SEC-03: recorder with ks undefined shows no error and no iframe', async () => {
+    const entry = byLabel('recorder');
+    const { container } = await mount(await entry.load(), { partnerId: 1 });
+    expect([container.textContent, container.querySelectorAll('iframe, [role="alert"]').length]).toEqual(['', 0]);
+  });
+
+  // ks is optional for agents (the host provider supplies it). The core components
+  // keep it required at runtime, see test/security/ks-provider.test.tsx.
+  it.each(PENDING_CASES.filter(([, , field]) => field !== 'ks').map(([label, props, field]) => [label, field, props] as const))(
+    'SEC-03: %s with %s undefined is pending for checkProps',
+    (label, _field, props) => {
+      expect(checkProps(byLabel(label).api.schema, props)).toEqual({ invalid: [], pending: true });
+    },
+  );
+
+  it.each(PENDING_CASES.filter(([, , field]) => field !== 'ks').map(([label, props, field]) => [label, field, props] as const))(
+    'SEC-03: %s with %s undefined is invalid for checkProps in strict mode',
+    (label, field, props) => {
+      expect(checkProps(byLabel(label).api.schema, props, true)).toEqual({ invalid: [field], pending: false });
+    },
+  );
+
+  it('SEC-03: an undefined value inside literal data is invalid, not pending', () => {
+    const cards = [{ title: 'C', content: 'x', clips: [{ entryId: '0_a', endTime: 1 }] }, { title: 'C' }];
+    expect(checkProps(byLabel('flashcards').api.schema, { title: 'D', cards })).toEqual({
+      invalid: ['cards.0.clips.0.startTime', 'cards.1.content'],
+      pending: false,
+    });
+  });
+
+  it('SEC-03: a flashcard without content shows the error, not a blank', async () => {
+    const entry = byLabel('flashcards');
+    const { container } = await mount(await entry.load(), { title: 'D', cards: [{ title: 'C' }] });
+    expect(container.querySelector('[role="alert"]')?.textContent).toBe('Failed to load flashcards: Invalid cards.0.content');
+  });
+
+  it('SEC-03: a defined but invalid value is an error even when another prop is pending', () => {
+    expect(checkProps(byLabel('captions editor').api.schema, { partnerId: 'x' })).toEqual({ invalid: ['partnerId'], pending: true });
+  });
+
+  it('SEC-03: the widget appears once the missing prop arrives', async () => {
+    const entry = byLabel('analytics');
+    const Component = (await entry.load()) as never;
+    const { container, root } = await mount(Component, { partnerId: 1 });
+    await act(async () => root.render(createElement(Component, base)));
+    expect([container.querySelectorAll('iframe').length, container.querySelectorAll('[role="alert"]').length]).toEqual([1, 0]);
+  });
+});
+
+describe('SEC-03: web components never get a later config, so a missing prop is an error', () => {
+  const connect = async (tag: string, config: Record<string, unknown>) => {
+    const el = document.createElement(tag) as HTMLElement & { config: Record<string, unknown> };
+    el.config = config;
+    await act(async () => {
+      document.body.appendChild(el);
+    });
+    return el;
+  };
+
+  it('SEC-03: a missing top-level partnerId stays pending in React', async () => {
+    const { container } = await mount(await byLabel('analytics').load(), { ks: 'dummy-ks' });
+    expect([container.textContent, container.querySelectorAll('[role="alert"]').length]).toEqual(['', 0]);
+  });
+
+  it('SEC-03: a missing top-level partnerId shows the error in the web component', async () => {
+    const { defineAnalyticsWebComponent, ANALYTICS_TAG } = await import('../../src/adapters/webcomponent/analytics');
+    defineAnalyticsWebComponent();
+    const el = await connect(ANALYTICS_TAG, { ks: 'dummy-ks' });
+    expect(el.querySelector('[role="alert"]')?.textContent).toBe('Failed to load analytics: Invalid partnerId');
+  });
+
+  it('SEC-03: every web component shows the error for an empty config', async () => {
+    const { defineKalturaWebComponents, KALTURA_WC_TAGS } = await import('../../src/adapters/webcomponent/index');
+    defineKalturaWebComponents();
+    const silent: string[] = [];
+    for (const tag of KALTURA_WC_TAGS) {
+      const el = await connect(tag, {});
+      if (!el.querySelector('[role="alert"]')) silent.push(tag);
+    }
+    expect(silent).toEqual([]);
+  });
+});
+
 describe('SEC-03: resolved props never carry bindings or function calls', () => {
   const dynamicKeys = (api: Entry['api']) => {
     const shape = (api.schema as { shape: Record<string, { _def: Record<string, unknown> }> }).shape;
@@ -188,20 +289,27 @@ describe('SEC-03: resolved props never carry bindings or function calls', () => 
     const entry = byLabel(label);
     const schema = entry.api.schema;
     // A literal passes where a binding does not. Leave the prop unset first, so the base stays valid.
-    expect(invalidProps(schema, entry.valid)).toEqual([]);
-    expect(invalidProps(schema, { ...entry.valid, [key]: { path: '/x' } })).toContain(key);
-    expect(invalidProps(schema, { ...entry.valid, [key]: { call: 'now', args: {} } })).toContain(key);
+    expect(checkProps(schema, entry.valid).invalid).toEqual([]);
+    expect(checkProps(schema, { ...entry.valid, [key]: { path: '/x' } }).invalid).toContain(key);
+    expect(checkProps(schema, { ...entry.valid, [key]: { call: 'now', args: {} } }).invalid).toContain(key);
   });
 });
 
-describe('SEC-11: schema ids and the core id check agree', () => {
-  const clipSchema = (KalturaFlashcardsApi.schema.shape.cards.element.shape.clips.unwrap().element) as {
-    shape: { entryId: { safeParse(v: unknown): { success: boolean } } };
-  };
-  const ids = ['0_abc', '1_abc12345', 'a', '_', '0'.repeat(64), '0'.repeat(65), '', 'a/b', '../x', 'a b', '1_a\n', 'é', '１_abc', 'a-b', '1_a?x=1'];
+describe('SEC-11: clip ids are checked per clip, not by the deck schema', () => {
+  const deck = (entryIds: unknown[]) => ({
+    title: 'Deck',
+    partnerId: 1,
+    uiconfId: 2,
+    cards: [{ title: 'C', content: 'x', clips: entryIds.map(entryId => ({ entryId, startTime: 0, endTime: 1 })) }],
+  });
+  const ids = ['a/b', '../x', '1_a?x=1', 'a b', '1_a\n', '', '0'.repeat(65), 7, null, { path: '/x' }, undefined];
 
-  it.each(ids.map(id => [id] as const))('SEC-11: clip entryId %j matches isEntryId', id => {
-    expect(clipSchema.shape.entryId.safeParse(id).success).toBe(isEntryId(id));
+  it.each(ids.map(id => [id] as const))('SEC-11: the deck schema does not reject clip entryId %j', id => {
+    expect(checkProps(KalturaFlashcardsApi.schema.omit({ partnerId: true, uiconfId: true }), deck([id]))).toEqual({ invalid: [], pending: false });
+  });
+
+  it('SEC-11: the deck schema still rejects a clip with a bad time', () => {
+    expect(checkProps(KalturaFlashcardsApi.schema, { ...deck(['0_a']), cards: [{ title: 'C', content: 'x', clips: [{ entryId: '0_a', startTime: 'x', endTime: 1 }] }] }).invalid).toEqual(['cards.0.clips.0.startTime']);
   });
 
   it.each([0, -1, 1.5, NaN, Infinity, '1', null])('SEC-03: plain partnerId schemas reject %j', value => {
@@ -210,7 +318,7 @@ describe('SEC-11: schema ids and the core id check agree', () => {
 });
 
 describe('SEC-03: real A2UI pipeline, bound values resolve before the check', () => {
-  async function renderSurface(component: Record<string, unknown>, data: Record<string, unknown>) {
+  async function startSurface(component: Record<string, unknown>, data: Record<string, unknown>) {
     const processor = new MessageProcessor([kalturaReactCatalog]);
     processor.processMessages([
       { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
@@ -226,8 +334,11 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
     await act(async () => {
       await new Promise(r => setTimeout(r, 30));
     });
-    return container;
+    return { container, processor };
   }
+
+  const renderSurface = async (component: Record<string, unknown>, data: Record<string, unknown>) =>
+    (await startSurface(component, data)).container;
 
   const session = { session: { ks: 'ks-from-host' } };
   const bound = { ks: { path: '/session/ks' } };
@@ -248,12 +359,30 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
     expect(container.querySelector('.kaltura-load-error')).toBeNull();
   });
 
-  it('SEC-03: a required binding with no data shows the error, not the widget', async () => {
+  it('SEC-03: a required binding with no data yields nothing, no error and no widget', async () => {
     const container = await renderSurface(
       { component: 'KalturaAnalytics', partnerId: 1, ...bound },
       {},
     );
-    expect([container.querySelectorAll('iframe').length, container.textContent]).toEqual([0, 'Failed to load analytics: Invalid ks']);
+    expect([container.querySelectorAll('iframe, [role="alert"]').length, container.textContent]).toEqual([0, '']);
+  });
+
+  it('SEC-03: the widget appears when the bound data arrives later', async () => {
+    const { container, processor } = await startSurface({ component: 'KalturaAnalytics', partnerId: 1, ...bound }, {});
+    await act(async () => {
+      processor.processMessages([
+        { version: 'v0.9', updateDataModel: { surfaceId: 's', path: '/session', value: { ks: 'late-ks' } } },
+      ] as never);
+    });
+    expect([container.querySelectorAll('iframe').length, container.querySelectorAll('[role="alert"]').length]).toEqual([1, 0]);
+  });
+
+  it('SEC-03: a bound value that arrives invalid shows the error', async () => {
+    const { container } = await startSurface(
+      { component: 'KalturaAnalytics', partnerId: 1, ks: { path: '/session/ks' } },
+      { session: { ks: 'a\nb' } },
+    );
+    expect(container.textContent).toBe('Failed to load analytics: Invalid ks');
   });
 
   it('SEC-03: a hostile entryId arriving through the data model is refused', async () => {

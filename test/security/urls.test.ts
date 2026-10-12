@@ -1,7 +1,7 @@
 // Covers: SEC-07 (query-string injection in captions and analytics URLs),
 // SEC-11 (path injection in the player URL).
 import { describe, it, expect, afterEach } from 'vitest';
-import { buildCaptionsEditorUrl, buildCaptionsUrl, CaptionsEditorCore } from '../../src/core/captions-editor';
+import { buildCaptionsEditorUrl, CaptionsEditorCore } from '../../src/core/captions-editor';
 import { buildAnalyticsUrl, AnalyticsCore } from '../../src/core/analytics';
 import { buildPlayerUrl, PlayerCore } from '../../src/core/player';
 import { mount } from '../helpers/render';
@@ -40,8 +40,23 @@ describe('SEC-07: buildCaptionsEditorUrl', () => {
     expect(new URL(buildCaptionsEditorUrl(base)).searchParams.has('uiconfid')).toBe(false);
   });
 
-  it('SEC-07: buildCaptionsUrl is the same builder', () => {
-    expect(buildCaptionsUrl(base)).toBe(buildCaptionsEditorUrl(base));
+  it('SEC-07: the raw URL keeps the fixed parts byte for byte', () => {
+    expect(buildCaptionsEditorUrl({ ...base, uiconfId: 55 })).toBe(
+      'https://www.kaltura.com/apps/captionstudio/latest/index.html' +
+        '?pid=123&ks=ks1&entryid=1_abc123' +
+        '&cdnurl=https://cdnapisec.kaltura.com&serviceurl=https://www.kaltura.com&uiconfid=55',
+    );
+  });
+
+  it('SEC-07: the raw URL ends at serviceurl without a uiconfId', () => {
+    expect(buildCaptionsEditorUrl(base)).toBe(
+      'https://www.kaltura.com/apps/captionstudio/latest/index.html' +
+        '?pid=123&ks=ks1&entryid=1_abc123&cdnurl=https://cdnapisec.kaltura.com&serviceurl=https://www.kaltura.com',
+    );
+  });
+
+  it('SEC-07: a ks with a space, plus and quote uses %20 and percent-encoding, not +', () => {
+    expect(buildCaptionsEditorUrl({ ...base, ks: "a b+c'd(e)~" })).toContain('&ks=a%20b%2Bc\'d(e)~&entryid=');
   });
 
   it('SEC-07: serviceurl appears exactly once with the fixed value', () => {
@@ -103,6 +118,21 @@ describe('SEC-07: buildAnalyticsUrl', () => {
       fromDate: '2026-01-01',
       toDate: '2026-02-01',
     });
+  });
+
+  it('SEC-07: the raw URL matches the pre-hardening format', () => {
+    expect(
+      buildAnalyticsUrl({ ...base, entryId: '1_abc', reportType: 'engagement', fromDate: '2026-01-01', toDate: '2026-02-01' }),
+    ).toBe(
+      'https://kmc.kaltura.com/index.php/kmcng/analytics' +
+        '?ks=ks1&partnerId=123&entryId=1_abc&reportType=engagement&fromDate=2026-01-01&toDate=2026-02-01',
+    );
+  });
+
+  it('SEC-07: spaces in a value become %20, not +', () => {
+    expect(buildAnalyticsUrl({ ...base, reportType: 'top content' })).toBe(
+      'https://kmc.kaltura.com/index.php/kmcng/analytics?ks=ks1&partnerId=123&reportType=top%20content',
+    );
   });
 
   it('SEC-07: omits optional parameters when not given', () => {

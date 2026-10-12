@@ -30,11 +30,13 @@ export const loader = async () => { throw new Error('stub'); };
 export const createWorkspace = async () => { throw new Error('stub'); };`,
   ok: `export const loader = async (cfg) => {
   (window.__loaderCalls = window.__loaderCalls || []).push(cfg.serverUrl);
+  (window.__loaderCfgs = window.__loaderCfgs || []).push(cfg);
   return { kill() {} };
 };
-export const createWorkspace = async () => ({
-  getRuntimeAsync: async () => ({ mountVisual: async () => 'v1', unmountVisual() {} }),
-});`,
+export const createWorkspace = async (cfg) => {
+  (window.__workspaceCfgs = window.__workspaceCfgs || []).push(cfg);
+  return { getRuntimeAsync: async () => ({ mountVisual: async () => 'v1', unmountVisual() {} }) };
+};`,
 };
 const SLOW_MS = 3000;
 // 1x1 transparent PNG

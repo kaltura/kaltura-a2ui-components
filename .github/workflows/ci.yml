@@ -68,6 +68,7 @@ jobs:
       - run: npm run check:bundle
       - run: npm run size
       - run: npm run check:package
+      - run: npm run check:consumer
 
   audit:
     name: npm audit

@@ -17,7 +17,7 @@ import { useChartTheme, CHART_COLORS } from './theme';
 import { formatNumber } from './utils';
 
 export interface ChartAnnotation {
-  x: string;
+  x: string | number;
   label: string;
   color?: string;
 }
@@ -211,7 +211,7 @@ export function CartesianChart({
           })}
 
           {autoAnnotations?.map((ann, i) => {
-            const datum = data.find(d => String(d[xKey]) === ann.x);
+            const datum = data.find(d => String(d[xKey]) === String(ann.x));
             if (!datum) return null;
             return (
               <Annotation

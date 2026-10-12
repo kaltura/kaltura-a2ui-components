@@ -5,7 +5,7 @@ export const KalturaMediaManagerApi = {
   name: 'KalturaMediaManager',
   schema: z.object({
     partnerId: z.number().int().positive(),
-    ks: CommonSchemas.DynamicString,
+    ks: CommonSchemas.DynamicString.optional(),
     serverUrl: CommonSchemas.DynamicString,
     theme: z.enum(['dark', 'light']).optional(),
     mode: z.enum(['select', 'manage']).optional(),

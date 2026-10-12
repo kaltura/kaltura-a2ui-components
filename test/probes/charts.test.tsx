@@ -55,14 +55,24 @@ describe('QA-06: chart robustness', () => {
   });
 
   it('QA-06: ChartCore error boundary resets when the chart type changes', async () => {
-    const { ChartCore } = await import('../../src/core/chart');
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    const { container, root } = mountRoot();
-    const radar = (data: typeof two): ChartCoreProps => ({ chartType: 'radar', data, xKey: 'n', yKeys: ['v'] });
-    await act(async () => root.render(createElement(ChartCore, radar(two))));
-    await act(async () => root.render(createElement(ChartCore, radar(four))));
-    await act(async () => root.render(createElement(ChartCore, { chartType: 'bar', data: four })));
-    expect(container.textContent).not.toContain(ERROR_TEXT);
+    vi.resetModules();
+    vi.doMock('../../src/core/charts/RadarChart', () => ({
+      RadarChart: () => {
+        throw new Error('radar failed');
+      },
+    }));
+    try {
+      const { ChartCore } = await import('../../src/core/chart');
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const { container, root } = mountRoot();
+      await act(async () => root.render(createElement(ChartCore, { chartType: 'radar', data: four, xKey: 'n', yKeys: ['v'] })));
+      expect(container.textContent).toContain(ERROR_TEXT);
+      await act(async () => root.render(createElement(ChartCore, { chartType: 'bar', data: four })));
+      expect(container.textContent).not.toContain(ERROR_TEXT);
+    } finally {
+      vi.doUnmock('../../src/core/charts/RadarChart');
+      vi.resetModules();
+    }
   });
 
   it('QA-06: data=[null] does not throw outside the error boundary', async () => {

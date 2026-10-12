@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
 import type { PlayerCoreProps } from '../../core/player';
 import { PlayerCore } from '../../core/player';
+import { StrictPendingContext } from '../../core/validate-props';
 
 export const PLAYER_TAG = 'kaltura-player';
 
@@ -13,7 +14,7 @@ export function definePlayerWebComponent(): void {
 
     connectedCallback(): void {
       const root = createRoot(this);
-      root.render(createElement(PlayerCore, this.config as PlayerCoreProps));
+      root.render(createElement(StrictPendingContext.Provider, { value: true }, createElement(PlayerCore, this.config as PlayerCoreProps)));
     }
   }
 

@@ -37,14 +37,15 @@ afterEach(() => {
 });
 
 describe('SEC-08: loadScriptOnce', () => {
-  it('SEC-08: sets crossorigin=anonymous', () => {
+  it('SEC-08: sets no crossorigin attribute without an integrity hash', () => {
     void loadScriptOnce(`${SRC}?a`);
-    expect(document.querySelector('script')?.crossOrigin).toBe('anonymous');
+    expect(document.querySelector('script')?.hasAttribute('crossorigin')).toBe(false);
   });
 
-  it('SEC-08: sets the integrity attribute when one is given', () => {
+  it('SEC-08: sets integrity and crossorigin=anonymous together when a hash is given', () => {
     void loadScriptOnce(`${SRC}?b`, 'sha384-test');
-    expect(document.querySelector('script')?.getAttribute('integrity')).toBe('sha384-test');
+    const script = document.querySelector('script');
+    expect([script?.getAttribute('integrity'), script?.crossOrigin]).toEqual(['sha384-test', 'anonymous']);
   });
 
   it('QA-04: the same URL gives one tag and one shared promise', () => {
@@ -67,7 +68,7 @@ describe('SEC-08 / QA-04: AvatarCore', () => {
     await mount({ avatarId: 'x' });
     await fire('error');
     const box = host.querySelector('.kaltura-load-error');
-    expect([box?.children.length, box?.textContent]).toEqual([0, expect.stringContaining('avatar SDK')]);
+    expect([box?.children.length, box?.textContent, box?.getAttribute('role')]).toEqual([0, expect.stringContaining('avatar SDK'), 'alert']);
   });
 
   it('QA-04: changing language re-initialises the avatar with the new value', async () => {

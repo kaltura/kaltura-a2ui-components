@@ -21,7 +21,7 @@ export type ChartType =
   | 'radar' | 'sankey' | 'funnel';
 
 export interface ChartAnnotation {
-  x: string;
+  x: string | number;
   label: string;
   color?: string;
 }
@@ -113,7 +113,7 @@ function ChartView(props: ChartCoreProps) {
   return (
     <div className="kaltura-chart-container">
       {props.title && <h4 className="kaltura-chart-title">{props.title}</h4>}
-      <ChartErrorBoundary title={props.title}>
+      <ChartErrorBoundary key={props.chartType} title={props.title}>
         <div className="kaltura-chart-body" role="img" aria-label={props.title || `${props.chartType} chart`}>
           {renderChart()}
         </div>

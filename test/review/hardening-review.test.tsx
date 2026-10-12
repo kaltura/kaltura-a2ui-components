@@ -1,9 +1,11 @@
-// Review regression tests for the Phase 1 fixes. Inputs that the earlier
-// security tests did not cover: unicode hosts, nested markup, odd types.
-import { describe, it, expect } from 'vitest';
+// Review regression tests for the Phase 1 and 1b fixes. Inputs that the earlier
+// security tests did not cover: unicode hosts, nested markup, odd types, a
+// numeric chart annotation, a malformed clip and an alert left behind.
+import { describe, it, expect, afterAll, afterEach, beforeAll } from 'vitest';
+import { createElement, act } from 'react';
 import { deriveLoaderUrl } from '../../src/core/unisphere-loader';
 import { sanitizeMarkdownHtml, toKalturaCdnUrl } from '../../src/core/safe-markdown';
-import { invalidProps } from '../../src/core/validate-props';
+import { checkProps } from '../../src/core/validate-props';
 import { buildPlayerUrl } from '../../src/core/player';
 import { buildClipUrl, buildThumbnailUrl } from '../../src/core/flashcards';
 import { KalturaPlayerApi } from '../../src/schemas/player';
@@ -121,14 +123,14 @@ describe('SEC-03: invalidProps with hostile prop shapes', () => {
     { ...ok, entryId: { path: '/x' } },
     { ...ok, partnerId: '1' },
   ])('SEC-03: player rejects %j', props => {
-    expect(invalidProps(KalturaPlayerApi.schema, props).length).toBeGreaterThan(0);
+    expect(checkProps(KalturaPlayerApi.schema, props).invalid.length).toBeGreaterThan(0);
   });
   it('SEC-03: an own __proto__ key does not supply a missing partnerId', () => {
     const props = JSON.parse('{"__proto__":{"partnerId":1},"uiconfId":2,"entryId":"0_abc"}');
-    expect(invalidProps(KalturaPlayerApi.schema, props)).toContain('partnerId');
+    expect(checkProps(KalturaPlayerApi.schema, props)).toEqual({ invalid: [], pending: true });
   });
   it('SEC-03: a non-string serverUrl is refused', () => {
-    expect(invalidProps(KalturaGenieApi.schema, { partnerId: 1, ks: 'k', serverUrl: 1 })).toContain('serverUrl');
+    expect(checkProps(KalturaGenieApi.schema, { partnerId: 1, ks: 'k', serverUrl: 1 }).invalid).toContain('serverUrl');
   });
 });
 
@@ -141,5 +143,69 @@ describe('SEC-06: loader rejection is text only', () => {
       serverUrl: '<img src=x onerror=alert(1)><a href="https://evil.example">x</a>',
     });
     expect(container.querySelectorAll('img, a, script').length).toBe(0);
+  });
+});
+
+describe('QA-05: a numeric chart annotation x matches its data point', () => {
+  const realWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
+  const realObserver = (globalThis as { ResizeObserver?: unknown }).ResizeObserver;
+  beforeAll(() => {
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => 600 });
+    (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+    };
+  });
+  afterAll(() => {
+    if (realWidth) Object.defineProperty(HTMLElement.prototype, 'clientWidth', realWidth);
+    (globalThis as { ResizeObserver?: unknown }).ResizeObserver = realObserver;
+  });
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  const data = [
+    { year: 2020, v: 1 },
+    { year: 2021, v: 5 },
+    { year: 2022, v: 2 },
+  ];
+
+  it('QA-05: a string x that matches a numeric data value renders its label', async () => {
+    const { ChartCore } = await import('../../src/core/chart');
+    const { container } = await mount(ChartCore, { chartType: 'line', data, xKey: 'year', yKeys: ['v'], annotations: [{ x: '2021', label: 'STRLABEL' }] });
+    expect(container.textContent).toContain('STRLABEL');
+  });
+
+  it('QA-05: a numeric x renders its label', async () => {
+    const { ChartCore } = await import('../../src/core/chart');
+    const { container } = await mount(ChartCore, { chartType: 'line', data, xKey: 'year', yKeys: ['v'], annotations: [{ x: 2021, label: 'NUMLABEL' }] });
+    expect(container.textContent).toContain('NUMLABEL');
+  });
+});
+
+describe('SEC-03: undefined inside literal data and stale alerts', () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('SEC-03: a clip missing startTime shows the error instead of a blank deck', async () => {
+    const { FlashcardsCore } = await import('../../src/core/flashcards');
+    const cards = [
+      { title: 'Good', content: 'ok', clips: [{ entryId: '0_abc', startTime: 1, endTime: 2 }] },
+      { title: 'Bad', content: 'ok', clips: [{ entryId: '0_abc', endTime: 2 }] },
+    ];
+    const { container } = await mount(FlashcardsCore, { title: 'Deck', partnerId: 1, uiconfId: 2, cards });
+    expect(container.textContent).toBe('Failed to load flashcards: Invalid cards.1.clips.0.startTime');
+  });
+
+  it('SEC-03: the recorder clears its old error when ks becomes undefined', async () => {
+    const { RecorderCore } = await import('../../src/core/recorder');
+    const { container, root } = await mount(RecorderCore, { partnerId: 1, ks: 'bad\u0000ks' });
+    expect(container.textContent).toBe('Failed to load recorder: Invalid ks');
+    await act(async () => {
+      root.render(createElement(RecorderCore, { partnerId: 1 }));
+    });
+    expect(container.textContent).toBe('');
   });
 });

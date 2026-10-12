@@ -2,8 +2,9 @@ import { z } from 'zod';
 import { CommonSchemas } from '@a2ui/web_core/v0_9';
 
 const ClipSchema = z.object({
-  // Same rule as isEntryId in core/ids.ts. A test keeps both in step.
-  entryId: z.string().regex(/^[A-Za-z0-9_]{1,64}$/),
+  // Not checked here, so one bad clip cannot fail the deck. ClipPlayer checks
+  // each clip with isEntryId (core/ids.ts) and shows "This clip cannot be shown."
+  entryId: z.unknown(),
   startTime: z.number(),
   endTime: z.number(),
   title: z.string().optional(),

@@ -3,8 +3,6 @@
 // A file with any red test stays listed until its last red test is fixed.
 export const PENDING: string[] = [
   'test/probes/webcomponent-lifecycle.test.tsx',
-  'test/probes/charts.test.tsx',
-  'test/probes/avatar.test.tsx',
   'test/probes/country-codes.test.ts',
   'test/probes/catalog-drift.test.ts',
 ];

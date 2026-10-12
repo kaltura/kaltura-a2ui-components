@@ -81,6 +81,7 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
       ws?.kill?.();
       workspaceRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Mount once: the remote runtime cannot be updated in place.
   }, []);
 
   return (

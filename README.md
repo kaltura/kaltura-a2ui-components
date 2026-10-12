@@ -75,6 +75,16 @@ The IIFE registers all 12 Kaltura custom elements on load. Use the SRI
 block — it is the machine-readable source for the exact CDN URL and SRI per
 release.
 
+## Security behaviour
+
+- **KS.** The host supplies the Kaltura Session with `setKsProvider(() => ks)` (exported from both adapters). The provider receives the widget name as its argument, so it can mint a least-privilege KS per widget. Agents must never set `ks`. It is optional in the schemas and not in the catalog `required` lists. The KS must stay out of the A2UI data model. See [docs/security/ks.md](docs/security/ks.md).
+- **Private clouds.** The host page can call `setExtraAllowedOrigins(['https://unisphere.example.com'])` (exported from both adapters) before the first load. Only `https:` origins are accepted. Agent messages cannot change this list.
+- **`openUrl`.** Only absolute `https:` URLs open. Everything else is blocked with a console warning.
+- **Web components.** Config is validated like the A2UI path. Invalid values (bad ids, ks, urls, enums) show a plain-text alert. Numeric-string ids such as `partnerId: "123"` are rejected: pass a number.
+- **Missing required props.** In React, a required top-level prop that is still `undefined` renders nothing until it arrives. Web components never receive later updates, so they show the plain-text alert for a missing required value. Nested invalid data (one bad flashcard clip) shows an alert or the per-clip message, never a silent blank.
+- **Rejected `serverUrl`.** It is never shown in the UI. `console.warn` prints at most 100 characters of the value, for developers only.
+- **Error states.** Chart errors use `ChartErrorBoundary` with `role="alert"`. Plain-text load errors share the `kaltura-load-error` class.
+
 ## Layout
 
 ```

@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
 import type { CaptionsEditorCoreProps } from '../../core/captions-editor';
 import { CaptionsEditorCore } from '../../core/captions-editor';
+import { StrictPendingContext } from '../../core/validate-props';
 
 export const CAPTIONS_EDITOR_TAG = 'kaltura-captions-editor';
 
@@ -13,7 +14,7 @@ export function defineCaptionsEditorWebComponent(): void {
 
     connectedCallback(): void {
       const root = createRoot(this);
-      root.render(createElement(CaptionsEditorCore, this.config as CaptionsEditorCoreProps));
+      root.render(createElement(StrictPendingContext.Provider, { value: true }, createElement(CaptionsEditorCore, this.config as CaptionsEditorCoreProps)));
     }
   }
 

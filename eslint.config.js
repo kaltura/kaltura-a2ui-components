@@ -4,12 +4,8 @@ import { defineConfig } from 'eslint/config';
 import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
-// switch to error when Phase 1 lands
-const SECURITY_RULE_LEVEL = 'warn';
-
-// RadarChart calls a hook conditionally (QA-06, Phase 2). Switch to error
-// when that fix lands.
-const HOOKS_RULE_LEVEL = 'warn';
+const SECURITY_RULE_LEVEL = 'error';
+const HOOKS_RULE_LEVEL = 'error';
 
 // Banned patterns (SECF-30837 plan 6.3). Each entry is one selector.
 const DYNAMIC_IMPORT = {
@@ -17,13 +13,20 @@ const DYNAMIC_IMPORT = {
   message: 'Dynamic import() with a non-literal argument is only allowed in src/core/unisphere-loader.ts.',
 };
 const DANGEROUS_HTML = {
-  selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+  selector:
+    "JSXAttribute[name.name='dangerouslySetInnerHTML'], Property[key.name='dangerouslySetInnerHTML'], Property[key.value='dangerouslySetInnerHTML'], AssignmentExpression[left.type='MemberExpression'][left.property.name='dangerouslySetInnerHTML']",
   message: 'dangerouslySetInnerHTML is only allowed in the sanitised flashcards markdown component.',
 };
 const BANNED_EVERYWHERE = [
   {
-    selector: "AssignmentExpression[left.type='MemberExpression'][left.property.name=/^(innerHTML|outerHTML)$/]",
+    selector:
+      "AssignmentExpression[left.type='MemberExpression'][left.property.name=/^(innerHTML|outerHTML)$/], AssignmentExpression[left.type='MemberExpression'][left.property.value=/^(innerHTML|outerHTML)$/]",
     message: 'Do not assign innerHTML or outerHTML. Use textContent or React elements.',
+  },
+  {
+    selector:
+      "JSXAttribute[name.name=/^srcdoc$/i], Property[key.name=/^srcdoc$/i], Property[key.value=/^srcdoc$/i], AssignmentExpression[left.type='MemberExpression'][left.property.name=/^srcdoc$/i], AssignmentExpression[left.type='MemberExpression'][left.property.value=/^srcdoc$/i], CallExpression[callee.property.name='setAttribute'][arguments.0.value=/^srcdoc$/i], CallExpression[callee.property.name='setAttributeNS'][arguments.1.value=/^srcdoc$/i]",
+    message: 'Do not set srcdoc. Load iframes from a validated https URL.',
   },
   {
     selector: "CallExpression[callee.property.name='insertAdjacentHTML']",
@@ -38,7 +41,7 @@ const BANNED_EVERYWHERE = [
     message: 'Do not use eval.',
   },
   {
-    selector: "NewExpression[callee.name='Function']",
+    selector: "NewExpression[callee.name='Function'], CallExpression[callee.name='Function']",
     message: 'Do not use new Function.',
   },
 ];
@@ -68,11 +71,12 @@ export default defineConfig([
     rules: { 'no-restricted-syntax': 'off', 'react-hooks/rules-of-hooks': 'off' },
   },
   {
-    // These files will legitimately own the loader import() and the
-    // sanitised markdown HTML. Everything else stays banned.
-    files: ['src/core/unisphere-loader.ts', 'src/core/flashcards.tsx'],
-    rules: {
-      'no-restricted-syntax': [SECURITY_RULE_LEVEL, ...BANNED_EVERYWHERE],
-    },
+    // Each file owns exactly one exemption. Everything else stays banned.
+    files: ['src/core/unisphere-loader.ts'],
+    rules: { 'no-restricted-syntax': [SECURITY_RULE_LEVEL, ...BANNED_EVERYWHERE, DANGEROUS_HTML] },
+  },
+  {
+    files: ['src/core/flashcards.tsx'],
+    rules: { 'no-restricted-syntax': [SECURITY_RULE_LEVEL, ...BANNED_EVERYWHERE, DYNAMIC_IMPORT] },
   },
 ]);

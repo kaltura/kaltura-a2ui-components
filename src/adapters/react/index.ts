@@ -114,6 +114,7 @@ export {
 export { UnisphereWidgetCore, type UnisphereWidgetCoreProps } from '../../core/unisphere-widget';
 // Host option only. Never call this from agent output.
 export { setExtraAllowedOrigins, getExtraAllowedOrigins } from '../../core/unisphere-loader';
+export { setKsProvider, type KsProvider, type KsWidget } from '../../core/ks';
 export { AnalyticsCore, buildAnalyticsUrl, type AnalyticsCoreProps } from '../../core/analytics';
 export { CaptionsEditorCore, type CaptionsEditorCoreProps } from '../../core/captions-editor';
 export { RecorderCore, type RecorderCoreProps } from '../../core/recorder';

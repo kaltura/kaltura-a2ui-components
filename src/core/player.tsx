@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import type { FC } from 'react';
 import { isEntryId, isPositiveInt } from './ids';
 import { KalturaPlayerApi } from '../schemas/player';
-import { withValidatedProps } from './validate-props';
+import { LoadError, withValidatedProps } from './validate-props';
+import { withKs } from './ks';
 
 const CDN_EMBED = 'https://cdnapisec.kaltura.com';
 const PLAYER_PLUGINS = 'uiManagers,youtube,dualscreen,timeline,kalturaCuepoints,ivq,kava';
@@ -75,7 +76,7 @@ const PlayerView: FC<PlayerCoreProps> = (props) => {
   }, [props.entryDescription]);
 
   if (playerUrl instanceof Error) {
-    return <div className="kaltura-load-error">Failed to load player: {playerUrl.message}</div>;
+    return <LoadError>Failed to load player: {playerUrl.message}</LoadError>;
   }
 
   return (
@@ -95,4 +96,4 @@ const PlayerView: FC<PlayerCoreProps> = (props) => {
   );
 };
 
-export const PlayerCore = withValidatedProps(KalturaPlayerApi.schema, 'player', PlayerView);
+export const PlayerCore = withKs('player', withValidatedProps(KalturaPlayerApi.schema, 'player', PlayerView));

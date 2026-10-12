@@ -20,7 +20,7 @@ export const KalturaChartApi = {
     colors: z.array(z.string()).optional(),
     height: CommonSchemas.DynamicNumber.optional(),
     annotations: z.array(z.object({
-      x: z.string(),
+      x: z.union([z.string(), z.number()]),
       label: z.string(),
       color: z.string().optional(),
     })).optional(),

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FC, type Keyboa
 import { isEntryId, isPositiveInt } from './ids';
 import { renderSafeMarkdown, toKalturaCdnUrl } from './safe-markdown';
 import { KalturaFlashcardsApi } from '../schemas/flashcards';
-import { withValidatedProps } from './validate-props';
+import { LoadError, withValidatedProps } from './validate-props';
 
 const CDN_EMBED = 'https://cdnapisec.kaltura.com';
 const CDN_THUMB = 'https://cfvod.kaltura.com';
@@ -97,26 +97,20 @@ export function buildAllCards(
 }
 
 function CardContentInner({ content }: { content: string }) {
-  // Only sanitised HTML ever reaches dangerouslySetInnerHTML. Until it is ready,
-  // or when rendering fails, the card shows nothing or the text as a React child.
-  const [html, setHtml] = useState('');
-  const [failed, setFailed] = useState(false);
+  // The text shows as a React child while markdown renders. Only sanitised HTML
+  // ever reaches dangerouslySetInnerHTML. Failed or empty output keeps the text.
+  const [rendered, setRendered] = useState<{ source: string; html: string }>();
   const contentRef = useRef<HTMLDivElement>(null);
   const [showMask, setShowMask] = useState(false);
+  const html = rendered?.source === content ? rendered.html : '';
 
   useEffect(() => {
     let cancelled = false;
     renderSafeMarkdown(content)
       .then(result => {
-        if (cancelled) return;
-        setHtml(result);
-        setFailed(!result);
+        if (!cancelled) setRendered({ source: content, html: result });
       })
-      .catch(() => {
-        if (cancelled) return;
-        setHtml('');
-        setFailed(true);
-      });
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -126,7 +120,7 @@ function CardContentInner({ content }: { content: string }) {
     const el = contentRef.current;
     if (!el) return;
     setShowMask(el.scrollHeight > el.clientHeight);
-  }, [html]);
+  }, [html, content]);
 
   const shared = {
     ref: contentRef,
@@ -138,7 +132,7 @@ function CardContentInner({ content }: { content: string }) {
   return html ? (
     <div {...shared} dangerouslySetInnerHTML={{ __html: html }} />
   ) : (
-    <div {...shared}>{failed ? content : null}</div>
+    <div {...shared}>{content}</div>
   );
 }
 
@@ -165,7 +159,7 @@ function ClipPlayer({
     !isEntryId(clip.entryId) ||
     (partnerId !== undefined && !isPositiveInt(partnerId)) ||
     (uiconfId !== undefined && !isPositiveInt(uiconfId));
-  if (invalid) return <div className="flashcard-clip-error">This clip cannot be shown.</div>;
+  if (invalid) return <LoadError>This clip cannot be shown.</LoadError>;
   if (!url) return null;
 
   return (

@@ -1,5 +1,5 @@
-import { createElement } from 'react';
-import type { ComponentType, FC } from 'react';
+import { createContext, createElement, useContext } from 'react';
+import type { ComponentType, FC, ReactNode } from 'react';
 import { z } from 'zod';
 import { CommonSchemas } from '@a2ui/web_core/v0_9';
 import { isEntryId, isPositiveInt } from './ids';
@@ -52,15 +52,29 @@ const FIELD_RULES: Record<string, (value: unknown) => boolean> = {
 };
 
 /**
- * Checks resolved props against a component schema. Returns the names of the
- * invalid props (paths like `cards.0.clips.1.entryId`), empty when all is fine.
- * Names come from the schema only, never from the values.
+ * Checks resolved props against a component schema.
+ * - `invalid`: names of props that have a value that fails (paths like
+ *   `cards.0.clips.1.title`), at most 5. Names come from the schema only, never
+ *   from the values.
+ * - `pending`: a required top-level prop is still undefined, for example a
+ *   binding the host has not filled yet. That is not an error, the value may
+ *   still arrive. An undefined value inside a prop (a clip without `startTime`)
+ *   is invalid. With `strict`, a missing top-level prop is invalid too.
  */
-export function invalidProps(schema: z.ZodObject<z.ZodRawShape>, props: unknown): string[] {
+export function checkProps(
+  schema: z.ZodObject<z.ZodRawShape>,
+  props: unknown,
+  strict = false,
+): { invalid: string[]; pending: boolean } {
   const bad = new Set<string>();
+  let pending = false;
   const parsed = resolvedSchema(schema).safeParse(props);
   if (!parsed.success) {
-    for (const issue of parsed.error.issues) bad.add(issue.path.join('.') || '(props)');
+    for (const issue of parsed.error.issues) {
+      const value = issue.path.reduce<unknown>((at, key) => (at as Record<PropertyKey, unknown> | undefined)?.[key], props);
+      if (value === undefined && issue.path.length === 1 && !strict) pending = true;
+      else bad.add(issue.path.join('.') || '(props)');
+    }
   }
   if (typeof props === 'object' && props !== null) {
     const record = props as Record<string, unknown>;
@@ -72,12 +86,25 @@ export function invalidProps(schema: z.ZodObject<z.ZodRawShape>, props: unknown)
       if (!rule(value)) bad.add(key);
     }
   }
-  return [...bad].slice(0, 5);
+  return { invalid: [...bad].slice(0, 5), pending };
 }
 
 /**
- * Wraps a core component. Props that fail the schema show a plain-text error
- * and the component is never rendered. `label` names the widget in the message.
+ * True where props never change after the first render, as in the web
+ * component adapters. There a missing required prop shows the error, because
+ * nothing would ever replace the blank.
+ */
+export const StrictPendingContext = createContext(false);
+
+/** The one plain-text error box. Style: `.kaltura-load-error` in styles/components.css. */
+export const LoadError: FC<{ children?: ReactNode }> = ({ children }) =>
+  createElement('div', { className: 'kaltura-load-error', role: 'alert' }, children);
+
+/**
+ * Wraps a core component. Props with a bad value show a plain-text error and
+ * the component is never rendered. Props that are still undefined render
+ * nothing until they arrive, except under `StrictPendingContext`. `label`
+ * names the widget in the message.
  */
 export function withValidatedProps<P extends object>(
   schema: z.ZodObject<z.ZodRawShape>,
@@ -85,10 +112,9 @@ export function withValidatedProps<P extends object>(
   Inner: ComponentType<P>,
 ): FC<P> {
   const Validated: FC<P> = props => {
-    const bad = invalidProps(schema, props);
-    if (bad.length) {
-      return createElement('div', { className: 'kaltura-load-error' }, `Failed to load ${label}: Invalid ${bad.join(', ')}`);
-    }
+    const { invalid, pending } = checkProps(schema, props, useContext(StrictPendingContext));
+    if (invalid.length) return createElement(LoadError, null, `Failed to load ${label}: Invalid ${invalid.join(', ')}`);
+    if (pending) return null;
     return createElement(Inner, props);
   };
   Validated.displayName = `Validated(${Inner.displayName || Inner.name || label})`;

@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
 import type { ContentLabCoreProps } from '../../core/content-lab';
 import { ContentLabCore } from '../../core/content-lab';
+import { StrictPendingContext } from '../../core/validate-props';
 
 export const CONTENT_LAB_TAG = 'kaltura-content-lab';
 
@@ -16,7 +17,7 @@ export function defineContentLabWebComponent(): void {
       connectedCallback(): void {
         if (!this.config) return;
         const root = createRoot(this);
-        root.render(createElement(ContentLabCore, this.config));
+        root.render(createElement(StrictPendingContext.Provider, { value: true }, createElement(ContentLabCore, this.config)));
       }
     },
   );

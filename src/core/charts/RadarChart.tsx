@@ -26,8 +26,6 @@ function RadarInner({ data, xKey, yKeys, yLabels, colors, height, width }: Radar
   const axes = useMemo(() => data.map(d => String(d[xKey] || '')), [data, xKey]);
   const numAxes = axes.length;
 
-  if (numAxes < 3) return null;
-
   const maxValue = useMemo(() => {
     let max = 0;
     for (const row of data) {
@@ -38,6 +36,8 @@ function RadarInner({ data, xKey, yKeys, yLabels, colors, height, width }: Radar
     }
     return max || 1;
   }, [data, yKeys]);
+
+  if (numAxes < 3) return null;
 
   const radialScale = scaleLinear({ domain: [0, maxValue], range: [0, radius] });
   const angleStep = (2 * Math.PI) / numAxes;
