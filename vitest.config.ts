@@ -11,7 +11,8 @@ export default defineConfig({
     setupFiles: ['./test/setup.ts'],
     // PENDING entries are written-but-red security tests. Paths are
     // relative to the repo root, like the default excludes.
-    exclude: [...configDefaults.exclude, ...PENDING],
+    // RUN_PENDING=1 runs them, to check a fix.
+    exclude: [...configDefaults.exclude, ...(process.env.RUN_PENDING ? [] : PENDING)],
     coverage: {
       provider: 'v8',
       include: ['src/core/**', 'src/adapters/**'],
