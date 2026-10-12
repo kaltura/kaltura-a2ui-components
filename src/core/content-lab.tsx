@@ -22,8 +22,9 @@ function ContentLabView(props: ContentLabCoreProps) {
         ...(props.entryId ? { entryId: props.entryId } : {}),
       }}
       label="Kaltura Content Lab"
+      widget="content-lab"
     />
   );
 }
 
-export const ContentLabCore = withKs('content-lab', withValidatedProps(KalturaContentLabApi.schema.required({ ks: true }), 'Kaltura Content Lab', ContentLabView));
+export const ContentLabCore = withKs('content-lab', withValidatedProps(KalturaContentLabApi.schema.required({ ks: true }), 'Kaltura Content Lab', ContentLabView, 'content-lab'));

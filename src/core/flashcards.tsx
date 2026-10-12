@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FC, type KeyboardEvent } from 'react';
 import { isEntryId, isPositiveInt } from './ids';
-import { renderSafeMarkdown, toKalturaCdnUrl } from './safe-markdown';
+import { renderSafeMarkdown } from './safe-markdown';
+import { toKalturaCdnUrl } from './media-url';
 import { KalturaFlashcardsApi } from '../schemas/flashcards';
 import { LoadError, withValidatedProps } from './validate-props';
-
-const CDN_EMBED = 'https://cdnapisec.kaltura.com';
-const CDN_THUMB = 'https://cfvod.kaltura.com';
+import { kalturaHosts } from './region';
 
 const GRADIENTS = [
   'radial-gradient(315% 315% at 50% 214%, rgba(0,110,250,0) 0%, rgba(0,110,250,0.5) 100%), #000',
@@ -53,7 +52,7 @@ export function buildClipUrl(
   ks?: string,
 ): string {
   if (!isPositiveInt(partnerId) || !isPositiveInt(uiconfId) || !isEntryId(clip.entryId)) return '';
-  const base = `${CDN_EMBED}/p/${encodeURIComponent(partnerId)}/embedPlaykitJs/partner_id/${encodeURIComponent(partnerId)}/uiconf_id/${encodeURIComponent(uiconfId)}`;
+  const base = `${kalturaHosts().cdn}/p/${encodeURIComponent(partnerId)}/embedPlaykitJs/partner_id/${encodeURIComponent(partnerId)}/uiconf_id/${encodeURIComponent(uiconfId)}`;
   const params = new URLSearchParams({
     iframeembed: 'true',
     entry_id: clip.entryId,
@@ -74,7 +73,7 @@ export function buildThumbnailUrl(clip: Clip, partnerId?: number): string {
   if (own) return own;
   if (!isPositiveInt(partnerId) || !isEntryId(clip.entryId)) return '';
   const sec = Math.round(clip.startTime) + 1;
-  return `${CDN_THUMB}/p/${encodeURIComponent(partnerId)}/thumbnail/entry_id/${encodeURIComponent(clip.entryId)}/width/200/vid_sec/${sec}`;
+  return `${kalturaHosts().vod}/p/${encodeURIComponent(partnerId)}/thumbnail/entry_id/${encodeURIComponent(clip.entryId)}/width/200/vid_sec/${sec}`;
 }
 
 /**
@@ -159,7 +158,7 @@ function ClipPlayer({
     !isEntryId(clip.entryId) ||
     (partnerId !== undefined && !isPositiveInt(partnerId)) ||
     (uiconfId !== undefined && !isPositiveInt(uiconfId));
-  if (invalid) return <LoadError>This clip cannot be shown.</LoadError>;
+  if (invalid) return <LoadError widget="flashcards">This clip cannot be shown.</LoadError>;
   if (!url) return null;
 
   return (
@@ -368,4 +367,5 @@ export const FlashcardsCore = withValidatedProps(
   KalturaFlashcardsApi.schema.omit({ partnerId: true, uiconfId: true }),
   'flashcards',
   FlashcardsView,
+  'flashcards',
 );

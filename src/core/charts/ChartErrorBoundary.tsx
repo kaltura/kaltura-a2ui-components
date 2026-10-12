@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import { reportError } from '../host-hooks';
 
 interface Props {
   /** When this value changes after an error, the boundary tries to render again. */
@@ -15,6 +16,11 @@ export class ChartErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(): State {
     return { hasError: true };
+  }
+
+  // The thrown error may hold data values: report fixed text only.
+  componentDidCatch() {
+    reportError('render-failed', 'chart', 'Unable to render chart.');
   }
 
   componentDidUpdate(prevProps: Props) {

@@ -77,7 +77,7 @@ const AvatarView: FC<AvatarCoreProps> = (props) => {
         }
       },
       (err) => {
-        if (!killed) renderLoadError(container, 'avatar SDK', err);
+        if (!killed) renderLoadError(container, 'avatar SDK', err, 'avatar');
       },
     );
 
@@ -96,4 +96,4 @@ const AvatarView: FC<AvatarCoreProps> = (props) => {
   );
 };
 
-export const AvatarCore = withValidatedProps(KalturaAvatarApi.schema, 'avatar', AvatarView);
+export const AvatarCore = withValidatedProps(KalturaAvatarApi.schema, 'avatar', AvatarView, 'avatar');

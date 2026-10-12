@@ -4,10 +4,12 @@ Short records of decisions that affect security or the public contract. One file
 
 | ADR | Title | Status |
 |---|---|---|
-| 0001 | `serverUrl` allowlist | planned |
-| 0002 | KS handling | planned |
-| 0003 | Peer dependencies | planned |
-| 0004 | npm-first distribution | planned |
+| [0001](0001-server-url-allowlist.md) | `serverUrl` allowlist | accepted |
+| [0002](0002-ks-handling.md) | KS handling | accepted |
+| [0003](0003-peer-dependencies.md) | Peer dependencies | accepted |
+| [0004](0004-npm-first-distribution.md) | npm-first distribution | accepted |
+| [0005](0005-analytics-and-recorder-integration.md) | Analytics and recorder integration | proposed |
+| [0006](0006-catalog-generation.md) | Catalog generation | accepted |
 
 ## Template
 

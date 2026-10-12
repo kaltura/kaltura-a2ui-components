@@ -3,6 +3,7 @@ import { isEntryId, isPositiveInt } from './ids';
 import { KalturaCaptionsEditorApi } from '../schemas/captions-editor';
 import { LoadError, withValidatedProps } from './validate-props';
 import { withKs } from './ks';
+import { kalturaHosts } from './region';
 
 export interface CaptionsEditorCoreProps {
   partnerId: number;
@@ -15,13 +16,14 @@ export function buildCaptionsEditorUrl(p: CaptionsEditorCoreProps): string {
   if (!isPositiveInt(p.partnerId)) throw new Error('Invalid partnerId');
   if (!isEntryId(p.entryId)) throw new Error('Invalid entryId');
   if (p.uiconfId != null && !isPositiveInt(p.uiconfId)) throw new Error('Invalid uiconfId');
+  const hosts = kalturaHosts();
   let src =
     `https://www.kaltura.com/apps/captionstudio/latest/index.html` +
     `?pid=${p.partnerId}` +
     `&ks=${encodeURIComponent(p.ks)}` +
     `&entryid=${encodeURIComponent(p.entryId)}` +
-    `&cdnurl=https://cdnapisec.kaltura.com` +
-    `&serviceurl=https://www.kaltura.com`;
+    `&cdnurl=${hosts.cdn}` +
+    `&serviceurl=${hosts.serviceUrl}`;
   if (p.uiconfId != null) src += `&uiconfid=${p.uiconfId}`;
   return src;
 }
@@ -31,7 +33,7 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = (props) => {
   try {
     src = buildCaptionsEditorUrl(props);
   } catch (e) {
-    return <LoadError>Failed to load captions editor: {(e as Error).message}</LoadError>;
+    return <LoadError widget="captions-editor">{`Failed to load captions editor: ${(e as Error).message}`}</LoadError>;
   }
   return (
     <div className="kaltura-captions-editor-container" style={{ width: '100%', minHeight: '600px' }}>
@@ -49,5 +51,5 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = (props) => {
 
 export const CaptionsEditorCore = withKs(
   'captions-editor',
-  withValidatedProps(KalturaCaptionsEditorApi.schema.required({ ks: true }), 'captions editor', CaptionsEditorView),
+  withValidatedProps(KalturaCaptionsEditorApi.schema.required({ ks: true }), 'captions editor', CaptionsEditorView, 'captions-editor'),
 );

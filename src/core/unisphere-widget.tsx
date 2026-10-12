@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
+import { KalturaFailure, type KalturaWidget } from './host-hooks';
 
 export { deriveLoaderUrl } from './unisphere-loader';
 
@@ -14,6 +15,8 @@ export interface UnisphereWidgetCoreProps {
   visualType?: string;
   visualSettings?: Record<string, unknown>;
   label: string;
+  /** Names the widget in `setErrorHandler` reports. Default `unisphere`. */
+  widget?: KalturaWidget;
 }
 
 /** Kills a remote workspace. A throwing remote must not break React's unmount. */
@@ -27,7 +30,7 @@ function killWorkspace(workspace: unknown): void {
 
 export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label } = props;
+  const { partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label, widget = 'unisphere' } = props;
   // Settings objects are rebuilt on every render. Compare them by value.
   const settingsKey = JSON.stringify([props.runtimeSettings, props.visualSettings]);
 
@@ -52,7 +55,7 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
       .then(mod => {
         if (cancelled) return;
         const { loader } = mod;
-        if (typeof loader !== 'function') throw new Error('Unisphere loader is missing');
+        if (typeof loader !== 'function') throw new KalturaFailure('load-failed', 'Unisphere loader is missing');
 
         return loader({
           serverUrl,
@@ -84,7 +87,7 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
       })
       .catch(err => {
         if (cancelled) return;
-        renderLoadError(container, label, err);
+        renderLoadError(container, label, err, widget);
       });
 
     return () => {
@@ -92,7 +95,7 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
       killWorkspace(workspace);
       workspace = null;
     };
-  }, [partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label, settingsKey]);
+  }, [partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label, widget, settingsKey]);
 
   return (
     <div

@@ -1,0 +1,295 @@
+{
+  "KalturaPlayer": [
+    {
+      "why": "missing entryId",
+      "props": {
+        "partnerId": 1,
+        "uiconfId": 2
+      }
+    },
+    {
+      "why": "partnerId is a string",
+      "props": {
+        "partnerId": "1",
+        "uiconfId": 2,
+        "entryId": "0_abc"
+      }
+    },
+    {
+      "why": "unknown prop",
+      "props": {
+        "partnerId": 1,
+        "uiconfId": 2,
+        "entryId": "0_abc",
+        "onload": "alert(1)"
+      },
+      "stripped": true,
+      "leak": "alert(1)"
+    }
+  ],
+  "KalturaFlashcards": [
+    {
+      "why": "missing cards",
+      "props": {
+        "title": "Deck"
+      }
+    },
+    {
+      "why": "cards is a string",
+      "props": {
+        "title": "Deck",
+        "cards": "x"
+      }
+    },
+    {
+      "why": "card without content",
+      "props": {
+        "title": "Deck",
+        "cards": [
+          {
+            "title": "A"
+          }
+        ]
+      }
+    }
+  ],
+  "KalturaMediaManager": [
+    {
+      "why": "missing serverUrl",
+      "props": {
+        "partnerId": 1
+      }
+    },
+    {
+      "why": "mode outside the enum",
+      "props": {
+        "partnerId": 1,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+        "mode": "admin"
+      }
+    },
+    {
+      "why": "multiSelect is a string",
+      "props": {
+        "partnerId": 1,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+        "multiSelect": "yes"
+      }
+    }
+  ],
+  "KalturaAnalytics": [
+    {
+      "why": "missing partnerId",
+      "props": {}
+    },
+    {
+      "why": "partnerId is a float",
+      "props": {
+        "partnerId": 1.5
+      }
+    },
+    {
+      "why": "unknown prop",
+      "props": {
+        "partnerId": 1,
+        "theme": "dark"
+      },
+      "stripped": true
+    }
+  ],
+  "KalturaCaptionsEditor": [
+    {
+      "why": "missing entryId",
+      "props": {
+        "partnerId": 1
+      }
+    },
+    {
+      "why": "entryId is a number",
+      "props": {
+        "partnerId": 1,
+        "entryId": 5
+      }
+    },
+    {
+      "why": "unknown prop",
+      "props": {
+        "partnerId": 1,
+        "entryId": "0_abc",
+        "assetId": "1"
+      },
+      "stripped": true
+    }
+  ],
+  "KalturaRecorder": [
+    {
+      "why": "missing partnerId",
+      "props": {}
+    },
+    {
+      "why": "uiconfId is a string",
+      "props": {
+        "partnerId": 1,
+        "uiconfId": "x"
+      }
+    },
+    {
+      "why": "unknown prop",
+      "props": {
+        "partnerId": 1,
+        "showRecordButton": true
+      },
+      "stripped": true
+    }
+  ],
+  "KalturaAvatar": [
+    {
+      "why": "missing avatarId",
+      "props": {}
+    },
+    {
+      "why": "avatarId is a number",
+      "props": {
+        "avatarId": 5
+      }
+    },
+    {
+      "why": "unknown prop",
+      "props": {
+        "avatarId": "a",
+        "sdkUrl": "https://evil.example/x.js"
+      },
+      "stripped": true,
+      "leak": "evil.example"
+    }
+  ],
+  "KalturaGenie": [
+    {
+      "why": "missing serverUrl",
+      "props": {
+        "partnerId": 1
+      }
+    },
+    {
+      "why": "serverUrl is a number",
+      "props": {
+        "partnerId": 1,
+        "serverUrl": 5
+      }
+    },
+    {
+      "why": "unknown prop",
+      "props": {
+        "partnerId": 1,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+        "runtime": "x"
+      },
+      "stripped": true
+    }
+  ],
+  "KalturaContentLab": [
+    {
+      "why": "missing partnerId",
+      "props": {
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
+      }
+    },
+    {
+      "why": "partnerId is a string",
+      "props": {
+        "partnerId": "1",
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
+      }
+    },
+    {
+      "why": "unknown prop",
+      "props": {
+        "partnerId": 1,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+        "x": 1
+      },
+      "stripped": true
+    }
+  ],
+  "KalturaAgentsWidget": [
+    {
+      "why": "missing serverUrl",
+      "props": {
+        "partnerId": 1
+      }
+    },
+    {
+      "why": "agentId is an object",
+      "props": {
+        "partnerId": 1,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+        "agentId": {
+          "a": 1
+        }
+      }
+    },
+    {
+      "why": "unknown prop",
+      "props": {
+        "partnerId": 1,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+        "x": 1
+      },
+      "stripped": true
+    }
+  ],
+  "KalturaVodAvatar": [
+    {
+      "why": "missing entryId",
+      "props": {
+        "partnerId": 1,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
+      }
+    },
+    {
+      "why": "partnerId is null",
+      "props": {
+        "partnerId": null,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+        "entryId": "0_abc"
+      }
+    },
+    {
+      "why": "unknown prop",
+      "props": {
+        "partnerId": 1,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+        "entryId": "0_abc",
+        "x": 1
+      },
+      "stripped": true
+    }
+  ],
+  "KalturaChart": [
+    {
+      "why": "missing data",
+      "props": {
+        "chartType": "bar"
+      }
+    },
+    {
+      "why": "chartType outside the enum",
+      "props": {
+        "chartType": "donut",
+        "data": []
+      }
+    },
+    {
+      "why": "annotation without label",
+      "props": {
+        "chartType": "bar",
+        "data": [],
+        "annotations": [
+          {
+            "x": 1
+          }
+        ]
+      }
+    }
+  ]
+}

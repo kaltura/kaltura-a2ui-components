@@ -6,6 +6,12 @@
 // 2. The ESM entry imports in plain Node, with no bundler.
 // 3. The web component entry runs in a bare jsdom window and registers every
 //    custom element listed in the catalog.
+// 4. QA-08: with the peers installed there is exactly one copy of each shared
+//    library, and the host's `Catalog` class is the one the ESM entry uses
+//    (an inlined second copy would break `instanceof`).
+// 5. QA-08: a host without the peers, or with a conflicting @a2ui/react, gets a
+//    clear npm message (`npm ls` "missing", or an ERESOLVE error that names
+//    the peer), and the ESM entry fails on import with the package name.
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { builtinModules, createRequire } from 'node:module';
@@ -16,7 +22,7 @@ import { JSDOM } from 'jsdom';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-const catalog = JSON.parse(readFileSync(join(root, pkg.exports['./catalog']), 'utf8'));
+const catalog = JSON.parse(readFileSync(join(root, pkg.exports['./catalog'].default), 'utf8'));
 const declared = new Set([...Object.keys(pkg.dependencies ?? {}), ...Object.keys(pkg.peerDependencies ?? {})]);
 
 const failures = [];
@@ -55,18 +61,31 @@ try {
   const packed = JSON.parse(run('npm', ['pack', '--json', '--pack-destination', work], root));
   const tarball = join(work, packed[0].filename);
 
-  // npm installs peer dependencies on its own, so this also proves that the
-  // peers are enough for the ESM entry.
   const consumer = join(work, 'consumer');
-  run('mkdir', [consumer], work);
-  writeFileSync(join(consumer, 'package.json'), JSON.stringify({ name: 'consumer', private: true, type: 'module' }));
-  run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', tarball], consumer);
+  const peers = Object.entries(pkg.peerDependencies).map(([name, range]) => `${name}@${range}`);
+  const install = (dir, args) => {
+    run('mkdir', ['-p', dir], work);
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'consumer', private: true, type: 'module' }));
+    return run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', ...args], dir);
+  };
+
+  // The host installs the peers itself, as a real A2UI client does.
+  install(consumer, [tarball, ...peers]);
+
+  // QA-08: one copy of every shared library, so one context and one zod.
+  const tree = run('npm', ['ls', '--all', '--parseable'], consumer).split('\n');
+  for (const name of ['@a2ui/react', '@a2ui/web_core', 'zod']) {
+    const copies = tree.filter((line) => line.endsWith(`/node_modules/${name}`));
+    if (copies.length !== 1) fail(`Expected one copy of ${name} in the consumer, found ${copies.length}: ${copies.join(', ')}`);
+  }
 
   const esmProbe = `
     const m = await import('@kaltura/a2ui-react');
     for (const name of ['kalturaReactCatalog', 'setKsProvider', 'setExtraAllowedOrigins']) {
       if (m[name] === undefined) throw new Error('missing export ' + name);
-    }`;
+    }
+    const { Catalog } = await import('@a2ui/web_core/v0_9');
+    if (!(m.kalturaReactCatalog instanceof Catalog)) throw new Error('catalog is not an instance of the host Catalog');`;
   try {
     run(process.execPath, ['--input-type=module', '-e', esmProbe], consumer);
   } catch (error) {
@@ -87,6 +106,41 @@ try {
     if (!dom.window.customElements.get(tag)) fail(`Web component entry did not register <${tag}>.`);
   }
   dom.window.close();
+
+  // QA-08: a host that skipped the peers (npm >= 7 installs them unless told
+  // not to) sees the gap in `npm ls`, and the import names the package.
+  const bare = join(work, 'no-peers');
+  install(bare, ['--legacy-peer-deps', tarball]);
+  let missing = '';
+  try {
+    run('npm', ['ls', '--all'], bare);
+  } catch (error) {
+    missing = String(error.stdout ?? '') + String(error.stderr ?? '');
+  }
+  for (const name of ['@a2ui/react', '@a2ui/web_core', 'zod']) {
+    if (!new RegExp(`missing: ${name}@`).test(missing)) fail(`"npm ls" does not report the missing peer ${name} when peers are skipped.`);
+  }
+  try {
+    run(process.execPath, ['--input-type=module', '-e', "await import('@kaltura/a2ui-react')"], bare);
+    fail('ESM entry imported without its peers installed.');
+  } catch (error) {
+    if (!/Cannot find package '(@a2ui\/(react|web_core)|zod|react)/.test(String(error.stderr))) {
+      fail(`ESM entry without peers did not fail with a "Cannot find package" error: ${String(error.stderr).split('\n').find((l) => /Error/.test(l)) ?? error}`);
+    }
+  }
+
+  // QA-08: a host on another @a2ui/react minor gets an install error that
+  // names the peer, instead of a second copy of the renderer.
+  let conflict = '';
+  try {
+    install(join(work, 'conflict'), ['@a2ui/react@0.10.2', tarball]);
+    fail('npm installed the package next to @a2ui/react@0.10.2 without a peer conflict.');
+  } catch (error) {
+    conflict = String(error.stderr ?? error);
+  }
+  if (conflict !== '' && !/ERESOLVE[\s\S]*peer @a2ui\/react@"\^0\.11/.test(conflict)) {
+    fail(`The peer conflict message does not name @a2ui/react ^0.11: ${conflict.split('\n').slice(0, 6).join(' | ')}`);
+  }
 } finally {
   rmSync(work, { recursive: true, force: true });
 }

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kaltura A2UI components: plain HTML</title>
+    <!-- check-examples: expect kaltura-chart h4.kaltura-chart-title; kaltura-player iframe; text:Cell -->
+  </head>
+  <body>
+    <h1>Kaltura A2UI components</h1>
+
+    <h2>Chart (no Kaltura account needed)</h2>
+    <kaltura-chart id="chart"></kaltura-chart>
+
+    <h2>Flashcards (no Kaltura account needed)</h2>
+    <kaltura-flashcards id="cards"></kaltura-flashcards>
+
+    <h2>Player (needs a real partner, uiconf and entry)</h2>
+    <kaltura-player id="player"></kaltura-player>
+
+    <!--
+      Served from the repo root, this loads the local build (npm run build).
+      On a real page, use the CDN file instead:
+      https://cdn.jsdelivr.net/npm/@kaltura/a2ui-react@0.2.0/dist/kaltura-wc.js
+    -->
+    <script src="../../dist/kaltura-wc.js"></script>
+    <script>
+      // The IIFE defines all 12 custom elements and the global KalturaA2UIWebComponents.
+      const { setKsProvider, setErrorHandler } = KalturaA2UIWebComponents;
+
+      // The host mints the Kaltura Session. The agent never sees it.
+      // Replace with a call to your backend. A user KS is enough for the Player.
+      setKsProvider(() => undefined);
+
+      // Report problems (invalid props, rejected URLs, load failures) to your own logging.
+      setErrorHandler((error) => console.warn('kaltura widget error:', error.code));
+
+      document.getElementById('chart').config = {
+        chartType: 'bar',
+        title: 'Visits per day',
+        data: [
+          { day: 'Mon', visits: 12 },
+          { day: 'Tue', visits: 31 },
+          { day: 'Wed', visits: 24 },
+        ],
+        xKey: 'day',
+        yKeys: ['visits'],
+      };
+
+      document.getElementById('cards').config = {
+        title: 'Cells',
+        cards: [{ title: 'Cell', content: 'The basic unit of life.' }],
+      };
+
+      // Use real ids. Ids must be numbers, not numeric strings.
+      document.getElementById('player').config = { partnerId: 1, uiconfId: 2, entryId: '0_abc' };
+    </script>
+  </body>
+</html>

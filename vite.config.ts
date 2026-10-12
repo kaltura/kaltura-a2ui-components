@@ -4,10 +4,16 @@ import cssInjectedByJs from 'vite-plugin-css-injected-by-js';
 
 // Two library targets, selected by BUILD_TARGET (the `build` script runs both):
 //
-//   react        → dist/kaltura-react.mjs  (ESM, React external/peer)
+//   react        → dist/kaltura-react.mjs  (ESM, React and @a2ui/* external)
 //                  Consumed by catalog-registering A2UI clients (chat-UI,
-//                  partner apps). React is provided by the host, so it stays
-//                  external; consumers dedupe on their own React.
+//                  partner apps). React, @a2ui/react, @a2ui/web_core and zod
+//                  are peers and stay external, so the host's copy is the only
+//                  copy (one context, one zod, one instanceof).
+//                  @a2ui/markdown-it stays inlined on purpose: it pins
+//                  DOMPurify 3.4.11, which has advisories. Inlined, our own
+//                  sanitiser runs on the patched copy (see "overrides" in
+//                  package.json). The host's tree gets 3.4.11 through
+//                  @a2ui/react either way and needs its own override.
 //
 //   webcomponent → dist/kaltura-wc.js      (IIFE, React inlined, CSS-in-JS)
 //                  Consumed by plain-HTML hosts via <script> + custom elements.
@@ -23,6 +29,9 @@ import cssInjectedByJs from 'vite-plugin-css-injected-by-js';
 const target = process.env.BUILD_TARGET ?? 'react';
 
 const isReact = target === 'react';
+
+// Packages the ESM build leaves for the host to resolve, with any subpath.
+const hostProvided = /^(@a2ui\/(react|web_core)|zod)(\/|$)/;
 
 export default defineConfig({
   // Browsers have no `process`. The self-contained bundle must not leave
@@ -53,9 +62,11 @@ export default defineConfig({
         },
     rollupOptions: isReact
       ? {
-          // Host provides React; keep it external so consumers dedupe.
-          external: ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client'],
+          // Host provides these; keep them external so consumers dedupe.
+          external: ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client', hostProvided],
           output: {
+            // Shipped maps keep the mappings but not the source text.
+            sourcemapExcludeSources: true,
             globals: {
               react: 'React',
               'react-dom': 'ReactDOM',
@@ -67,7 +78,7 @@ export default defineConfig({
       : {
           // Self-contained bundle — React and all deps inlined. IIFE already
           // disables code-splitting, so dynamic imports fold in automatically.
-          output: {},
+          output: { sourcemapExcludeSources: true },
         },
   },
 });

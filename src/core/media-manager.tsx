@@ -4,6 +4,7 @@ import { renderLoadError } from './render-load-error';
 import { KalturaMediaManagerApi } from '../schemas/media-manager';
 import { withValidatedProps } from './validate-props';
 import { withKs } from './ks';
+import { emitEvent, KalturaFailure, type KalturaEvent } from './host-hooks';
 
 export { deriveLoaderUrl } from './unisphere-loader';
 
@@ -106,14 +107,17 @@ function MediaManagerView(props: MediaManagerCoreProps) {
    * or the wrapper div in React) with the instance id. Legacy mode bubbles it
    * to `document` as before. Otherwise it fires on the wrapper inside the host
    * and bubbles up to the host element, and stops there. `name` is text from
-   * the media library or the agent: treat it as untrusted.
+   * the media library or the agent: treat it as untrusted. The host event
+   * handler gets the same detail.
    */
-  const announce = (detail: Record<string, unknown>) => {
+  const announce = (selection: Omit<KalturaEvent['detail'], 'instanceId'>) => {
     const wrapper = hostRef.current;
     if (!wrapper) return;
     const host = wrapper.closest('kaltura-media-manager');
+    const detail = { ...selection, instanceId: instanceIdRef.current };
+    emitEvent({ type: 'entry-selected', widget: 'media-manager', detail });
     const event = new CustomEvent('kaltura-entry-selected', {
-      detail: { ...detail, instanceId: instanceIdRef.current },
+      detail,
       bubbles: true,
       composed: true,
     });
@@ -171,7 +175,7 @@ function MediaManagerView(props: MediaManagerCoreProps) {
         createWorkspace?: (cfg: unknown) => Promise<unknown>;
       }>(serverUrl);
       if (cancelled) return;
-      if (typeof createWorkspace !== 'function') throw new Error('Unisphere createWorkspace is missing');
+      if (typeof createWorkspace !== 'function') throw new KalturaFailure('load-failed', 'Unisphere createWorkspace is missing');
 
       workspace = (await createWorkspace(buildWorkspaceConfig({ ks, partnerId, instanceId, theme }))) as RemoteWorkspace;
       // The effect was cleaned up while this ran: nobody else will kill it.
@@ -199,7 +203,7 @@ function MediaManagerView(props: MediaManagerCoreProps) {
     })().catch(err => {
       if (cancelled) return;
       console.error('[MediaManager] Load failed:', err);
-      renderLoadError(container, 'Media Manager', err);
+      renderLoadError(container, 'Media Manager', err, 'media-manager');
     });
 
     return () => {
@@ -257,5 +261,5 @@ function MediaManagerView(props: MediaManagerCoreProps) {
 
 export const MediaManagerCore = withKs(
   'media-manager',
-  withValidatedProps(KalturaMediaManagerApi.schema.required({ ks: true }), 'Media Manager', MediaManagerView),
+  withValidatedProps(KalturaMediaManagerApi.schema.required({ ks: true }), 'Media Manager', MediaManagerView, 'media-manager'),
 );

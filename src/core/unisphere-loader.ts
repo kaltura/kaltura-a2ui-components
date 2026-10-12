@@ -1,11 +1,14 @@
+import { KalturaFailure } from './host-hooks';
+
 /** serverUrl comes from agent output. Only known Unisphere origins may be imported. */
+// Same codes as KALTURA_REGIONS in region.ts. test/release/unisphere-smoke.test.ts reads this line.
 const KALTURA_REGIONS = ['nvp1', 'irp2', 'frp2', 'cap2', 'syp2'];
 const BUILT_IN_ORIGINS = KALTURA_REGIONS.map(region => `https://unisphere.${region}.ovp.kaltura.com`);
 
 let extraOrigins: string[] = [];
 
 /** Accepts only an https origin: no path, query, hash or userinfo. Returns the normalised origin. */
-function parseOrigin(value: string): string {
+export function parseOrigin(value: string): string {
   let url: URL;
   try {
     url = new URL(value);
@@ -47,7 +50,7 @@ export function deriveLoaderUrl(serverUrl: string): string {
   if (!origin || !allowed || !exact) {
     // The value comes from agent output: keep it out of the UI and the thrown message.
     console.warn('serverUrl rejected:', String(serverUrl).slice(0, 100));
-    throw new Error('serverUrl is not an allowed Unisphere origin');
+    throw new KalturaFailure('origin-not-allowed', 'serverUrl is not an allowed Unisphere origin');
   }
   return `${origin}/v1/loader/index.esm.js`;
 }

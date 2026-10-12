@@ -24,8 +24,9 @@ function GenieView(props: GenieCoreProps) {
         language: props.language || 'en',
       }}
       label="Kaltura Genie"
+      widget="genie"
     />
   );
 }
 
-export const GenieCore = withKs('genie', withValidatedProps(KalturaGenieApi.schema.required({ ks: true }), 'Kaltura Genie', GenieView));
+export const GenieCore = withKs('genie', withValidatedProps(KalturaGenieApi.schema.required({ ks: true }), 'Kaltura Genie', GenieView, 'genie'));
