@@ -15,7 +15,7 @@ const css = readFileSync(resolve(process.cwd(), 'src/styles/components.css'), 'u
 describe('SEC-06: every plain-text error state is one alert with one class', () => {
   it('SEC-06: renderLoadError makes an alert with the shared class and no inline style', () => {
     const host = document.body.appendChild(document.createElement('div'));
-    renderLoadError(host, 'thing', new Error('boom'));
+    renderLoadError(host, 'thing', new Error('boom'), 'avatar');
     const box = host.firstElementChild!;
     expect([box.className, box.getAttribute('role'), box.hasAttribute('style'), box.textContent]).toEqual([
       'kaltura-load-error',

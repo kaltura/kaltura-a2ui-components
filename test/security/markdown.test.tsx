@@ -26,6 +26,10 @@ describe('SEC-05: renderSafeMarkdown images', () => {
     const out = parse(await renderSafeMarkdown('![x](https://cfvod.kaltura.com/a.png)'));
     expect(out.querySelector('img')?.getAttribute('src')).toBe('https://cfvod.kaltura.com/a.png');
   });
+  it('SEC-05: an image that calls the Kaltura API with a ks is removed', async () => {
+    const out = parse(await renderSafeMarkdown('![x](https://www.kaltura.com/api_v3/service/media/action/list?ks=SECRET)'));
+    expect(out.querySelectorAll('img').length).toBe(0);
+  });
   it('SEC-05: raw HTML in markdown stays text', async () => {
     const out = parse(await renderSafeMarkdown('<img src="https://evil.example/a" onerror="x()">'));
     expect(out.querySelectorAll('img').length).toBe(0);

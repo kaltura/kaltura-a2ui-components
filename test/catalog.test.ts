@@ -74,20 +74,20 @@ describe('x-kaltura-adapters', () => {
     expect(adapters.webcomponent.customElements).toHaveLength(12);
   });
 
-  // The committed source carries placeholders; build-and-release.yml stamps the
-  // real tag + SRI onto the tagged commit (see the workflow's stamp step). Guard
-  // that the placeholders are present so a release can substitute them, and that
-  // a stamped release never ships an unresolved placeholder.
-  it('carries release placeholders that CI substitutes', () => {
-    const released = process.env.RELEASE_STAMPED === '1';
-    const flat = JSON.stringify(adapters);
-    if (released) {
-      expect(flat).not.toContain('__RELEASE_TAG__');
-      expect(flat).not.toContain('__WC_SRI__');
-      expect(adapters.webcomponent.integrity).toMatch(/^sha384-/);
-    } else {
-      expect(adapters.react.cdn).toContain('__RELEASE_TAG__');
-      expect(adapters.webcomponent.integrity).toBe('__WC_SRI__');
-    }
+  // The committed source carries placeholders. release.yml stamps them in the build
+  // workspace only (scripts/stamp-catalog.mjs). The stamped result is checked by
+  // scripts/release-verify-stamp.mjs and test/release/stamped-catalog.test.ts.
+  it('carries the release placeholders that the release workflow substitutes', () => {
+    expect([adapters.react.cdn, adapters.react.integrity, adapters.webcomponent.cdn, adapters.webcomponent.integrity]).toEqual([
+      expect.stringContaining('@__RELEASE_TAG__/dist/kaltura-react.mjs'),
+      '__REACT_SRI__',
+      expect.stringContaining('@__RELEASE_TAG__/dist/kaltura-wc.js'),
+      '__WC_SRI__',
+    ]);
+  });
+
+  it('keeps placeholder tokens out of every description, so a stamped catalog has none left', () => {
+    const descriptions = [adapters.description, adapters.react.description, adapters.webcomponent.description];
+    expect(descriptions.filter(text => /__[A-Z][A-Z0-9_]*__/.test(text))).toEqual([]);
   });
 });

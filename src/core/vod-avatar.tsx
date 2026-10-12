@@ -24,8 +24,9 @@ function VodAvatarView(props: VodAvatarCoreProps) {
         ...(props.avatarStyle ? { avatarStyle: props.avatarStyle } : {}),
       }}
       label="Kaltura VOD Avatar"
+      widget="vod-avatar"
     />
   );
 }
 
-export const VodAvatarCore = withKs('vod-avatar', withValidatedProps(KalturaVodAvatarApi.schema.required({ ks: true }), 'Kaltura VOD Avatar', VodAvatarView));
+export const VodAvatarCore = withKs('vod-avatar', withValidatedProps(KalturaVodAvatarApi.schema.required({ ks: true }), 'Kaltura VOD Avatar', VodAvatarView, 'vod-avatar'));

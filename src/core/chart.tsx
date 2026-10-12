@@ -136,4 +136,4 @@ function ChartView(props: ChartCoreProps) {
   );
 }
 
-export const ChartCore = withValidatedProps(KalturaChartApi.schema, 'chart', ChartView);
+export const ChartCore = withValidatedProps(KalturaChartApi.schema, 'chart', ChartView, 'chart');

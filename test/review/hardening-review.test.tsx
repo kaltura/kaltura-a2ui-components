@@ -4,7 +4,8 @@
 import { describe, it, expect, afterAll, afterEach, beforeAll } from 'vitest';
 import { createElement, act } from 'react';
 import { deriveLoaderUrl } from '../../src/core/unisphere-loader';
-import { sanitizeMarkdownHtml, toKalturaCdnUrl } from '../../src/core/safe-markdown';
+import { sanitizeMarkdownHtml } from '../../src/core/safe-markdown';
+import { toKalturaCdnUrl } from '../../src/core/media-url';
 import { checkProps } from '../../src/core/validate-props';
 import { buildPlayerUrl } from '../../src/core/player';
 import { buildClipUrl, buildThumbnailUrl } from '../../src/core/flashcards';

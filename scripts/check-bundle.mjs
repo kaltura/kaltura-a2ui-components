@@ -40,6 +40,54 @@ if (sources.iife !== undefined) {
   }
 }
 
+// QA-08 (D4, plan 3.2): the ESM keeps @a2ui/react, @a2ui/web_core and zod external, so
+// the host supplies one copy of each (one context, one zod, one instanceof).
+// The IIFE stays self-contained. The source maps list every bundled file, so
+// they show exactly what was inlined, including `createContext` from
+// @a2ui/react.
+//
+// @a2ui/markdown-it and DOMPurify stay inlined in the ESM on purpose:
+// @a2ui/markdown-it pins dompurify 3.4.11 (advisories up to 3.4.15), so
+// externalising it would hand hosts the vulnerable copy (SEC-23).
+const peerLibraries = /node_modules\/(@a2ui\/(react|web_core)|zod)\//;
+const peerSpecifiers = ['@a2ui/react/v0_9', '@a2ui/web_core/v0_9', 'zod'];
+const maps = {};
+for (const [kind, file] of Object.entries(bundles)) {
+  const path = join(dist, `${file}.map`);
+  if (!existsSync(path)) {
+    if (sources[kind] !== undefined) fail('SOURCEMAP-EXISTS', `dist/${file}.map is missing.`);
+    continue;
+  }
+  maps[kind] = JSON.parse(readFileSync(path, 'utf8'));
+  if (maps[kind].sourcesContent !== undefined) {
+    fail('SOURCEMAP-CONTENT', `dist/${file}.map embeds sourcesContent. Shipped maps must not carry the source text.`);
+  }
+}
+
+if (maps.esm !== undefined) {
+  const inlined = maps.esm.sources.filter((s) => peerLibraries.test(s));
+  if (inlined.length > 0) {
+    fail('ESM-PEERS', `dist/${bundles.esm} inlines peer libraries (${inlined.length} files, first: ${inlined[0]}). Keep them external.`);
+  }
+  if (!maps.esm.sources.some((s) => s.includes('node_modules/dompurify/'))) {
+    fail('ESM-DOMPURIFY', `dist/${bundles.esm} does not inline DOMPurify. @a2ui/markdown-it would then use the host's pinned, vulnerable copy.`);
+  }
+}
+if (sources.esm !== undefined) {
+  for (const specifier of peerSpecifiers) {
+    if (!new RegExp(`from\\s*["']${specifier}["']`).test(sources.esm)) {
+      fail('ESM-PEERS', `dist/${bundles.esm} does not import "${specifier}" from the host.`);
+    }
+  }
+}
+if (maps.iife !== undefined) {
+  for (const library of ['@a2ui/markdown-it', 'dompurify', 'zod']) {
+    if (!maps.iife.sources.some((s) => s.includes(`node_modules/${library}/`))) {
+      fail('IIFE-SELF-CONTAINED', `dist/${bundles.iife} does not inline ${library}. The script-tag bundle must be self-contained.`);
+    }
+  }
+}
+
 // Declarations must not import CSS: the CSS is not shipped under dist/types.
 const typesDir = join(dist, 'types');
 if (existsSync(typesDir)) {

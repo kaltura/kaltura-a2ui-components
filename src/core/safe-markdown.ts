@@ -1,30 +1,13 @@
 import { renderMarkdown } from '@a2ui/markdown-it';
+import { isAllowedMediaUrl } from './media-url';
 
 /**
  * Markdown comes from agent output. A remote image URL is a zero-click way to
- * send data out (the URL itself carries it), so images may only load from
- * Kaltura CDN hosts. DOMPurify is only a transitive dependency of
- * @a2ui/markdown-it, so this file uses DOMParser instead of importing it.
+ * send data out (the URL itself carries it), so images load only from the
+ * hosts the basic Image allows (isAllowedMediaUrl). DOMPurify is only a
+ * transitive dependency of @a2ui/markdown-it, so this file uses DOMParser
+ * instead of importing it.
  */
-
-/**
- * Kaltura CDN allowlist: https only, default port, no credentials, and a host
- * that is `kaltura.com` or a subdomain of it. This covers the hosts used in
- * this repo (cdnapisec.kaltura.com, cfvod.kaltura.com). Returns the
- * normalised URL, or '' when the URL is not allowed.
- */
-export function toKalturaCdnUrl(value: unknown): string {
-  if (typeof value !== 'string') return '';
-  let url: URL;
-  try {
-    url = new URL(value); // no base: relative and protocol-relative URLs throw
-  } catch {
-    return '';
-  }
-  const { protocol, username, password, port, hostname } = url;
-  const kalturaHost = hostname === 'kaltura.com' || hostname.endsWith('.kaltura.com');
-  return protocol === 'https:' && !username && !password && !port && kalturaHost ? url.href : '';
-}
 
 const ALLOWED_TAGS = new Set([
   'a', 'img', 'p', 'br', 'hr', 'span', 'div', 'strong', 'b', 'em', 'i', 'u', 's', 'del',
@@ -57,7 +40,7 @@ function isSafeLink(value: string): boolean {
   }
 }
 
-/** Removes everything but plain formatting tags, safe links and Kaltura CDN images. */
+/** Removes everything but plain formatting tags, safe links and allowed images. */
 export function sanitizeMarkdownHtml(html: string): string {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   for (const el of Array.from(doc.body.querySelectorAll('*'))) {
@@ -71,8 +54,8 @@ export function sanitizeMarkdownHtml(html: string): string {
       if (!ALLOWED_ATTRS[tag]?.includes(attr.name)) el.removeAttribute(attr.name);
     }
     if (tag === 'img') {
-      const src = toKalturaCdnUrl(el.getAttribute('src'));
-      if (src) el.setAttribute('src', src);
+      const src = el.getAttribute('src');
+      if (src !== null && isAllowedMediaUrl(src)) el.setAttribute('src', new URL(src).href);
       else el.replaceWith(doc.createTextNode(el.getAttribute('alt') ?? ''));
     } else if (tag === 'code') {
       if (!CODE_CLASS.test(el.getAttribute('class') ?? '')) el.removeAttribute('class');

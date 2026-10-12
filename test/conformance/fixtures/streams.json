@@ -1,0 +1,492 @@
+[
+  {
+    "component": "KalturaPlayer",
+    "description": "Bound entry id, then the data model changes.",
+    "messages": [
+      {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "s",
+          "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json"
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateDataModel": {
+          "surfaceId": "s",
+          "path": "/",
+          "value": {
+            "entryId": "0_abc"
+          }
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "s",
+          "components": [
+            {
+              "id": "root",
+              "component": "KalturaPlayer",
+              "partnerId": 1,
+              "uiconfId": 2,
+              "entryId": {
+                "path": "/entryId"
+              },
+              "autoplay": true,
+              "muted": true
+            }
+          ]
+        }
+      }
+    ],
+    "expect": {
+      "iframeSrcContains": [
+        "/partner_id/1/uiconf_id/2",
+        "entry_id=0_abc"
+      ]
+    },
+    "after": {
+      "messages": [
+        {
+          "version": "v0.9",
+          "updateDataModel": {
+            "surfaceId": "s",
+            "path": "/entryId",
+            "value": "0_def"
+          }
+        }
+      ],
+      "expect": {
+        "iframeSrcContains": [
+          "entry_id=0_def"
+        ]
+      }
+    }
+  },
+  {
+    "component": "KalturaFlashcards",
+    "description": "Bound deck title, then the data model changes.",
+    "messages": [
+      {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "s",
+          "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json"
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateDataModel": {
+          "surfaceId": "s",
+          "path": "/",
+          "value": {
+            "deck": {
+              "title": "Biology"
+            }
+          }
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "s",
+          "components": [
+            {
+              "id": "root",
+              "component": "KalturaFlashcards",
+              "title": {
+                "path": "/deck/title"
+              },
+              "cards": [
+                {
+                  "title": "Cell",
+                  "content": "The basic unit of life."
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "expect": {
+      "textContains": [
+        "Biology",
+        "Cell"
+      ]
+    },
+    "after": {
+      "messages": [
+        {
+          "version": "v0.9",
+          "updateDataModel": {
+            "surfaceId": "s",
+            "path": "/deck/title",
+            "value": "Chemistry"
+          }
+        }
+      ],
+      "expect": {
+        "textContains": [
+          "Chemistry"
+        ]
+      }
+    }
+  },
+  {
+    "component": "KalturaMediaManager",
+    "description": "Unisphere workspace on the default server.",
+    "messages": [
+      {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "s",
+          "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json"
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "s",
+          "components": [
+            {
+              "id": "root",
+              "component": "KalturaMediaManager",
+              "partnerId": 1,
+              "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+              "mode": "select"
+            }
+          ]
+        }
+      }
+    ],
+    "expect": {
+      "selector": "div[id^=\"unisphere-\"]"
+    }
+  },
+  {
+    "component": "KalturaAnalytics",
+    "description": "Analytics iframe.",
+    "messages": [
+      {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "s",
+          "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json"
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "s",
+          "components": [
+            {
+              "id": "root",
+              "component": "KalturaAnalytics",
+              "partnerId": 1,
+              "entryId": "0_abc"
+            }
+          ]
+        }
+      }
+    ],
+    "expect": {
+      "iframeSrcContains": [
+        "partnerId=1",
+        "entryId=0_abc"
+      ]
+    }
+  },
+  {
+    "component": "KalturaCaptionsEditor",
+    "description": "Captions editor iframe.",
+    "messages": [
+      {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "s",
+          "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json"
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "s",
+          "components": [
+            {
+              "id": "root",
+              "component": "KalturaCaptionsEditor",
+              "partnerId": 1,
+              "entryId": "0_abc"
+            }
+          ]
+        }
+      }
+    ],
+    "expect": {
+      "iframeSrcContains": [
+        "pid=1",
+        "entryid=0_abc"
+      ]
+    }
+  },
+  {
+    "component": "KalturaRecorder",
+    "description": "Recorder iframe.",
+    "messages": [
+      {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "s",
+          "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json"
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "s",
+          "components": [
+            {
+              "id": "root",
+              "component": "KalturaRecorder",
+              "partnerId": 1
+            }
+          ]
+        }
+      }
+    ],
+    "expect": {
+      "iframeSrcContains": [
+        "/partner_id/1/"
+      ]
+    }
+  },
+  {
+    "component": "KalturaAvatar",
+    "description": "Avatar SDK container.",
+    "messages": [
+      {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "s",
+          "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json"
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "s",
+          "components": [
+            {
+              "id": "root",
+              "component": "KalturaAvatar",
+              "avatarId": "avatar-1",
+              "language": "en"
+            }
+          ]
+        }
+      }
+    ],
+    "expect": {
+      "selector": "div[id^=\"kaltura-avatar-\"]"
+    }
+  },
+  {
+    "component": "KalturaGenie",
+    "description": "Genie on the default server.",
+    "messages": [
+      {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "s",
+          "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json"
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "s",
+          "components": [
+            {
+              "id": "root",
+              "component": "KalturaGenie",
+              "partnerId": 1,
+              "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
+            }
+          ]
+        }
+      }
+    ],
+    "expect": {
+      "selector": "div[id^=\"unisphere-\"]"
+    }
+  },
+  {
+    "component": "KalturaContentLab",
+    "description": "Content Lab on the default server.",
+    "messages": [
+      {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "s",
+          "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json"
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "s",
+          "components": [
+            {
+              "id": "root",
+              "component": "KalturaContentLab",
+              "partnerId": 1,
+              "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
+            }
+          ]
+        }
+      }
+    ],
+    "expect": {
+      "selector": "div[id^=\"unisphere-\"]"
+    }
+  },
+  {
+    "component": "KalturaAgentsWidget",
+    "description": "Agents widget on the default server.",
+    "messages": [
+      {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "s",
+          "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json"
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "s",
+          "components": [
+            {
+              "id": "root",
+              "component": "KalturaAgentsWidget",
+              "partnerId": 1,
+              "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+              "agentId": "agent-1"
+            }
+          ]
+        }
+      }
+    ],
+    "expect": {
+      "selector": "div[id^=\"unisphere-\"]"
+    }
+  },
+  {
+    "component": "KalturaVodAvatar",
+    "description": "VOD Avatar on the default server.",
+    "messages": [
+      {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "s",
+          "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json"
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "s",
+          "components": [
+            {
+              "id": "root",
+              "component": "KalturaVodAvatar",
+              "partnerId": 1,
+              "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+              "entryId": "0_abc"
+            }
+          ]
+        }
+      }
+    ],
+    "expect": {
+      "selector": "div[id^=\"unisphere-\"]"
+    }
+  },
+  {
+    "component": "KalturaChart",
+    "description": "Bound chart title, then the data model changes.",
+    "messages": [
+      {
+        "version": "v0.9",
+        "createSurface": {
+          "surfaceId": "s",
+          "catalogId": "https://kaltura.github.io/a2ui/v1/catalog.json"
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateDataModel": {
+          "surfaceId": "s",
+          "path": "/",
+          "value": {
+            "title": "Visits"
+          }
+        }
+      },
+      {
+        "version": "v0.9",
+        "updateComponents": {
+          "surfaceId": "s",
+          "components": [
+            {
+              "id": "root",
+              "component": "KalturaChart",
+              "chartType": "bar",
+              "data": [
+                {
+                  "name": "a",
+                  "value": 1
+                },
+                {
+                  "name": "b",
+                  "value": 3
+                }
+              ],
+              "xKey": "name",
+              "yKeys": [
+                "value"
+              ],
+              "title": {
+                "path": "/title"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "expect": {
+      "selector": "h4.kaltura-chart-title",
+      "textContains": [
+        "Visits"
+      ]
+    },
+    "after": {
+      "messages": [
+        {
+          "version": "v0.9",
+          "updateDataModel": {
+            "surfaceId": "s",
+            "path": "/title",
+            "value": "Sessions"
+          }
+        }
+      ],
+      "expect": {
+        "textContains": [
+          "Sessions"
+        ]
+      }
+    }
+  }
+]

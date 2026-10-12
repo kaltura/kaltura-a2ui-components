@@ -1,8 +1,9 @@
-import { createContext, createElement, useContext } from 'react';
-import type { ComponentType, FC, ReactNode } from 'react';
+import { createContext, createElement, useContext, useEffect } from 'react';
+import type { ComponentType, FC } from 'react';
 import { z } from 'zod';
 import { CommonSchemas } from '@a2ui/web_core/v0_9';
 import { isEntryId, isPositiveInt } from './ids';
+import { invalidCode, reportError, type KalturaErrorCode, type KalturaWidget } from './host-hooks';
 
 // Core components get resolved props, so the bindings and function calls that the
 // A2UI schemas allow must not appear. Use the schema, minus those two options.
@@ -96,24 +97,41 @@ export function checkProps(
  */
 export const StrictPendingContext = createContext(false);
 
-/** The one plain-text error box. Style: `.kaltura-load-error` in styles/components.css. */
-export const LoadError: FC<{ children?: ReactNode }> = ({ children }) =>
-  createElement('div', { className: 'kaltura-load-error', role: 'alert' }, children);
+/**
+ * The one plain-text error box. Style: `.kaltura-load-error` in
+ * styles/components.css. Reports the error to the host handler. `children`
+ * is the message: fixed text and prop names only, never a prop value.
+ */
+export const LoadError: FC<{ widget: KalturaWidget; code?: KalturaErrorCode; children: string }> = ({
+  widget,
+  code = 'invalid-props',
+  children,
+}) => {
+  useEffect(() => reportError(code, widget, children), [code, widget, children]);
+  return createElement('div', { className: 'kaltura-load-error', role: 'alert' }, children);
+};
 
 /**
  * Wraps a core component. Props with a bad value show a plain-text error and
  * the component is never rendered. Props that are still undefined render
  * nothing until they arrive, except under `StrictPendingContext`. `label`
- * names the widget in the message.
+ * names the widget in the message, `widget` in the error handler report.
  */
 export function withValidatedProps<P extends object>(
   schema: z.ZodObject<z.ZodRawShape>,
   label: string,
   Inner: ComponentType<P>,
+  widget: KalturaWidget,
 ): FC<P> {
   const Validated: FC<P> = props => {
     const { invalid, pending } = checkProps(schema, props, useContext(StrictPendingContext));
-    if (invalid.length) return createElement(LoadError, null, `Failed to load ${label}: Invalid ${invalid.join(', ')}`);
+    if (invalid.length) {
+      return createElement(LoadError, {
+        widget,
+        code: invalidCode(invalid),
+        children: `Failed to load ${label}: Invalid ${invalid.join(', ')}`,
+      });
+    }
     if (pending) return null;
     return createElement(Inner, props);
   };

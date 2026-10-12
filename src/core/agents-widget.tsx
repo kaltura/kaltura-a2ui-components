@@ -22,8 +22,9 @@ function AgentsWidgetView(props: AgentsWidgetCoreProps) {
         ...(props.agentId ? { agentId: props.agentId } : {}),
       }}
       label="Kaltura AI Agents"
+      widget="agents-widget"
     />
   );
 }
 
-export const AgentsWidgetCore = withKs('agents-widget', withValidatedProps(KalturaAgentsWidgetApi.schema.required({ ks: true }), 'Kaltura AI Agents', AgentsWidgetView));
+export const AgentsWidgetCore = withKs('agents-widget', withValidatedProps(KalturaAgentsWidgetApi.schema.required({ ks: true }), 'Kaltura AI Agents', AgentsWidgetView, 'agents-widget'));

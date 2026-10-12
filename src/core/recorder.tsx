@@ -4,6 +4,8 @@ import { renderLoadError } from './render-load-error';
 import { KalturaRecorderApi } from '../schemas/recorder';
 import { checkProps, StrictPendingContext } from './validate-props';
 import { withKs } from './ks';
+import { invalidCode, KalturaFailure } from './host-hooks';
+import { kalturaHosts } from './region';
 
 export interface RecorderCoreProps {
   partnerId: number;
@@ -27,7 +29,7 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
       uiconfId: props.uiconfId,
     }, strict);
     if (invalid.length) {
-      renderLoadError(container, 'recorder', new Error(`Invalid ${invalid.join(', ')}`));
+      renderLoadError(container, 'recorder', new KalturaFailure(invalidCode(invalid), `Invalid ${invalid.join(', ')}`), 'recorder');
       return () => {
         container.replaceChildren();
       };
@@ -36,7 +38,7 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
 
     const iframe = document.createElement('iframe');
     iframe.src =
-      `https://www.kaltura.com/index.php/extwidget/preview` +
+      `${kalturaHosts().recorder}/index.php/extwidget/preview` +
       `/partner_id/${encodeURIComponent(props.partnerId)}` +
       `/uiconf_id/${encodeURIComponent(props.uiconfId || 0)}` +
       `/entry_id//embed/iframe` +
