@@ -2,17 +2,17 @@
 
 Kaltura's [A2UI](https://a2ui.org) Experience Components. All 12 components ship as one versioned catalog, so any A2UI client that registers a catalog can render them without re-implementing them.
 
-Version **0.2.0** (see [CHANGELOG.md](CHANGELOG.md)). Served by jsDelivr from the git tag. There is no npm package: a package on npm with this name is not ours.
+Version **0.3.0** (see [CHANGELOG.md](CHANGELOG.md)). Served by jsDelivr from the git tag. There is no npm package: a package on npm with this name is not ours.
 
 ## Quick start
 
-Pick one. All three pin the tag `v0.2.0`.
+Pick one. All three pin the tag `v0.3.0`.
 
 **1. Script tag (plain HTML).** Defines all 12 custom elements.
 
 <!-- check-examples: expect kaltura-chart h4.kaltura-chart-title -->
 ```html
-<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
 
 <kaltura-chart id="chart"></kaltura-chart>
 
@@ -21,18 +21,18 @@ Pick one. All three pin the tag `v0.2.0`.
 </script>
 ```
 
-For production, copy the same tag with its `integrity` value from the [v0.2.0 Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases/tag/v0.2.0).
+For production, copy the same tag with its `integrity` value from the [v0.3.0 Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases/tag/v0.3.0).
 
 **2. ESM (React, A2UI clients).** Install from the git tag with the peers, then register the catalog as in [A2UI client (React)](#a2ui-client-react).
 
 ```bash
-npm i github:kaltura/kaltura-a2ui-components#v0.2.0 @a2ui/react @a2ui/web_core zod react react-dom
+npm i github:kaltura/kaltura-a2ui-components#v0.3.0 @a2ui/react @a2ui/web_core zod react react-dom
 ```
 
 **3. Catalog JSON.** For A2UI tooling that reads a catalog by URL:
 
 ```
-https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/src/catalog/kaltura_catalog.json
+https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/src/catalog/kaltura_catalog.json
 ```
 
 Check a release before you use it: [docs/verify-release.md](docs/verify-release.md).
@@ -53,10 +53,10 @@ Clients that cannot register a catalog (Gemini Enterprise, generic text clients)
 ### Git tag (React, A2UI clients)
 
 ```bash
-npm i github:kaltura/kaltura-a2ui-components#v0.2.0 @a2ui/react @a2ui/web_core zod react react-dom
+npm i github:kaltura/kaltura-a2ui-components#v0.3.0 @a2ui/react @a2ui/web_core zod react react-dom
 ```
 
-npm installs it as `@kaltura/a2ui-react`, so imports use that name. Your `package.json` gets `"@kaltura/a2ui-react": "github:kaltura/kaltura-a2ui-components#v0.2.0"`. The tag holds the built `dist/`, so nothing builds on install.
+npm installs it as `@kaltura/a2ui-react`, so imports use that name. Your `package.json` gets `"@kaltura/a2ui-react": "github:kaltura/kaltura-a2ui-components#v0.3.0"`. The tag holds the built `dist/`, so nothing builds on install.
 
 The package needs these peers: `@a2ui/react ^0.13.0`, `@a2ui/web_core ^0.13.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`. Entries: `@kaltura/a2ui-react` (React), `@kaltura/a2ui-react/webcomponent` (script bundle) and `@kaltura/a2ui-react/catalog` (the catalog JSON). In Node (SSR, tests), import `@kaltura/a2ui-react` before `@a2ui/react`: see [docs/host-integration.md](docs/host-integration.md#server-imports-ssr).
 
@@ -69,8 +69,8 @@ The package needs these peers: `@a2ui/react ^0.13.0`, `@a2ui/web_core ^0.13.0`, 
 ### CDN (plain HTML)
 
 ```
-https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js
-https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-react.mjs
+https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js
+https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-react.mjs
 ```
 
 Pin the full tag. jsDelivr also resolves `@0.2` and `@latest`, but those change under you and break SRI. Each GitHub Release lists the SRI string (`sha384-…`) of every file in its notes and in `hashes.json`. Add it as `integrity` with `crossorigin="anonymous"`.
@@ -140,7 +140,7 @@ A full page: [examples/react](examples/react).
 
 <!-- check-examples: expect kaltura-chart h4.kaltura-chart-title; kaltura-player iframe -->
 ```html
-<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
 
 <kaltura-chart id="chart"></kaltura-chart>
 <kaltura-player id="player"></kaltura-player>
