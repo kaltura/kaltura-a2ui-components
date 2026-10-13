@@ -24,12 +24,14 @@ Both use `PlayerEmbed`.
 
 The clip end is not sent to the player. On `timeupdate` at or after `clipTo`, we pause the player and move it back to the clip start, so the next play shows the clip again.
 
-Why not the player's `seekFrom` and `clipTo`: they ask Kaltura for a cut file. Checked live on `nvp1` in Chromium, Firefox and WebKit, with `seekFrom: 10, clipTo: 16`:
+Why not the player's `seekFrom` and `clipTo`: they are correct for entries with HLS or DASH flavors. On entries that have only a source flavor, the only playable format is a progressive MP4, and Kaltura serves `seekFrom` for it through a CDN time offset (`aktimeoffset`). Browsers send a `Range` header, and the edge then ignores the offset or returns wrong bytes. `clipTo` alone is fine. Checked live on `nvp1` (Player 3.17.102) in Chromium, Firefox and WebKit, with `seekFrom: 10, clipTo: 16`:
 
 | Entry | With `seekFrom` and `clipTo` | With `startTime` and our stop |
 |---|---|---|
 | `1_rjclzn41`, `1_hpc1olo6` | Plays source 0 to 16 s. The start is ignored. | Plays 10 to 16 s. |
-| `1_3lov8dhg`, `1_43zhxakt` | The cut file is corrupt (ffmpeg reports about 2,400 and 1,800 error lines). Chromium and Firefox stall at 0 to 3 s. | Plays 10 to 16 s. |
+| `1_3lov8dhg`, `1_43zhxakt` | The `Range` response has wrong bytes after the first 1 MiB. Chromium raises a decode error at about 3 s and the player reloads, which looks like a stall. | Plays 10 to 16 s. |
+
+A transcoded entry (`1_aaaaaaaa`) plays HLS and honours `seekFrom` and `clipTo`. Once Kaltura fixes the progressive seek, go back to `seekFrom` and `clipTo`.
 
 The cost: the player timeline shows the whole entry, not only the clip, and a viewer can seek outside the clip. Playback stops about 0.1 to 0.4 s after `clipTo` (`timeupdate` granularity).
 
