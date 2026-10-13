@@ -1,7 +1,8 @@
 {
   "name": "@kaltura/a2ui-react",
-  "version": "0.1.4",
-  "description": "Kaltura's A2UI Experience Components (Player, Flashcards, Media Manager) as a reusable, CDN-publishable catalog for any A2UI client.",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Kaltura Experience Components for A2UI: Player, Flashcards, Media Manager, Recorder, Captions Editor, Analytics, Genie, Content Lab, Avatar, VOD Avatar, Agents Widget and Chart. A React catalog for A2UI clients and a self-contained web component bundle for plain HTML pages.",
   "license": "AGPL-3.0-only",
   "type": "module",
   "repository": {
@@ -26,9 +27,13 @@
       "import": "./dist/kaltura-react.mjs"
     },
     "./webcomponent": {
+      "types": "./dist/types/adapters/webcomponent/index.d.ts",
       "default": "./dist/kaltura-wc.js"
     },
-    "./catalog": "./src/catalog/kaltura_catalog.json"
+    "./catalog": {
+      "default": "./src/catalog/kaltura_catalog.json"
+    },
+    "./package.json": "./package.json"
   },
   "module": "./dist/kaltura-react.mjs",
   "types": "./dist/types/adapters/react/index.d.ts",
@@ -37,52 +42,95 @@
     "build": "npm run build:react && npm run build:wc && npm run build:types",
     "build:react": "BUILD_TARGET=react vite build",
     "build:wc": "BUILD_TARGET=webcomponent vite build",
-    "build:types": "tsc -p tsconfig.build.json",
+    "build:types": "tsc -p tsconfig.build.json && node scripts/finalize-types.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "tsc --noEmit"
+    "lint": "eslint . && node scripts/check-lint-rules.mjs",
+    "check": "npm run typecheck && npm run lint && npm test",
+    "test:coverage": "vitest run --coverage",
+    "e2e": "playwright test",
+    "check:bundle": "node scripts/check-bundle.mjs",
+    "check:package": "publint && attw --pack . --profile esm-only",
+    "check:consumer": "node scripts/check-consumer.mjs",
+    "check:examples": "node scripts/check-examples.mjs",
+    "gen:catalog": "node scripts/gen-catalog.mjs",
+    "test:conformance": "vitest run test/conformance",
+    "size": "size-limit",
+    "release:check": "node scripts/release-check.mjs",
+    "release:stamp": "node scripts/stamp-catalog.mjs",
+    "release:hashes": "node scripts/release-hashes.mjs",
+    "release:notes": "node scripts/release-notes.mjs",
+    "release:verify": "node scripts/verify-cdn.mjs",
+    "release:smoke": "node scripts/release-unisphere-smoke.mjs"
   },
   "peerDependencies": {
+    "@a2ui/react": "^0.11.1",
+    "@a2ui/web_core": "^0.11.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
-  "dependencies": {
-    "@a2ui/markdown-it": "^0.0.3",
-    "@a2ui/react": "^0.9.1",
-    "@a2ui/web_core": "^0.9.2",
-    "@types/topojson-client": "^3.1.5",
-    "@visx/axis": "^4.0.0-alpha.11",
-    "@visx/curve": "^4.0.0-alpha.11",
-    "@visx/geo": "^4.0.0-alpha.11",
-    "@visx/gradient": "^4.0.0-alpha.11",
-    "@visx/grid": "^4.0.0-alpha.11",
-    "@visx/group": "^4.0.0-alpha.11",
-    "@visx/heatmap": "^4.0.0-alpha.11",
-    "@visx/hierarchy": "^4.0.0-alpha.11",
-    "@visx/legend": "^4.0.0-alpha.11",
-    "@visx/point": "^4.0.0-alpha.11",
-    "@visx/responsive": "^4.0.0-alpha.11",
-    "@visx/sankey": "^4.0.0-alpha.11",
-    "@visx/scale": "^4.0.0-alpha.11",
-    "@visx/shape": "^4.0.0-alpha.11",
-    "@visx/text": "^4.0.0-alpha.11",
-    "@visx/tooltip": "^4.0.0-alpha.11",
-    "@visx/wordcloud": "^4.0.0-alpha.11",
-    "@visx/xychart": "^4.0.0-alpha.11",
-    "topojson-client": "^3.1.0",
+    "react-dom": "^19.0.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@a2ui/markdown-it": "^0.1.2",
+    "@a2ui/react": "^0.11.1",
+    "@a2ui/web_core": "^0.11.0",
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.0",
+    "@size-limit/file": "^14.2.0",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/topojson-client": "^3.1.5",
+    "@types/topojson-specification": "^1.0.5",
+    "@visx/axis": "^4.0.0",
+    "@visx/curve": "^4.0.0",
+    "@visx/geo": "^4.0.0",
+    "@visx/gradient": "^4.0.0",
+    "@visx/grid": "^4.0.0",
+    "@visx/group": "^4.0.0",
+    "@visx/heatmap": "^4.0.0",
+    "@visx/hierarchy": "^4.0.0",
+    "@visx/legend": "^4.0.0",
+    "@visx/point": "^4.0.0",
+    "@visx/responsive": "^4.0.0",
+    "@visx/sankey": "^4.0.0",
+    "@visx/scale": "^4.0.0",
+    "@visx/shape": "^4.0.0",
+    "@visx/text": "^4.0.0",
+    "@visx/tooltip": "^4.0.0",
+    "@visx/wordcloud": "^4.0.0",
+    "@visx/xychart": "^4.0.0",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^5.0.4",
+    "ajv": "^8.20.0",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
     "jsdom": "^29.0.0",
+    "publint": "^0.3.25",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
+    "size-limit": "^14.2.0",
+    "topojson-client": "^3.1.0",
     "typescript": "~6.0.2",
+    "typescript-eslint": "^8.71.1",
     "vite": "^8.0.10",
-    "vite-plugin-css-injected-by-js": "^3.5.0",
-    "vitest": "^4.1.8"
-  }
+    "vite-plugin-css-injected-by-js": "^5.0.2",
+    "vitest": "^5.0.4",
+    "zod": "^3.25.76"
+  },
+  "overrides": {
+    "dompurify": "^3.4.17",
+    "markdown-it": "^14.3.1",
+    "linkify-it": "^5.0.2"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "sideEffects": [
+    "./dist/kaltura-react.mjs",
+    "./dist/kaltura-wc.js"
+  ]
 }

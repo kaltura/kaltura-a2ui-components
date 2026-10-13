@@ -1,5 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { kalturaClientFunctions, CopyToClipboardImplementation } from '../src/catalog/client-functions';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import {
+  kalturaClientFunctions,
+  CopyToClipboardImplementation,
+  SafeOpenUrlImplementation,
+} from '../src/catalog/client-functions';
 
 describe('kalturaClientFunctions', () => {
   it('has exactly 1 entry', () => {
@@ -36,5 +40,36 @@ describe('CopyToClipboardImplementation', () => {
     // args.text as number — schema is z.string() but execute coerces via String()
     CopyToClipboardImplementation.execute({ text: 42 } as unknown as { text: string }, mockContext);
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('42');
+  });
+});
+
+describe('SafeOpenUrlImplementation', () => {
+  const ctx = {} as Parameters<typeof SafeOpenUrlImplementation.execute>[1];
+
+  beforeEach(() => {
+    vi.stubGlobal('open', vi.fn());
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('SEC-02: is named openUrl', () => {
+    expect(SafeOpenUrlImplementation.name).toBe('openUrl');
+  });
+
+  it('SEC-02: opens an https URL with noopener,noreferrer', () => {
+    SafeOpenUrlImplementation.execute({ url: 'https://example.com/' }, ctx);
+    expect(window.open).toHaveBeenCalledWith('https://example.com/', '_blank', 'noopener,noreferrer');
+  });
+
+  it('SEC-02: does not open a javascript: URL', () => {
+    SafeOpenUrlImplementation.execute({ url: 'javascript:alert(1)' }, ctx);
+    expect(window.open).not.toHaveBeenCalled();
+  });
+
+  it('SEC-02: does not throw on a non-string url', () => {
+    expect(() => SafeOpenUrlImplementation.execute({ url: 42 }, ctx)).not.toThrow();
   });
 });

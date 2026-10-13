@@ -1,0 +1,68 @@
+// The Content Security Policy recommended in docs/host-integration.md: the web
+// component bundle, a chart, flashcards and a Player iframe run under it with no
+// violation, and the same policy blocks a script from a host that is not listed.
+// The page is served from a fake origin by page.route, so the test needs no port
+// and no network. Requests to Kaltura hosts get an empty answer.
+import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const ORIGIN = 'https://host.test';
+const doc = readFileSync(resolve(process.cwd(), 'docs/host-integration.md'), 'utf8');
+const block = /<!-- csp -->\s*```text\n([\s\S]*?)```/.exec(doc)?.[1];
+const POLICY = (block ?? '').split('\n').map((line) => line.trim()).filter(Boolean).join(' ');
+
+const PAGE = `<!doctype html><html lang="en"><body>
+<kaltura-chart id="chart"></kaltura-chart>
+<kaltura-flashcards id="cards"></kaltura-flashcards>
+<kaltura-player id="player"></kaltura-player>
+<script src="/kaltura-wc.js"></script>
+<script src="/page.js"></script>
+</body></html>`;
+
+const PAGE_JS = `
+document.getElementById('chart').config = { chartType: 'bar', title: 'Visits', data: [{ d: 'a', v: 1 }, { d: 'b', v: 3 }], xKey: 'd', yKeys: ['v'] };
+document.getElementById('cards').config = { title: 'Cells', cards: [{ title: 'Cell', content: 'The basic unit of life.' }] };
+document.getElementById('player').config = { partnerId: 1, uiconfId: 2, entryId: '0_abc' };
+`;
+
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    const seen: string[] = [];
+    (window as unknown as { __csp: string[] }).__csp = seen;
+    document.addEventListener('securitypolicyviolation', (event) => seen.push(`${event.violatedDirective} ${event.blockedURI}`));
+  });
+  const serve = (body: string, type: string) => ({ status: 200, contentType: type, headers: { 'content-security-policy': POLICY }, body });
+  await page.route(`${ORIGIN}/**`, (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === '/') return route.fulfill(serve(PAGE, 'text/html'));
+    if (path === '/page.js') return route.fulfill(serve(PAGE_JS, 'text/javascript'));
+    if (path === '/kaltura-wc.js') return route.fulfill(serve(readFileSync(resolve(process.cwd(), 'dist/kaltura-wc.js'), 'utf8'), 'text/javascript'));
+    return route.fulfill({ status: 404, body: '' });
+  });
+  await page.route((url) => url.origin !== ORIGIN, (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '' }));
+});
+
+const violations = (page: import('@playwright/test').Page) => page.evaluate(() => (window as unknown as { __csp: string[] }).__csp);
+
+test('the recommended policy is in docs/host-integration.md', () => {
+  expect(POLICY).toContain("default-src 'self'");
+});
+
+test('CSP: chart, flashcards and a Player iframe run under the recommended policy', async ({ page }) => {
+  await page.goto(`${ORIGIN}/`);
+  await expect(page.locator('kaltura-chart h4.kaltura-chart-title')).toHaveText('Visits');
+  await expect(page.locator('kaltura-flashcards')).toContainText('Cell');
+  await expect(page.locator('kaltura-player iframe')).toHaveAttribute('src', /^https:\/\/cdnapisec\.kaltura\.com\/p\/1\/embedPlaykitJs\//);
+  expect(await violations(page)).toEqual([]);
+});
+
+test('CSP: the same policy blocks a script from a host that is not listed', async ({ page }) => {
+  await page.goto(`${ORIGIN}/`);
+  await page.evaluate(() => {
+    const script = document.createElement('script');
+    script.src = 'https://evil.test/x.js';
+    document.head.appendChild(script);
+  });
+  await expect.poll(() => violations(page)).toEqual([expect.stringContaining('https://evil.test/x.js')]);
+});

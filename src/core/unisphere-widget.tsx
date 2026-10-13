@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { deriveLoaderUrl } from './media-manager';
+import { loadUnisphereModule } from './unisphere-loader';
+import { renderLoadError } from './render-load-error';
+import { KalturaFailure, type KalturaWidget } from './host-hooks';
 
-export { deriveLoaderUrl };
+export { deriveLoaderUrl } from './unisphere-loader';
 
 export interface UnisphereWidgetCoreProps {
   partnerId: number;
@@ -13,53 +15,64 @@ export interface UnisphereWidgetCoreProps {
   visualType?: string;
   visualSettings?: Record<string, unknown>;
   label: string;
+  /** Names the widget in `setErrorHandler` reports. Default `unisphere`. */
+  widget?: KalturaWidget;
+}
+
+/** Kills a remote workspace. A throwing remote must not break React's unmount. */
+function killWorkspace(workspace: unknown): void {
+  try {
+    (workspace as { kill?: () => void } | null)?.kill?.();
+  } catch {
+    // The workspace is gone either way.
+  }
 }
 
 export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const workspaceRef = useRef<unknown>(null);
+  const { partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label, widget = 'unisphere' } = props;
+  // Settings objects are rebuilt on every render. Compare them by value.
+  const settingsKey = JSON.stringify([props.runtimeSettings, props.visualSettings]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    let killed = false;
+    let cancelled = false;
+    let workspace: unknown = null;
+    container.replaceChildren();
 
-    const id = `unisphere-${props.runtimeName}-${crypto.randomUUID()}`;
+    const id = `unisphere-${runtimeName}-${crypto.randomUUID()}`;
     container.id = id;
 
     const theme =
       (document.documentElement.getAttribute('data-theme') as 'dark' | 'light') || 'dark';
-    const loaderUrl = deriveLoaderUrl(props.serverUrl);
+    const [runtimeSettings, visualSettings] = JSON.parse(settingsKey) as [
+      Record<string, unknown> | undefined,
+      Record<string, unknown> | undefined,
+    ];
 
-    import(/* @vite-ignore */ loaderUrl)
-      .then((mod: { loader?: (cfg: unknown) => Promise<unknown> }) => {
-        if (killed) return;
+    loadUnisphereModule<{ loader?: (cfg: unknown) => Promise<unknown> }>(serverUrl)
+      .then(mod => {
+        if (cancelled) return;
         const { loader } = mod;
-        if (!loader) return;
-
-        const runtimeSettings: Record<string, unknown> = {
-          ks: props.ks,
-          partnerId: props.partnerId,
-          ...props.runtimeSettings,
-        };
+        if (typeof loader !== 'function') throw new KalturaFailure('load-failed', 'Unisphere loader is missing');
 
         return loader({
-          serverUrl: props.serverUrl,
+          serverUrl,
           appId: `kaltura-agent-${id}`,
           workspace: id,
-          appVersion: '0.3.0',
-          session: { ks: props.ks, partnerId: props.partnerId },
+          session: { ks, partnerId },
           ui: { theme, language: 'en' },
           runtimes: [
             {
-              widgetName: props.widgetName,
-              runtimeName: props.runtimeName,
-              settings: runtimeSettings,
+              widgetName,
+              runtimeName,
+              settings: { ks, partnerId, ...runtimeSettings },
               visuals: [
                 {
-                  type: props.visualType || 'default',
+                  type: visualType || 'default',
                   target: id,
-                  settings: props.visualSettings || {},
+                  settings: visualSettings || {},
                 },
               ],
             },
@@ -67,24 +80,22 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
         });
       })
       .then(ws => {
-        if (killed || !ws) return;
-        workspaceRef.current = ws;
+        if (!ws) return;
+        workspace = ws;
+        // The effect was cleaned up while the load ran: nobody else will kill it.
+        if (cancelled) killWorkspace(ws);
       })
       .catch(err => {
-        if (killed) return;
-        const loadErr = err as { message?: string };
-        if (container) {
-          container.innerHTML = `<div style="padding:20px;color:#ff6b6b;text-align:center">Failed to load ${props.label}: ${loadErr.message ?? String(err)}</div>`;
-        }
+        if (cancelled) return;
+        renderLoadError(container, label, err, widget);
       });
 
     return () => {
-      killed = true;
-      const ws = workspaceRef.current as { kill?: () => void } | null;
-      ws?.kill?.();
-      workspaceRef.current = null;
+      cancelled = true;
+      killWorkspace(workspace);
+      workspace = null;
     };
-  }, []);
+  }, [partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label, widget, settingsKey]);
 
   return (
     <div

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FC, type KeyboardEvent } from 'react';
-import { renderMarkdown } from '@a2ui/markdown-it';
-
-const CDN_EMBED = 'https://cdnapisec.kaltura.com';
-const CDN_THUMB = 'https://cfvod.kaltura.com';
+import { isEntryId, isPositiveInt } from './ids';
+import { renderSafeMarkdown } from './safe-markdown';
+import { toKalturaCdnUrl } from './media-url';
+import { KalturaFlashcardsApi } from '../schemas/flashcards';
+import { LoadError, withValidatedProps } from './validate-props';
+import { kalturaHosts } from './region';
 
 const GRADIENTS = [
   'radial-gradient(315% 315% at 50% 214%, rgba(0,110,250,0) 0%, rgba(0,110,250,0.5) 100%), #000',
@@ -41,7 +43,7 @@ export interface FlashcardsCoreProps {
 
 /**
  * Pure helper: builds the clip iframe embed URL.
- * Returns an empty string when partnerId or uiconfId is missing.
+ * Returns an empty string when partnerId, uiconfId or entryId is missing or invalid.
  */
 export function buildClipUrl(
   clip: Clip,
@@ -49,8 +51,8 @@ export function buildClipUrl(
   uiconfId?: number,
   ks?: string,
 ): string {
-  if (!partnerId || !uiconfId) return '';
-  const base = `${CDN_EMBED}/p/${partnerId}/embedPlaykitJs/partner_id/${partnerId}/uiconf_id/${uiconfId}`;
+  if (!isPositiveInt(partnerId) || !isPositiveInt(uiconfId) || !isEntryId(clip.entryId)) return '';
+  const base = `${kalturaHosts().cdn}/p/${encodeURIComponent(partnerId)}/embedPlaykitJs/partner_id/${encodeURIComponent(partnerId)}/uiconf_id/${encodeURIComponent(uiconfId)}`;
   const params = new URLSearchParams({
     iframeembed: 'true',
     entry_id: clip.entryId,
@@ -63,13 +65,15 @@ export function buildClipUrl(
 
 /**
  * CDN thumbnail URL for a clip — seeks to startTime+1s for a meaningful frame.
- * Falls back to the clip's own thumbnail field if set, otherwise empty string.
+ * Uses the clip's own thumbnail field only when it is an https Kaltura CDN URL
+ * (see toKalturaCdnUrl). Otherwise builds the CDN URL, or returns an empty string.
  */
 export function buildThumbnailUrl(clip: Clip, partnerId?: number): string {
-  if (clip.thumbnail) return clip.thumbnail;
-  if (!partnerId) return '';
+  const own = toKalturaCdnUrl(clip.thumbnail);
+  if (own) return own;
+  if (!isPositiveInt(partnerId) || !isEntryId(clip.entryId)) return '';
   const sec = Math.round(clip.startTime) + 1;
-  return `${CDN_THUMB}/p/${partnerId}/thumbnail/entry_id/${clip.entryId}/width/200/vid_sec/${sec}`;
+  return `${kalturaHosts().vod}/p/${encodeURIComponent(partnerId)}/thumbnail/entry_id/${encodeURIComponent(clip.entryId)}/width/200/vid_sec/${sec}`;
 }
 
 /**
@@ -92,15 +96,20 @@ export function buildAllCards(
 }
 
 function CardContentInner({ content }: { content: string }) {
-  const [html, setHtml] = useState('');
+  // The text shows as a React child while markdown renders. Only sanitised HTML
+  // ever reaches dangerouslySetInnerHTML. Failed or empty output keeps the text.
+  const [rendered, setRendered] = useState<{ source: string; html: string }>();
   const contentRef = useRef<HTMLDivElement>(null);
   const [showMask, setShowMask] = useState(false);
+  const html = rendered?.source === content ? rendered.html : '';
 
   useEffect(() => {
     let cancelled = false;
-    renderMarkdown(content).then(result => {
-      if (!cancelled) setHtml(result);
-    });
+    renderSafeMarkdown(content)
+      .then(result => {
+        if (!cancelled) setRendered({ source: content, html: result });
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -110,19 +119,19 @@ function CardContentInner({ content }: { content: string }) {
     const el = contentRef.current;
     if (!el) return;
     setShowMask(el.scrollHeight > el.clientHeight);
-  }, [html]);
+  }, [html, content]);
 
-  return (
-    <div
-      ref={contentRef}
-      className="flashcard-content"
-      style={{
-        maskImage: showMask
-          ? 'linear-gradient(to bottom, black 50%, transparent 100%)'
-          : undefined,
-      }}
-      dangerouslySetInnerHTML={{ __html: html || content }}
-    />
+  const shared = {
+    ref: contentRef,
+    className: 'flashcard-content',
+    style: {
+      maskImage: showMask ? 'linear-gradient(to bottom, black 50%, transparent 100%)' : undefined,
+    },
+  };
+  return html ? (
+    <div {...shared} dangerouslySetInnerHTML={{ __html: html }} />
+  ) : (
+    <div {...shared}>{content}</div>
   );
 }
 
@@ -144,13 +153,19 @@ function ClipPlayer({
     [clip, partnerId, uiconfId, ks],
   );
 
-  if (!url || !active) return null;
+  if (!active) return null;
+  const invalid =
+    !isEntryId(clip.entryId) ||
+    (partnerId !== undefined && !isPositiveInt(partnerId)) ||
+    (uiconfId !== undefined && !isPositiveInt(uiconfId));
+  if (invalid) return <LoadError widget="flashcards">This clip cannot be shown.</LoadError>;
+  if (!url) return null;
 
   return (
     <iframe
       src={url}
       className="flashcard-clip-player"
-      allow="autoplay *; fullscreen *; encrypted-media *; camera *; microphone *; display-capture *"
+      allow="autoplay *; fullscreen *; encrypted-media *"
       allowFullScreen
       title={clip.title ?? 'Video clip'}
     />
@@ -214,7 +229,7 @@ function ClipGallery({
   );
 }
 
-export const FlashcardsCore: FC<FlashcardsCoreProps> = ({
+const FlashcardsView: FC<FlashcardsCoreProps> = ({
   title,
   summary,
   cards,
@@ -346,3 +361,11 @@ export const FlashcardsCore: FC<FlashcardsCoreProps> = ({
     </div>
   );
 };
+
+// Bad partnerId or uiconfId only disables the clips (SEC-11), so they are not checked here.
+export const FlashcardsCore = withValidatedProps(
+  KalturaFlashcardsApi.schema.omit({ partnerId: true, uiconfId: true }),
+  'flashcards',
+  FlashcardsView,
+  'flashcards',
+);

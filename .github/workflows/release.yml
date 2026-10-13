@@ -1,0 +1,279 @@
+name: release
+
+# Run by hand from main: version input -> checks -> build -> release commit and tag -> jsDelivr check.
+# dist/ is never committed to main. The release job commits the CI-built dist/ and the stamped
+# catalog on top of the main commit, tags that commit and pushes only the tag. The commit is on
+# no branch. jsDelivr serves the tag at cdn.jsdelivr.net/gh/<repo>@<tag>/. There is no npm.
+#
+# dry_run (on by default) checks and builds and uploads the artifact. It creates no commit,
+# no tag and no Release. Steps and one-time setup: docs/release.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, equal to package.json (for example 0.2.0). The tag is v<version>.'
+        type: string
+        required: true
+      dry_run:
+        description: 'Check and build only. No commit, no tag, no Release.'
+        type: boolean
+        default: true
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  verify-inputs:
+    name: inputs and main
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      tag: ${{ steps.check.outputs.tag }}
+      prerelease: ${{ steps.check.outputs.prerelease }}
+      sha: ${{ steps.main.outputs.sha }}
+    steps:
+      - name: Run from main only
+        run: |
+          [ "$GITHUB_REF" = 'refs/heads/main' ] \
+            || { echo "::error::Run this workflow from main, not ${GITHUB_REF}."; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Commit must be the head of origin/main
+        id: main
+        run: |
+          set -euo pipefail
+          head="$(git ls-remote origin refs/heads/main | cut -f1)"
+          [ "$head" = "$GITHUB_SHA" ] \
+            || { echo "::error::main moved to ${head} after this run started at ${GITHUB_SHA}. Run again."; exit 1; }
+          echo "sha=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+      - name: dist/ must not be tracked
+        run: test -z "$(git ls-files dist)"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          package-manager-cache: false
+          node-version-file: .nvmrc
+      # Semver, equal to package.json, "private": true and a dated CHANGELOG section.
+      - name: Version must match package.json and CHANGELOG.md
+        id: check
+        env:
+          VERSION: ${{ inputs.version }}
+        run: node scripts/release-check.mjs "$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Tag must not exist
+        env:
+          TAG: ${{ steps.check.outputs.tag }}
+        run: |
+          set -euo pipefail
+          ! git rev-parse -q --verify "refs/tags/${TAG}" > /dev/null \
+            || { echo "::error::Tag ${TAG} exists in the clone. Tags never move: bump the version."; exit 1; }
+          [ -z "$(git ls-remote --tags origin "refs/tags/${TAG}")" ] \
+            || { echo "::error::Tag ${TAG} exists on GitHub. Tags never move: bump the version."; exit 1; }
+
+  ci:
+    name: ci
+    needs: verify-inputs
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+
+  e2e:
+    name: e2e
+    needs: verify-inputs
+    permissions:
+      contents: read
+    uses: ./.github/workflows/e2e.yml
+
+  build:
+    name: build and stamp
+    needs: [verify-inputs, ci, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify-inputs.outputs.sha }}
+          persist-credentials: false
+      # No npm cache here: this job makes the bytes that get released.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          package-manager-cache: false
+          node-version-file: .nvmrc
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm run check:bundle
+      - run: npm run size
+      - run: npm test
+      # Edits the catalog in this workspace only. The release job commits it in the release commit.
+      - name: Stamp catalog (tag and SRI)
+        env:
+          TAG: ${{ needs.verify-inputs.outputs.tag }}
+        run: node scripts/stamp-catalog.mjs --tag "$TAG"
+      # A plain script, not a test filter: it cannot pass by running nothing.
+      - name: Check the stamped catalog
+        env:
+          TAG: ${{ needs.verify-inputs.outputs.tag }}
+        run: node scripts/release-verify-stamp.mjs --tag "$TAG"
+      # The SBOM lists every locked package, dev ones too: the bundles inline some devDependencies.
+      - name: Archive, SBOM, hashes and notes
+        env:
+          VERSION: ${{ needs.verify-inputs.outputs.version }}
+        run: |
+          set -euo pipefail
+          out="${RUNNER_TEMP}/release"
+          assets="${out}/assets"
+          mkdir -p "$assets"
+          npm sbom --sbom-format cyclonedx --package-lock-only > "${assets}/sbom.cdx.json"
+          tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner -cf - dist | gzip -n > "${assets}/dist.tar.gz"
+          cp src/catalog/kaltura_catalog.json "${assets}/kaltura_catalog.json"
+          node scripts/release-hashes.mjs --version "$VERSION" --out "$assets"
+          node scripts/release-notes.mjs --version "$VERSION" --hashes "${assets}/hashes.json" > "${out}/notes.md"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release
+          path: ${{ runner.temp }}/release
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: release commit, tag and GitHub Release
+    needs: [verify-inputs, build]
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Limit this environment to main and add required reviewers (docs/release.md).
+    environment: release
+    # The only job that can write. No repo code runs here: shell, git, jq, openssl and gh only.
+    permissions:
+      contents: write # push the tag and create the Release
+      id-token: write # build provenance attestation
+      attestations: write # build provenance attestation
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify-inputs.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: ${{ runner.temp }}/release
+      - name: Check the artifact and unpack it into the checkout
+        env:
+          VERSION: ${{ needs.verify-inputs.outputs.version }}
+        run: |
+          set -euo pipefail
+          assets="${RUNNER_TEMP}/release/assets"
+          (cd "$assets" && sha256sum --check --strict SHA256SUMS)
+          jq -e --arg v "$VERSION" '.version == $v' "${assets}/hashes.json" > /dev/null \
+            || { echo "::error::hashes.json is not for ${VERSION}."; exit 1; }
+          paths="$(tar -tzf "${assets}/dist.tar.gz")"
+          if grep -qEv '^dist/' <<< "$paths" || grep -qE '(^|/)\.\.(/|$)' <<< "$paths"; then
+            echo '::error::dist.tar.gz has paths outside dist/.'
+            exit 1
+          fi
+          test -z "$(git ls-files dist)"
+          rm -rf dist
+          tar --no-same-owner -xzf "${assets}/dist.tar.gz"
+          cp "${assets}/kaltura_catalog.json" src/catalog/kaltura_catalog.json
+          for file in dist/kaltura-wc.js dist/kaltura-react.mjs src/catalog/kaltura_catalog.json; do
+            want="$(jq -r --arg f "$file" '.cdn[$f]' "${assets}/hashes.json")"
+            got="sha384-$(openssl dgst -sha384 -binary "$file" | base64 -w0)"
+            [ "$got" = "$want" ] || { echo "::error::${file} does not match hashes.json."; exit 1; }
+          done
+          jq -e --slurpfile h "${assets}/hashes.json" \
+            '."x-kaltura-adapters" | .webcomponent.integrity == $h[0].cdn["dist/kaltura-wc.js"] and .react.integrity == $h[0].cdn["dist/kaltura-react.mjs"]' \
+            src/catalog/kaltura_catalog.json > /dev/null \
+            || { echo '::error::The catalog integrity values do not match hashes.json.'; exit 1; }
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/kaltura-wc.js
+            dist/kaltura-react.mjs
+            src/catalog/kaltura_catalog.json
+            ${{ runner.temp }}/release/assets/dist.tar.gz
+      # Same inputs give the same commit, so a re-run finds its own tag and skips the push.
+      # Pushes the tag only, never main and never forced.
+      - name: Release commit and tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.verify-inputs.outputs.tag }}
+          SHA: ${{ needs.verify-inputs.outputs.sha }}
+        run: |
+          set -euo pipefail
+          [ "$(git rev-parse HEAD)" = "$SHA" ]
+          date="$(git log -1 --format=%cI "$SHA")"
+          export GIT_AUTHOR_NAME='github-actions[bot]'
+          export GIT_AUTHOR_EMAIL='41898282+github-actions[bot]@users.noreply.github.com'
+          export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME" GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+          export GIT_AUTHOR_DATE="$date" GIT_COMMITTER_DATE="$date"
+          git add -f dist src/catalog/kaltura_catalog.json
+          git commit --quiet --no-verify -m "Release ${TAG}" \
+            -m "Built by ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} from ${SHA}." \
+            -m "dist/ and the stamped catalog are only in this commit. It is on no branch."
+          git tag "$TAG"
+          commit="$(git rev-parse HEAD)"
+          basic="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::${basic}"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0='http.https://github.com/.extraheader'
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${basic}"
+          remote="$(git ls-remote origin "refs/tags/${TAG}" | cut -f1)"
+          if [ -z "$remote" ]; then
+            git push origin "refs/tags/$TAG"
+          elif [ "$remote" = "$commit" ]; then
+            echo "Tag ${TAG} already points to ${commit} (re-run). Not pushing."
+          else
+            echo "::error::Tag ${TAG} is on ${remote}, not ${commit}. Tags never move."
+            exit 1
+          fi
+      - name: Create or update the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.verify-inputs.outputs.tag }}
+          PRERELEASE: ${{ needs.verify-inputs.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          out="${RUNNER_TEMP}/release"
+          flags=()
+          [ "$PRERELEASE" != 'true' ] || flags=(--prerelease --latest=false)
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" &> /dev/null; then
+            gh release upload "$TAG" "$out"/assets/* --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" "$out"/assets/* --repo "$GITHUB_REPOSITORY" --verify-tag \
+              --title "$TAG" --notes-file "${out}/notes.md" "${flags[@]}"
+          fi
+
+  verify-cdn:
+    name: jsDelivr matches the build
+    needs: [verify-inputs, release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify-inputs.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          package-manager-cache: false
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release
+          path: ${{ runner.temp }}/release
+      # A new tag can take a few minutes to show up on jsDelivr: 20 tries, 60 s apart.
+      - name: Compare jsDelivr bytes with the build
+        env:
+          TAG: ${{ needs.verify-inputs.outputs.tag }}
+        run: node scripts/verify-cdn.mjs --tag "$TAG" --hashes "${RUNNER_TEMP}/release/assets/hashes.json" --attempts 20 --delay-ms 60000

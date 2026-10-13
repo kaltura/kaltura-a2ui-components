@@ -12,6 +12,8 @@ import {
   SourceDataTable,
   ChartErrorBoundary,
 } from './charts';
+import { KalturaChartApi } from '../schemas/chart';
+import { withValidatedProps } from './validate-props';
 
 export type ChartType =
   | 'line' | 'bar' | 'area' | 'pie' | 'scatter'
@@ -19,7 +21,7 @@ export type ChartType =
   | 'radar' | 'sankey' | 'funnel';
 
 export interface ChartAnnotation {
-  x: string;
+  x: string | number;
   label: string;
   color?: string;
 }
@@ -39,12 +41,18 @@ export interface ChartCoreProps {
   annotations?: ChartAnnotation[];
 }
 
-export function ChartCore(props: ChartCoreProps) {
+// Rows drawn in the chart. Longer data is cut and the cut is shown under the chart.
+// The source data table and the CSV still get every row.
+const MAX_CHART_ROWS = 500;
+
+function ChartView(props: ChartCoreProps) {
   const height = props.height || 300;
+  const allRows = Array.isArray(props.data) ? props.data : [];
+  const rows = allRows.length > MAX_CHART_ROWS ? allRows.slice(0, MAX_CHART_ROWS) : allRows;
 
   const { xKey, yKeys } = useMemo(() => {
-    if (!props.data.length) return { xKey: '', yKeys: [] as string[] };
-    const keys = Object.keys(props.data[0]);
+    if (!rows.length) return { xKey: '', yKeys: [] as string[] };
+    const keys = Object.keys(rows[0]);
     let x = props.xKey || '';
     if (!x) {
       if (props.chartType === 'pie' && keys.includes('name')) {
@@ -57,9 +65,9 @@ export function ChartCore(props: ChartCoreProps) {
         x = 'source';
       } else {
         const firstKey = keys[0] || '';
-        const firstValue = props.data[0][firstKey];
+        const firstValue = rows[0][firstKey];
         if (typeof firstValue === 'number' && keys.length > 1) {
-          x = keys.find(k => typeof props.data[0][k] !== 'number') || firstKey;
+          x = keys.find(k => typeof rows[0][k] !== 'number') || firstKey;
         } else {
           x = firstKey;
         }
@@ -67,12 +75,12 @@ export function ChartCore(props: ChartCoreProps) {
     }
     const y = props.yKeys || keys.filter(k => k !== x);
     return { xKey: x, yKeys: y };
-  }, [props.data, props.xKey, props.yKeys, props.chartType]);
+  }, [rows, props.xKey, props.yKeys, props.chartType]);
 
-  if (!props.data.length) return null;
+  if (!rows.length) return null;
 
   const chartProps = {
-    data: props.data,
+    data: rows,
     xKey,
     yKeys,
     yLabels: props.yLabels,
@@ -111,12 +119,21 @@ export function ChartCore(props: ChartCoreProps) {
   return (
     <div className="kaltura-chart-container">
       {props.title && <h4 className="kaltura-chart-title">{props.title}</h4>}
-      <ChartErrorBoundary title={props.title}>
+      <ChartErrorBoundary key={props.chartType} resetKey={props.data}>
         <div className="kaltura-chart-body" role="img" aria-label={props.title || `${props.chartType} chart`}>
           {renderChart()}
         </div>
       </ChartErrorBoundary>
-      <SourceDataTable data={props.data} sourceData={props.sourceData} />
+      {allRows.length > rows.length && (
+        <div className="chart-source-data-count" role="status">
+          Showing first {rows.length} of {allRows.length} rows.
+        </div>
+      )}
+      <ChartErrorBoundary resetKey={props.data}>
+        <SourceDataTable data={allRows} sourceData={props.sourceData} />
+      </ChartErrorBoundary>
     </div>
   );
 }
+
+export const ChartCore = withValidatedProps(KalturaChartApi.schema, 'chart', ChartView, 'chart');

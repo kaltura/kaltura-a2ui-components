@@ -1,7 +1,11 @@
 import { useMemo } from 'react';
 import type { FC } from 'react';
+import { isEntryId, isPositiveInt } from './ids';
+import { KalturaPlayerApi } from '../schemas/player';
+import { LoadError, withValidatedProps } from './validate-props';
+import { withKs } from './ks';
+import { kalturaHosts } from './region';
 
-const CDN_EMBED = 'https://cdnapisec.kaltura.com';
 const PLAYER_PLUGINS = 'uiManagers,youtube,dualscreen,timeline,kalturaCuepoints,ivq,kava';
 
 export interface PlayerCoreProps {
@@ -19,8 +23,11 @@ export interface PlayerCoreProps {
 }
 
 export function buildPlayerUrl(p: PlayerCoreProps): string {
+  if (!isPositiveInt(p.partnerId)) throw new Error('Invalid partnerId');
+  if (!isPositiveInt(p.uiconfId)) throw new Error('Invalid uiconfId');
+  if (!isEntryId(p.entryId)) throw new Error('Invalid entryId');
   const base =
-    `${CDN_EMBED}/p/${p.partnerId}/embedPlaykitJs` +
+    `${kalturaHosts().cdn}/p/${p.partnerId}/embedPlaykitJs` +
     `/partner_id/${p.partnerId}/uiconf_id/${p.uiconfId}`;
   const params = new URLSearchParams({
     iframeembed: 'true',
@@ -35,11 +42,17 @@ export function buildPlayerUrl(p: PlayerCoreProps): string {
   return `${base}?${params}`;
 }
 
-export const PlayerCore: FC<PlayerCoreProps> = (props) => {
+const PlayerView: FC<PlayerCoreProps> = (props) => {
   const aspectRatio = props.aspectRatio || '16/9';
 
   const playerUrl = useMemo(
-    () => buildPlayerUrl(props),
+    () => {
+      try {
+        return buildPlayerUrl(props);
+      } catch (e) {
+        return e as Error;
+      }
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       props.partnerId,
@@ -62,12 +75,16 @@ export const PlayerCore: FC<PlayerCoreProps> = (props) => {
     return props.entryDescription.replace(/<[^>]*>/g, '').trim();
   }, [props.entryDescription]);
 
+  if (playerUrl instanceof Error) {
+    return <LoadError widget="player">{`Failed to load player: ${playerUrl.message}`}</LoadError>;
+  }
+
   return (
     <div className="kaltura-player-container">
       <iframe
         src={playerUrl}
         style={{ width: '100%', aspectRatio, border: 0, display: 'block', minHeight: 280 }}
-        allow="autoplay *; fullscreen *; encrypted-media *; camera *; microphone *; display-capture *"
+        allow="autoplay *; fullscreen *; encrypted-media *"
         allowFullScreen
         title="Kaltura Player v7"
       />
@@ -78,3 +95,5 @@ export const PlayerCore: FC<PlayerCoreProps> = (props) => {
     </div>
   );
 };
+
+export const PlayerCore = withKs('player', withValidatedProps(KalturaPlayerApi.schema, 'player', PlayerView, 'player'));

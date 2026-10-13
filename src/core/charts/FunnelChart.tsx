@@ -74,7 +74,7 @@ function FunnelInner({ data, xKey, yKeys, colors, height, width }: FunnelProps &
 
             return (
               <g
-                key={stage.label}
+                key={`${i}-${stage.label}`}
                 style={{ cursor: 'pointer' }}
                 onMouseMove={(e) => handleMouseMove(e, stage)}
                 onMouseLeave={() => setTooltip(null)}

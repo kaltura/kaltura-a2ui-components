@@ -4,7 +4,13 @@ node_modules/
 .vite/
 *.tsbuildinfo
 
-# dist/ is built and committed ONLY on release tags by build-and-release.yml.
-# jsDelivr serves it from the tagged commit. On main it stays ignored so the
-# working tree never carries stale bundles.
+# dist/ is never committed to main. release.yml force-adds the CI build only in
+# the release commit a v* tag points to. jsDelivr serves that tag. CI fails if
+# dist/ is tracked.
 dist/
+
+# test and tooling output
+coverage/
+test-results/
+playwright-report/
+blob-report/

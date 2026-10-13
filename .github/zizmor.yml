@@ -1,0 +1,5 @@
+rules:
+  self-repository:
+    # actionlint 1.7.12 rejects the "$/" form. Keep "./" for the two local reusable calls.
+    ignore:
+      - release.yml

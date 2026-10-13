@@ -1,0 +1,4 @@
+[
+  { "name": "kaltura-react.mjs", "path": "dist/kaltura-react.mjs", "gzip": true, "limit": "164 kB" },
+  { "name": "kaltura-wc.js", "path": "dist/kaltura-wc.js", "gzip": true, "limit": "225 kB" }
+]

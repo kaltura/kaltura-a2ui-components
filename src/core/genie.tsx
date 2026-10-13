@@ -1,4 +1,7 @@
 import { UnisphereWidgetCore } from './unisphere-widget';
+import { KalturaGenieApi } from '../schemas/genie';
+import { withValidatedProps } from './validate-props';
+import { withKs } from './ks';
 
 export interface GenieCoreProps {
   partnerId: number;
@@ -8,7 +11,7 @@ export interface GenieCoreProps {
   language?: string;
 }
 
-export function GenieCore(props: GenieCoreProps) {
+function GenieView(props: GenieCoreProps) {
   return (
     <UnisphereWidgetCore
       partnerId={props.partnerId}
@@ -21,6 +24,9 @@ export function GenieCore(props: GenieCoreProps) {
         language: props.language || 'en',
       }}
       label="Kaltura Genie"
+      widget="genie"
     />
   );
 }
+
+export const GenieCore = withKs('genie', withValidatedProps(KalturaGenieApi.schema.required({ ks: true }), 'Kaltura Genie', GenieView, 'genie'));

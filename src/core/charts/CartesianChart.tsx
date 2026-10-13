@@ -17,7 +17,7 @@ import { useChartTheme, CHART_COLORS } from './theme';
 import { formatNumber } from './utils';
 
 export interface ChartAnnotation {
-  x: string;
+  x: string | number;
   label: string;
   color?: string;
 }
@@ -162,7 +162,7 @@ export function CartesianChart({
               case 'line':
                 return (
                   <LineSeries
-                    key={key}
+                    key={`${i}-${key}`}
                     dataKey={label}
                     data={data}
                     xAccessor={xAccessor}
@@ -174,7 +174,7 @@ export function CartesianChart({
               case 'area':
                 return (
                   <AreaSeries
-                    key={key}
+                    key={`${i}-${key}`}
                     dataKey={label}
                     data={data}
                     xAccessor={xAccessor}
@@ -188,7 +188,7 @@ export function CartesianChart({
               case 'bar':
                 return (
                   <BarSeries
-                    key={key}
+                    key={`${i}-${key}`}
                     dataKey={label}
                     data={data}
                     xAccessor={xAccessor}
@@ -199,7 +199,7 @@ export function CartesianChart({
               case 'scatter':
                 return (
                   <GlyphSeries
-                    key={key}
+                    key={`${i}-${key}`}
                     dataKey={label}
                     data={data}
                     xAccessor={xAccessor}
@@ -211,7 +211,7 @@ export function CartesianChart({
           })}
 
           {autoAnnotations?.map((ann, i) => {
-            const datum = data.find(d => String(d[xKey]) === ann.x);
+            const datum = data.find(d => String(d[xKey]) === String(ann.x));
             if (!datum) return null;
             return (
               <Annotation
@@ -244,7 +244,7 @@ export function CartesianChart({
             snapTooltipToDatumX
             snapTooltipToDatumY
             showVerticalCrosshair
-            verticalCrosshairStyle={{ stroke: 'var(--page-text-muted)', strokeDasharray: '4 2', opacity: 0.5 }}
+            verticalCrosshairStyle={{ stroke: 'var(--page-text-muted, currentColor)', strokeDasharray: '4 2', opacity: 0.5 }}
             renderTooltip={({ tooltipData }) => {
               if (!tooltipData?.nearestDatum) return null;
               const datum = tooltipData.nearestDatum.datum as Record<string, unknown>;
@@ -252,7 +252,7 @@ export function CartesianChart({
                 <div className="chart-tooltip-content">
                   <strong className="chart-tooltip-header">{String(datum[xKey])}</strong>
                   {yKeys.map((key, i) => (
-                    <div key={key} className="chart-tooltip-row">
+                    <div key={`${i}-${key}`} className="chart-tooltip-row">
                       <span className="chart-tooltip-dot" style={{ backgroundColor: palette[i % palette.length] }} />
                       <span className="chart-tooltip-label">{yLabels?.[i] || key}</span>
                       <span className="chart-tooltip-value">{formatNumber(Number(datum[key]) || 0)}</span>

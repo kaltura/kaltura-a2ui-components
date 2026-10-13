@@ -26,8 +26,6 @@ function RadarInner({ data, xKey, yKeys, yLabels, colors, height, width }: Radar
   const axes = useMemo(() => data.map(d => String(d[xKey] || '')), [data, xKey]);
   const numAxes = axes.length;
 
-  if (numAxes < 3) return null;
-
   const maxValue = useMemo(() => {
     let max = 0;
     for (const row of data) {
@@ -38,6 +36,8 @@ function RadarInner({ data, xKey, yKeys, yLabels, colors, height, width }: Radar
     }
     return max || 1;
   }, [data, yKeys]);
+
+  if (numAxes < 3) return null;
 
   const radialScale = scaleLinear({ domain: [0, maxValue], range: [0, radius] });
   const angleStep = (2 * Math.PI) / numAxes;
@@ -90,7 +90,7 @@ function RadarInner({ data, xKey, yKeys, yLabels, colors, height, width }: Radar
           ).join(' ') + ' Z';
 
           return (
-            <g key={key}>
+            <g key={`${keyIdx}-${key}`}>
               <path
                 d={pathStr}
                 fill={palette[keyIdx % palette.length]}
@@ -133,7 +133,7 @@ function RadarInner({ data, xKey, yKeys, yLabels, colors, height, width }: Radar
       {yKeys.length > 1 && (
         <Group top={size - 20} left={12}>
           {yKeys.map((key, i) => (
-            <g key={key} transform={`translate(${i * 100}, 0)`}>
+            <g key={`${i}-${key}`} transform={`translate(${i * 100}, 0)`}>
               <rect width={10} height={10} fill={palette[i % palette.length]} rx={3} />
               <Text x={14} y={9} fontSize={11} fontFamily="Lato, sans-serif" fill={themeColors.textSecondary}>
                 {yLabels?.[i] || key}
