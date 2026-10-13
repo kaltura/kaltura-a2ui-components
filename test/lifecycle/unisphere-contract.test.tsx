@@ -97,7 +97,26 @@ describe('Unisphere runtime contract', () => {
         uiconfId: '58022072',
         kalturaServerURI: 'https://www.kaltura.com',
         analyticsServerURI: 'analytics.kaltura.com',
-        hostAppName: 1,
+        hostAppName: 0,
+        hostedInKalturaProduct: true,
+        widget: '',
+      },
+    ]);
+  });
+
+  it('content lab: ai-consent runtime, announcement visual on the body', async () => {
+    await runtimeOf('../../src/core/content-lab', 'ContentLabCore', { uiconfId: 58022072, entryId: '1_hpc1olo6' });
+    const { widgetName, runtimeName, visuals, settings } = configs[0].runtimes[1] as Runtime & { visuals: { target: unknown }[] };
+    expect([widgetName, runtimeName, visuals, settings]).toEqual([
+      'unisphere.widget.content-lab',
+      'ai-consent',
+      [{ type: 'announcement', target: { target: 'body' }, settings: {} }],
+      {
+        _schemaVersion: '1',
+        ks: 'ks-1',
+        pid: '6516742',
+        hostApp: 'kaltura-a2ui-components',
+        kaltura: { analyticsServerURI: 'analytics.kaltura.com', hostAppName: 0, hostAppVersion: 'unknown' },
       },
     ]);
   });

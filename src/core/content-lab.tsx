@@ -45,8 +45,28 @@ function ContentLabView(props: ContentLabCoreProps) {
         uiconfId: String(props.uiconfId),
         kalturaServerURI: kalturaHosts().serviceUrl,
         analyticsServerURI: 'analytics.kaltura.com',
-        hostAppName: 1,
+        // 0 is KMC. With 1 (KMS) the menu hides captions unless reachConfig is set.
+        hostAppName: 0,
+        // Without this the runtime skips its consent check and never asks for AI consent.
+        hostedInKalturaProduct: true,
+        // '' lists every feature. Unset, the menu stays empty.
+        widget: '',
       }}
+      extraRuntimes={[
+        {
+          // The application runtime opens this one when the account has not given AI consent.
+          runtimeName: 'ai-consent',
+          visualType: 'announcement',
+          settings: {
+            _schemaVersion: '1',
+            ks: props.ks,
+            pid: String(props.partnerId),
+            hostApp: 'kaltura-a2ui-components',
+            // The runtime rejects an empty version, and the package has no version constant.
+            kaltura: { analyticsServerURI: 'analytics.kaltura.com', hostAppName: 0, hostAppVersion: 'unknown' },
+          },
+        },
+      ]}
       onRuntime={(runtime, isCancelled) => openWhenChecked(runtime, props.entryId, isCancelled)}
       label="Kaltura Content Lab"
       containerClass="kaltura-kaltura-content-lab-container"
