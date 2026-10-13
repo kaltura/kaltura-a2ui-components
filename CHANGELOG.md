@@ -2,6 +2,12 @@
 
 Newest first. 0.2.0 is the first release since v0.1.4. It holds the hardening work for SECF-30837 that this file listed before as "0.1.5 (not tagged)" (Phase 1, security), "0.1.6 (not tagged)" (Phase 2, robustness) and "Unreleased" (Phase 3). How each finding is closed and tested: [docs/security/SECF-30837.md](docs/security/SECF-30837.md). Upgrade steps: [docs/migration-0.2.md](docs/migration-0.2.md). Releases up to v0.1.4: [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
 
+## Unreleased
+
+### Added
+
+- **SRI for the SSR stub in the catalog.** `x-kaltura-adapters.react` has `stubCdn` and `stubIntegrity` for `dist/html-element-stub.mjs`, which `kaltura-react.mjs` imports. Before, a client that loaded the module from the catalog had no SRI for that second file. The release stamps and checks them, and `verify-cdn` compares `stubIntegrity` with the served stub. Catalogs of 0.3.0 and older have no stub keys. See [docs/host-integration.md](docs/host-integration.md#server-imports-ssr).
+
 ## 0.3.0 - 2026-10-12
 
 ### Breaking changes for hosts

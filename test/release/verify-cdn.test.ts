@@ -41,6 +41,7 @@ const handle = (request: IncomingMessage, response: ServerResponse) => {
   }
 };
 
+const STUB = 'export function t() {}';
 const readCatalogSource = () => readFileSync('src/catalog/kaltura_catalog.json', 'utf8');
 const retry = { attempts: 1, delayMs: 1 };
 const local = () => ({ base: stamp.cdnBase(TAG, origin), catalogBase: stamp.cdnBase(TAG) });
@@ -49,8 +50,8 @@ const local = () => ({ base: stamp.cdnBase(TAG, origin), catalogBase: stamp.cdnB
 const publish = (wc: string, bundle: string, tag = TAG) => {
   files.set(cdnPath('dist/kaltura-wc.js', tag), wc);
   files.set(cdnPath('dist/kaltura-react.mjs', tag), bundle);
-  files.set(cdnPath('dist/html-element-stub.mjs', tag), 'export function t() {}');
-  files.set(cdnPath('src/catalog/kaltura_catalog.json', tag), stamp.stampCatalog(readCatalogSource(), { tag, wcSri: stamp.sri(wc), reactSri: stamp.sri(bundle) }));
+  files.set(cdnPath('dist/html-element-stub.mjs', tag), STUB);
+  files.set(cdnPath('src/catalog/kaltura_catalog.json', tag), stamp.stampCatalog(readCatalogSource(), { tag, wcSri: stamp.sri(wc), reactSri: stamp.sri(bundle), stubSri: stamp.sri(STUB) }));
   return hashing.buildHashes({ version: tag.slice(1), read: path => Buffer.from(files.get(cdnPath(path, tag)) ?? '') });
 };
 
@@ -100,7 +101,10 @@ describe('QA-09: verifyCdn compares the served bytes with the build', () => {
 
   it('SEC-19: the SSR stub that the React bundle imports is checked too', async () => {
     files.set(cdnPath('dist/html-element-stub.mjs'), 'globalThis.x = 1;');
-    expect(await verify.verifyCdn({ ...local(), expected: expected.cdn, retry })).toEqual([expect.stringContaining('dist/html-element-stub.mjs: served')]);
+    expect(await verify.verifyCdn({ ...local(), expected: expected.cdn, retry })).toEqual([
+      expect.stringContaining('dist/html-element-stub.mjs: served'),
+      expect.stringContaining('catalog react.stubIntegrity'),
+    ]);
   });
 
   it('QA-09: hashes from a build without the stub (up to v0.2.0) check only the files that build hashed', async () => {
@@ -116,7 +120,7 @@ describe('QA-09: verifyCdn compares the served bytes with the build', () => {
   });
 
   it('SEC-19: a catalog integrity that is not the served bundle is reported even without expected hashes', async () => {
-    const catalog = stamp.stampCatalog(readCatalogSource(), { tag: TAG, wcSri: 'sha384-wrong', reactSri: stamp.sri('export const x = 1;') });
+    const catalog = stamp.stampCatalog(readCatalogSource(), { tag: TAG, wcSri: 'sha384-wrong', reactSri: stamp.sri('export const x = 1;'), stubSri: stamp.sri(STUB) });
     files.set(cdnPath('src/catalog/kaltura_catalog.json'), catalog);
     expect(await verify.verifyCdn({ ...local(), retry })).toEqual([expect.stringContaining('catalog webcomponent.integrity sha384-wrong is not the served')]);
   });
@@ -129,12 +133,35 @@ describe('QA-09: verifyCdn compares the served bytes with the build', () => {
     expect(problems).toEqual(expect.arrayContaining([expect.stringContaining('catalog react.integrity undefined is not the served')]));
   });
 
+  it('SEC-19: a catalog stub integrity that is not the served stub is reported even without expected hashes', async () => {
+    const catalog = stamp.stampCatalog(readCatalogSource(), { tag: TAG, wcSri: stamp.sri('console.log("wc")'), reactSri: stamp.sri('export const x = 1;'), stubSri: 'sha384-wrong' });
+    files.set(cdnPath('src/catalog/kaltura_catalog.json'), catalog);
+    expect(await verify.verifyCdn({ ...local(), retry })).toEqual([expect.stringContaining('catalog react.stubIntegrity sha384-wrong is not the served')]);
+  });
+
+  it('SEC-19: a catalog stub URL for another tag is reported', async () => {
+    const catalog = JSON.parse(files.get(cdnPath('src/catalog/kaltura_catalog.json')) ?? '{}');
+    catalog['x-kaltura-adapters'].react.stubCdn = `${stamp.cdnBase('v0.1.9')}dist/html-element-stub.mjs`;
+    files.set(cdnPath('src/catalog/kaltura_catalog.json'), JSON.stringify(catalog));
+    expect(await verify.verifyCdn({ ...local(), retry })).toEqual([expect.stringContaining('catalog react.stubCdn is')]);
+  });
+
+  it('QA-09: a catalog without the stub keys (tags up to v0.3.0) still passes', async () => {
+    const catalog = JSON.parse(files.get(cdnPath('src/catalog/kaltura_catalog.json')) ?? '{}');
+    delete catalog['x-kaltura-adapters'].react.stubCdn;
+    delete catalog['x-kaltura-adapters'].react.stubIntegrity;
+    files.set(cdnPath('src/catalog/kaltura_catalog.json'), JSON.stringify(catalog));
+    const rebuilt = hashing.buildHashes({ version: TAG.slice(1), read: path => Buffer.from(files.get(cdnPath(path)) ?? '') });
+    expect(await verify.verifyCdn({ ...local(), expected: rebuilt.cdn, retry })).toEqual([]);
+  });
+
   it('QA-09: catalog URLs that point at another tag are reported', async () => {
-    const other = stamp.stampCatalog(readCatalogSource(), { tag: 'v0.1.9', wcSri: stamp.sri('console.log("wc")'), reactSri: stamp.sri('export const x = 1;') });
+    const other = stamp.stampCatalog(readCatalogSource(), { tag: 'v0.1.9', wcSri: stamp.sri('console.log("wc")'), reactSri: stamp.sri('export const x = 1;'), stubSri: stamp.sri(STUB) });
     files.set(cdnPath('src/catalog/kaltura_catalog.json'), other);
     expect(await verify.verifyCdn({ ...local(), retry })).toEqual([
       expect.stringContaining(`catalog react.cdn is ${stamp.cdnBase('v0.1.9')}dist/kaltura-react.mjs`),
       expect.stringContaining(`catalog webcomponent.cdn is ${stamp.cdnBase('v0.1.9')}dist/kaltura-wc.js`),
+      expect.stringContaining(`catalog react.stubCdn is ${stamp.cdnBase('v0.1.9')}dist/html-element-stub.mjs`),
     ]);
   });
 
