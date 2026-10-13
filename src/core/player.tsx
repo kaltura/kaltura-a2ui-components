@@ -88,9 +88,9 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
         player.addEventListener(player.Event?.ERROR ?? 'error', () => {
           if (!cancelled) reportError('render-failed', widget, 'Player error');
         });
-        // The player's own seekFrom and clipTo ask Kaltura for a cut file. Kaltura ignores the start for some
-        // entries and serves a corrupt cut for others (docs/adr/0008). So the player gets a plain startTime
-        // and we stop it at the clip end here.
+        // On entries with only a progressive MP4 (no HLS or DASH flavor), Kaltura serves seekFrom through a
+        // CDN time offset that browser Range requests ignore or corrupt (docs/adr/0008). So the player gets a
+        // plain startTime and we stop it at the clip end here.
         const start = seekFrom !== undefined ? Math.round(seekFrom) : undefined;
         const end = clipTo !== undefined ? Math.round(clipTo) : undefined;
         if (end !== undefined && end > (start ?? 0)) {
