@@ -240,7 +240,7 @@ The KS is not in the script or iframe URL we build for the Player, the Flashcard
 | Player | The player version of the uiConf. The customer admin picks it per player instance in KMC, so the uiConf is the pin | None |
 | Express Recorder | Pinned to `/apps/expressrecorder/v2.2.10/` | None yet. SRI waits on Kaltura: the script is served with no CORS header, so a hash with `crossorigin` is blocked. The loader is ready for a hash |
 | Captions editor | Pinned to `/apps/captionstudio/v1.3.10/` | `embed.php` is fetched with `integrity`, and `main.js` and `main.css` get `integrity` before the blob page is built. A mismatch on `embed.php` shows an error and the KS is never sent. A mismatch on `main.js` or `main.css` is blocked by the browser inside the frame, so the editor stays blank or unstyled with no error. The KS is on the frame by then, but only code that matches the pinned hash can run |
-| Analytics iframe | `latest` (pin pending) | SRI does not apply to iframes. The controls are the cross-origin frame and the `postMessage` origin checks |
+| Analytics iframe | `latest`, by design (Kaltura manages the version) | SRI does not apply to iframes. The controls are the cross-origin frame and the `postMessage` origin checks |
 | Unisphere widgets | The `/v1` loader. The runtime list (`runtime.json`) can change | None. You trust Kaltura here. `script-src` and `connect-src` limit where code can come from. WebKit does not enforce import-map integrity |
 
 - A pin gives change control. SRI gives integrity. We accept no SRI for the rest while all remote code comes from Kaltura.
