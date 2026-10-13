@@ -1,12 +1,13 @@
 // Covers: SEC-03, SEC-07, SEC-11, SEC-12 root cause (core components trusted raw agent props).
 // Plan item 1.5: every core component checks its resolved props and shows a plain-text error.
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
 import { A2uiSurface } from '@a2ui/react/v0_9';
 import { mount } from '../helpers/render';
 import { checkProps } from '../../src/core/validate-props';
+import { setKsProvider } from '../../src/core/ks';
 import { kalturaReactCatalog, KALTURA_CATALOG_ID } from '../../src/adapters/react/index';
 import { KalturaPlayerApi } from '../../src/schemas/player';
 import { KalturaFlashcardsApi } from '../../src/schemas/flashcards';
@@ -22,7 +23,7 @@ import { KalturaVodAvatarApi } from '../../src/schemas/vod-avatar';
 import { KalturaChartApi } from '../../src/schemas/chart';
 
 const SERVER_URL = 'https://unisphere.nvp1.ovp.kaltura.com/v1';
-const calls = vi.hoisted(() => ({ loader: 0, createWorkspace: 0 }));
+const calls = vi.hoisted(() => ({ loader: 0, createWorkspace: 0, embeds: 0 }));
 
 // A harmless loader, so valid Unisphere widgets can start without network.
 vi.mock('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js', () => ({
@@ -34,6 +35,12 @@ vi.mock('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js', () => (
     calls.createWorkspace++;
     return new Promise(() => {});
   },
+  embeds: {
+    workspace: async () => {
+      calls.embeds++;
+      return new Promise(() => {});
+    },
+  },
 }));
 
 (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class {
@@ -42,10 +49,14 @@ vi.mock('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js', () => (
   unobserve() {}
 };
 
+// The avatar takes its KS from the provider only. The others fall back to their ks prop.
+beforeEach(() => setKsProvider(widget => (widget === 'avatar' ? 'dummy-ks' : undefined)));
 afterEach(() => {
+  setKsProvider(undefined);
   document.body.innerHTML = '';
   calls.loader = 0;
   calls.createWorkspace = 0;
+  calls.embeds = 0;
 });
 
 const base = { partnerId: 1, ks: 'dummy-ks' };
@@ -65,7 +76,7 @@ const ENTRIES: Entry[] = [
   { label: 'analytics', load: async () => (await import('../../src/core/analytics')).AnalyticsCore, api: KalturaAnalyticsApi as never, valid: base },
   { label: 'captions editor', load: async () => (await import('../../src/core/captions-editor')).CaptionsEditorCore, api: KalturaCaptionsEditorApi as never, valid: { ...base, entryId: '0_abc' } },
   { label: 'recorder', load: async () => (await import('../../src/core/recorder')).RecorderCore, api: KalturaRecorderApi as never, valid: base },
-  { label: 'avatar', load: async () => (await import('../../src/core/avatar')).AvatarCore, api: KalturaAvatarApi as never, valid: { avatarId: 'a1' } },
+  { label: 'Kaltura Avatar', load: async () => (await import('../../src/core/avatar')).AvatarCore, api: KalturaAvatarApi as never, valid: { partnerId: 1, serverUrl: SERVER_URL } },
   { label: 'Kaltura Genie', load: async () => (await import('../../src/core/genie')).GenieCore, api: KalturaGenieApi as never, valid: unisphere },
   { label: 'Kaltura Content Lab', load: async () => (await import('../../src/core/content-lab')).ContentLabCore, api: KalturaContentLabApi as never, valid: unisphere },
   { label: 'Kaltura AI Agents', load: async () => (await import('../../src/core/agents-widget')).AgentsWidgetCore, api: KalturaAgentsWidgetApi as never, valid: unisphere },
@@ -110,8 +121,8 @@ const BAD: Array<[string, Record<string, unknown>, string]> = [
   ['analytics', { ...base, ks: '' }, 'ks'],
   ['captions editor', { ...base, entryId: '0_abc', uiconfId: 0 }, 'uiconfId'],
   ['recorder', { ...base, uiconfId: null }, 'uiconfId'],
-  ['avatar', { avatarId: 7 }, 'avatarId'],
-  ['avatar', { avatarId: 'a1', autoStart: 'true' }, 'autoStart'],
+  ['Kaltura Avatar', { partnerId: 1, serverUrl: SERVER_URL, theme: 'custom' }, 'theme'],
+  ['Kaltura Avatar', { partnerId: 1, serverUrl: SERVER_URL, openingPhrase: 'a'.repeat(501) }, 'openingPhrase'],
   ['Kaltura Genie', { ...unisphere, ks: null }, 'ks'],
   ['Kaltura Genie', { ...unisphere, partnerId: 0 }, 'partnerId'],
   ['Kaltura Content Lab', { ...unisphere, entryId: '../x' }, 'entryId'],
@@ -131,7 +142,7 @@ describe('SEC-03: invalid props show a plain-text error and never the widget', (
       // Recorder keeps its error inside its own container, the others render the box alone.
       const box = container.querySelector('.kaltura-load-error');
       expect(box?.textContent).toBe(`Failed to load ${label}: Invalid ${field}`);
-      expect([container.querySelectorAll('iframe').length, calls.loader, calls.createWorkspace]).toEqual([0, 0, 0]);
+      expect([container.querySelectorAll('iframe').length, calls.loader, calls.createWorkspace, calls.embeds]).toEqual([0, 0, 0, 0]);
     },
   );
 
@@ -167,7 +178,7 @@ const PENDING_CASES: Array<[string, Record<string, unknown>, string]> = [
   ['flashcards', { title: 'D' }, 'cards'],
   ['Media Manager', { partnerId: 1, serverUrl: SERVER_URL }, 'ks'],
   ['captions editor', base, 'entryId'],
-  ['avatar', {}, 'avatarId'],
+  ['Kaltura Avatar', { partnerId: 1 }, 'serverUrl'],
   ['Kaltura Genie', { ...unisphere, ks: undefined }, 'ks'],
   ['Kaltura VOD Avatar', unisphere, 'entryId'],
   ['analytics', { partnerId: 1 }, 'ks'],
@@ -181,7 +192,7 @@ describe('SEC-03: a required prop that is still undefined is pending, not an err
     async (label, _field, props) => {
       const entry = byLabel(label);
       const { container } = await mount(await entry.load(), props as Record<string, unknown>);
-      expect([container.textContent, container.querySelectorAll('iframe, [role="alert"]').length, calls.loader, calls.createWorkspace]).toEqual(['', 0, 0, 0]);
+      expect([container.textContent, container.querySelectorAll('iframe, [role="alert"]').length, calls.loader, calls.createWorkspace, calls.embeds]).toEqual(['', 0, 0, 0, 0]);
     },
   );
 

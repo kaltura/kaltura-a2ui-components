@@ -11,7 +11,7 @@ Playwright starts `e2e/fixtures/servers.mjs`. It builds `dist/` only if missing.
 
 Modes: `throw`, `throwstr`, `codeload`, `ok`, `slow`, `notfound`. Both origins log requests per token (`harness.serverLog('A' | 'B')`). Requests to `*.kaltura.com` are stubbed, never sent (`harness.kalturaMode`).
 
-The `ok` loader records what the widget passed in: `harness.loaderConfigs()` (from `loader`) and `harness.workspaceConfigs()` (from `createWorkspace`).
+The `ok` loader records what the widget passed in: `harness.loaderConfigs()` (from `loader`), `harness.workspaceConfigs()` (from `createWorkspace`) and `harness.embedsConfigs()` (from `embeds.workspace`, the avatar).
 
 | Spec | Covers |
 |---|---|
@@ -24,6 +24,8 @@ The `ok` loader records what the widget passed in: `harness.loaderConfigs()` (fr
 | `unisphere-lifecycle.spec.ts` | Unisphere widgets follow props and kill the workspace; `kaltura-entry-selected` scope (QA-03, QA-07, SEC-18) |
 | `css-tokens.spec.ts` | Design tokens resolve with and without host variables (QA-02, SEC-25) |
 | `iframe-permissions.spec.ts` | `allow` and `sandbox` per iframe, no capture on the player and clip (SEC-14) |
+| `avatar.spec.ts` | Avatar on the embeds API: provider KS only, no script tag, teardown order, disconnect event (SEC-08, QA-04) |
+| `csp.spec.ts` | The recommended CSP from docs/host-integration.md, including the avatar (SEC-08) |
 | `player-sandbox.spec.ts` | Opt-in `setPlayerSandbox` against a stub player page: script, origin, fullscreen and downloads work, top navigation is blocked (SEC-14) |
 
 Add a case: import `test` from `./fixtures/harness`, call `h.open()` and `h.mount(tag, config)`, then assert on `h.pwned()` and the logs.

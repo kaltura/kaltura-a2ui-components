@@ -94,16 +94,17 @@ describe('CONF-07: the generator notices drift (so the test above is not vacuous
     const next = generator.generateCatalog(catalog, [...APIS.filter(api => api.name !== 'KalturaChart'), chart]);
     expect((ownBlock(next, 'KalturaChart').properties.chartType as { enum: string[] }).enum).toEqual(['line', 'bar']);
   });
+
+  it('CONF-07: a string max length is copied', () => {
+    const avatar = { name: 'KalturaAvatar', schema: KalturaAvatarApi.schema.extend({ openingPhrase: z.string().max(7).optional() }) };
+    const next = generator.generateCatalog(catalog, [...APIS.filter(api => api.name !== 'KalturaAvatar'), avatar]);
+    expect((ownBlock(next, 'KalturaAvatar').properties.openingPhrase as { maxLength: number }).maxLength).toBe(7);
+  });
 });
 
 describe('CONF-08: differences between zod and the catalog are on purpose', () => {
-  it('CONF-08: the kept-from-catalog props are exactly these four', () => {
-    expect(Object.keys(generator.KEPT_FROM_CATALOG)).toEqual([
-      'KalturaPlayer.partnerId',
-      'KalturaPlayer.uiconfId',
-      'KalturaAvatar.autoStart',
-      'KalturaAvatar.allowInterrupt',
-    ]);
+  it('CONF-08: the kept-from-catalog props are exactly these two', () => {
+    expect(Object.keys(generator.KEPT_FROM_CATALOG)).toEqual(['KalturaPlayer.partnerId', 'KalturaPlayer.uiconfId']);
   });
 
   it('CONF-08: each kept prop still differs from what zod gives (a stale entry should be removed)', () => {
