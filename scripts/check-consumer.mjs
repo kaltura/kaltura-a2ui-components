@@ -6,7 +6,9 @@
 //    name a package in dependencies or peerDependencies. Chart libraries are
 //    inlined, so they are devDependencies; an unreachable .d.ts may still name
 //    them.
-// 2. The ESM entry imports in plain Node, with no bundler.
+// 2. The ESM entry imports in plain Node, with no bundler, and leaves no
+//    HTMLElement stub behind. A control run shows that @a2ui/react alone
+//    still fails there (a2ui#3158, ADR 0007).
 // 3. The web component entry runs in a bare jsdom window and registers every
 //    custom element listed in the catalog.
 // 4. QA-08: with the peers installed there is exactly one copy of each shared
@@ -16,7 +18,7 @@
 //    clear npm message (`npm ls` "missing", or an ERESOLVE error that names
 //    the peer), and the ESM entry fails on import with the package name.
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { builtinModules, createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -51,7 +53,7 @@ function checkDeclared(file, source) {
   }
 }
 
-for (const file of ['kaltura-react.mjs', 'kaltura-wc.js']) {
+for (const file of readdirSync(join(root, 'dist')).filter((name) => /\.m?js$/.test(name))) {
   checkDeclared(`dist/${file}`, readFileSync(join(root, 'dist', file), 'utf8'));
 }
 const typeFiles = Object.values(pkg.exports).flatMap((target) => (target.types ? [resolve(root, target.types)] : []));
@@ -96,11 +98,24 @@ try {
       if (m[name] === undefined) throw new Error('missing export ' + name);
     }
     const { Catalog } = await import('@a2ui/web_core/v0_9');
-    if (!(m.kalturaReactCatalog instanceof Catalog)) throw new Error('catalog is not an instance of the host Catalog');`;
+    if (!(m.kalturaReactCatalog instanceof Catalog)) throw new Error('catalog is not an instance of the host Catalog');
+    if (typeof HTMLElement !== 'undefined') throw new Error('the HTMLElement stub is still defined after the import');
+    await import('@a2ui/react/v0_9');`;
   try {
     run(process.execPath, ['--input-type=module', '-e', esmProbe], consumer);
   } catch (error) {
     fail(`ESM entry failed to import in Node: ${String(error.stderr ?? error).split('\n').find((l) => /Error/.test(l)) ?? error}`);
+  }
+
+  // Control: without the stub, @a2ui/react 0.13.0 fails in Node. If it loads,
+  // upstream fixed a2ui#3158: remove the stub (see ADR 0007).
+  try {
+    run(process.execPath, ['--input-type=module', '-e', "await import('@a2ui/react/v0_9')"], consumer);
+    console.warn('NOTE @a2ui/react imports in plain Node without the stub. a2ui#3158 looks fixed: remove src/adapters/react/html-element-stub.ts (ADR 0007).');
+  } catch (error) {
+    if (!/HTMLElement is not defined/.test(String(error.stderr))) {
+      fail(`@a2ui/react failed in Node for a reason other than a2ui#3158: ${String(error.stderr).split('\n').find((l) => /Error/.test(l)) ?? error}`);
+    }
   }
 
   const wcPath = createRequire(join(consumer, 'x.js')).resolve('@kaltura/a2ui-react/webcomponent');
@@ -144,13 +159,13 @@ try {
   // names the peer, instead of a second copy of the renderer.
   let conflict = '';
   try {
-    install(join(work, 'conflict'), ['@a2ui/react@0.10.2', tarball]);
-    fail('npm installed the package next to @a2ui/react@0.10.2 without a peer conflict.');
+    install(join(work, 'conflict'), ['@a2ui/react@0.11.1', tarball]);
+    fail('npm installed the package next to @a2ui/react@0.11.1 without a peer conflict.');
   } catch (error) {
     conflict = String(error.stderr ?? error);
   }
-  if (conflict !== '' && !/ERESOLVE[\s\S]*peer @a2ui\/react@"\^0\.11/.test(conflict)) {
-    fail(`The peer conflict message does not name @a2ui/react ^0.11: ${conflict.split('\n').slice(0, 6).join(' | ')}`);
+  if (conflict !== '' && !/ERESOLVE[\s\S]*peer @a2ui\/react@"\^0\.13/.test(conflict)) {
+    fail(`The peer conflict message does not name @a2ui/react ^0.13: ${conflict.split('\n').slice(0, 6).join(' | ')}`);
   }
 } finally {
   rmSync(work, { recursive: true, force: true });

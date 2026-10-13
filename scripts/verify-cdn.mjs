@@ -50,7 +50,7 @@ export async function resolveLatest({ apiUrl = 'https://api.github.com', repo = 
 }
 
 /**
- * Fetches the three CDN files under `base` (with trailing slash). Returns problems.
+ * Fetches the CDN files under `base` (with trailing slash). Returns problems.
  * `catalogBase` is the base the catalog URLs must use (the real jsDelivr URL when
  * `base` is a test server). `expected` is the hashes.json `cdn` object, or undefined
  * for a self-check.
@@ -58,7 +58,8 @@ export async function resolveLatest({ apiUrl = 'https://api.github.com', repo = 
 export async function verifyCdn({ base, catalogBase = base, expected, retry }) {
   const problems = [];
   const seen = {};
-  for (const path of CDN_FILES) {
+  // With build hashes, check the files that build hashed. Tags up to v0.2.0 have no stub file.
+  for (const path of CDN_FILES.filter(file => !expected || file in expected)) {
     try {
       const { bytes, headers } = await getWithRetry(`${base}${path}`, retry);
       seen[path] = { bytes, sri: sri(bytes) };
@@ -123,7 +124,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
       for (const problem of problems) console.error(`FAIL ${problem}`);
       process.exit(1);
     }
-    console.log(`OK ${CDN_FILES.length} files on jsDelivr ${hashes ? 'match the build' : 'match the served catalog'}.`);
+    console.log(`OK the files on jsDelivr ${hashes ? 'match the build' : 'match the served catalog'}.`);
   } catch (error) {
     console.error(`verify-cdn: ${error.message}`);
     process.exit(1);

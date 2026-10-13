@@ -10,7 +10,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { sri } from './stamp-catalog.mjs';
 
-export const CDN_FILES = ['dist/kaltura-wc.js', 'dist/kaltura-react.mjs', 'src/catalog/kaltura_catalog.json'];
+// kaltura-react.mjs imports html-element-stub.mjs (ADR 0007), so jsDelivr serves both.
+export const CDN_FILES = ['dist/kaltura-wc.js', 'dist/kaltura-react.mjs', 'dist/html-element-stub.mjs', 'src/catalog/kaltura_catalog.json'];
 
 /** Builds the hashes.json object. `read(path)` returns the bytes of a repo file. */
 export const buildHashes = ({ version, read }) => ({ version, cdn: Object.fromEntries(CDN_FILES.map(path => [path, sri(read(path))])) });

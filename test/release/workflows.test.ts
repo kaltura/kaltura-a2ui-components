@@ -99,7 +99,7 @@ describe('SEC-09: release.yml jobs', () => {
   });
 
   it('SEC-09: the release job attests the bundles, the catalog and the archive', () => {
-    expect(['actions/attest-build-provenance@', 'dist/kaltura-wc.js', 'dist/kaltura-react.mjs', 'src/catalog/kaltura_catalog.json', 'dist.tar.gz'].filter(text => !releaseJobs['release']?.includes(text))).toEqual([]);
+    expect(['actions/attest-build-provenance@', 'dist/kaltura-wc.js', 'dist/kaltura-react.mjs', 'dist/html-element-stub.mjs', 'src/catalog/kaltura_catalog.json', 'dist.tar.gz'].filter(text => !releaseJobs['release']?.includes(text))).toEqual([]);
   });
 
   it('SEC-09: there is no npm publish, no npm token and no registry', () => {

@@ -184,7 +184,7 @@ jobs:
           rm -rf dist
           tar --no-same-owner -xzf "${assets}/dist.tar.gz"
           cp "${assets}/kaltura_catalog.json" src/catalog/kaltura_catalog.json
-          for file in dist/kaltura-wc.js dist/kaltura-react.mjs src/catalog/kaltura_catalog.json; do
+          for file in dist/kaltura-wc.js dist/kaltura-react.mjs dist/html-element-stub.mjs src/catalog/kaltura_catalog.json; do
             want="$(jq -r --arg f "$file" '.cdn[$f]' "${assets}/hashes.json")"
             got="sha384-$(openssl dgst -sha384 -binary "$file" | base64 -w0)"
             [ "$got" = "$want" ] || { echo "::error::${file} does not match hashes.json."; exit 1; }
@@ -198,6 +198,7 @@ jobs:
           subject-path: |
             dist/kaltura-wc.js
             dist/kaltura-react.mjs
+            dist/html-element-stub.mjs
             src/catalog/kaltura_catalog.json
             ${{ runner.temp }}/release/assets/dist.tar.gz
       # Same inputs give the same commit, so a re-run finds its own tag and skips the push.

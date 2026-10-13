@@ -2,6 +2,24 @@
 
 Newest first. 0.2.0 is the first release since v0.1.4. It holds the hardening work for internal-review that this file listed before as "0.1.5 (not tagged)" (Phase 1, security), "0.1.6 (not tagged)" (Phase 2, robustness) and "Unreleased" (Phase 3). How each finding is closed and tested: [docs/security/internal-review.md](docs/security/internal-review.md). Upgrade steps: [docs/migration-0.2.md](docs/migration-0.2.md). Releases up to v0.1.4: [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
 
+## Unreleased
+
+### Breaking changes for hosts
+
+- **Peers move to the A2UI 0.13 line.** `@a2ui/react ^0.13.0` and `@a2ui/web_core ^0.13.0`. 0.11 is no longer supported. Steps: [docs/migration-a2ui-0.13.md](docs/migration-a2ui-0.13.md).
+- **0.13 changes upstream that hosts see.** `basicCatalog` comes from `@a2ui/web_core/v0_9/basic_catalog`. The basic components are Lit custom elements, and every component renders inside an `<a2ui-react-<name>>` element (`display: contents`). The guarded basic Image, Video, AudioPlayer and Text use the tags `kaltura-a2ui-image`, `kaltura-a2ui-video`, `kaltura-a2ui-audioplayer` and `kaltura-a2ui-basic-text`. The v0.9 basic catalog drops `add`, `subtract`, `multiply`, `divide`, `equals`, `notEquals`, `greaterThan`, `lessThan`, `contains`, `startsWith` and `endsWith`.
+
+### Fixed
+
+- **The ESM imports in Node** although `@a2ui/react` 0.13.0 throws `HTMLElement is not defined` there ([a2ui#3158](https://github.com/a2ui-project/a2ui/issues/3158)). A one-file stub runs first and is removed after the imports. In Node, import `@kaltura/a2ui-react` before `@a2ui/react`. See [ADR 0007](docs/adr/0007-ssr-html-element-stub.md).
+
+### Security
+
+- The basic Image, Video, AudioPlayer and Text guards work on the 0.13 Lit elements: same URL rules, same markdown filter, also for a renderer from a Lit context provider.
+- A basic Button `openUrl` action now runs in the browser (0.13). It goes through the package's safe `openUrl`.
+- `@a2ui/markdown-it` 0.2.1 still pins `dompurify` 3.4.11. Keep the host override.
+- `kaltura-react.mjs` imports a second file, `dist/html-element-stub.mjs`. It is in `hashes.json`, the Release notes and the build provenance attestation.
+
 ## 0.2.0 - 2026-10-12
 
 Security and robustness release. Components check every prop and URL, follow prop changes and clean up after themselves. Shared libraries are now peers. **Distribution is jsDelivr only**, from the git tag `v0.2.0`. The package is not on npm. Each release has SRI hashes, an SBOM and a build provenance attestation. Hosts must change their install line or script URL: see [Breaking changes for hosts](#breaking-changes-for-hosts).
