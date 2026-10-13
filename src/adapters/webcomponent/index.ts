@@ -85,6 +85,7 @@ export { setExtraAllowedOrigins, getExtraAllowedOrigins } from '../../core/unisp
 export { setKsProvider, type KsProvider, type KsWidget } from '../../core/ks';
 // Host options: region, error and event handlers. Call them before the widgets mount. See docs/host-api.md.
 export { setRegion, type KalturaRegion } from '../../core/region';
+export { setAllowedPartners, setAllowedUiconfs, type AllowedIds } from '../../core/allowed-ids';
 export {
   setErrorHandler,
   setEventHandler,

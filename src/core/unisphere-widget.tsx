@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
 import { KalturaFailure, type KalturaWidget } from './host-hooks';
+import { refusedIdProp } from './allowed-ids';
 
 export { deriveLoaderUrl } from './unisphere-loader';
 
@@ -49,6 +50,11 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
     let cancelled = false;
     let workspace: unknown = null;
     container.replaceChildren();
+    const refused = refusedIdProp({ partnerId });
+    if (refused) {
+      renderLoadError(container, label, new KalturaFailure('origin-not-allowed', `${refused} is not allowed`), widget);
+      return;
+    }
 
     const id = `unisphere-${runtimeName}-${crypto.randomUUID()}`;
     container.id = id;

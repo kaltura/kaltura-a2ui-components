@@ -5,6 +5,7 @@ import { isAllowedMediaUrl } from './media-url';
 import { KalturaFlashcardsApi } from '../schemas/flashcards';
 import { LoadError, withValidatedProps } from './validate-props';
 import { kalturaHosts } from './region';
+import { refusedIdProp } from './allowed-ids';
 import { PlayerEmbed } from './player';
 import { withKs } from './ks';
 
@@ -47,12 +48,12 @@ export interface FlashcardsCoreProps {
  * CDN thumbnail URL for a clip — seeks to startTime+1s for a meaningful frame.
  * Uses the clip's own thumbnail field only when isAllowedMediaUrl accepts it (an https
  * Kaltura CDN URL or a host-added media origin, with no api_v3 path or KS). Otherwise builds the CDN URL, or returns an
- * empty string.
+ * empty string. A `partnerId` that the host allowlist refuses also gives an empty string.
  */
 export function buildThumbnailUrl(clip: Clip, partnerId?: number): string {
   const own = clip.thumbnail;
   if (own && isAllowedMediaUrl(own)) return new URL(own).href;
-  if (!isPositiveInt(partnerId) || !isEntryId(clip.entryId)) return '';
+  if (!isPositiveInt(partnerId) || !isEntryId(clip.entryId) || refusedIdProp({ partnerId })) return '';
   const sec = Math.round(clip.startTime) + 1;
   return `${kalturaHosts().vod}/p/${encodeURIComponent(partnerId)}/thumbnail/entry_id/${encodeURIComponent(clip.entryId)}/width/200/vid_sec/${sec}`;
 }

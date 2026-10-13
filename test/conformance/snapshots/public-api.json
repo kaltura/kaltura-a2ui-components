@@ -36,6 +36,8 @@
       "loadKalturaCatalog",
       "mediaManagerReactImpl",
       "recorderReactImpl",
+      "setAllowedPartners",
+      "setAllowedUiconfs",
       "setErrorHandler",
       "setEventHandler",
       "setExtraAllowedOrigins",
@@ -46,6 +48,7 @@
     ],
     "types": [
       "AgentsWidgetCoreProps",
+      "AllowedIds",
       "AnalyticsCoreProps",
       "AvatarCoreProps",
       "CaptionsEditorCoreProps",
@@ -100,6 +103,8 @@
       "defineRecorderWebComponent",
       "defineVodAvatarWebComponent",
       "getExtraAllowedOrigins",
+      "setAllowedPartners",
+      "setAllowedUiconfs",
       "setErrorHandler",
       "setEventHandler",
       "setExtraAllowedOrigins",
@@ -107,6 +112,7 @@
       "setRegion"
     ],
     "types": [
+      "AllowedIds",
       "KalturaError",
       "KalturaErrorCode",
       "KalturaEvent",

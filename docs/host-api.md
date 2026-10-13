@@ -8,6 +8,8 @@ Options the host page sets. Agents never call these. Set them once, before the c
 | `setExtraAllowedOrigins(origins)` | yes | yes | Adds Unisphere `serverUrl` origins (private cloud, on-prem) |
 | `setExtraMediaOrigins(origins)` | yes | no | Adds origins for the basic Image, Video and AudioPlayer |
 | `setRegion(code)` | yes | yes | Picks the Kaltura region for the hosts in the table below |
+| `setAllowedPartners(rule)` | yes | yes | Limits the `partnerId` values the components accept. Default: all |
+| `setAllowedUiconfs(rule)` | yes | yes | Limits the `uiconfId` values the components accept. Default: all |
 | `setErrorHandler(fn)` | yes | yes | Gets a `KalturaError` for each error state |
 | `setEventHandler(fn)` | yes | yes | Gets a `KalturaEvent` for widget events |
 
@@ -51,6 +53,40 @@ The Player, the Flashcards clips and the Captions editor run in your page. The K
 - The player also reads `kalturaSeekFrom`, `kalturaClipTo` and `kalturaStartTime` from the query string of your page. Those parameters can change which part of a clip plays.
 - CSP: [host-integration.md](host-integration.md#content-security-policy). The Player needs `media-src data:` and `worker-src blob:`. The Captions editor needs `frame-src blob:` and `connect-src <serviceUrl>`.
 
+## Allowed partners and uiconfs
+
+The agent picks `partnerId` and `uiconfId`. A uiconf decides which player or recorder code runs in your page, with your KS. Whoever owns a uiconf can put any JavaScript in it, so the code that runs is only as trusted as the account behind the id. Set an allowlist so the agent can use only your accounts.
+
+```ts
+import { setAllowedPartners, setAllowedUiconfs } from '@kaltura/a2ui-react';
+
+setAllowedPartners([1234567]);
+setAllowedUiconfs([/^(2000001|2000002)$/]);
+```
+
+The rule is one of:
+
+| Rule | Allows |
+|---|---|
+| `'*'` or `undefined` | Every id. The default. Also resets an earlier rule |
+| A list of numbers, strings and RegExps | An id that equals a number or string, or matches a RegExp. `[]` allows none |
+| A RegExp | An id that matches it |
+
+- A number or string must equal the id (`123` and `'123'` are the same). It never matches part of an id.
+- A RegExp is tested against the id as text and is not anchored. `/123/` allows `91234`. Write `^` and `$`: `/^(123|456)$/`. A `g` or `y` flag does not change the result between calls.
+- Any other value throws and keeps the current rule. A list entry of `'*'` matches only the text `*`, so use the plain `'*'` rule to allow all.
+- `uiconfId: 0` (the default uiConf) is checked like any other id. An unset optional `uiconfId` is not checked.
+- Call both before the components mount. Each call replaces the previous rule. They are not a replacement for `setKsProvider` with a least-privilege KS.
+
+A refused id loads nothing: no script, request or iframe. The component shows `Failed to load <widget>: partnerId is not allowed` (or `uiconfId`), never the id, and the error handler gets `origin-not-allowed`. The check covers every component that takes the ids, through A2UI and the web components:
+
+| Checked | Components |
+|---|---|
+| `partnerId` and `uiconfId` | Player, Flashcards clips, Recorder, Captions editor, Genie, Content Lab |
+| `partnerId` | Analytics, Media Manager, Avatar, Agents, VOD Avatar, `UnisphereWidgetCore`, Flashcards thumbnails |
+
+A refused Flashcards `partnerId` or `uiconfId` affects the clips only. The cards still render. A bad id that fails the usual prop checks still gives `invalid-props`.
+
 ## Regions
 
 ```ts
@@ -93,7 +129,7 @@ setErrorHandler((error: KalturaError) => log(error.code, error.widget, error.mes
 |---|---|
 | `invalid-props` | A prop has a bad value |
 | `invalid-ks` | The KS is one of the bad props |
-| `origin-not-allowed` | `serverUrl` is not an allowed Unisphere origin |
+| `origin-not-allowed` | `serverUrl` is not an allowed Unisphere origin, or `partnerId` or `uiconfId` is refused by the [allowlist](#allowed-partners-and-uiconfs) |
 | `load-failed` | A remote module, SDK or workspace failed to load |
 | `url-rejected` | A basic Image, Video or AudioPlayer `url` was refused |
 | `render-failed` | A chart threw while it rendered, or the recorder reported an error (fixed text `Recorder error`) |
