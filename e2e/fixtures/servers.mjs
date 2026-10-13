@@ -10,11 +10,12 @@ import { dirname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const dist = join(root, 'dist');
+// E2E_DIST: a directory with the files of a published release (recipe in e2e/README.md).
+const dist = process.env.E2E_DIST ?? join(root, 'dist');
 const portA = Number(process.env.E2E_PORT_A ?? 4310);
 const portB = Number(process.env.E2E_PORT_B ?? 4311);
 
-if (!existsSync(join(dist, 'kaltura-wc.js'))) {
+if (!existsSync(join(dist, 'kaltura-wc.js')) && !process.env.E2E_DIST) {
   const build = spawnSync('npm', ['run', 'build'], { cwd: root, stdio: 'inherit' });
   if (build.status !== 0) process.exit(build.status ?? 1);
 }
@@ -100,7 +101,7 @@ function serveFile(res, file) {
 const serverA = makeServer('A', (url, res) => {
   if (url.pathname === '/harness.html') return serveFile(res, join(root, 'e2e', 'fixtures', 'harness.html'));
   if (url.pathname.startsWith('/dist/')) {
-    const file = normalize(join(root, url.pathname));
+    const file = normalize(join(dist, url.pathname.slice('/dist/'.length)));
     if (!file.startsWith(dist + sep)) return send(res, 404, 'text/plain', 'not found');
     return serveFile(res, file);
   }
