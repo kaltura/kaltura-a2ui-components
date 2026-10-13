@@ -18,6 +18,10 @@ Newest first. 0.2.0 is the first release since v0.1.4. It holds the hardening wo
 - **`recorder-upload-ended` event** for `setEventHandler`, with `entryId` and `instanceId`. A recorder `error` reaches `setErrorHandler` as `render-failed` (or `invalid-ks`) with the fixed text `Recorder error`.
 - **SRI for the SSR stub in the catalog.** `x-kaltura-adapters.react` has `stubCdn` and `stubIntegrity` for `dist/html-element-stub.mjs`, which `kaltura-react.mjs` imports. Before, a client that loaded the module from the catalog had no SRI for that second file. The release stamps and checks them, and `verify-cdn` compares `stubIntegrity` with the served stub. Catalogs of 0.3.0 and older have no stub keys. See [docs/host-integration.md](docs/host-integration.md#server-imports-ssr).
 
+### Changed
+
+- **The bundle size budgets** are 165 kB gzip for `kaltura-react.mjs` and 226 kB for `kaltura-wc.js` (were 164 kB and 225 kB). The Express Recorder loader needs the extra room.
+
 ### Security
 
 - **Only maintainers create release tags.** A new tag ruleset limits creation of `v*` tags to the Admin and Maintain roles and one write deploy key. The release job pushes the tag with that key (environment secret `RELEASE_TAG_KEY`), not with the job token. Update, delete and force-push stay blocked for everyone. See [docs/release.md](docs/release.md).
