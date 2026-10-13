@@ -24,6 +24,9 @@ export const remote = { log: [] as string[], failWith: null as string | null };
 const workspace = (name: string) => ({
   kill: () => remote.log.push(`kill ${name}`),
   getRuntimeAsync: async () => ({
+    openDrawer: () => {},
+    openApplication: () => {},
+    partnerChecks: { onChanges: (listener: (checks: unknown) => void) => listener({ status: 'loaded', isAvailable: true }) },
     mountVisual: async () => ({ id: 'visual-1' }),
     unmountVisual: () => remote.log.push('unmount visual'),
   }),
@@ -230,8 +233,8 @@ export const CASES: Case[] = [
     effect: () => expect(remote.log).toEqual(['embeds workspace', 'contained']),
     afterUnmount: () => expect(remote.log).toEqual(['embeds workspace', 'contained', 'remove', 'destroy']),
   },
-  widget('genie', 'kaltura-genie-widget', 'KalturaGenie', async () => (await import('../../src/core/genie')).GenieCore as ComponentType<never>),
-  widget('content lab', 'kaltura-content-lab', 'KalturaContentLab', async () => (await import('../../src/core/content-lab')).ContentLabCore as ComponentType<never>),
+  widget('genie', 'kaltura-genie-widget', 'KalturaGenie', async () => (await import('../../src/core/genie')).GenieCore as ComponentType<never>, { uiconfId: 2 }),
+  widget('content lab', 'kaltura-content-lab', 'KalturaContentLab', async () => (await import('../../src/core/content-lab')).ContentLabCore as ComponentType<never>, { uiconfId: 2, entryId: '0_abc' }),
   widget('agents widget', 'kaltura-agents-widget', 'KalturaAgentsWidget', async () => (await import('../../src/core/agents-widget')).AgentsWidgetCore as ComponentType<never>),
   widget('vod avatar', 'kaltura-vod-avatar-wc', 'KalturaVodAvatar', async () => (await import('../../src/core/vod-avatar')).VodAvatarCore as ComponentType<never>, { entryId: '0_abc' }),
   {

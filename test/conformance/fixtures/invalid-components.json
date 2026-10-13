@@ -213,6 +213,14 @@
   ],
   "KalturaContentLab": [
     {
+      "why": "missing entryId",
+      "props": {
+        "partnerId": 1,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+        "uiconfId": 2
+      }
+    },
+    {
       "why": "missing partnerId",
       "props": {
         "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
@@ -264,10 +272,9 @@
   ],
   "KalturaVodAvatar": [
     {
-      "why": "missing entryId",
+      "why": "missing serverUrl",
       "props": {
-        "partnerId": 1,
-        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
+        "partnerId": 1
       }
     },
     {

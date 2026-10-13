@@ -56,9 +56,9 @@ export const WIDGET_ROWS: WidgetRow[] = [
     component: 'KalturaGenie',
     guide: 'https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/ (Available widgets)',
     guideWidget: 'unisphere.widget.genie',
-    guideRuntimes: ['chat', 'avatar', 'flashcards-tool', 'followups-tool', 'sources-tool'],
+    guideRuntimes: ['application', 'chat', 'avatar', 'flashcards-tool', 'followups-tool', 'sources-tool'],
     oursWidget: 'unisphere.widget.genie',
-    oursRuntime: 'kaltura-genie',
+    oursRuntime: 'application',
   },
   {
     component: 'KalturaMediaManager',
@@ -74,7 +74,7 @@ export const WIDGET_ROWS: WidgetRow[] = [
     guideWidget: 'unisphere.widget.content-lab',
     guideRuntimes: ['application', 'ai-consent'],
     oursWidget: 'unisphere.widget.content-lab',
-    oursRuntime: 'kaltura-content-lab',
+    oursRuntime: 'application',
   },
   {
     component: 'KalturaAgentsWidget',
@@ -82,15 +82,15 @@ export const WIDGET_ROWS: WidgetRow[] = [
     guideWidget: 'unisphere.widget.agents',
     guideRuntimes: ['manager'],
     oursWidget: 'unisphere.widget.agents',
-    oursRuntime: 'kaltura-agents',
+    oursRuntime: 'manager',
   },
   {
     component: 'KalturaVodAvatar',
     guide: 'https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/ (Available widgets)',
     guideWidget: 'unisphere.widget.vod-avatars',
     guideRuntimes: ['studio'],
-    oursWidget: 'unisphere.widget.vod-avatar',
-    oursRuntime: 'kaltura-vod-avatar',
+    oursWidget: 'unisphere.widget.vod-avatars',
+    oursRuntime: 'studio',
   },
 ];
 
@@ -102,11 +102,6 @@ export const KNOWN_DIVERGENCES: Record<string, string> = {
   'KalturaPlayer:integration': 'The guide shows an iframe embed with the KS in the URL. We load the embedPlaykitJs script and pass the KS in the player config with useHeaderForKs. See docs/adr/0008.',
   'KalturaCaptionsEditor:integration': 'The guide shows an iframe with pid, ks and entryid in the URL. We load embed.php into a blob URL iframe and set data-* attributes. See docs/adr/0008.',
   'KalturaMediaManager:runtime': 'We pass runtimeName kaltura-media-manager (live manifest, v1.12.0). The guide lists kaltura-items-media-manager, but its onRowSelected cannot be subscribed to in the live loader (v1.26.0), so a table has no way to report a selection. Checked live on 2026-10-13. Needs the Media Manager team.',
-  'KalturaGenie:runtime': 'We pass runtimeName kaltura-genie. The guide and the live manifest list chat, avatar and the tools. Needs the Genie team.',
-  'KalturaContentLab:runtime': 'We pass runtimeName kaltura-content-lab. The guide and the live manifest list application and ai-consent. Needs the Content Lab team.',
-  'KalturaAgentsWidget:runtime': 'We pass runtimeName kaltura-agents. The guide lists manager. Needs the Agents team.',
-  'KalturaVodAvatar:widget': 'We pass widgetName unisphere.widget.vod-avatar. The guide and the live manifest name it unisphere.widget.vod-avatars (plural).',
-  'KalturaVodAvatar:runtime': 'We pass runtimeName kaltura-vod-avatar. The guide lists studio.',
 };
 
 /** KS privileges the guides name. Used by docs/ks-privileges.md, checked by the docs test. */

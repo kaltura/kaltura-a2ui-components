@@ -24,7 +24,7 @@ const UNISPHERE_TAGS = [
 const recorderConfig = { partnerId: 1234567, uiconfId: 7654321 };
 const recorderCreates = (h: Harness) =>
   h.page.evaluate(() => (window as unknown as { __recorderCreates?: Array<{ options: { ks?: string } }> }).__recorderCreates ?? []);
-const unisphereConfig = { partnerId: 1234567, serverUrl: SERVER_URL, entryId: '0_dummy' };
+const unisphereConfig = { partnerId: 1234567, serverUrl: SERVER_URL, uiconfId: 2, entryId: '0_dummy' };
 
 /** The KS must not appear in any visible text or console line. */
 async function expectNoKsInTextOrLogs(h: Harness) {

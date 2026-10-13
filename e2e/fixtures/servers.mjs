@@ -32,7 +32,14 @@ export const createWorkspace = async () => { throw new Error('stub'); };`,
   ok: `export const loader = async (cfg) => {
   (window.__loaderCalls = window.__loaderCalls || []).push(cfg.serverUrl);
   (window.__loaderCfgs = window.__loaderCfgs || []).push(cfg);
-  return { kill() {} };
+  return {
+    kill() {},
+    getRuntimeAsync: async () => ({
+      openDrawer() {},
+      openApplication() {},
+      partnerChecks: { onChanges: (listener) => listener({ status: 'loaded', isAvailable: true }) },
+    }),
+  };
 };
 export const createWorkspace = async (cfg) => {
   (window.__workspaceCfgs = window.__workspaceCfgs || []).push(cfg);

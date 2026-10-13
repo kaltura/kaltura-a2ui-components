@@ -16,7 +16,7 @@ test.describe('invalid serverUrl shows a generic plain-text error', () => {
     for (const [name, serverUrl] of Object.entries(BAD_URLS)) {
       test(`${tag}: ${name}`, async ({ harness: h }) => {
         await h.open();
-        await h.mount(tag, { partnerId: 1234567, ks: KS, serverUrl });
+        await h.mount(tag, { partnerId: 1234567, uiconfId: 2, ks: KS, serverUrl });
         await h.settle();
         const text = await h.hostText();
         expect(text).toMatch(/^Failed to load /);
@@ -39,7 +39,7 @@ test.describe('error states use one alert box', () => {
     { name: 'flashcards with no cards array', tag: 'kaltura-flashcards', config: { title: 'Deck', cards: 'nope' } },
     { name: 'media manager with a bad serverUrl', tag: 'kaltura-media-manager', config: { partnerId: 1234567, ks: KS, serverUrl: 'https://evil.invalid/v1' } },
     { name: 'media manager, loader 404', tag: 'kaltura-media-manager', config: { partnerId: 1234567, ks: KS, serverUrl: SERVER_URL }, kalturaMode: 'notfound' },
-    { name: 'genie, loader throws', tag: 'kaltura-genie-widget', config: { partnerId: 1234567, ks: KS, serverUrl: SERVER_URL }, kalturaMode: 'throw' },
+    { name: 'genie, loader throws', tag: 'kaltura-genie-widget', config: { partnerId: 1234567, uiconfId: 2, ks: KS, serverUrl: SERVER_URL }, kalturaMode: 'throw' },
   ];
   for (const c of cases) {
     test(c.name, async ({ harness: h }) => {

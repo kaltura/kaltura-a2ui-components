@@ -40,8 +40,8 @@ async function components() {
   const base = { partnerId: 1, ks: 'dummy-ks', serverUrl: SERVER_URL };
   return [
     ['MediaManagerCore', mm.MediaManagerCore, base],
-    ['GenieCore', genie.GenieCore, base],
-    ['ContentLabCore', cl.ContentLabCore, base],
+    ['GenieCore', genie.GenieCore, { ...base, uiconfId: 2 }],
+    ['ContentLabCore', cl.ContentLabCore, { ...base, uiconfId: 2, entryId: '0_abc' }],
     ['VodAvatarCore', vod.VodAvatarCore, { ...base, entryId: '0_abc' }],
     ['AgentsWidgetCore', ag.AgentsWidgetCore, base],
   ] as const;

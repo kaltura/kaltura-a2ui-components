@@ -54,7 +54,7 @@ test.describe('REC-01: the script and the create call', () => {
       [SCRIPT_URL],
       {
         ks: KS,
-        serviceUrl: 'https://www.kaltura.com/api_v3',
+        serviceUrl: 'https://www.kaltura.com',
         playerUrl: 'https://cdnapisec.kaltura.com',
         partnerId: 1234567,
         uiConfId: 7654321,

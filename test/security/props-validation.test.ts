@@ -31,7 +31,14 @@ const calls = vi.hoisted(() => ({ loader: 0, createWorkspace: 0, embeds: 0 }));
 vi.mock('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js', () => ({
   loader: async () => {
     calls.loader++;
-    return { kill() {} };
+    return {
+      kill() {},
+      getRuntimeAsync: async () => ({
+        openDrawer() {},
+        openApplication() {},
+        partnerChecks: { onChanges: (listener: (checks: unknown) => void) => listener({ status: 'loaded', isAvailable: true }) },
+      }),
+    };
   },
   createWorkspace: async () => {
     calls.createWorkspace++;
@@ -70,7 +77,7 @@ afterEach(() => {
 });
 
 const base = { partnerId: 1, ks: 'dummy-ks' };
-const unisphere = { ...base, serverUrl: SERVER_URL };
+const unisphere = { ...base, serverUrl: SERVER_URL, uiconfId: 2 };
 
 type Entry = {
   label: string;
@@ -88,7 +95,7 @@ const ENTRIES: Entry[] = [
   { label: 'recorder', load: async () => (await import('../../src/core/recorder')).RecorderCore, api: KalturaRecorderApi as never, valid: { ...base, uiconfId: 2 } },
   { label: 'Kaltura Avatar', load: async () => (await import('../../src/core/avatar')).AvatarCore, api: KalturaAvatarApi as never, valid: { partnerId: 1, serverUrl: SERVER_URL } },
   { label: 'Kaltura Genie', load: async () => (await import('../../src/core/genie')).GenieCore, api: KalturaGenieApi as never, valid: unisphere },
-  { label: 'Kaltura Content Lab', load: async () => (await import('../../src/core/content-lab')).ContentLabCore, api: KalturaContentLabApi as never, valid: unisphere },
+  { label: 'Kaltura Content Lab', load: async () => (await import('../../src/core/content-lab')).ContentLabCore, api: KalturaContentLabApi as never, valid: { ...unisphere, entryId: '0_abc' } },
   { label: 'Kaltura AI Agents', load: async () => (await import('../../src/core/agents-widget')).AgentsWidgetCore, api: KalturaAgentsWidgetApi as never, valid: unisphere },
   { label: 'Kaltura VOD Avatar', load: async () => (await import('../../src/core/vod-avatar')).VodAvatarCore, api: KalturaVodAvatarApi as never, valid: { ...unisphere, entryId: '0_abc' } },
   { label: 'chart', load: async () => (await import('../../src/core/chart')).ChartCore, api: KalturaChartApi as never, valid: { chartType: 'bar', data: [{ n: 'a', v: 1 }] } },
@@ -195,7 +202,7 @@ const PENDING_CASES: Array<[string, Record<string, unknown>, string]> = [
   ['captions editor', base, 'entryId'],
   ['Kaltura Avatar', { partnerId: 1 }, 'serverUrl'],
   ['Kaltura Genie', { ...unisphere, ks: undefined }, 'ks'],
-  ['Kaltura VOD Avatar', unisphere, 'entryId'],
+  ['Kaltura Content Lab', unisphere, 'entryId'],
   ['analytics', {}, 'partnerId'],
   ['player', { ...base, uiconfId: 2 }, 'entryId'],
   ['chart', { chartType: 'bar' }, 'data'],
@@ -437,7 +444,7 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
 
   it('SEC-03: a Genie widget with a bound KS reaches the loader', async () => {
     await renderSurface(
-      { component: 'KalturaGenie', partnerId: 1, serverUrl: SERVER_URL, ...bound },
+      { component: 'KalturaGenie', partnerId: 1, uiconfId: 2, serverUrl: SERVER_URL, ...bound },
       session,
     );
     expect(calls.loader).toBe(1);

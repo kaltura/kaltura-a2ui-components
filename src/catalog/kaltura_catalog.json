@@ -431,9 +431,13 @@
             "language": {
               "$ref": "#/$defs/DynamicString",
               "description": "UI language code. Default: 'en'."
+            },
+            "uiconfId": {
+              "type": "integer",
+              "description": "Player UI configuration ID (uiConf). Genie needs it to start."
             }
           },
-          "required": ["component", "partnerId", "serverUrl"]
+          "required": ["component", "partnerId", "serverUrl", "uiconfId"]
         }
       ],
       "unevaluatedProperties": false
@@ -462,10 +466,14 @@
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Optional media entry ID to open Content Lab focused on a specific entry."
+              "description": "Media entry ID that Content Lab opens."
+            },
+            "uiconfId": {
+              "type": "integer",
+              "description": "Player UI configuration ID (uiConf) for the video preview."
             }
           },
-          "required": ["component", "partnerId", "serverUrl"]
+          "required": ["component", "partnerId", "serverUrl", "uiconfId", "entryId"]
         }
       ],
       "unevaluatedProperties": false
@@ -494,7 +502,7 @@
             },
             "agentId": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Optional agent ID to launch a specific agent."
+              "description": "Ignored. The agents runtime has no setting for it."
             }
           },
           "required": ["component", "partnerId", "serverUrl"]
@@ -504,7 +512,7 @@
     },
     "KalturaVodAvatar": {
       "type": "object",
-      "description": "Kaltura VOD Avatar — avatar overlay on a video-on-demand entry, powered by Unisphere.",
+      "description": "Kaltura VOD Avatar — the avatar video studio, powered by Unisphere.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -526,14 +534,14 @@
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Media entry ID for the VOD content the avatar overlays."
+              "description": "Ignored. The studio runtime has no setting for it."
             },
             "avatarStyle": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Optional avatar visual style preset."
+              "description": "Ignored. The studio runtime has no setting for it."
             }
           },
-          "required": ["component", "partnerId", "serverUrl", "entryId"]
+          "required": ["component", "partnerId", "serverUrl"]
         }
       ],
       "unevaluatedProperties": false

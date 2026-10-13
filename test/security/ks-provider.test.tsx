@@ -73,7 +73,7 @@ const editorKs = async (container: Element) => {
   await captions.ready();
   return container.querySelector('iframe')?.getAttribute('data-ks');
 };
-const unisphere = { partnerId: 1, serverUrl: SERVER_URL };
+const unisphere = { partnerId: 1, serverUrl: SERVER_URL, uiconfId: 2, entryId: '0_abc' };
 
 // [label, component, props without ks, reads the KS the widget got]. No URL holds it.
 const EMBED_CASES = [
