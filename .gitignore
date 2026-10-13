@@ -14,3 +14,8 @@ coverage/
 test-results/
 playwright-report/
 blob-report/
+
+# Local secrets (partner id, admin secret, keys). Never commit.
+.env
+.env.*
+!.env.example
