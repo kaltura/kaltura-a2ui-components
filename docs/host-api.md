@@ -10,7 +10,6 @@ Options the host page sets. Agents never call these. Set them once, before the c
 | `setRegion(code)` | yes | yes | Picks the Kaltura region for the hosts in the table below |
 | `setErrorHandler(fn)` | yes | yes | Gets a `KalturaError` for each error state |
 | `setEventHandler(fn)` | yes | yes | Gets a `KalturaEvent` for widget events |
-| `setPlayerSandbox(tokens)` | yes | yes | Opt-in `sandbox` for player and flashcard clip iframes. Off by default |
 
 In the web component bundle they are on `window.KalturaA2UIWebComponents`. That bundle has no basic Image, Video or AudioPlayer, so it has no `setExtraMediaOrigins`.
 
@@ -36,39 +35,21 @@ setExtraMediaOrigins(['https://media.example.com']);
 
 **Register the Kaltura catalog only.** The agent picks the catalog by id in `createSurface`. Importing the package guards the shared `basicCatalog` in place (Image, Video, AudioPlayer and Text), so an agent that picks it gets these checks too. A catalog you build yourself from the raw `Image`, `Video`, `AudioPlayer` or `Text` exports, or from a second copy of `@a2ui/web_core`, is not guarded. To keep the basic catalog id for older agents, register `buildKalturaCatalog(basicCatalog.id)` in its place.
 
-## Player sandbox
+## Player and Captions editor
 
-Player and flashcard clip iframes have no `sandbox` attribute by default. A sandbox that leaves out a token the player needs breaks a feature without an error, and none was tested on real devices. Turn it on only after you test your players with it.
+The Player, the Flashcards clips and the Captions editor run in your page. The KS goes in JavaScript, not in the URL of any script or iframe ([ADR 0008](adr/0008-in-page-player-and-captions-editor.md)). There is no iframe left to sandbox, so the player sandbox option of 0.3 is removed in 0.4.0 ([migration-0.4.md](migration-0.4.md#player-flashcards-and-captions-editor)).
 
-```ts
-import { setPlayerSandbox, PLAYER_SANDBOX_PRESET } from '@kaltura/a2ui-react';
+| Widget | How it loads | Where the KS goes |
+|---|---|---|
+| Player, flashcard clips | The `embedPlaykitJs` script of the `uiconfId` from the `cdn` host (table below), then `KalturaPlayer.setup` | The player config, with `useHeaderForKs: true`. Not in any URL |
+| Captions editor | `<serviceUrl>/apps/captionstudio/v1.3.10/embed.php` is fetched (with `integrity`) into a blob URL iframe | `data-*` attributes on that iframe. The editor's own player requests a `playManifest` URL with the KS in its path ([CSP reports](host-integration.md#rollout)) |
 
-setPlayerSandbox(PLAYER_SANDBOX_PRESET); // or a list, or 'allow-scripts allow-same-origin'
-setPlayerSandbox(undefined); // back to no sandbox
-```
-
-- It applies to player and clip iframes that mount after the call. A player already on the page keeps the value it mounted with. Remount it to change it.
-- Allowed tokens: `allow-downloads`, `allow-forms`, `allow-modals`, `allow-orientation-lock`, `allow-pointer-lock`, `allow-popups`, `allow-popups-to-escape-sandbox`, `allow-presentation`, `allow-same-origin`, `allow-scripts`, `allow-storage-access-by-user-activation`, `allow-top-navigation-by-user-activation`. Any other token throws (`Sandbox token not allowed: …`) and keeps the current value. `allow-top-navigation` and `allow-top-navigation-to-custom-protocols` are refused: they let the player page replace your page without a click.
-- An empty list gives the strictest sandbox: no scripts, so no player.
-- No prop or element `config` sets it. The iframe reads only the host value, so a `sandbox` prop from an agent has no effect.
-- The recorder, captions editor and analytics iframes keep their own fixed `sandbox`.
-
-`PLAYER_SANDBOX_PRESET` keeps playback, fullscreen, downloads, Cast/Presentation and share pop-ups. It blocks top navigation, `alert`/`confirm` dialogs, pointer lock and storage access prompts.
-
-| Token | Why the preset has it |
-|---|---|
-| `allow-scripts` | The player is a script app |
-| `allow-same-origin` | The player page (`cdnapisec.kaltura.com`) keeps its own origin, so its API calls, cookies, storage and DRM license requests work. It is cross-origin to your page, so it gets no access to your page |
-| `allow-presentation` | Cast and other Presentation API devices |
-| `allow-downloads` | The player download button |
-| `allow-popups` | Share and "open in new window" links |
-| `allow-popups-to-escape-sandbox` | Those new windows open as normal pages. A sandboxed share page often fails |
-| `allow-forms` | Player plugins with forms, such as quizzes |
-| `allow-orientation-lock` | Landscape lock in fullscreen on phones |
-
-Fullscreen needs no token: the iframe keeps `allowfullscreen` and `allow="fullscreen *"`.
-
-What is tested (`e2e/player-sandbox.spec.ts`, Chromium, Firefox and WebKit, with a local stub page in place of the player): with the preset the page loads, runs script and keeps its origin, fullscreen from inside works, an `<a download>` link downloads, and a `target=_top` link click does not leave your page. What is not tested: the real Kaltura player, Cast and AirPlay devices, DRM playback, mobile browsers and player plugins. Test those with your own players before you turn it on.
+- The script and the editor page run in your page origin and can read the KS and your page. The captions iframe `sandbox` has `allow-same-origin` and `allow-scripts`, so it is not a security boundary. If you need isolation, embed the component in a page on a separate origin, or use a CSP.
+- Versions: the player version is the one the customer admin picks for the uiConf in KMC, so the uiConf is the pin. The editor is pinned to `v1.3.10` and checked with `integrity` (page, `main.js`, `main.css`). The player bundle that the editor loads has no integrity: pins cover the first hop only. See [Remote code from Kaltura](host-integration.md#remote-code-from-kaltura).
+- The player adds `KalturaPlayer`, `__kalturaplayerdata` and `regeneratorRuntime` to `window`. Each bundle replaces `KalturaPlayer`, so two uiconfs on one page make the loader load the bundle again when it switches.
+- The uiconf sets the plugins. The `plugins=` URL parameter is gone. `autoplay` and `muted` reach the player only when the prop is set, so the uiconf defaults apply otherwise.
+- The player also reads `kalturaSeekFrom`, `kalturaClipTo` and `kalturaStartTime` from the query string of your page. Those parameters can change which part of a clip plays.
+- CSP: [host-integration.md](host-integration.md#content-security-policy). The Player needs `media-src data:` and `worker-src blob:`. The Captions editor needs `frame-src blob:` and `connect-src <serviceUrl>`.
 
 ## Regions
 
@@ -76,25 +57,25 @@ What is tested (`e2e/player-sandbox.spec.ts`, Chromium, Firefox and WebKit, with
 setRegion('irp2');
 ```
 
-Codes: `nvp1` (default, US), `irp2`, `frp2`, `cap2`, `syp2`. Any other code throws and keeps the current region. Builders read the region when they build a URL, so call `setRegion` before the components mount.
+Codes: `nvp1` (default, US), `irp2`, `frp2`, `cap2`, `syp2`. Any other code throws and keeps the current region. Components read the region when they build a URL or load a script, so call `setRegion` before they mount.
 
 | Host | nvp1 | irp2 | frp2 | cap2 | syp2 | Used by |
 |---|---|---|---|---|---|---|
-| serviceUrl | `https://www.kaltura.com` | `https://api.eu.kaltura.com` | `https://api.de.kaltura.com` | `https://api.ca.kaltura.com` | `https://api.ap.kaltura.com` | Captions editor `serviceurl` |
+| serviceUrl | `https://www.kaltura.com` | `https://api.eu.kaltura.com` | `https://api.de.kaltura.com` | `https://api.ca.kaltura.com` | `https://api.ap.kaltura.com` | Captions editor page (`embed.php`) and `serviceurl` |
 | vod | `https://cfvod.kaltura.com` | `https://cfvod.irp2.ovp.kaltura.com` | `https://cfvod.frp2.ovp.kaltura.com` | `https://cfvod.cap2.ovp.kaltura.com` | `https://cfvod.syp2.ovp.kaltura.com` | Flashcards thumbnails |
-| cdn | `https://cdnapisec.kaltura.com` | `https://api.eu.kaltura.com` | `https://api.de.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | Player, flashcard clips, captions editor `cdnurl` |
-| kmc | `https://kmc.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` | `https://kmc.de.kaltura.com` | `https://kmc.ca.kaltura.com` | `https://kmc.ap.kaltura.com` | Analytics (`/index.php/kmcng/analytics`) |
-| recorder | `https://www.kaltura.com` | same as cdn | same as cdn | same as cdn | same as cdn | Recorder iframe (`/index.php/extwidget/preview`) |
+| cdn | `https://cdnapisec.kaltura.com` | `https://api.eu.kaltura.com` | `https://api.de.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | Player script, flashcard clips, captions editor `cdnurl` |
+| kmc | `https://kmc.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` | `https://kmc.de.kaltura.com` | `https://kmc.ca.kaltura.com` | `https://kmc.ap.kaltura.com` | Analytics (`/apps/kmc-analytics/latest/index.html`, and the `postMessage` origin) |
+| recorder | `https://www.kaltura.com` | same as cdn | same as cdn | same as cdn | same as cdn | Express Recorder script (`/apps/expressrecorder/v2.2.10/express-recorder.js`) |
 
-The guide lists no regional CDN host, so the player uses the regional API host shown in the cdn row. The recorder uses the same host with the US path.
+The guide lists no regional CDN host, so the player script loads from the regional API host shown in the cdn row. The recorder script loads from the recorder host of the row above. It gets the regional API host as `serviceUrl` and the cdn host as `playerUrl`.
 
 Sources:
 
-- serviceUrl: https://kaltura.md/KALTURA_API_GETTING_STARTED/ §4.1 lists the API base URL per region (`https://api.eu.kaltura.com/api_v3` and so on). The captions editor takes it without `/api_v3`, as in https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/.
+- serviceUrl: https://kaltura.md/KALTURA_API_GETTING_STARTED/ §4.1 lists the API base URL per region (`https://api.eu.kaltura.com/api_v3` and so on). The captions editor and the Express Recorder take it without `/api_v3` (the recorder script adds it), as in https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/.
 - vod: the same guide, §4.3, gives `cfvod.{code}.ovp.kaltura.com`.
 - kmc: the same guide, §4, "Rich Media CMS" row of each region.
 - cdn, recorder: the guide lists no regional CDN host. Kaltura confirmed (2026-10-13) that regional accounts serve the player from the API host and that the recorder uses the US path on it. The Canada and Australia API hosts use the internal `{code}.ovp` form.
-- The captions editor page itself stays on `www.kaltura.com`. Check it on a regional account before you rely on it.
+- The captions editor page comes from the `serviceUrl` host. CORS on its `embed.php` was verified on `www.kaltura.com`, `api.eu`, `api.de`, `api.ca`, `api.ap`, `api.cap2.ovp` and `api.syp2.ovp`. The editor itself was loaded only on `nvp1`. Check a regional account before you rely on it.
 
 `sgp2` (Singapore) is in the API guide but not supported here: the guide says it runs no microservices, so there is no Unisphere host for it.
 
@@ -115,7 +96,7 @@ setErrorHandler((error: KalturaError) => log(error.code, error.widget, error.mes
 | `origin-not-allowed` | `serverUrl` is not an allowed Unisphere origin |
 | `load-failed` | A remote module, SDK or workspace failed to load |
 | `url-rejected` | A basic Image, Video or AudioPlayer `url` was refused |
-| `render-failed` | A chart threw while it rendered |
+| `render-failed` | A chart threw while it rendered, or the recorder reported an error (fixed text `Recorder error`) |
 
 `widget` is the `KsWidget` name (`player`, `analytics`, `recorder` …) or `flashcards`, `chart`, `image`, `video`, `audio-player`. `UnisphereWidgetCore` used directly reports `unisphere` unless you pass its `widget` prop.
 
@@ -134,6 +115,29 @@ setEventHandler(event => {
 | Type | Widget | `detail` |
 |---|---|---|
 | `entry-selected` | `media-manager` | `{ entryId, name, instanceId, entries? }`, the same as the `kaltura-entry-selected` DOM event |
+| `recorder-upload-ended` | `recorder` | `{ entryId?, instanceId }`. `entryId` is there only when the recorder sent a valid entry id. `instanceId` is the recorder container id |
 | `avatar-disconnected` | `avatar` | `{ reason, instanceId }`. `reason` is a name such as `ConversationEnded`, or `UnknownReason`. `instanceId` is the avatar container id |
 
 The DOM event still fires. `name` comes from the media library or the agent: treat it as untrusted text. A handler that throws is ignored.
+
+## Client functions
+
+The Kaltura catalog replaces the basic `openUrl`. It opens only absolute `https:` URLs. Anything else (a relative URL, `javascript:`, `http:`) is blocked with a console warning. The agent and the error handler get no signal. `copyToClipboard` copies the agent's text without a preview, so treat it as agent output.
+
+## Capability negotiation
+
+An agent that offers catalog choices needs to know which catalogs your client renders. Ask the `MessageProcessor` and send the result in the `a2uiClientCapabilities` field of your request to the agent (A2UI v0.9 [client capabilities](https://a2ui.org/specification/v0_9/client_capabilities.json)):
+
+```ts
+const processor = new MessageProcessor([kalturaReactCatalog]);
+
+const request = {
+  message: userText,
+  // { 'v0.9': { supportedCatalogIds: [KALTURA_CATALOG_ID] } }
+  a2uiClientCapabilities: processor.getRendererCapabilities({ versions: ['v0.9'] }),
+};
+```
+
+- `supportedCatalogIds` lists the id of every catalog you registered. The agent must use one of them in `createSurface`.
+- Add `includeInlineCatalogs: true` to send the full catalog definitions. Only do that for an agent that declares `acceptsInlineCatalogs: true`.
+- `getRendererCapabilities` comes from `@a2ui/web_core` (it replaces `getClientCapabilities`). The transport that carries the field depends on your agent protocol.

@@ -1,4 +1,6 @@
 // What the Kaltura guides say, next to what our code does (plan item 3.3c).
+// The Player and the Captions editor have no URL row: they build no URL any more (ADR 0008).
+// Their guide iframe embeds are listed in KNOWN_DIVERGENCES as `integration`.
 // Read on 2026-10-12. Guide URLs:
 //   Player        https://kaltura.md/KALTURA_PLAYER_EMBED_GUIDE/
 //   Captions      https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/
@@ -18,44 +20,24 @@ export interface UrlRow {
   /** Component name in the catalog. */
   component: string;
   guide: string;
-  /** Base URL (origin and path) the guide documents, with the sample ids filled in. */
+  /** Base URL (origin and path) the guide documents. */
   guideBase: string;
   /** Query parameter names the guide documents. */
   guideParams: string[];
-  /** Base URL our code builds for the same sample ids. */
+  /** Base URL our code builds. */
   oursBase: string;
   /** Query parameter names our code sends. */
   oursParams: string[];
 }
 
-// Sample ids used for every URL row.
-export const SAMPLE = { partnerId: 1, uiconfId: 2, entryId: '0_abc', ks: 'ks-1' } as const;
-
 export const URL_ROWS: UrlRow[] = [
-  {
-    component: 'KalturaPlayer',
-    guide: 'https://kaltura.md/KALTURA_PLAYER_EMBED_GUIDE/ (Iframe embed)',
-    guideBase: 'https://cdnapisec.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2',
-    guideParams: ['iframeembed', 'ks', 'entry_id', 'kalturaSeekFrom', 'kalturaClipTo', 'config[playback]'],
-    oursBase: 'https://cdnapisec.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2',
-    // The guide sets autoplay and muted in config[playback]. We send the short flags below.
-    oursParams: ['iframeembed', 'entry_id', 'plugins', 'ks', 'kalturaSeekFrom', 'kalturaClipTo', 'autoplay', 'mute'],
-  },
-  {
-    component: 'KalturaCaptionsEditor',
-    guide: 'https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/ (Embedding via iframe)',
-    guideBase: 'https://www.kaltura.com/apps/captionstudio/latest/index.html',
-    guideParams: ['pid', 'ks', 'entryid', 'assetid', 'maxcharsperline', 'cdnurl', 'serviceurl'],
-    oursBase: 'https://www.kaltura.com/apps/captionstudio/latest/index.html',
-    oursParams: ['pid', 'ks', 'entryid', 'cdnurl', 'serviceurl', 'uiconfid'],
-  },
   {
     component: 'KalturaAnalytics',
     guide: 'https://kaltura.md/KALTURA_ANALYTICS_EMBED_API/ (Embedding, postMessage protocol)',
     guideBase: 'https://kmc.kaltura.com/apps/kmc-analytics/latest/index.html',
     guideParams: [],
-    oursBase: 'https://kmc.kaltura.com/index.php/kmcng/analytics',
-    oursParams: ['ks', 'partnerId', 'entryId'],
+    oursBase: 'https://kmc.kaltura.com/apps/kmc-analytics/latest/index.html',
+    oursParams: [],
   },
 ];
 
@@ -74,9 +56,9 @@ export const WIDGET_ROWS: WidgetRow[] = [
     component: 'KalturaGenie',
     guide: 'https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/ (Available widgets)',
     guideWidget: 'unisphere.widget.genie',
-    guideRuntimes: ['chat', 'avatar', 'flashcards-tool', 'followups-tool', 'sources-tool'],
+    guideRuntimes: ['application', 'chat', 'avatar', 'flashcards-tool', 'followups-tool', 'sources-tool'],
     oursWidget: 'unisphere.widget.genie',
-    oursRuntime: 'kaltura-genie',
+    oursRuntime: 'application',
   },
   {
     component: 'KalturaMediaManager',
@@ -84,7 +66,7 @@ export const WIDGET_ROWS: WidgetRow[] = [
     guideWidget: 'unisphere.widget.media-manager',
     guideRuntimes: ['kaltura-items-media-manager'],
     oursWidget: 'unisphere.widget.media-manager',
-    oursRuntime: 'kaltura-items-media-manager',
+    oursRuntime: 'kaltura-media-manager',
   },
   {
     component: 'KalturaContentLab',
@@ -92,7 +74,7 @@ export const WIDGET_ROWS: WidgetRow[] = [
     guideWidget: 'unisphere.widget.content-lab',
     guideRuntimes: ['application', 'ai-consent'],
     oursWidget: 'unisphere.widget.content-lab',
-    oursRuntime: 'kaltura-content-lab',
+    oursRuntime: 'application',
   },
   {
     component: 'KalturaAgentsWidget',
@@ -100,15 +82,15 @@ export const WIDGET_ROWS: WidgetRow[] = [
     guideWidget: 'unisphere.widget.agents',
     guideRuntimes: ['manager'],
     oursWidget: 'unisphere.widget.agents',
-    oursRuntime: 'kaltura-agents',
+    oursRuntime: 'manager',
   },
   {
     component: 'KalturaVodAvatar',
     guide: 'https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/ (Available widgets)',
     guideWidget: 'unisphere.widget.vod-avatars',
     guideRuntimes: ['studio'],
-    oursWidget: 'unisphere.widget.vod-avatar',
-    oursRuntime: 'kaltura-vod-avatar',
+    oursWidget: 'unisphere.widget.vod-avatars',
+    oursRuntime: 'studio',
   },
 ];
 
@@ -117,15 +99,9 @@ export const GUIDE_LOADER_URL = 'https://unisphere.nvp1.ovp.kaltura.com/v1/loade
 
 /** Where the code and the guide differ today. Each key is `<component>:<aspect>`. */
 export const KNOWN_DIVERGENCES: Record<string, string> = {
-  'KalturaPlayer:params': 'We send autoplay, mute and plugins as query parameters. The guide sets playback options in config[playback]. Not decided.',
-  'KalturaCaptionsEditor:params': 'We never send assetid or maxcharsperline, and we add uiconfid. The guide lists no uiconfid.',
-  'KalturaAnalytics:url': 'ANA-01. The guide embeds kmc-analytics/latest/index.html and passes the KS with postMessage. See docs/adr/0005-analytics-and-recorder-integration.md.',
-  'KalturaRecorder:integration': 'REC-01. The guide loads express-recorder.js in the host page. We embed an extwidget/preview iframe. See docs/adr/0005-analytics-and-recorder-integration.md.',
-  'KalturaGenie:runtime': 'We pass runtimeName kaltura-genie. The guide and the live manifest list chat, avatar and the tools. Needs the Genie team.',
-  'KalturaContentLab:runtime': 'We pass runtimeName kaltura-content-lab. The guide and the live manifest list application and ai-consent. Needs the Content Lab team.',
-  'KalturaAgentsWidget:runtime': 'We pass runtimeName kaltura-agents. The guide lists manager. Needs the Agents team.',
-  'KalturaVodAvatar:widget': 'We pass widgetName unisphere.widget.vod-avatar. The guide and the live manifest name it unisphere.widget.vod-avatars (plural).',
-  'KalturaVodAvatar:runtime': 'We pass runtimeName kaltura-vod-avatar. The guide lists studio.',
+  'KalturaPlayer:integration': 'The guide shows an iframe embed with the KS in the URL. We load the embedPlaykitJs script and pass the KS in the player config with useHeaderForKs. See docs/adr/0008.',
+  'KalturaCaptionsEditor:integration': 'The guide shows an iframe with pid, ks and entryid in the URL. We load embed.php into a blob URL iframe and set data-* attributes. See docs/adr/0008.',
+  'KalturaMediaManager:runtime': 'We pass runtimeName kaltura-media-manager (live manifest, v1.12.0). The guide lists kaltura-items-media-manager, but its onRowSelected cannot be subscribed to in the live loader (v1.26.0), so a table has no way to report a selection. Checked live on 2026-10-13. Needs the Media Manager team.',
 };
 
 /** KS privileges the guides name. Used by docs/ks-privileges.md, checked by the docs test. */

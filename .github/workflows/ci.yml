@@ -93,7 +93,10 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
+      - run: npm ci --ignore-scripts
       - run: npm audit --audit-level=high
+      # Checks the registry signature and provenance of every installed package.
+      - run: npm audit signatures
 
   dependency-review:
     name: dependency review

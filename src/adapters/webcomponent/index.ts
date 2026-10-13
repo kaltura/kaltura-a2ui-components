@@ -83,13 +83,11 @@ export {
 export { setExtraAllowedOrigins, getExtraAllowedOrigins } from '../../core/unisphere-loader';
 // Host option: supplies the KS so it never goes through agent output. Call it before the widgets mount.
 export { setKsProvider, type KsProvider, type KsWidget } from '../../core/ks';
-// Host options: region, error and event handlers, player sandbox. Call them before the widgets mount. See docs/host-api.md.
+// Host options: region, error and event handlers. Call them before the widgets mount. See docs/host-api.md.
 export { setRegion, type KalturaRegion } from '../../core/region';
 export {
   setErrorHandler,
   setEventHandler,
-  setPlayerSandbox,
-  PLAYER_SANDBOX_PRESET,
   type KalturaError,
   type KalturaErrorCode,
   type KalturaEvent,

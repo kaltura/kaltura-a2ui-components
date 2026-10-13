@@ -15,7 +15,8 @@ The `ok` loader records what the widget passed in: `harness.loaderConfigs()` (fr
 
 | Spec | Covers |
 |---|---|
-| `hostile-input.spec.ts` | Hostile loader text, `serverUrl` allowlist, recorder ids, flashcards payloads, remote code |
+| `hostile-input.spec.ts` | Hostile loader text, `serverUrl` allowlist, recorder script and container ids, flashcards payloads, remote code |
+| `recorder.spec.ts` | Express Recorder via a stub script: one shared load, create options, KS only from the provider, destroy, events, fixed error text (REC-01) |
 | `ks-provider.spec.ts` | `setKsProvider` wiring (`harness.setKsProvider`), fallback to the `ks` prop, missing and bad provider output, KS never in text or console |
 | `error-states.spec.ts` | Generic `serverUrl` error without echo, `role="alert"` on every error state, one bad flashcard clip |
 | `bootstrap.spec.ts` | `kaltura-wc.js` boots on a bare page and defines all tags |
@@ -23,10 +24,10 @@ The `ok` loader records what the widget passed in: `harness.loaderConfigs()` (fr
 | `webcomponent-lifecycle.spec.ts` | Late `config`, remove and re-add, move keeps the widget, one root per element (QA-01, SEC-17) |
 | `unisphere-lifecycle.spec.ts` | Unisphere widgets follow props and kill the workspace; `kaltura-entry-selected` scope (QA-03, QA-07, SEC-18) |
 | `css-tokens.spec.ts` | Design tokens resolve with and without host variables (QA-02, SEC-25) |
-| `iframe-permissions.spec.ts` | `allow` and `sandbox` per iframe, no capture on the player and clip (SEC-14) |
+| `iframe-permissions.spec.ts` | `allow` and `sandbox` of the remaining iframes, no capture permission, no iframe for the player, clips and recorder |
 | `avatar.spec.ts` | Avatar on the embeds API: provider KS only, no script tag, teardown order, disconnect event (SEC-08, QA-04) |
-| `csp.spec.ts` | The recommended CSP from docs/host-integration.md, including the avatar (SEC-08) |
-| `player-sandbox.spec.ts` | Opt-in `setPlayerSandbox` against a stub player page: script, origin, fullscreen and downloads work, top navigation is blocked (SEC-14) |
+| `csp.spec.ts` | The recommended CSP from docs/host-integration.md, including the Player stub, the avatar (SEC-08), the recorder script (REC-01) and the captions editor page. A `data:` media element and a `blob:` worker pass, a media URL and a worker script from elsewhere are blocked. The region table in that file matches `src/core/region.ts` |
+| `analytics.spec.ts` | Analytics `postMessage` handshake against a stub KMC page: `init` content, `navigate`, `updateFilters`, `updateLayout` clamp, wrong origin and wrong source rejected (ANA-01) |
 
 Add a case: import `test` from `./fixtures/harness`, call `h.open()` and `h.mount(tag, config)`, then assert on `h.pwned()` and the logs.
 Title cases that wait for a fix `[pending SEC-xx]`. They are skipped unless `E2E_PENDING=1`. Remove the prefix in the fix commit. List them: `grep -rn "\[pending" e2e`.

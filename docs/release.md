@@ -16,10 +16,10 @@ main:  ── A ── B            (B: version bump, merged by PR)
 
 | Job | Does | Token scope |
 |---|---|---|
-| `verify-inputs` | Run must be on `main` and its commit must be the head of `origin/main`. `version` must be semver, equal `package.json` and have a dated `## X.Y.Z - YYYY-MM-DD` section in `CHANGELOG.md`. `package.json` must be private. Tag `vX.Y.Z` must not exist, in the clone or on GitHub. `git ls-files dist` must be empty. | `contents: read` |
+| `verify-inputs` | Run must be on `main` and its commit must be the head of `origin/main`. `version` must be semver, equal `package.json`. `package.json` must be private. Tag `vX.Y.Z` must not exist, in the clone or on GitHub. `git ls-files dist` must be empty. | `contents: read` |
 | `ci`, `e2e` | The normal suites, run again. | as in `ci.yml`, `e2e.yml` |
-| `build` | `npm ci --ignore-scripts`, build, bundle and size checks, tests. Stamps the tag URLs, the install line and the SRI hashes of both bundles and the stub into the catalog (workspace only) and checks the result with `release-verify-stamp.mjs`. Makes `dist.tar.gz`, the SBOM, `hashes.json`, `SHA256SUMS` and the Release notes. Uploads one artifact. | `contents: read` |
-| `release` | Environment `release`. Skipped on a dry run. Checks the artifact (`SHA256SUMS`, SRI with `openssl`, catalog integrity for both bundles and the stub), attests the files, makes the release commit, tags it, pushes only the tag and creates the GitHub Release. Runs no repo code. | `contents: write`, `id-token: write`, `attestations: write` |
+| `build` | `npm ci --ignore-scripts`, build, bundle and size checks, tests. Stamps the tag URLs, the install line and the SRI hashes of both bundles and the stub into the catalog (workspace only) and checks the result with `release-verify-stamp.mjs`. `npm run build` also writes `dist/THIRD_PARTY_NOTICES.txt` from the source maps (see [Third-party notices](#third-party-notices)). Makes `dist.tar.gz`, the SBOM, `hashes.json`, `SHA256SUMS`, a copy of the notices and the Release notes. Uploads one artifact. | `contents: read` |
+| `release` | Environment `release`. Skipped on a dry run. Checks the artifact (`SHA256SUMS`, SRI with `openssl`, catalog integrity for both bundles and the stub), attests the files, makes the release commit, tags it, pushes only the tag and creates the GitHub Release as a draft. It downloads the assets and fails if any differs from the build, then publishes the draft. It never overwrites an asset. Runs no repo code. | `contents: write`, `id-token: write`, `attestations: write` |
 | `verify-cdn` | Fetches both bundles, `html-element-stub.mjs` and the catalog from `cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@<tag>/`. Bytes and SRI must equal `hashes.json`. The catalog `integrity` and `stubIntegrity` must equal the served bytes (`stubIntegrity` only if the tag's catalog has it). Tries 20 times, 60 seconds apart. | `contents: read` |
 
 The release commit is the same on every attempt: same tree, author `github-actions[bot]`, dates of the `main` commit and the run URL in the message. So a re-run finds its own tag and skips the push. A tag on any other commit fails the run. The workflow never pushes a branch and never forces.
@@ -27,12 +27,12 @@ The release commit is the same on every attempt: same tree, author `github-actio
 ## Cut a release
 
 1. On a branch, bump the version: `npm version 0.3.0 --no-git-tag-version` (updates `package.json` and `package-lock.json`).
-2. Add `## 0.3.0 - YYYY-MM-DD` at the top of `CHANGELOG.md`. Its body becomes the Release notes.
+2. Check the PR titles since the last tag. GitHub turns them into the "What's changed" list, grouped by label (`.github/release.yml`). Label a breaking change `breaking` and link its migration doc in the PR.
 3. Change the `v0.2.0` pins in `README.md` and the docs to `v0.3.0`. The docs test checks the README.
 4. Merge the PR to `main`.
 5. **Dry run.** Actions, `release`, Run workflow. Use workflow from `main`, version `0.3.0`, keep `dry_run` on. It runs every check and the build, and uploads the `release` artifact. It writes nothing.
 6. **Real run.** Same, with `dry_run` off. Approve the `release` environment when GitHub asks.
-7. Check that `verify-cdn` is green and the Release has `dist.tar.gz`, `kaltura_catalog.json`, `hashes.json`, `SHA256SUMS` and `sbom.cdx.json`.
+7. Check that `verify-cdn` is green and the Release has `dist.tar.gz`, `kaltura_catalog.json`, `hashes.json`, `SHA256SUMS`, `sbom.cdx.json` and `THIRD_PARTY_NOTICES.txt`.
 
 A version with a suffix, such as `0.3.0-rc.1`, makes a prerelease Release that is never Latest.
 
@@ -42,9 +42,14 @@ A version with a suffix, such as `0.3.0-rc.1`, makes a prerelease Release that i
 |---|---|
 | Before `release` | Nothing was written. Fix on `main` and run again. |
 | In `release` or `verify-cdn` | Use **Re-run failed jobs**, not "Re-run all jobs": `verify-inputs` would stop on the tag that now exists. The re-run reuses the artifact and makes the same commit. |
+| `release` failed after the draft Release was made | **Re-run failed jobs**. The draft is checked against the build and then published. The tag is already pushed and is reused. |
 | Tag exists on a wrong commit, or jsDelivr serves other bytes | Never move or delete the tag. Fix on `main`, bump to the next patch version and release again. |
 
 jsDelivr caches a file at a tag for a year and has no purge for that. A wrong release stays wrong at its tag, so always release a new version.
+
+## Third-party notices
+
+`scripts/gen-notices.mjs` (run by `npm run build`) writes `dist/THIRD_PARTY_NOTICES.txt`: one entry per package that has a file in `kaltura-react.mjs` or `kaltura-wc.js`, with the licence text from `node_modules`. The package list comes from the shipped source maps, so there is no list to edit. DOMPurify is used under its Apache-2.0 option. `check-bundle.mjs` fails if the file is missing or leaves out a bundled package. The file is in `dist/` (so in `dist.tar.gz` and on jsDelivr), and is a Release asset. Size budgets do not count it.
 
 ## One-time admin setup
 
@@ -56,6 +61,8 @@ Not code. The workflow cannot do these, and it does not check them. Do them befo
 4. **Branch ruleset on `main`.** Settings, Rules, Rulesets, New branch ruleset for the default branch. Require a pull request, require the [checks below](#required-checks), block force pushes and restrict deletions. `release.yml` trusts that everything on `main` was reviewed.
 5. **Release deploy key.** The job token cannot create tags under step 3. Add a write deploy key to the repository (Settings, Deploy keys, Allow write access) and add "Deploy keys" to the creation ruleset bypass list. Put its private key in the `release` environment secret `RELEASE_TAG_KEY`. The release job uses it for the tag push only, with the GitHub SSH host key pinned in the workflow. The secret is readable only by jobs that pass the environment gate (`main` and the reviewer). To rotate: add a new key, update the secret, delete the old key.
 
+6. **Immutable releases.** Settings, General, turn on Immutable releases. A Release published after that locks its assets and its tag: nobody can add, replace or delete an asset, and the tag cannot move or be deleted. GitHub also adds a release attestation. The workflow does not change this setting and does not check it. Turn it on before the first real run, because it only applies to Releases published afterwards.
+
 GitHub has no per-role switch for creating Releases. A Release needs a tag, and only the roles above can create one, so only they can release a new version.
 
 ### Required checks
@@ -64,9 +71,9 @@ Rulesets match checks by job name. A matrix job reports one check per leg.
 
 | Workflow | Required | Not required |
 |---|---|---|
-| `ci.yml` | `lint and types`, `unit tests (node 24)`, `bundle and package checks`, `npm audit`, `dependency review` | `unit tests (node 26)` |
+| `ci.yml` | `lint and types`, `unit tests (node 24)`, `bundle and package checks`, `npm audit` (also runs `npm audit signatures`), `dependency review` | `unit tests (node 26)` |
 | `e2e.yml` | `e2e (chromium)`, `e2e (firefox)`, `e2e (webkit)` | |
-| `security.yml` | `CodeQL`, `actionlint and zizmor`, `gitleaks` | |
+| `security.yml` | `CodeQL`, `CodeQL (actions)`, `actionlint and zizmor`, `gitleaks` | |
 
 `unit tests (node 26)` has `continue-on-error`, so a red run does not fail the workflow. When `.nvmrc` moves to a new major, update the matrix in `ci.yml` and this table.
 
@@ -93,7 +100,7 @@ It does not mount a widget or use a partner.
 | `npm run release:stamp -- --tag v1.2.3` | Stamps the tag and the SRI of both bundles and the stub from `dist/` into the catalog. |
 | `node scripts/release-verify-stamp.mjs --tag v1.2.3` | Checks the stamped catalog against `dist/`. Fails on any left-over placeholder. |
 | `npm run release:hashes -- --version 1.2.3 --out DIR` | `hashes.json` (from the working tree) and `SHA256SUMS` of every file in `DIR`. |
-| `npm run release:notes -- --version 1.2.3 --hashes DIR/hashes.json` | Prints the Release notes. |
+| `npm run release:notes -- --version 1.2.3 --hashes DIR/hashes.json` | Prints the install lines and SRI table of the Release notes. GitHub adds the change list. |
 | `npm run release:verify -- --tag v1.2.3 --hashes DIR/hashes.json` | Compares jsDelivr with the hashes. Add `--cdn-origin http://127.0.0.1:PORT` for a local server with the `/gh/<repo>@<tag>/` layout. |
 | `npm run release:verify -- --latest` | Nightly check. |
 | `npm run release:smoke` | Unisphere loader check. |

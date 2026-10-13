@@ -3,7 +3,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { URL_A, URL_B, loaderUrl, gate, render, fakeLoader, errorSpy, tick } from './harness';
 
-const base = { partnerId: 1, ks: 'ks-1', serverUrl: URL_A };
+const base = { partnerId: 1, ks: 'ks-1', serverUrl: URL_A, uiconfId: 2 };
 let log: string[];
 let configs: Record<string, unknown>[];
 

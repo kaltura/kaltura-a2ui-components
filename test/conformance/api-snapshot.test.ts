@@ -1,7 +1,7 @@
 // Covers: CONF-16 (plan item 3.3c): the public API. The exported names of each
 // package entry are compared with test/conformance/snapshots/public-api.json.
 // A change to the API fails here on purpose. If it is intended, update the
-// snapshot and add a CHANGELOG line:
+// snapshot and describe the change in the PR (label `breaking` if it is):
 //   UPDATE_API_SNAPSHOT=1 npx vitest run test/conformance/api-snapshot
 // The names come from the TypeScript compiler (values and types) and are checked
 // against the real module (values only).

@@ -1,9 +1,65 @@
+import { useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { isEntryId, isPositiveInt } from './ids';
 import { KalturaCaptionsEditorApi } from '../schemas/captions-editor';
 import { LoadError, withValidatedProps } from './validate-props';
 import { withKs } from './ks';
 import { kalturaHosts } from './region';
+import { KalturaFailure } from './host-hooks';
+import { renderLoadError } from './render-load-error';
+
+// Serves the editor page with a <base> tag and CORS open. Pinned to v1.3.10: `latest` is an alias
+// that Kaltura moves by hand.
+const EDITOR_PATH = '/apps/captionstudio/v1.3.10/embed.php';
+
+// sha384 of the v1.3.10 page and of the two files it loads. Change them with EDITOR_PATH.
+// `embed.php` writes the service host into its <base> tag, so its hash differs per host.
+// The player bundle that the editor loads from the CDN is not pinned.
+const EDITOR_PAGE_INTEGRITY: Record<string, string> = {
+  'https://www.kaltura.com': 'sha384-HajZJL7XrUQ8Z7IPRBS0KXRI4J5/fQ83kcyvxaVfGoi2pKKD4sWGltXVnNjZ6bFJ',
+  'https://api.eu.kaltura.com': 'sha384-gY+fJ1eIq2yg0cHegqeqF/wjyoVeIsfFsbKEamBy0PzJFK+vn4fbBIXyCPNfrUDo',
+  'https://api.de.kaltura.com': 'sha384-hqVKETsQxnnQdxWxfhI5EDysq0LFJr0XL05wGsXNCFp9fGyb3BjBf9iGrKgkHWzN',
+  'https://api.ca.kaltura.com': 'sha384-WBssm8TvVZKCM0CkzocUBctSyVRDDbuRRDc2Z3gayxn/j6Ihjhjy2lu034jNRiUj',
+  'https://api.ap.kaltura.com': 'sha384-QSOdmShx0N34wR32lvgT3vPzU4pM8z20TCeBSlijwFC5rNUZGMofxnWa2DDHdGrE',
+};
+const EDITOR_ASSET_INTEGRITY: Record<string, string> = {
+  './static/js/main.6315bf26.js': 'sha384-iYhkCPdMwqiJ1wjyPCV5MqsbuVv3oGWa++mhGj30xoyxj1cCaAWEQXB9nuy+dBU0',
+  './static/css/main.74b8a353.css': 'sha384-2kxBNi7/SGtDcBTjMkIn4DH7vjmBIfgHZ2WWhIto/1JNh+d+34SV0fScG987xwlZ',
+};
+const PAGE_TIMEOUT_MS = 15_000;
+const PAGE_MAX_BYTES = 1024 * 1024;
+
+/** The page text, read only up to the size cap. */
+async function readCapped(res: Response): Promise<string> {
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error();
+  const decoder = new TextDecoder();
+  let text = '';
+  let size = 0;
+  for (let part = await reader.read(); !part.done; part = await reader.read()) {
+    size += part.value.byteLength;
+    if (size > PAGE_MAX_BYTES) {
+      void reader.cancel();
+      throw new Error();
+    }
+    text += decoder.decode(part.value, { stream: true });
+  }
+  return text + decoder.decode();
+}
+
+/** The page with a hash and `crossorigin` on every script and stylesheet. Throws on one that has no pinned hash. */
+function pinAssets(html: string): string {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  for (const el of doc.querySelectorAll('script, link[rel~="stylesheet"]')) {
+    if (el.hasAttribute('integrity')) continue;
+    const ref = el.getAttribute('src') ?? el.getAttribute('href') ?? '';
+    const integrity = Object.hasOwn(EDITOR_ASSET_INTEGRITY, ref) ? EDITOR_ASSET_INTEGRITY[ref] : undefined;
+    if (!integrity) throw new Error();
+    el.setAttribute('integrity', integrity);
+    el.setAttribute('crossorigin', 'anonymous');
+  }
+  return `<!DOCTYPE html>${doc.documentElement.outerHTML}`;
+}
 
 export interface CaptionsEditorCoreProps {
   partnerId: number;
@@ -12,41 +68,85 @@ export interface CaptionsEditorCoreProps {
   uiconfId?: number;
 }
 
-export function buildCaptionsEditorUrl(p: CaptionsEditorCoreProps): string {
-  if (!isPositiveInt(p.partnerId)) throw new Error('Invalid partnerId');
-  if (!isEntryId(p.entryId)) throw new Error('Invalid entryId');
-  if (p.uiconfId != null && !isPositiveInt(p.uiconfId)) throw new Error('Invalid uiconfId');
-  const hosts = kalturaHosts();
-  let src =
-    `https://www.kaltura.com/apps/captionstudio/latest/index.html` +
-    `?pid=${p.partnerId}` +
-    `&ks=${encodeURIComponent(p.ks)}` +
-    `&entryid=${encodeURIComponent(p.entryId)}` +
-    `&cdnurl=${hosts.cdn}` +
-    `&serviceurl=${hosts.serviceUrl}`;
-  if (p.uiconfId != null) src += `&uiconfid=${p.uiconfId}`;
-  return src;
-}
+/** The first prop that cannot be used, or `undefined`. */
+const invalidProp = (p: CaptionsEditorCoreProps): string | undefined =>
+  !isPositiveInt(p.partnerId) ? 'partnerId' : !isEntryId(p.entryId) ? 'entryId' : p.uiconfId != null && !isPositiveInt(p.uiconfId) ? 'uiconfId' : undefined;
 
-const CaptionsEditorView: FC<CaptionsEditorCoreProps> = (props) => {
-  let src: string;
-  try {
-    src = buildCaptionsEditorUrl(props);
-  } catch (e) {
-    return <LoadError widget="captions-editor">{`Failed to load captions editor: ${(e as Error).message}`}</LoadError>;
-  }
-  return (
-    <div className="kaltura-captions-editor-container" style={{ width: '100%', minHeight: '600px' }}>
-      <iframe
-        src={src}
-        style={{ width: '100%', height: '100%', minHeight: '600px', border: 0 }}
-        allow="autoplay *; fullscreen *; encrypted-media *"
-        allowFullScreen
-        title="Kaltura Captions Editor"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"
-      />
-    </div>
-  );
+/**
+ * The editor reads its settings from `data-*` attributes on its own iframe
+ * when the URL has none (closed-captions-studio README). That needs the
+ * iframe to share our origin, so its page is loaded into a blob URL. The KS
+ * is set on the element and never appears in a URL. The editor runs in the
+ * page origin, so the iframe sandbox is not a boundary (docs/adr/0008).
+ */
+const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
+  const { partnerId, ks, entryId, uiconfId } = props;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const invalid = invalidProp(props);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || invalid) return;
+
+    let cancelled = false;
+    let blobUrl: string | undefined;
+    const hosts = kalturaHosts();
+
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), PAGE_TIMEOUT_MS);
+
+    // The page runs in our origin: take it only from the region host, as HTML, with no redirect,
+    // and only if it matches the pinned hash, within a time and size limit.
+    Promise.resolve()
+      .then(() => {
+        const integrity = EDITOR_PAGE_INTEGRITY[hosts.serviceUrl];
+        if (!integrity) throw new Error();
+        return fetch(`${hosts.serviceUrl}${EDITOR_PATH}`, { credentials: 'omit', referrerPolicy: 'no-referrer', redirect: 'error', integrity, signal: abort.signal });
+      })
+      .then(res => {
+        if (!res.ok || !res.headers.get('content-type')?.includes('text/html')) throw new Error();
+        return readCapped(res);
+      })
+      .then(html => {
+        if (cancelled) return;
+        blobUrl = URL.createObjectURL(new Blob([pinAssets(html)], { type: 'text/html' }));
+        const frame = document.createElement('iframe');
+        frame.title = 'Kaltura Captions Editor';
+        frame.allow = ['autoplay', 'fullscreen', 'encrypted-media'].map(feature => `${feature} 'self' ${hosts.cdn}`).join('; ');
+        frame.allowFullscreen = true;
+        frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-downloads');
+        frame.style.cssText = 'width:100%;height:100%;min-height:600px;border:0';
+        const data: Record<string, string | number | undefined> = {
+          pid: partnerId,
+          ks,
+          entryid: entryId,
+          cdnurl: hosts.cdn,
+          serviceurl: hosts.serviceUrl,
+          uiconfid: uiconfId,
+        };
+        for (const [name, value] of Object.entries(data)) {
+          if (value !== undefined) frame.setAttribute(`data-${name}`, String(value));
+        }
+        frame.src = blobUrl;
+        container.replaceChildren(frame);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        renderLoadError(container, 'captions editor', new KalturaFailure('load-failed', 'Captions editor could not start'), 'captions-editor');
+      })
+      .finally(() => clearTimeout(timer));
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      abort.abort();
+      container.replaceChildren();
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [partnerId, ks, entryId, uiconfId, invalid]);
+
+  if (invalid) return <LoadError widget="captions-editor">{`Failed to load captions editor: Invalid ${invalid}`}</LoadError>;
+  return <div ref={containerRef} className="kaltura-captions-editor-container" style={{ width: '100%', minHeight: '600px' }} />;
 };
 
 export const CaptionsEditorCore = withKs(

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
 import { KalturaFailure, emitEvent } from './host-hooks';
-import { KALTURA_REGIONS } from './region';
+import { regionOf } from './region';
 import { KalturaAvatarApi } from '../schemas/avatar';
 import { withValidatedProps } from './validate-props';
 import { withKs } from './ks';
@@ -33,12 +33,6 @@ interface EmbedsWorkspace {
 }
 interface EmbedsModule {
   embeds?: { workspace?: (config: unknown) => Promise<EmbedsWorkspace> };
-}
-
-/** The loader takes the workspace region from `env`, not from its own URL. Extra origins send none. */
-function regionOf(serverUrl: string): string | undefined {
-  const region = /^unisphere\.([a-z0-9]+)\.ovp\.kaltura\.com$/.exec(new URL(serverUrl).hostname)?.[1];
-  return KALTURA_REGIONS.find(code => code === region);
 }
 
 /** Disconnect reasons are PascalCase names. Anything else is not passed on. */

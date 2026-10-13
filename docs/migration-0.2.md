@@ -1,6 +1,6 @@
 # Migrate from 0.1.x to 0.2.0
 
-0.2.0 fixes security and robustness bugs and changes the install and host contract. It is served from jsDelivr and git tags only, not npm. Do the checklist, then read the details you need. The full list is in [CHANGELOG.md](../CHANGELOG.md).
+0.2.0 fixes security and robustness bugs and changes the install and host contract. It is served from jsDelivr and git tags only, not npm. Do the checklist, then read the details you need. The full list is in [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
 
 The peer versions below are those of 0.2.0. Later releases need A2UI 0.13: see [migration-a2ui-0.13.md](migration-a2ui-0.13.md).
 

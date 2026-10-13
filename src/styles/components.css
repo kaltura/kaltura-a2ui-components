@@ -562,14 +562,6 @@
   background: var(--kaltura-surface-deep);
 }
 
-.kaltura-recorder-container iframe {
-  width: 100%;
-  aspect-ratio: 16/9;
-  border: 0;
-  display: block;
-  min-height: 280px;
-}
-
 /* ─── KalturaAvatar ─── */
 .kaltura-avatar-container {
   margin: 12px 0;
@@ -581,7 +573,7 @@
 }
 
 /* ─── Unisphere Widgets (Genie, ContentLab, AgentsWidget, VodAvatar) ─── */
-/* The class is kaltura-<runtimeName>-container and runtimeName starts with kaltura-.
+/* The class names are kept from the old runtime names (kaltura-genie, kaltura-agents ...).
    The fallbacks keep the box right if a container ever misses the token block. */
 .kaltura-kaltura-genie-container,
 .kaltura-kaltura-content-lab-container,

@@ -102,6 +102,26 @@ describe('SEC-09: release.yml jobs', () => {
     expect(['actions/attest-build-provenance@', 'dist/kaltura-wc.js', 'dist/kaltura-react.mjs', 'dist/html-element-stub.mjs', 'src/catalog/kaltura_catalog.json', 'dist.tar.gz'].filter(text => !releaseJobs['release']?.includes(text))).toEqual([]);
   });
 
+  it('F32: the release job also attests the SBOM, hashes.json, SHA256SUMS and the notices', () => {
+    expect(['assets/sbom.cdx.json', 'assets/hashes.json', 'assets/SHA256SUMS', 'dist/THIRD_PARTY_NOTICES.txt'].filter(text => !releaseJobs['release']?.includes(text))).toEqual([]);
+  });
+
+  it('F32: release assets are never replaced', () => {
+    expect(release).not.toContain('--clobber');
+  });
+
+  it('F32: a new Release is a draft, compared with the build, then published', () => {
+    const job = releaseJobs['release'] ?? '';
+    const order = ['--verify-tag --draft', 'gh release download', 'diff -r', '--draft=false'].map(text => job.indexOf(text));
+    expect([order.includes(-1), order.join() === [...order].sort((x, y) => x - y).join()]).toEqual([false, true]);
+  });
+
+  it('F33: the build copies the notices into the assets before the hashes are made', () => {
+    const build = releaseJobs['build'] ?? '';
+    const [copied, hashed] = ['cp dist/THIRD_PARTY_NOTICES.txt', 'release-hashes.mjs'].map(text => build.indexOf(text));
+    expect(copied !== undefined && hashed !== undefined && copied >= 0 && copied < hashed).toBe(true);
+  });
+
   it('SEC-19: the release job checks all three catalog SRI values against hashes.json', () => {
     const job = releaseJobs['release'] ?? '';
     expect(['.webcomponent.integrity == $h[0].cdn["dist/kaltura-wc.js"]', '.react.integrity == $h[0].cdn["dist/kaltura-react.mjs"]', '.react.stubIntegrity == $h[0].cdn["dist/html-element-stub.mjs"]'].filter(text => !job.includes(text))).toEqual([]);
@@ -194,6 +214,17 @@ describe('SEC-19: the release is verified on jsDelivr', () => {
 
   it('SEC-19: the build makes an SBOM, a dist archive, hashes and notes', () => {
     expect(['npm sbom --sbom-format cyclonedx', 'dist.tar.gz', 'release-hashes.mjs', 'release-notes.mjs'].filter(text => !releaseJobs['build']?.includes(text))).toEqual([]);
+  });
+});
+
+describe('supply chain checks', () => {
+  it('SC-09: ci.yml verifies registry signatures after a clean install', () => {
+    const audit = jobs(workflows['ci.yml'] ?? '')['audit'] ?? '';
+    expect(audit.indexOf('npm ci --ignore-scripts') >= 0 && audit.indexOf('npm ci --ignore-scripts') < audit.indexOf('npm audit signatures')).toBe(true);
+  });
+
+  it('SC-10: CodeQL scans GitHub Actions workflows and JavaScript', () => {
+    expect(['languages: javascript-typescript\n', 'languages: actions\n'].filter(text => !workflows['security.yml']?.includes(text))).toEqual([]);
   });
 });
 

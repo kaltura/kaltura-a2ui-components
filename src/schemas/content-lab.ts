@@ -7,6 +7,7 @@ export const KalturaContentLabApi = {
     partnerId: z.number().int().positive(),
     ks: CommonSchemas.DynamicString.optional(),
     serverUrl: CommonSchemas.DynamicString,
-    entryId: CommonSchemas.DynamicString.optional(),
+    uiconfId: z.number().int().positive(),
+    entryId: CommonSchemas.DynamicString,
   }),
 };

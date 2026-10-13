@@ -41,9 +41,9 @@
       }
     ],
     "expect": {
-      "iframeSrcContains": [
-        "/partner_id/1/uiconf_id/2",
-        "entry_id=0_abc"
+      "selector": ".kaltura-player-container [role=\"region\"]",
+      "textContains": [
+        "0_abc"
       ]
     },
     "after": {
@@ -58,8 +58,8 @@
         }
       ],
       "expect": {
-        "iframeSrcContains": [
-          "entry_id=0_def"
+        "textContains": [
+          "0_def"
         ]
       }
     }
@@ -192,14 +192,13 @@
     ],
     "expect": {
       "iframeSrcContains": [
-        "partnerId=1",
-        "entryId=0_abc"
+        "https://kmc.kaltura.com/apps/kmc-analytics/latest/index.html"
       ]
     }
   },
   {
     "component": "KalturaCaptionsEditor",
-    "description": "Captions editor iframe.",
+    "description": "Captions editor container. The iframe is added after the editor page is fetched.",
     "messages": [
       {
         "version": "v0.9",
@@ -224,15 +223,12 @@
       }
     ],
     "expect": {
-      "iframeSrcContains": [
-        "pid=1",
-        "entryid=0_abc"
-      ]
+      "selector": ".kaltura-captions-editor-container"
     }
   },
   {
     "component": "KalturaRecorder",
-    "description": "Recorder iframe.",
+    "description": "Recorder container for the Express Recorder script.",
     "messages": [
       {
         "version": "v0.9",
@@ -249,16 +245,15 @@
             {
               "id": "root",
               "component": "KalturaRecorder",
-              "partnerId": 1
+              "partnerId": 1,
+              "uiconfId": 2
             }
           ]
         }
       }
     ],
     "expect": {
-      "iframeSrcContains": [
-        "/partner_id/1/"
-      ]
+      "selector": "div[id^=\"kaltura-recorder-\"]"
     }
   },
   {
@@ -311,6 +306,7 @@
               "id": "root",
               "component": "KalturaGenie",
               "partnerId": 1,
+              "uiconfId": 2,
               "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
             }
           ]
@@ -341,6 +337,8 @@
               "id": "root",
               "component": "KalturaContentLab",
               "partnerId": 1,
+              "uiconfId": 2,
+              "entryId": "0_abc",
               "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
             }
           ]
