@@ -1,6 +1,6 @@
 # Migrate from 0.2.x to 0.3.0
 
-0.3.0 changes `KalturaAvatar` (`<kaltura-avatar>`). It now runs on the Unisphere embeds API (`genieAvatar`) instead of the old avatar web SDK script. Its props are new. The full list is in [CHANGELOG.md](../CHANGELOG.md).
+0.3.0 changes `KalturaAvatar` (`<kaltura-avatar>`). It now runs on the Unisphere embeds API (`genieAvatar`) instead of the old avatar web SDK script. Its props are new. The full list is in [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
 
 ## Checklist
 

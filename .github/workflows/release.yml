@@ -61,8 +61,8 @@ jobs:
         with:
           package-manager-cache: false
           node-version-file: .nvmrc
-      # Semver, equal to package.json, "private": true and a dated CHANGELOG section.
-      - name: Version must match package.json and CHANGELOG.md
+      # Semver, equal to package.json, and "private": true.
+      - name: Version must match package.json
         id: check
         env:
           VERSION: ${{ inputs.version }}
@@ -254,7 +254,7 @@ jobs:
             gh release upload "$TAG" "$out"/assets/* --clobber --repo "$GITHUB_REPOSITORY"
           else
             gh release create "$TAG" "$out"/assets/* --repo "$GITHUB_REPOSITORY" --verify-tag \
-              --title "$TAG" --notes-file "${out}/notes.md" "${flags[@]}"
+              --title "$TAG" --notes-file "${out}/notes.md" --generate-notes "${flags[@]}"
           fi
 
   verify-cdn:
