@@ -83,7 +83,7 @@ The Unisphere runtimes reject settings they do not declare and skip themselves w
 | Widget | Needs | Notes |
 |---|---|---|
 | Genie | `uiconfId` | Player uiConf for answers with video |
-| Content Lab | `uiconfId`, `entryId` | Opens the drawer on that entry. Stays empty until the account has given AI consent |
+| Content Lab | `uiconfId`, `entryId` | Opens the drawer on that entry. The menu lists the features the account has in Reach. It also loads the `ai-consent` runtime. An account without AI consent sees the consent dialog when it picks an AI feature. Only an account admin can accept it: other users see "contact your account admin" |
 | Agents | none | `agentId` is accepted but ignored. Opens its drawer on load. The agents backend answers only origins Kaltura allows: a localhost page gets a CORS error |
 | VOD Avatar | none | `entryId` and `avatarStyle` are accepted but the studio runtime has no setting for them |
 
@@ -167,7 +167,7 @@ Add only the rows for the widgets you use. Tested on `nvp1` in Chromium with the
 | Captions editor | What the Player needs, plus `frame-src blob:`, `script-src https://www.kaltura.com/apps/`, `connect-src https://www.kaltura.com`, `base-uri https://www.kaltura.com`, `font-src https://www.kaltura.com` and `style-src-elem 'unsafe-inline'` (required). Do not use `'strict-dynamic'`: it blocks the `main.js` that the editor page inserts |
 | Recorder | What the Player needs, plus `script-src https://www.kaltura.com/apps/` and `style-src-elem 'unsafe-inline'` (required). Your `Permissions-Policy` must allow `camera`, `microphone` and `display-capture`. The upload goes to `www.kaltura.com` and `cdnapisec.kaltura.com`, covered by `connect-src https://*.kaltura.com` |
 | Analytics | `frame-src https://kmc.kaltura.com` only |
-| Unisphere widgets | `script-src` and `connect-src https://unisphere.<region>.ovp.kaltura.com/v1/`. The Media Manager also asks for a Lato stylesheet from `https://fonts.googleapis.com`. The starting policy blocks it (a `style-src-elem` report in Chromium, Firefox and WebKit) and the widget works with the fallback font. To allow it, add that host to `style-src` and `https://fonts.gstatic.com` to `font-src` |
+| Unisphere widgets | `script-src` and `connect-src https://unisphere.<region>.ovp.kaltura.com/v1/`. Genie, Agents, VOD Avatar and Content Lab ask for fonts from `https://fonts.kaltura.com`. The Media Manager and VOD Avatar also ask for stylesheets from `https://fonts.googleapis.com`. The starting policy blocks these (CSP reports in Chromium, Firefox and WebKit) and every widget works with fallback fonts. To allow them, add `https://fonts.kaltura.com` and `https://fonts.googleapis.com` to `style-src` and `font-src`, and `https://fonts.gstatic.com` to `font-src` |
 | Avatar | What Unisphere needs, plus `connect-src https://api.avatar.us.kaltura.ai`. Only the `us` host was seen. The regional hosts, and the WebSocket and WebRTC hosts, are not verified |
 
 ### Style tiers

@@ -89,7 +89,7 @@ The live runtimes skip a widget silently when its config does not match, so earl
 | Widget | Change |
 |---|---|
 | `KalturaGenie` | `uiconfId` is required |
-| `KalturaContentLab` | `uiconfId` and `entryId` are required. The drawer stays empty until the account has given AI consent |
+| `KalturaContentLab` | `uiconfId` and `entryId` are required. The menu lists the features the account has in Reach. AI features ask for AI consent first |
 | `KalturaVodAvatar` | `entryId` is optional and ignored, as is `avatarStyle` |
 | `KalturaAgentsWidget` | `agentId` is ignored. The drawer opens on load |
 
