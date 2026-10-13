@@ -16,7 +16,7 @@ main:  ── A ── B            (B: version bump, merged by PR)
 
 | Job | Does | Token scope |
 |---|---|---|
-| `verify-inputs` | Run must be on `main` and its commit must be the head of `origin/main`. `version` must be semver, equal `package.json` and have a dated `## X.Y.Z - YYYY-MM-DD` section in `CHANGELOG.md`. `package.json` must be private. Tag `vX.Y.Z` must not exist, in the clone or on GitHub. `git ls-files dist` must be empty. | `contents: read` |
+| `verify-inputs` | Run must be on `main` and its commit must be the head of `origin/main`. `version` must be semver, equal `package.json`. `package.json` must be private. Tag `vX.Y.Z` must not exist, in the clone or on GitHub. `git ls-files dist` must be empty. | `contents: read` |
 | `ci`, `e2e` | The normal suites, run again. | as in `ci.yml`, `e2e.yml` |
 | `build` | `npm ci --ignore-scripts`, build, bundle and size checks, tests. Stamps the tag URLs, the install line and the SRI hashes of both bundles and the stub into the catalog (workspace only) and checks the result with `release-verify-stamp.mjs`. Makes `dist.tar.gz`, the SBOM, `hashes.json`, `SHA256SUMS` and the Release notes. Uploads one artifact. | `contents: read` |
 | `release` | Environment `release`. Skipped on a dry run. Checks the artifact (`SHA256SUMS`, SRI with `openssl`, catalog integrity for both bundles and the stub), attests the files, makes the release commit, tags it, pushes only the tag and creates the GitHub Release. Runs no repo code. | `contents: write`, `id-token: write`, `attestations: write` |
@@ -27,7 +27,7 @@ The release commit is the same on every attempt: same tree, author `github-actio
 ## Cut a release
 
 1. On a branch, bump the version: `npm version 0.3.0 --no-git-tag-version` (updates `package.json` and `package-lock.json`).
-2. Add `## 0.3.0 - YYYY-MM-DD` at the top of `CHANGELOG.md`. Its body becomes the Release notes.
+2. Check the PR titles since the last tag. GitHub turns them into the "What's changed" list, grouped by label (`.github/release.yml`). Label a breaking change `breaking` and link its migration doc in the PR.
 3. Change the `v0.2.0` pins in `README.md` and the docs to `v0.3.0`. The docs test checks the README.
 4. Merge the PR to `main`.
 5. **Dry run.** Actions, `release`, Run workflow. Use workflow from `main`, version `0.3.0`, keep `dry_run` on. It runs every check and the build, and uploads the `release` artifact. It writes nothing.
@@ -93,7 +93,7 @@ It does not mount a widget or use a partner.
 | `npm run release:stamp -- --tag v1.2.3` | Stamps the tag and the SRI of both bundles and the stub from `dist/` into the catalog. |
 | `node scripts/release-verify-stamp.mjs --tag v1.2.3` | Checks the stamped catalog against `dist/`. Fails on any left-over placeholder. |
 | `npm run release:hashes -- --version 1.2.3 --out DIR` | `hashes.json` (from the working tree) and `SHA256SUMS` of every file in `DIR`. |
-| `npm run release:notes -- --version 1.2.3 --hashes DIR/hashes.json` | Prints the Release notes. |
+| `npm run release:notes -- --version 1.2.3 --hashes DIR/hashes.json` | Prints the install lines and SRI table of the Release notes. GitHub adds the change list. |
 | `npm run release:verify -- --tag v1.2.3 --hashes DIR/hashes.json` | Compares jsDelivr with the hashes. Add `--cdn-origin http://127.0.0.1:PORT` for a local server with the `/gh/<repo>@<tag>/` layout. |
 | `npm run release:verify -- --latest` | Nightly check. |
 | `npm run release:smoke` | Unisphere loader check. |

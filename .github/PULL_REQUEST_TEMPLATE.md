@@ -7,7 +7,7 @@
 - [ ] `npm run check` passes (types, lint, unit tests)
 - [ ] Tests added or updated for the change, titled `ID: behaviour`
 - [ ] Docs updated if behaviour changed
-- [ ] `CHANGELOG.md` updated under Unreleased
+- [ ] PR title says what changed for users. It becomes a line in the Release notes
 - [ ] Public API change: snapshot updated (`UPDATE_API_SNAPSHOT=1`) and a migration note added
 - [ ] Props change: `npm run gen:catalog` is clean
 - [ ] Changed a component or the bundle: `npm run build`, `npm run e2e` and `npm run check:examples` pass

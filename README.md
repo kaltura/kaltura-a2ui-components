@@ -2,7 +2,7 @@
 
 Kaltura's [A2UI](https://a2ui.org) Experience Components. All 12 components ship as one versioned catalog, so any A2UI client that registers a catalog can render them without re-implementing them.
 
-Version **0.3.0** (see [CHANGELOG.md](CHANGELOG.md)). Served by jsDelivr from the git tag. There is no npm package: a package on npm with this name is not ours.
+Version **0.3.0** (see [Releases](https://github.com/kaltura/kaltura-a2ui-components/releases)). Served by jsDelivr from the git tag. There is no npm package: a package on npm with this name is not ours.
 
 ## Quick start
 

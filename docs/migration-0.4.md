@@ -1,6 +1,6 @@
 # Migrate from 0.3.x to 0.4.0
 
-0.4.0 changes `KalturaAnalytics` (`<kaltura-analytics>`). It now uses the documented `postMessage` handshake of the Kaltura Analytics app. The full list is in [CHANGELOG.md](../CHANGELOG.md).
+0.4.0 changes `KalturaAnalytics` (`<kaltura-analytics>`). It now uses the documented `postMessage` handshake of the Kaltura Analytics app. The full list is in [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
 
 ## Checklist
 

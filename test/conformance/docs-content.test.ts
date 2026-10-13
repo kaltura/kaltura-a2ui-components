@@ -18,7 +18,7 @@ function markdownFiles(dir: string): string[] {
   });
 }
 
-const DOCS = ['README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', '.github/PULL_REQUEST_TEMPLATE.md', ...markdownFiles('docs'), ...markdownFiles('examples'), 'test/README.md', 'e2e/README.md'];
+const DOCS = ['README.md', 'CONTRIBUTING.md', 'SECURITY.md', '.github/PULL_REQUEST_TEMPLATE.md', ...markdownFiles('docs'), ...markdownFiles('examples'), 'test/README.md', 'e2e/README.md'];
 const text = Object.fromEntries(DOCS.map(path => [path, read(path)]));
 // Code blocks hold example code, not claims about names or links.
 const prose = (path: string) => (text[path] ?? '').replace(/^```[\s\S]*?^```/gm, '');
@@ -32,7 +32,7 @@ const exported = new Set([...api['.'].values, ...api['./webcomponent'].values]);
 const scripts = Object.keys(readJson<{ scripts: Record<string, string> }>('package.json').scripts);
 
 describe('QA-16: docs name real things', () => {
-  it.each(DOCS.filter(path => path !== 'CHANGELOG.md'))('QA-16: %s names only exported functions', path => {
+  it.each(DOCS)('QA-16: %s names only exported functions', path => {
     const names = [...prose(path).matchAll(/`((?:set|build|load|getExtra)[A-Z]\w*)/g)].map(match => match[1] ?? '');
     expect(names.filter(name => !exported.has(name))).toEqual([]);
   });
