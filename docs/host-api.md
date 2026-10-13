@@ -71,7 +71,7 @@ The guide lists no regional CDN host, so the player script loads from the region
 
 Sources:
 
-- serviceUrl: https://kaltura.md/KALTURA_API_GETTING_STARTED/ §4.1 lists the API base URL per region (`https://api.eu.kaltura.com/api_v3` and so on). The captions editor takes it without `/api_v3`, as in https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/.
+- serviceUrl: https://kaltura.md/KALTURA_API_GETTING_STARTED/ §4.1 lists the API base URL per region (`https://api.eu.kaltura.com/api_v3` and so on). The captions editor and the Express Recorder take it without `/api_v3` (the recorder script adds it), as in https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/.
 - vod: the same guide, §4.3, gives `cfvod.{code}.ovp.kaltura.com`.
 - kmc: the same guide, §4, "Rich Media CMS" row of each region.
 - cdn, recorder: the guide lists no regional CDN host. Kaltura confirmed (2026-10-13) that regional accounts serve the player from the API host and that the recorder uses the US path on it. The Canada and Australia API hosts use the internal `{code}.ovp` form.

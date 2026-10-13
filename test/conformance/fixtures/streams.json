@@ -306,6 +306,7 @@
               "id": "root",
               "component": "KalturaGenie",
               "partnerId": 1,
+              "uiconfId": 2,
               "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
             }
           ]
@@ -336,6 +337,8 @@
               "id": "root",
               "component": "KalturaContentLab",
               "partnerId": 1,
+              "uiconfId": 2,
+              "entryId": "0_abc",
               "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
             }
           ]

@@ -46,8 +46,8 @@ async function run(Comp: string, serverUrl: string) {
   });
   const mods: Record<string, [string, string, Record<string, unknown>]> = {
     MediaManagerCore: ['../../src/core/media-manager', 'MediaManagerCore', {}],
-    GenieCore: ['../../src/core/genie', 'GenieCore', {}],
-    ContentLabCore: ['../../src/core/content-lab', 'ContentLabCore', {}],
+    GenieCore: ['../../src/core/genie', 'GenieCore', { uiconfId: 2 }],
+    ContentLabCore: ['../../src/core/content-lab', 'ContentLabCore', { uiconfId: 2, entryId: '0_abc' }],
     VodAvatarCore: ['../../src/core/vod-avatar', 'VodAvatarCore', { entryId: '0_a' }],
     AgentsWidgetCore: ['../../src/core/agents-widget', 'AgentsWidgetCore', {}],
   };

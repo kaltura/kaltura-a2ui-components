@@ -62,7 +62,7 @@ describe('REC-01: the script comes from one fixed place', () => {
       remote.created[0].options.playerUrl,
     ]).toEqual([
       ['https://api.eu.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js'],
-      'https://api.eu.kaltura.com/api_v3',
+      'https://api.eu.kaltura.com',
       'https://api.eu.kaltura.com',
     ]);
   });
@@ -103,7 +103,7 @@ describe('REC-01: create options', () => {
     expect([options, id]).toEqual([
       {
         ks: HOST_KS,
-        serviceUrl: 'https://www.kaltura.com/api_v3',
+        serviceUrl: 'https://www.kaltura.com',
         playerUrl: 'https://cdnapisec.kaltura.com',
         partnerId: 123,
         uiConfId: 456,

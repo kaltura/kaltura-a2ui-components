@@ -8,6 +8,7 @@
 | `KalturaRecorder` | Runs the Express Recorder script in your page | [Recorder](#recorder) |
 | `KalturaPlayer`, `KalturaFlashcards` clips | Run the Kaltura Player script in your page. Breaking: public functions removed | [Player, Flashcards and Captions editor](#player-flashcards-and-captions-editor) |
 | `KalturaCaptionsEditor` | Runs the editor in a same-origin blob iframe. Breaking: public function removed | [Player, Flashcards and Captions editor](#player-flashcards-and-captions-editor) |
+| `KalturaGenie`, `KalturaContentLab`, `KalturaAgentsWidget`, `KalturaVodAvatar` | Send the config the live Unisphere runtimes take. Before, they rendered blank. Breaking: new required props on Genie and Content Lab | [Unisphere widgets](#unisphere-widgets) |
 
 The full list is in [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
 
@@ -80,6 +81,17 @@ New optional props: `entryName`, `allowVideo`, `allowAudio`, `allowScreenShare`,
 Trade-off: the script runs in your page origin and can read the KS. Use a short expiry. Details: [docs/security/ks.md](security/ks.md).
 
 The script is pinned to `/apps/expressrecorder/v2.2.10/`. It has no SRI yet, because the Kaltura CDN sends no CORS header for it. The loader can take a hash once Kaltura sends one.
+
+## Unisphere widgets
+
+The live runtimes skip a widget silently when its config does not match, so earlier versions showed an empty box. The runtime names, visual types and settings now match the live runtimes ([props table](host-integration.md#unisphere-widget-props)).
+
+| Widget | Change |
+|---|---|
+| `KalturaGenie` | `uiconfId` is required |
+| `KalturaContentLab` | `uiconfId` and `entryId` are required. The drawer stays empty until the account has given AI consent |
+| `KalturaVodAvatar` | `entryId` is optional and ignored, as is `avatarStyle` |
+| `KalturaAgentsWidget` | `agentId` is ignored. The drawer opens on load |
 
 ## Player, Flashcards and Captions editor
 

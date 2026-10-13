@@ -86,7 +86,7 @@ test.describe('F1: Media Manager workspace config', () => {
 test.describe('QA-03: Unisphere widget config', () => {
   test('QA-03: the loader config has no hard-coded appVersion', async ({ harness: h }) => {
     await h.open();
-    await h.mount('kaltura-genie-widget', { partnerId: 1234567, ks: 'e2e-ks', serverUrl: SERVER_URL });
+    await h.mount('kaltura-genie-widget', { partnerId: 1234567, uiconfId: 2, ks: 'e2e-ks', serverUrl: SERVER_URL });
     await h.page.waitForFunction(() => (window as unknown as { __loaderCfgs?: unknown[] }).__loaderCfgs?.length);
     expect(await h.loaderConfigs()).toEqual([expect.not.objectContaining({ appVersion: expect.anything() })]);
   });

@@ -82,8 +82,8 @@ test.describe('QA-02: CSS tokens', () => {
   });
 });
 
-// The Unisphere containers get the class `kaltura-${runtimeName}-container` and the
-// runtimeName already starts with `kaltura-`, hence `kaltura-kaltura-genie-container`.
+// The Unisphere containers keep the class names `kaltura-kaltura-<widget>-container`
+// from the old runtime names. Hosts style them, so they must not change.
 const SERVER_URL = `${ALLOWED_HOSTS[0]}/v1`;
 const UNISPHERE: [tag: string, selector: string][] = [
   ['kaltura-genie-widget', '.kaltura-kaltura-genie-container'],
@@ -93,7 +93,7 @@ const UNISPHERE: [tag: string, selector: string][] = [
 ];
 
 async function container(h: Harness, tag: string, selector: string) {
-  await h.mount(tag, { partnerId: 1234567, serverUrl: SERVER_URL, entryId: '0_abc123' });
+  await h.mount(tag, { partnerId: 1234567, serverUrl: SERVER_URL, uiconfId: 2, entryId: '0_abc123' });
   await h.settle();
   return h.page.evaluate((sel) => {
     const el = document.querySelector(sel);

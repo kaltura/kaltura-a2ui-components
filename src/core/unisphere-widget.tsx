@@ -12,9 +12,14 @@ export interface UnisphereWidgetCoreProps {
   widgetName: string;
   runtimeName: string;
   runtimeSettings?: Record<string, unknown>;
-  visualType?: string;
+  /** A visual type the runtime declares. The loader rejects any other. */
+  visualType: string;
   visualSettings?: Record<string, unknown>;
+  /** Runs once the workspace has loaded, with the runtime. A throw shows the load error. `isCancelled` turns true on unmount. */
+  onRuntime?: (runtime: unknown, isCancelled: () => boolean) => void | Promise<void>;
   label: string;
+  /** Class of the container. Default `kaltura-<runtimeName>-container`. */
+  containerClass?: string;
   /** Names the widget in `setErrorHandler` reports. Default `unisphere`. */
   widget?: KalturaWidget;
 }
@@ -31,6 +36,8 @@ function killWorkspace(workspace: unknown): void {
 export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label, widget = 'unisphere' } = props;
+  const onRuntimeRef = useRef(props.onRuntime);
+  onRuntimeRef.current = props.onRuntime;
   // Settings objects are rebuilt on every render. Compare them by value.
   const settingsKey = JSON.stringify([props.runtimeSettings, props.visualSettings]);
 
@@ -67,10 +74,10 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
             {
               widgetName,
               runtimeName,
-              settings: { ks, partnerId, ...runtimeSettings },
+              settings: runtimeSettings ?? {},
               visuals: [
                 {
-                  type: visualType || 'default',
+                  type: visualType,
                   target: id,
                   settings: visualSettings || {},
                 },
@@ -83,7 +90,11 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
         if (!ws) return;
         workspace = ws;
         // The effect was cleaned up while the load ran: nobody else will kill it.
-        if (cancelled) killWorkspace(ws);
+        if (cancelled) return killWorkspace(ws);
+        const onRuntime = onRuntimeRef.current;
+        if (!onRuntime) return;
+        const remote = ws as { getRuntimeAsync: (widgetName: string, runtimeName: string) => Promise<unknown> };
+        return remote.getRuntimeAsync(widgetName, runtimeName).then(runtime => (cancelled ? undefined : onRuntime(runtime, () => cancelled)));
       })
       .catch(err => {
         if (cancelled) return;
@@ -100,7 +111,7 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
   return (
     <div
       ref={containerRef}
-      className={`kaltura-${props.runtimeName}-container`}
+      className={props.containerClass ?? `kaltura-${props.runtimeName}-container`}
       style={{ width: '100%', minHeight: '500px' }}
     />
   );

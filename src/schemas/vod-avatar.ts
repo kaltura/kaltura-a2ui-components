@@ -7,7 +7,7 @@ export const KalturaVodAvatarApi = {
     partnerId: z.number().int().positive(),
     ks: CommonSchemas.DynamicString.optional(),
     serverUrl: CommonSchemas.DynamicString,
-    entryId: CommonSchemas.DynamicString,
+    entryId: CommonSchemas.DynamicString.optional(),
     avatarStyle: CommonSchemas.DynamicString.optional(),
   }),
 };

@@ -76,6 +76,17 @@ setExtraAllowedOrigins(['https://unisphere.example.com']);
 
 Only `https:` origins with no path, query or user name are accepted. The list replaces the previous one. Anything else throws. Only allow hosts you trust to run code in your page: a Unisphere module runs with your page origin.
 
+### Unisphere widget props
+
+The Unisphere runtimes reject settings they do not declare and skip themselves without an error, so each widget sends only what its runtime takes.
+
+| Widget | Needs | Notes |
+|---|---|---|
+| Genie | `uiconfId` | Player uiConf for answers with video |
+| Content Lab | `uiconfId`, `entryId` | Opens the drawer on that entry. Stays empty until the account has given AI consent |
+| Agents | none | `agentId` is accepted but ignored. Opens its drawer on load. The agents backend answers only origins Kaltura allows: a localhost page gets a CORS error |
+| VOD Avatar | none | `entryId` and `avatarStyle` are accepted but the studio runtime has no setting for them |
+
 ## Region
 
 ```ts
@@ -154,9 +165,9 @@ Add only the rows for the widgets you use. Tested on `nvp1` in Chromium with the
 | Flashcards (markdown) | As Charts, plus `img-src https://www.kaltura.com https://cfvod.kaltura.com data:`. Strict variant: `style-src-attr 'unsafe-hashes'` and 3 `text-align` hashes ([Style tiers](#style-tiers)) |
 | Player, Flashcards clips | `script-src https://cdnapisec.kaltura.com/p/`, `media-src https://cdnapisec.kaltura.com https://cfvod.kaltura.com blob: data:`, `worker-src blob:`, `connect-src https://cdnapisec.kaltura.com https://analytics.kaltura.com https://cfvod.kaltura.com`, `style-src-elem 'unsafe-inline'`. A nonce through `kalturaGlobalConfig.stylesNonce` worked in a test, but Kaltura has not confirmed support |
 | Captions editor | What the Player needs, plus `frame-src blob:`, `script-src https://www.kaltura.com/apps/`, `connect-src https://www.kaltura.com`, `base-uri https://www.kaltura.com`, `font-src https://www.kaltura.com` and `style-src-elem 'unsafe-inline'` (required). Do not use `'strict-dynamic'`: it blocks the `main.js` that the editor page inserts |
-| Recorder | What the Player needs, plus `script-src https://www.kaltura.com/apps/` and `style-src-elem 'unsafe-inline'` (required). Your `Permissions-Policy` must allow `camera`, `microphone` and `display-capture`. The upload hosts are not verified |
+| Recorder | What the Player needs, plus `script-src https://www.kaltura.com/apps/` and `style-src-elem 'unsafe-inline'` (required). Your `Permissions-Policy` must allow `camera`, `microphone` and `display-capture`. The upload goes to `www.kaltura.com` and `cdnapisec.kaltura.com`, covered by `connect-src https://*.kaltura.com` |
 | Analytics | `frame-src https://kmc.kaltura.com` only |
-| Unisphere widgets | `script-src` and `connect-src https://unisphere.<region>.ovp.kaltura.com/v1/` |
+| Unisphere widgets | `script-src` and `connect-src https://unisphere.<region>.ovp.kaltura.com/v1/`. The Media Manager also asks for a Lato stylesheet from `https://fonts.googleapis.com`. The starting policy blocks it (a `style-src-elem` report in Chromium, Firefox and WebKit) and the widget works with the fallback font. To allow it, add that host to `style-src` and `https://fonts.gstatic.com` to `font-src` |
 | Avatar | What Unisphere needs, plus `connect-src https://api.avatar.us.kaltura.ai`. Only the `us` host was seen. The regional hosts, and the WebSocket and WebRTC hosts, are not verified |
 
 ### Style tiers
@@ -215,13 +226,13 @@ Server-to-server calls, such as minting a KS on your server, need no CSP entry.
 - **`Integrity-Policy: blocked-destinations=(script)`.** Do not set it. The recorder and the editor's `main.js` load the Player script with no `integrity`, and Unisphere loads its runtimes from a manifest. The browser would block them.
 - **`'strict-dynamic'`** with the captions editor, as above.
 
-What is tested: the Chart, Flashcards, the Player (stub), the avatar loader (stub) and the recorder (stub script) run under this exact policy with no violation. A `data:` media element and a `blob:` worker are allowed. A script from an unlisted host, a media URL from an unlisted host and a worker script from `'self'` are blocked (`e2e/csp.spec.ts`). The real Player script was checked once in Chromium on `nvp1`: it plays with `data:` in `media-src` and `worker-src blob:`, and without them autoplay is blocked and the KAVA worker is lost. The real recorder script was checked once: its UI rendered with no violation. A real recording and upload was not checked, so watch for `connect-src` and `media-src` messages. The real captions editor page was checked once on `nvp1`: it loaded with no violation (the test entry has no captions, so the editing screen was not exercised). Not tested: Firefox and WebKit against the real Kaltura hosts, regional accounts, other Unisphere widgets, the captions editor with captions, and a live avatar session. Private cloud and on-prem Unisphere hosts also need entries in `script-src`, `connect-src` and `frame-src`.
+What is tested: the Chart, Flashcards, the Player (stub), the avatar loader (stub) and the recorder (stub script) run under this exact policy with no violation. A `data:` media element and a `blob:` worker are allowed. A script from an unlisted host, a media URL from an unlisted host and a worker script from `'self'` are blocked (`e2e/csp.spec.ts`). The real Player script was checked once in Chromium on `nvp1`: it plays with `data:` in `media-src` and `worker-src blob:`, and without them autoplay is blocked and the KAVA worker is lost. A real recording and upload was checked in Chromium, Firefox and WebKit (US, fake devices): no violation. The real captions editor page was checked once on `nvp1`: it loaded with no violation (the test entry has no captions, so the editing screen was not exercised). The Player, clips, captions editor, Media Manager and Analytics were also run in Firefox and WebKit, as a header and as a meta tag. The only violation is the Media Manager font stylesheet, see the Unisphere row. Not tested: regional accounts, other Unisphere widgets, the captions editor with captions, and a live avatar session. Private cloud and on-prem Unisphere hosts also need entries in `script-src`, `connect-src` and `frame-src`.
 
 ## Remote code from Kaltura
 
 Most widgets run Kaltura code in your page origin. It can read the KS and your page. Any script on the page can read the KS too. Only Analytics keeps the KS in a cross-origin iframe. Use a short-lived KS with the least privilege each widget needs, and `editadmintags:*` only for the recorder.
 
-The KS is not in the script or iframe URL of the Player, the Flashcards clips, the recorder, Analytics or the Unisphere widgets. It goes in JavaScript: the recorder `create` options, the player config (`useHeaderForKs: true`) and `data-*` attributes. The captions editor is the exception: its own player requests a `playManifest` URL with the KS in the path. See [Rollout](#rollout) for what that means for CSP reports.
+The KS is not in the script or iframe URL we build for the Player, the Flashcards clips, the recorder, Analytics or the Unisphere widgets (the Analytics app itself requests a player script with the KS in its path from inside its frame). It goes in JavaScript: the recorder `create` options, the player config (`useHeaderForKs: true`) and `data-*` attributes. The captions editor is the exception: its own player requests a `playManifest` URL with the KS in the path. See [Rollout](#rollout) for what that means for CSP reports.
 
 | Code | Version you get | Integrity |
 |---|---|---|

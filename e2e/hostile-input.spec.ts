@@ -16,6 +16,7 @@ const unisphereConfig = (serverUrl: string) => ({
   partnerId: 1234567,
   ks: 'DUMMY_KS_NOT_REAL',
   serverUrl,
+  uiconfId: 2,
   entryId: '0_dummy',
 });
 

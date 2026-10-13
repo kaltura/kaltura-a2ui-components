@@ -51,7 +51,7 @@ const CASES: Record<string, () => Promise<Record<string, unknown>>> = {
   'origin-not-allowed': async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { GenieCore } = await import('../../src/core/genie');
-    const props = { partnerId: 1, ks: KS, serverUrl: `https://evil.invalid/${HOSTILE}` };
+    const props = { partnerId: 1, uiconfId: 2, ks: KS, serverUrl: `https://evil.invalid/${HOSTILE}` };
     await render(GenieCore, props);
     return props;
   },
@@ -62,7 +62,7 @@ const CASES: Record<string, () => Promise<Record<string, unknown>>> = {
       },
     });
     const { GenieCore } = await import('../../src/core/genie');
-    const props = { partnerId: 1, ks: KS, serverUrl: URL_A };
+    const props = { partnerId: 1, uiconfId: 2, ks: KS, serverUrl: URL_A };
     await render(GenieCore, props);
     return props;
   },
@@ -155,7 +155,7 @@ describe('3.3e: setErrorHandler gets a typed error for each error state', () => 
     });
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { GenieCore } = await import('../../src/core/genie');
-    const view = await render(GenieCore, { partnerId: 1, ks: KS, serverUrl: 'https://evil.invalid/v1' });
+    const view = await render(GenieCore, { partnerId: 1, uiconfId: 2, ks: KS, serverUrl: 'https://evil.invalid/v1' });
     expect(view.container.querySelector('[role=alert]')?.textContent).toBe(
       'Failed to load Kaltura Genie: serverUrl is not an allowed Unisphere origin',
     );

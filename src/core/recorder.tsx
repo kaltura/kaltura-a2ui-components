@@ -65,7 +65,8 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
         if (cancelled) return;
         recorder = api.create(id, {
           ks,
-          serviceUrl: `${hosts.serviceUrl}/api_v3`,
+          // The script adds /api_v3 itself.
+          serviceUrl: hosts.serviceUrl,
           playerUrl: hosts.cdn,
           partnerId,
           uiConfId: uiconfId,
