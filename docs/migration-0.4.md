@@ -9,6 +9,7 @@
 | `KalturaPlayer`, `KalturaFlashcards` clips | Run the Kaltura Player script in your page. Breaking: public functions removed | [Player, Flashcards and Captions editor](#player-flashcards-and-captions-editor) |
 | `KalturaCaptionsEditor` | Runs the editor in a same-origin blob iframe. Breaking: public function removed | [Player, Flashcards and Captions editor](#player-flashcards-and-captions-editor) |
 | `KalturaGenie`, `KalturaContentLab`, `KalturaAgentsWidget`, `KalturaVodAvatar` | Send the config the live Unisphere runtimes take. Before, they rendered blank. Breaking: new required props on Genie and Content Lab | [Unisphere widgets](#unisphere-widgets) |
+| Catalog | New id `https://kaltura.github.io/a2ui/v2/catalog.json`. The JSON now lists the basic components and functions. Breaking: the old id is gone | [Catalog v2](#catalog-v2) |
 
 The full list is in [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
 
@@ -22,6 +23,43 @@ The full list is in [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-co
 | 4 | Hosts that call `buildAnalyticsUrl` | Call it with no arguments | It returns a fixed URL. See [URL](#url) |
 | 5 | Hosts with a CSP | Keep the KMC host of your region in `frame-src` | See [host-integration.md](host-integration.md#content-security-policy) |
 | 6 | Hosts that render agent output | Call `setAllowedPartners` and `setAllowedUiconfs` with your own ids (optional) | The agent picks the ids, and a uiconf decides which code runs in your page. See [Allowed partners and uiconfs](#allowed-partners-and-uiconfs) |
+| 7 | Agents and hosts that use the catalog id | Use the `v2` id in `createSurface` and in `supportedCatalogIds` | See [Catalog v2](#catalog-v2) |
+
+## Catalog v2
+
+The 0.4 catalog breaks the 0.3 prop contract (below), so it has a new id. 0.4 does not answer to the old one.
+
+| | 0.3 (previous catalog) | 0.4 (current catalog) |
+|---|---|---|
+| `catalogId` and `$id` | `https://kaltura.github.io/a2ui/v1/catalog.json` | `https://kaltura.github.io/a2ui/v2/catalog.json` |
+| `KALTURA_CATALOG_ID` | the `v1` id | the `v2` id |
+| Components | 12 Kaltura | 18 basic and 12 Kaltura |
+| Functions | none listed | 14 basic and `copyToClipboard` |
+| Theme | Kaltura keys (`palette`, `typography`, ...) that the renderer did not read | The basic theme (`primaryColor`, `iconUrl`, `agentDisplayName`) |
+
+Why the new id: a surface binds to one catalog id, and an agent that cached the `v1` schema would send props that 0.4 rejects. With a new id, an agent cannot mix them.
+
+Why the JSON lists the basic components: `kalturaReactCatalog` already serves them, and a surface uses one catalog. Before, an agent that read the JSON did not see `Text`, `Image` and the others. The runtime and the JSON now have the same names ([ADR 0006](adr/0006-catalog-generation.md)).
+
+What the `v1` catalog (0.3.x) had that `v2` has not, or has changed:
+
+| Component | Prop | `v1` | `v2` |
+|---|---|---|---|
+| `KalturaAnalytics` | `ks` | accepted | removed. See [KS](#ks) |
+| `KalturaRecorder` | `uiconfId` | not listed | required. See [Recorder](#recorder) |
+| `KalturaRecorder` | `entryName`, `allowVideo`, `allowAudio`, `allowScreenShare`, `maxRecordingTime` | not listed | optional |
+| `KalturaGenie` | `uiconfId` | not listed | required |
+| `KalturaContentLab` | `uiconfId`, `entryId` | not listed | required |
+| `KalturaVodAvatar` | `entryId`, `avatarStyle` | `entryId` required | optional and ignored. See [Unisphere widgets](#unisphere-widgets) |
+| `KalturaAgentsWidget` | `agentId` | used | ignored |
+| `KalturaPlayer` | `partnerId`, `uiconfId` | integer only | integer or data binding |
+| `KalturaChart` | `colors`, `annotations[].color` | any length | at most 64 characters per colour |
+
+| # | Who | Do |
+|---|---|---|
+| 1 | Hosts | Register `kalturaReactCatalog` alone. Its id is now the `v2` id, so `supportedCatalogIds` changes with no code change |
+| 2 | Hosts that hard-code the id | Import `KALTURA_CATALOG_ID` instead |
+| 3 | Agent authors | Use the `v2` id and the props above. Read the catalog from the [release](../README.md#install) of 0.4.0 or later |
 
 ## KS
 

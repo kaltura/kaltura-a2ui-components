@@ -23,16 +23,31 @@ const ALL_COMPONENTS = [
 
 describe('kaltura_catalog.json', () => {
   it('is keyed by the canonical catalog id in both $id and catalogId', () => {
-    const id = 'https://kaltura.github.io/a2ui/v1/catalog.json';
+    const id = 'https://kaltura.github.io/a2ui/v2/catalog.json';
     expect(catalog.$id).toBe(id);
     expect(catalog.catalogId).toBe(id);
   });
 
-  it('declares all 12 Experience Components', () => {
-    expect(Object.keys(catalog.components)).toEqual(
-      expect.arrayContaining([...ALL_COMPONENTS]),
-    );
-    expect(Object.keys(catalog.components)).toHaveLength(ALL_COMPONENTS.length);
+  it('declares all 12 Experience Components after the 18 basic components', () => {
+    const names = Object.keys(catalog.components);
+    expect(names.slice(18)).toEqual([...ALL_COMPONENTS]);
+    expect(names.slice(0, 18).some(name => name.startsWith('Kaltura'))).toBe(false);
+  });
+
+  it('declares the basic functions and copyToClipboard', () => {
+    const names = Object.keys(catalog.functions);
+    expect([names.length, names.at(-1)]).toEqual([15, 'copyToClipboard']);
+  });
+
+  it('F31: KalturaPlayer partnerId and uiconfId accept a data binding (DynamicNumber, as in zod)', () => {
+    const props = catalog.components.KalturaPlayer.allOf[2].properties as Record<string, { $ref?: string }>;
+    expect([props.partnerId.$ref, props.uiconfId.$ref]).toEqual(['#/$defs/DynamicNumber', '#/$defs/DynamicNumber']);
+  });
+
+  it('F31: dynamic values accept a function call', () => {
+    const defs = catalog.$defs as Record<string, object>;
+    const refs = ['DynamicString', 'DynamicNumber', 'DynamicBoolean'].map(name => JSON.stringify(defs[name]).includes('"#/$defs/FunctionCall"'));
+    expect(refs).toEqual([true, true, true]);
   });
 });
 

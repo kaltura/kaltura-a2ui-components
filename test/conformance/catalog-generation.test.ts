@@ -22,7 +22,7 @@ import { KalturaContentLabApi } from '../../src/schemas/content-lab';
 import { KalturaAgentsWidgetApi } from '../../src/schemas/agents-widget';
 import { KalturaVodAvatarApi } from '../../src/schemas/vod-avatar';
 import { KalturaChartApi } from '../../src/schemas/chart';
-import { loadCatalog, type CatalogJson } from './helpers';
+import { kalturaNames, loadCatalog, type CatalogJson } from './helpers';
 
 interface Api {
   name: string;
@@ -63,8 +63,8 @@ describe('CONF-06: the checked-in catalog equals the generated one', () => {
     expect(JSON.stringify(generator.generateCatalog(catalog, APIS))).toBe(JSON.stringify(catalog));
   });
 
-  it('CONF-06: it covers all 12 components', () => {
-    expect(APIS.map(api => api.name)).toEqual(Object.keys(catalog.components));
+  it('CONF-06: it covers all 12 Kaltura components', () => {
+    expect(APIS.map(api => api.name)).toEqual(kalturaNames(catalog));
   });
 });
 
@@ -103,8 +103,8 @@ describe('CONF-07: the generator notices drift (so the test above is not vacuous
 });
 
 describe('CONF-08: differences between zod and the catalog are on purpose', () => {
-  it('CONF-08: the kept-from-catalog props are exactly these two', () => {
-    expect(Object.keys(generator.KEPT_FROM_CATALOG)).toEqual(['KalturaPlayer.partnerId', 'KalturaPlayer.uiconfId']);
+  it('CONF-08: no prop is kept from the catalog (the Player ids take data bindings, like zod)', () => {
+    expect(Object.keys(generator.KEPT_FROM_CATALOG)).toEqual([]);
   });
 
   it('CONF-08: each kept prop still differs from what zod gives (a stale entry should be removed)', () => {
