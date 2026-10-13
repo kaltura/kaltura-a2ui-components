@@ -17,6 +17,7 @@ import { ContentLabCore } from '../../src/core/content-lab';
 import { AgentsWidgetCore } from '../../src/core/agents-widget';
 import { VodAvatarCore } from '../../src/core/vod-avatar';
 import { MediaManagerCore } from '../../src/core/media-manager';
+import { AvatarCore } from '../../src/core/avatar';
 
 const SERVER_URL = 'https://unisphere.nvp1.ovp.kaltura.com/v1';
 const seen = vi.hoisted(() => ({ configs: [] as unknown[] }));
@@ -29,6 +30,12 @@ vi.mock('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js', () => (
   createWorkspace: async (config: unknown) => {
     seen.configs.push(config);
     return new Promise(() => {});
+  },
+  embeds: {
+    workspace: async (config: unknown) => {
+      seen.configs.push(config);
+      return new Promise(() => {});
+    },
   },
 }));
 
@@ -58,6 +65,7 @@ const UNISPHERE_CASES = [
   ['Kaltura AI Agents', AgentsWidgetCore, unisphere],
   ['Kaltura VOD Avatar', VodAvatarCore, { ...unisphere, entryId: '0_abc' }],
   ['Media Manager', MediaManagerCore, unisphere],
+  ['Kaltura Avatar', AvatarCore, unisphere],
 ] as const;
 
 describe('SEC-05: setKsProvider supplies the KS', () => {
@@ -133,6 +141,7 @@ describe('SEC-05: the provider learns which widget asks, for a least-privilege K
     ['content-lab', ContentLabCore, unisphere],
     ['agents-widget', AgentsWidgetCore, unisphere],
     ['vod-avatar', VodAvatarCore, { ...unisphere, entryId: '0_abc' }],
+    ['avatar', AvatarCore, unisphere],
   ] as const;
 
   it.each(WIDGETS)('SEC-05: %s passes its name to the provider', async (widget, component, props) => {
@@ -173,7 +182,8 @@ describe('SEC-05: widgets that need a KS wait for it and refuse a bad one', () =
     ['Kaltura VOD Avatar', VodAvatarCore, { ...unisphere, entryId: '0_abc' }],
   ] as const;
 
-  it.each(NEEDS_KS)('SEC-05: %s with no KS renders nothing and loads nothing', async (_label, component, props) => {
+  // The avatar drops a ks prop, so it is only in the no-KS case.
+  it.each([...NEEDS_KS, ['Kaltura Avatar', AvatarCore, { ...unisphere, ks: AGENT_KS }] as const])('SEC-05: %s with no KS renders nothing and loads nothing', async (_label, component, props) => {
     const { container } = await mount(component, props);
     expect([container.textContent, container.querySelectorAll('iframe, [role="alert"]').length, seen.configs.length]).toEqual(['', 0, 0]);
   });

@@ -1,99 +1,116 @@
-import { useEffect, useRef } from 'react';
+import { createElement, useEffect, useRef } from 'react';
 import type { FC } from 'react';
+import { z } from 'zod';
+import { loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
+import { KalturaFailure, emitEvent } from './host-hooks';
+import { KALTURA_REGIONS } from './region';
 import { KalturaAvatarApi } from '../schemas/avatar';
 import { withValidatedProps } from './validate-props';
+import { withKs } from './ks';
 
 export interface AvatarCoreProps {
-  avatarId: string;
-  projectId?: string;
-  language?: string;
-  autoStart?: boolean;
-  allowInterrupt?: boolean;
+  partnerId: number;
+  serverUrl: string;
+  autoConnect?: boolean;
+  openingPhrase?: string;
+  captions?: boolean;
+  theme?: 'light' | 'dark' | 'studio';
 }
 
-// Not pinned yet: the vendor has not published a versioned URL or a stable hash.
-// Set both together when it does. The loader adds `integrity` once it is set.
-const SDK_SRC = 'https://static.avatar.us.kaltura.ai/web-sdk/latest/index.js';
-const SDK_INTEGRITY: string | undefined = undefined;
+const LABEL = 'Kaltura Avatar';
 
-const loads = new Map<string, Promise<void>>();
-
-/** Adds one script tag per URL. A failed load removes the tag, so a retry is possible. */
-export function loadScriptOnce(src: string, integrity?: string): Promise<void> {
-  const cached = loads.get(src);
-  if (cached) return cached;
-  const promise = new Promise<void>((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = src;
-    // crossorigin without an integrity hash only makes the request fail on a host without CORS headers.
-    if (integrity) {
-      script.crossOrigin = 'anonymous';
-      script.setAttribute('integrity', integrity);
-    }
-    script.onload = () => resolve();
-    script.onerror = () => {
-      script.remove();
-      loads.delete(src);
-      reject(new Error('script could not be loaded'));
-    };
-    document.head.appendChild(script);
-  });
-  loads.set(src, promise);
-  return promise;
+// The parts of the Unisphere embeds API the avatar uses. Remote code: check every call.
+interface GenieAvatarApi {
+  contained?: (params: { elementId: string; autoConnect: boolean }) => { remove?: () => void } | undefined;
+  disconnectData?: { onChanges?: (listener: (data: { reason?: unknown } | null) => void) => unknown };
+}
+interface EmbedsWorkspace {
+  apis?: { genieAvatar?: GenieAvatarApi };
+  destroy?: () => void;
+  // The live loader spells it this way.
+  destory?: () => void;
+}
+interface EmbedsModule {
+  embeds?: { workspace?: (config: unknown) => Promise<EmbedsWorkspace> };
 }
 
-const AvatarView: FC<AvatarCoreProps> = (props) => {
+/** The loader takes the workspace region from `env`, not from its own URL. Extra origins send none. */
+function regionOf(serverUrl: string): string | undefined {
+  const region = /^unisphere\.([a-z0-9]+)\.ovp\.kaltura\.com$/.exec(new URL(serverUrl).hostname)?.[1];
+  return KALTURA_REGIONS.find(code => code === region);
+}
+
+/** Disconnect reasons are PascalCase names. Anything else is not passed on. */
+const safeReason = (reason: unknown) => (typeof reason === 'string' && /^[A-Za-z]{1,64}$/.test(reason) ? reason : 'UnknownReason');
+
+const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { avatarId, projectId, language, autoStart, allowInterrupt } = props;
+  const { partnerId, ks, serverUrl, autoConnect, openingPhrase, captions, theme } = props;
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    let killed = false;
-
-    const uid = `kaltura-avatar-${Math.random().toString(36).slice(2, 9)}`;
-    container.id = uid;
-
-    loadScriptOnce(SDK_SRC, SDK_INTEGRITY).then(
-      () => {
-        if (killed) return;
+    let cancelled = false;
+    // Teardown steps of the remote embed, run newest first. A throwing remote must not break React's unmount.
+    const teardown: Array<() => void> = [];
+    const stop = () =>
+      teardown.splice(0).reverse().forEach(step => {
         try {
-          const win = window as unknown as {
-            KalturaAvatar?: { create: (cfg: unknown) => unknown };
-          };
-          if (win.KalturaAvatar) {
-            win.KalturaAvatar.create({
-              containerId: uid,
-              avatarId,
-              projectId,
-              language: language || 'en',
-              autoStart: autoStart || false,
-              allowInterrupt: allowInterrupt !== false,
-            });
-          }
-        } catch (err) {
-          console.error('[KalturaAvatar] init failed:', err);
+          step();
+        } catch {
+          // The embed is gone either way.
         }
-      },
-      (err) => {
-        if (!killed) renderLoadError(container, 'avatar SDK', err, 'avatar');
-      },
-    );
+      });
+    container.replaceChildren();
+    const id = `kaltura-avatar-${crypto.randomUUID()}`;
+    container.id = id;
+    const settings = {
+      ...(openingPhrase ? { openingPhrase } : {}),
+      ...(captions === undefined ? {} : { captions: { enable: captions } }),
+      theme: { type: theme ?? (document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark') },
+    };
+
+    loadUnisphereModule<EmbedsModule>(serverUrl)
+      .then(async ({ embeds }) => {
+        if (cancelled) return;
+        if (typeof embeds?.workspace !== 'function') throw new KalturaFailure('load-failed', 'Unisphere embeds API is missing');
+        const region = regionOf(serverUrl);
+        const workspace = await embeds.workspace({
+          ...(region ? { env: region } : {}),
+          session: { ks, partnerId },
+          apis: [{ name: 'genieAvatar', settings }],
+        });
+        teardown.push(() => (workspace.destroy ?? workspace.destory)?.call(workspace));
+        // The effect was cleaned up while the workspace loaded: nobody else will destroy it.
+        if (cancelled) return stop();
+        const avatar = workspace.apis?.genieAvatar;
+        if (typeof avatar?.contained !== 'function') throw new KalturaFailure('load-failed', 'Avatar embed is missing');
+        const embed = avatar.contained({ elementId: id, autoConnect: autoConnect === true });
+        teardown.push(() => embed?.remove?.());
+        const off = avatar.disconnectData?.onChanges?.(data => {
+          if (data && !cancelled) emitEvent({ type: 'avatar-disconnected', widget: 'avatar', detail: { reason: safeReason(data.reason), instanceId: id } });
+        });
+        teardown.push(() => (typeof off === 'function' ? off() : (off as { unsubscribe?: () => void } | undefined)?.unsubscribe?.()));
+      })
+      .catch(err => {
+        stop();
+        if (cancelled) return;
+        // Remote error text can hold the KS or markup. Show fixed text only.
+        renderLoadError(container, LABEL, err instanceof KalturaFailure ? err : new KalturaFailure('load-failed', 'Avatar could not start'), 'avatar');
+      });
 
     return () => {
-      killed = true;
+      cancelled = true;
+      stop();
       container.replaceChildren();
     };
-  }, [avatarId, projectId, language, autoStart, allowInterrupt]);
+  }, [partnerId, ks, serverUrl, autoConnect, openingPhrase, captions, theme]);
 
-  return (
-    <div
-      ref={containerRef}
-      className="kaltura-avatar-container"
-      style={{ width: '100%', aspectRatio: '16/9' }}
-    />
-  );
+  return <div ref={containerRef} className="kaltura-avatar-container" style={{ width: '100%', aspectRatio: '16/9' }} />;
 };
 
-export const AvatarCore = withValidatedProps(KalturaAvatarApi.schema, 'avatar', AvatarView, 'avatar');
+const Validated = withKs('avatar', withValidatedProps(KalturaAvatarApi.schema.extend({ ks: z.string() }), LABEL, AvatarView, 'avatar'));
+
+/** The avatar takes its KS from `setKsProvider` only. A `ks` prop is dropped, because the KS picks the agent. */
+export const AvatarCore: FC<AvatarCoreProps> = props => createElement(Validated, { ...props, ks: undefined });

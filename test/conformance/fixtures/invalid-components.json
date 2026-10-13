@@ -144,20 +144,44 @@
   ],
   "KalturaAvatar": [
     {
-      "why": "missing avatarId",
-      "props": {}
-    },
-    {
-      "why": "avatarId is a number",
+      "why": "missing serverUrl",
       "props": {
-        "avatarId": 5
+        "partnerId": 1
       }
     },
     {
-      "why": "unknown prop",
+      "why": "custom theme",
       "props": {
+        "partnerId": 1,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+        "theme": "custom"
+      }
+    },
+    {
+      "why": "openingPhrase over 500 characters",
+      "props": {
+        "partnerId": 1,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+        "openingPhrase": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "why": "ks prop from the agent",
+      "props": {
+        "partnerId": 1,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
+        "ks": "agent-written-ks"
+      },
+      "stripped": true,
+      "leak": "agent-written-ks"
+    },
+    {
+      "why": "removed avatarId and customTheme props",
+      "props": {
+        "partnerId": 1,
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
         "avatarId": "a",
-        "sdkUrl": "https://evil.example/x.js"
+        "customTheme": { "background": "url(https://evil.example/x)" }
       },
       "stripped": true,
       "leak": "evil.example"

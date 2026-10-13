@@ -89,7 +89,7 @@ describe('SEC-05: catalog serverUrl examples', () => {
   const urls = withProp('serverUrl');
 
   it('SEC-05: the catalog documents serverUrl for the Unisphere components', () => {
-    expect(urls.length).toBe(5);
+    expect(urls.length).toBe(6);
   });
 
   it.each(urls)('SEC-05: %s example is accepted by the loader allowlist', (_name, description) => {

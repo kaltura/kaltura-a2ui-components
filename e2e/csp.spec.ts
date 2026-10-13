@@ -2,7 +2,8 @@
 // component bundle, a chart, flashcards and a Player iframe run under it with no
 // violation, and the same policy blocks a script from a host that is not listed.
 // The page is served from a fake origin by page.route, so the test needs no port
-// and no network. Requests to Kaltura hosts get an empty answer.
+// and no network. Requests to Kaltura hosts get an empty answer. The avatar
+// gets a stub embeds module on its Unisphere host.
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -26,6 +27,21 @@ document.getElementById('cards').config = { title: 'Cells', cards: [{ title: 'Ce
 document.getElementById('player').config = { partnerId: 1, uiconfId: 2, entryId: '0_abc' };
 `;
 
+const AVATAR_PAGE = `<!doctype html><html lang="en"><body>
+<kaltura-avatar id="avatar"></kaltura-avatar>
+<script src="/kaltura-wc.js"></script>
+<script src="/avatar.js"></script>
+</body></html>`;
+
+const AVATAR_JS = `
+KalturaA2UIWebComponents.setKsProvider(() => 'csp-ks');
+document.getElementById('avatar').config = { partnerId: 1, serverUrl: 'https://unisphere.nvp1.ovp.kaltura.com/v1' };
+`;
+
+const EMBEDS_STUB = `export const embeds = { workspace: async () => ({
+  apis: { genieAvatar: { contained: () => { window.__avatar = 'contained'; return { remove() {} }; } } },
+}) };`;
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     const seen: string[] = [];
@@ -37,6 +53,8 @@ test.beforeEach(async ({ page }) => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/') return route.fulfill(serve(PAGE, 'text/html'));
     if (path === '/page.js') return route.fulfill(serve(PAGE_JS, 'text/javascript'));
+    if (path === '/avatar') return route.fulfill(serve(AVATAR_PAGE, 'text/html'));
+    if (path === '/avatar.js') return route.fulfill(serve(AVATAR_JS, 'text/javascript'));
     if (path === '/kaltura-wc.js') return route.fulfill(serve(readFileSync(resolve(process.cwd(), 'dist/kaltura-wc.js'), 'utf8'), 'text/javascript'));
     return route.fulfill({ status: 404, body: '' });
   });
@@ -65,4 +83,15 @@ test('CSP: the same policy blocks a script from a host that is not listed', asyn
     document.head.appendChild(script);
   });
   await expect.poll(() => violations(page)).toEqual([expect.stringContaining('https://evil.test/x.js')]);
+});
+
+test('CSP: the avatar runs under the recommended policy and never contacts the old avatar host', async ({ page }) => {
+  const requests: string[] = [];
+  page.on('request', (request) => requests.push(request.url()));
+  await page.route('https://unisphere.nvp1.ovp.kaltura.com/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/javascript', headers: { 'Access-Control-Allow-Origin': '*' }, body: EMBEDS_STUB }),
+  );
+  await page.goto(`${ORIGIN}/avatar`);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __avatar?: string }).__avatar)).toBe('contained');
+  expect([await violations(page), requests.filter((url) => url.includes('static.avatar')), POLICY.includes('static.avatar')]).toEqual([[], [], false]);
 });

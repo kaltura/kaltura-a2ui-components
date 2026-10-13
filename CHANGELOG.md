@@ -4,9 +4,17 @@ Newest first. 0.2.0 is the first release since v0.1.4. It holds the hardening wo
 
 ## Unreleased
 
+### Breaking changes for hosts
+
+- **`KalturaAvatar` runs on the Unisphere embeds API** (`genieAvatar`). The old avatar web SDK script is gone, which closes SEC-08. New props: `partnerId` and `serverUrl` (required), `autoConnect`, `openingPhrase`, `captions` and `theme`. `avatarId`, `projectId`, `language`, `allowInterrupt` and `autoStart` are removed. The KS comes from `setKsProvider` (widget `avatar`) only. Steps: [docs/migration-0.3.md](docs/migration-0.3.md).
+- **CSP:** drop `https://static.avatar.us.kaltura.ai` from `script-src`.
+
 ### Added
 
 - **Opt-in player sandbox** (SEC-14). `setPlayerSandbox(tokens)` sets a `sandbox` on player and flashcard clip iframes that mount after the call. `PLAYER_SANDBOX_PRESET` keeps playback, fullscreen, downloads, Cast/Presentation and share pop-ups, and blocks top navigation. Unknown tokens, `allow-top-navigation` and `allow-top-navigation-to-custom-protocols` throw. Both the React adapter and `window.KalturaA2UIWebComponents` have it. The default is unchanged: no sandbox. Tested against a stub player page only, not the real player, Cast, DRM or mobile. Test your players before you turn it on. See [docs/host-api.md](docs/host-api.md#player-sandbox).
+- **`avatar-disconnected` event** for `setEventHandler`, with `{ reason, instanceId }`. `KalturaEvent` is now a union, so TypeScript hosts check `event.type` before they read `detail`.
+
+### Changed
 
 - **Regions** (REG-01). `setRegion` now maps the player, flashcard clips, analytics and recorder hosts too. The player and recorder use the regional API host (for example `https://api.eu.kaltura.com`). Analytics uses the regional KMC host (for example `https://kmc.de.kaltura.com`). Add the hosts you use to `frame-src` in your CSP. Details: [docs/host-api.md](docs/host-api.md#regions).
 
