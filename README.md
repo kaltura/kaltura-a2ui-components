@@ -87,7 +87,7 @@ Tags up to `v0.1.4` serve the old bundles, without the 0.2.0 fixes or host funct
 | `KalturaAnalytics` | `<kaltura-analytics>` | iframe |
 | `KalturaCaptionsEditor` | `<kaltura-captions-editor>` | iframe |
 | `KalturaRecorder` | `<kaltura-recorder>` | sandboxed iframe (`extwidget/preview`) |
-| `KalturaAvatar` | `<kaltura-avatar>` | Kaltura avatar web SDK, loaded as a script |
+| `KalturaAvatar` | `<kaltura-avatar>` | Unisphere embeds API (`genieAvatar`) |
 | `KalturaGenie` | `<kaltura-genie-widget>` | Unisphere ES module |
 | `KalturaContentLab` | `<kaltura-content-lab>` | Unisphere ES module |
 | `KalturaAgentsWidget` | `<kaltura-agents-widget>` | Unisphere ES module |
@@ -173,6 +173,7 @@ A full page with a KS provider and an error handler: [examples/plain-html](examp
 | Region, media URL allowlist, error and event hooks | [docs/host-api.md](docs/host-api.md) |
 | Trust model and CSP | [SECURITY.md](SECURITY.md) |
 | Upgrade from 0.1.x | [docs/migration-0.2.md](docs/migration-0.2.md) |
+| Upgrade from 0.2.x (avatar props) | [docs/migration-0.3.md](docs/migration-0.3.md) |
 
 ## Security behaviour
 

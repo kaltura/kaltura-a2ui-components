@@ -110,7 +110,7 @@ function MediaManagerView(props: MediaManagerCoreProps) {
    * the media library or the agent: treat it as untrusted. The host event
    * handler gets the same detail.
    */
-  const announce = (selection: Omit<KalturaEvent['detail'], 'instanceId'>) => {
+  const announce = (selection: Omit<Extract<KalturaEvent, { type: 'entry-selected' }>['detail'], 'instanceId'>) => {
     const wrapper = hostRef.current;
     if (!wrapper) return;
     const host = wrapper.closest('kaltura-media-manager');

@@ -10,7 +10,7 @@ export type KalturaErrorCode =
   | 'render-failed';
 
 /** The widget that reports. `unisphere` is a `UnisphereWidgetCore` used without a `widget` prop. */
-export type KalturaWidget = KsWidget | 'flashcards' | 'avatar' | 'chart' | 'image' | 'video' | 'audio-player' | 'unisphere';
+export type KalturaWidget = KsWidget | 'flashcards' | 'chart' | 'image' | 'video' | 'audio-player' | 'unisphere';
 
 /**
  * `message` is fixed text plus prop names from the schema. It never holds a
@@ -22,11 +22,19 @@ export interface KalturaError {
   message: string;
 }
 
-export interface KalturaEvent {
-  type: 'entry-selected';
-  widget: 'media-manager';
-  detail: { entryId: string; name: string; instanceId: string; entries?: Array<{ entryId: string; name: string }> };
-}
+/** A widget event. See docs/host-api.md. */
+export type KalturaEvent =
+  | {
+      type: 'entry-selected';
+      widget: 'media-manager';
+      detail: { entryId: string; name: string; instanceId: string; entries?: Array<{ entryId: string; name: string }> };
+    }
+  | {
+      /** The avatar session ended. `reason` is a name such as `ConversationEnded`, or `UnknownReason`. */
+      type: 'avatar-disconnected';
+      widget: 'avatar';
+      detail: { reason: string; instanceId: string };
+    };
 
 /** An error whose message is fixed text, safe to show and report. */
 export class KalturaFailure extends Error {
