@@ -5,6 +5,7 @@ import type { ComponentType, FC } from 'react';
 export type KsWidget =
   | 'player'
   | 'analytics'
+  | 'flashcards'
   | 'captions-editor'
   | 'recorder'
   | 'media-manager'

@@ -1,4 +1,5 @@
-// Covers: SEC-05 (a USER KS must not travel through agent output or the A2UI data model).
+// Covers: SEC-05 (a USER KS must not travel through agent output or the A2UI data model),
+// SEC-10 (the Flashcards clips take the KS from the provider, not from a prop).
 // Plan item 3.1, pulled forward: the host supplies the KS through setKsProvider.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createElement, act } from 'react';
@@ -10,6 +11,7 @@ import { setKsProvider, type KsWidget } from '../../src/core/ks';
 import { kalturaReactCatalog, KALTURA_CATALOG_ID } from '../../src/adapters/react/index';
 import { PlayerCore } from '../../src/core/player';
 import { AnalyticsCore } from '../../src/core/analytics';
+import { FlashcardsCore } from '../../src/core/flashcards';
 import { CaptionsEditorCore } from '../../src/core/captions-editor';
 import { RecorderCore } from '../../src/core/recorder';
 import { GenieCore } from '../../src/core/genie';
@@ -89,6 +91,14 @@ describe('SEC-05: setKsProvider supplies the KS', () => {
     expect(iframeSrc(container)).toContain(`ks=${HOST_KS}`);
   });
 
+  it('SEC-05: a flashcards clip uses the provider KS and ignores the ks prop', async () => {
+    setKsProvider(widget => (widget === 'flashcards' ? HOST_KS : undefined));
+    const cards = [{ title: 'C', content: 'x', clips: [{ entryId: '1_abc', startTime: 0, endTime: 1 }] }];
+    const { container } = await mount(FlashcardsCore, { title: 'Deck', partnerId: 1, uiconfId: 2, cards, ks: AGENT_KS });
+    await act(async () => container.querySelector<HTMLButtonElement>('.flashcard-action-btn')!.click());
+    expect([iframeSrc(container).includes(`ks=${HOST_KS}`), iframeSrc(container).includes(AGENT_KS)]).toEqual([true, false]);
+  });
+
   it('SEC-05: nothing renders while the async provider is still running', async () => {
     setKsProvider(() => new Promise<string>(() => {}));
     const { container } = await mount(AnalyticsCore, { partnerId: 1, ks: AGENT_KS });
@@ -136,6 +146,7 @@ describe('SEC-05: the provider learns which widget asks, for a least-privilege K
   const WIDGETS = [
     ['player', PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' }],
     ['analytics', AnalyticsCore, { partnerId: 1 }],
+    ['flashcards', FlashcardsCore, { title: 'Deck', partnerId: 1, uiconfId: 2, cards: [] }],
     ['captions-editor', CaptionsEditorCore, { partnerId: 1, entryId: '0_abc' }],
     ['recorder', RecorderCore, { partnerId: 1, uiconfId: 2 }],
     ['media-manager', MediaManagerCore, unisphere],
