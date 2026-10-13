@@ -6,6 +6,9 @@ export default defineConfig({
   plugins: [react()],
   test: {
     globals: true,
+    // Expected stderr from error-path tests floods the worker RPC. A run can end
+    // with "Closing rpc while onUserConsoleLog was pending". Failing tests still print.
+    silent: 'passed-only',
     environment: 'jsdom',
     include: ['test/**/*.test.{ts,tsx}'],
     setupFiles: ['./test/setup.ts'],
