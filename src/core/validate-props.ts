@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { CommonSchemas } from '@a2ui/web_core/v0_9';
 import { isEntryId, isPositiveInt } from './ids';
 import { invalidCode, reportError, type KalturaErrorCode, type KalturaWidget } from './host-hooks';
+import { refusedIdProp } from './allowed-ids';
 
 // Core components get resolved props, so the bindings and function calls that the
 // A2UI schemas allow must not appear. Use the schema, minus those two options.
@@ -116,6 +117,8 @@ export const LoadError: FC<{ widget: KalturaWidget; code?: KalturaErrorCode; chi
  * the component is never rendered. Props that are still undefined render
  * nothing until they arrive, except under `StrictPendingContext`. `label`
  * names the widget in the message, `widget` in the error handler report.
+ * A `partnerId` or `uiconfId` that the host allowlist refuses shows an
+ * `origin-not-allowed` error (allowed-ids.ts).
  */
 export function withValidatedProps<P extends object>(
   schema: z.ZodObject<z.ZodRawShape>,
@@ -133,6 +136,10 @@ export function withValidatedProps<P extends object>(
       });
     }
     if (pending) return null;
+    const refused = refusedIdProp(props, schema.shape);
+    if (refused) {
+      return createElement(LoadError, { widget, code: 'origin-not-allowed', children: `Failed to load ${label}: ${refused} is not allowed` });
+    }
     return createElement(Inner, props);
   };
   Validated.displayName = `Validated(${Inner.displayName || Inner.name || label})`;

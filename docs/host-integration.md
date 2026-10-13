@@ -7,11 +7,12 @@ What the page or app that embeds the components must set up. Agents never call t
 | A Kaltura Session (KS) | `setKsProvider` | [KS](#kaltura-session-ks) |
 | A private cloud or on-prem Unisphere | `setExtraAllowedOrigins` | [Unisphere origins](#unisphere-origins) |
 | Another Kaltura region | `setRegion` | [Region](#region) |
+| Only your own accounts and players | `setAllowedPartners`, `setAllowedUiconfs` | [Allowed partners and uiconfs](#allowed-partners-and-uiconfs) |
 | Images, video or audio from your own host | `setExtraMediaOrigins` (React only) | [Media URLs](#media-urls) |
 | Logs and selection events | `setErrorHandler`, `setEventHandler` | [Errors and events](#errors-and-events) |
 | A CSP | See below | [CSP](#content-security-policy) |
 
-All six functions come from `@kaltura/a2ui-react`. The script-tag bundle has the same functions, except `setExtraMediaOrigins`, on `window.KalturaA2UIWebComponents`. Signatures and codes: [host-api.md](host-api.md).
+All eight functions come from `@kaltura/a2ui-react`. The script-tag bundle has the same functions, except `setExtraMediaOrigins`, on `window.KalturaA2UIWebComponents`. Signatures and codes: [host-api.md](host-api.md).
 
 ## Register the Kaltura catalog alone
 
@@ -94,6 +95,15 @@ setRegion('irp2'); // nvp1 (default), irp2, frp2, cap2, syp2
 ```
 
 It changes every Kaltura host the components build: player, flashcard clips and thumbnails, captions editor, Analytics and recorder. Unknown codes throw. `sgp2` (Singapore) is not supported. The host table and sources are in [host-api.md](host-api.md#regions).
+
+## Allowed partners and uiconfs
+
+```ts
+setAllowedPartners([1234567]);
+setAllowedUiconfs([2000001, /^20000[0-9]{2}$/]);
+```
+
+The agent picks `partnerId` and `uiconfId`. Owning a uiconf means running code in your page origin with your KS, so set both lists to the accounts and players you own. Both default to open. The rule can be `'*'`, a RegExp (anchor it with `^` and `$`) or a list of ids and RegExps. A refused id loads nothing and reports `origin-not-allowed`. Rules and covered components: [host-api.md](host-api.md#allowed-partners-and-uiconfs).
 
 ## Media URLs
 
@@ -245,6 +255,7 @@ The KS is not in the script or iframe URL we build for the Player, the Flashcard
 
 - A pin gives change control. SRI gives integrity. We accept no SRI for the rest while all remote code comes from Kaltura.
 - Pins cover the first hop only. The recorder and the editor's `main.js` load the Player script with no `integrity`, and Unisphere loads its runtimes from the manifest.
+- Set `setAllowedPartners` and `setAllowedUiconfs` ([above](#allowed-partners-and-uiconfs)). The agent chooses the ids, and the uiconf decides which player or recorder code runs in your page.
 - A host that needs isolation must embed the components in a page on a separate origin. See [ADR 0005](adr/0005-analytics-and-recorder-integration.md) and [ADR 0008](adr/0008-in-page-player-and-captions-editor.md).
 
 CSP does not replace the host controls above. Agent output stays untrusted: [SECURITY.md](../SECURITY.md).

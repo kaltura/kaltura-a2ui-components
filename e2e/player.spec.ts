@@ -77,3 +77,30 @@ test('SEC-10: a script that fails to load shows the error and never the KS', asy
   await expect(h.page.locator('#host [role=alert]')).toHaveText(/^Failed to load player: /);
   expect(JSON.stringify([await h.page.content(), h.consoleText])).not.toContain(KS);
 });
+
+type HostApi = Record<string, (rule: unknown) => void>;
+
+test('F11: a refused partner or uiconf loads no script and reports origin-not-allowed', async ({ harness: h }) => {
+  await h.page.evaluate(() => {
+    const api = (window as unknown as { KalturaA2UIWebComponents: HostApi }).KalturaA2UIWebComponents;
+    const reports: unknown[] = [];
+    (window as unknown as { __reports: unknown[] }).__reports = reports;
+    api.setErrorHandler((error: unknown) => reports.push(error));
+    api.setAllowedPartners([/^12345\d\d$/]);
+    api.setAllowedUiconfs([42]);
+  });
+  await h.mount('kaltura-player', PLAYER);
+  await h.mount('kaltura-player', { ...PLAYER, uiconfId: 42, partnerId: 99 });
+  await expect(h.page.locator('#host [role=alert]')).toHaveText([
+    'Failed to load player: uiconfId is not allowed',
+    'Failed to load player: partnerId is not allowed',
+  ]);
+  expect([h.requests.filter((url) => url.includes('embedPlaykitJs')), await h.page.locator('#host .stub-player-ui').count()]).toEqual([[], 0]);
+  await h.page.evaluate(() => (window as unknown as { KalturaA2UIWebComponents: HostApi }).KalturaA2UIWebComponents.setAllowedUiconfs(undefined));
+  await h.mount('kaltura-player', PLAYER);
+  await expect(h.page.locator('#host .stub-player-ui')).toHaveCount(1);
+  expect([
+    h.requests.filter((url) => url.includes('embedPlaykitJs')),
+    await h.page.evaluate(() => (window as unknown as { __reports: Array<{ code: string }> }).__reports.map((report) => report.code)),
+  ]).toEqual([[SCRIPT_URL], ['origin-not-allowed', 'origin-not-allowed']]);
+});
