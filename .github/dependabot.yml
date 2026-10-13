@@ -6,6 +6,12 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+    # zod is a peer dependency (ADR 0003). @types/node follows .nvmrc.
+    ignore:
+      - dependency-name: zod
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       npm-production:
         dependency-type: production
