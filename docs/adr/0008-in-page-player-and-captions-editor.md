@@ -20,7 +20,18 @@ Both use `PlayerEmbed`.
 
 1. The loader adds `<cdn>/p/{pid}/embedPlaykitJs/partner_id/{pid}/uiconf_id/{uiconf}` as a `<script>`. `<cdn>` is the region host (`kalturaHosts().cdn`).
 2. `KalturaPlayer.setup({ targetId, provider: { partnerId, uiConfId, ks, useHeaderForKs: true }, playback })` builds the player.
-3. `player.loadMedia({ entryId }, { seekFrom, clipTo })` starts the entry.
+3. `player.loadMedia({ entryId }, { startTime })` starts the entry. `startTime` is the `startTime` prop (the clip start) and is left out when the prop is not set.
+
+The clip end is not sent to the player. On `timeupdate` at or after `clipTo`, we pause the player and move it back to the clip start, so the next play shows the clip again.
+
+Why not the player's `seekFrom` and `clipTo`: they ask Kaltura for a cut file. Checked live on `nvp1` in Chromium, Firefox and WebKit, with `seekFrom: 10, clipTo: 16`:
+
+| Entry | With `seekFrom` and `clipTo` | With `startTime` and our stop |
+|---|---|---|
+| `1_rjclzn41`, `1_hpc1olo6` | Plays source 0 to 16 s. The start is ignored. | Plays 10 to 16 s. |
+| `1_3lov8dhg`, `1_43zhxakt` | The cut file is corrupt (ffmpeg reports about 2,400 and 1,800 error lines). Chromium and Firefox stall at 0 to 3 s. | Plays 10 to 16 s. |
+
+The cost: the player timeline shows the whole entry, not only the clip, and a viewer can seek outside the clip. Playback stops about 0.1 to 0.4 s after `clipTo` (`timeupdate` granularity).
 
 `useHeaderForKs: true` is required. Checked live on `nvp1` with a real KS: with it, no request carried the KS in its URL. Without it, the `playManifest` requests carried the KS in the URL.
 

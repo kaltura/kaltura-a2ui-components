@@ -53,7 +53,23 @@ test('SEC-10: a flashcards clip plays with the same script and the KS stays out 
   expect([h.requests.filter((url) => url.includes(KS)), (await setups(h)).map((setup) => setup.provider.ks), await loads(h)]).toEqual([
     [],
     [KS],
-    [{ info: { entryId: '0_clip123' }, options: { seekFrom: 10, clipTo: 21 } }],
+    [{ info: { entryId: '0_clip123' }, options: { startTime: 10 } }],
+  ]);
+});
+
+test('a flashcards clip pauses at its end and rewinds to its start', async ({ harness: h }) => {
+  await h.mount('kaltura-flashcards', FLASHCARDS);
+  await h.page.locator('.flashcard-action-btn').first().click();
+  await expect.poll(() => log(h)).toEqual(['setup', 'loadMedia']);
+  // The stub has no playback. The page sets the time and fires the event, as the player does.
+  await h.page.evaluate(() => {
+    const w = window as unknown as { __playerEmit: (type: string) => void; __playerCurrent: { currentTime: number } };
+    w.__playerCurrent.currentTime = 21.2;
+    w.__playerEmit('timeupdate');
+  });
+  expect([await log(h), await h.page.evaluate(() => (window as unknown as { __playerCurrent: { currentTime: number } }).__playerCurrent.currentTime)]).toEqual([
+    ['setup', 'loadMedia', 'pause'],
+    10,
   ]);
 });
 

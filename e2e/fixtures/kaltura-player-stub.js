@@ -1,6 +1,6 @@
 // Stand-in for the Kaltura Player bundle (https://cdnapisec.kaltura.com/p/<pid>/embedPlaykitJs/...).
 // Served by Harness.open() for that path. Same shape as the real bundle:
-// `KalturaPlayer.setup(config)` returns a player with `loadMedia`, `addEventListener` and `destroy`.
+// `KalturaPlayer.setup(config)` returns a player with `loadMedia`, `addEventListener`, `pause`, `currentTime` and `destroy`.
 (function () {
   var log = (window.__playerLog = window.__playerLog || []);
   window.__playerSetups = window.__playerSetups || [];
@@ -20,8 +20,12 @@
       ui.className = 'stub-player-ui';
       ui.textContent = 'stub player';
       document.getElementById(config.targetId).appendChild(ui);
-      return {
-        Event: { ERROR: 'error' },
+      var player = {
+        Event: { ERROR: 'error', TIME_UPDATE: 'timeupdate' },
+        currentTime: 0,
+        pause: function () {
+          log.push('pause');
+        },
         addEventListener: function (type, listener) {
           (listeners[type] = listeners[type] || []).push(listener);
         },
@@ -35,6 +39,8 @@
           ui.remove();
         },
       };
+      window.__playerCurrent = player;
+      return player;
     },
   };
 })();

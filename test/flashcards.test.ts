@@ -42,16 +42,16 @@ describe('FlashcardsCore clip player', () => {
     expect(remote.urls).toEqual([scriptUrl(99999, 12345)]);
   });
 
-  it('loads the entry with rounded seek and clip end', async () => {
+  it('loads the entry with the rounded start and no cut', async () => {
     await openClip({ partnerId: 99999, uiconfId: 12345 });
     await remote.ready();
-    expect(remote.created[0].loads).toEqual([{ info: { entryId: '1_abc123' }, options: { seekFrom: 11, clipTo: 45 } }]);
+    expect(remote.created[0].loads).toEqual([{ info: { entryId: '1_abc123' }, options: { startTime: 11 } }]);
   });
 
-  it('rounds whole-second times as they are', async () => {
+  it('keeps whole-second times as they are', async () => {
     await openClip({ partnerId: 1, uiconfId: 2, cards: [{ title: 'C', content: 'x', clips: [{ entryId: '1_xyz', startTime: 30, endTime: 60 }] }] });
     await remote.ready();
-    expect(remote.created[0].loads[0].options).toEqual({ seekFrom: 30, clipTo: 60 });
+    expect(remote.created[0].loads[0].options).toEqual({ startTime: 30 });
   });
 
   it('gives the KS to the player setup, not to a URL', async () => {

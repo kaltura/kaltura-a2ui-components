@@ -88,13 +88,21 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
         player.addEventListener(player.Event?.ERROR ?? 'error', () => {
           if (!cancelled) reportError('render-failed', widget, 'Player error');
         });
-        return player.loadMedia(
-          { entryId },
-          {
-            ...(seekFrom !== undefined ? { seekFrom: Math.round(seekFrom) } : {}),
-            ...(clipTo !== undefined ? { clipTo: Math.round(clipTo) } : {}),
-          },
-        );
+        // The player's own seekFrom and clipTo ask Kaltura for a cut file. Kaltura ignores the start for some
+        // entries and serves a corrupt cut for others (docs/adr/0008). So the player gets a plain startTime
+        // and we stop it at the clip end here.
+        const start = seekFrom !== undefined ? Math.round(seekFrom) : undefined;
+        const end = clipTo !== undefined ? Math.round(clipTo) : undefined;
+        if (end !== undefined && end > (start ?? 0)) {
+          const handle = player;
+          handle.addEventListener?.(handle.Event?.TIME_UPDATE ?? 'timeupdate', () => {
+            if ((handle.currentTime ?? 0) < end) return;
+            // Back to the start, so the next play shows the clip again instead of stopping at once.
+            handle.pause?.();
+            handle.currentTime = start ?? 0;
+          });
+        }
+        return player.loadMedia({ entryId }, start !== undefined ? { startTime: start } : {});
       })
       .catch(err => {
         if (cancelled) return;

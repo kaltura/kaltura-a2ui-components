@@ -2,7 +2,7 @@
 // The bundle is a fake from test/helpers/player-remote.ts. Security checks: test/security/player.test.tsx.
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { mount } from './helpers/render';
-import { playerRemote, loadPlayer, scriptUrl, type PlayerRemote } from './helpers/player-remote';
+import { playerRemote, loadPlayer, scriptUrl, TIME_UPDATE_EVENT, type PlayerRemote } from './helpers/player-remote';
 
 const BASE_PROPS = {
   partnerId: 1234567,
@@ -85,14 +85,19 @@ describe('PlayerCore loadMedia', () => {
     expect(remote.created[0].loads).toEqual([{ info: { entryId: '1_abc123' }, options: {} }]);
   });
 
-  it('rounds startTime and clipTo to whole seconds for seekFrom and clipTo', async () => {
+  it('rounds startTime to whole seconds and sends it as startTime, not as a cut', async () => {
     await render({ ...BASE_PROPS, startTime: 12.7, clipTo: 99.3 });
-    expect(remote.created[0].loads[0].options).toEqual({ seekFrom: 13, clipTo: 99 });
+    expect(remote.created[0].loads[0].options).toEqual({ startTime: 13 });
   });
 
   it('keeps a startTime of 0', async () => {
     await render({ ...BASE_PROPS, startTime: 0 });
-    expect(remote.created[0].loads[0].options).toEqual({ seekFrom: 0 });
+    expect(remote.created[0].loads[0].options).toEqual({ startTime: 0 });
+  });
+
+  it('sends no options for a clipTo alone', async () => {
+    await render({ ...BASE_PROPS, clipTo: 99 });
+    expect(remote.created[0].loads[0].options).toEqual({});
   });
 
   it('shows the entry id and name, and the description as plain text', async () => {
@@ -101,5 +106,55 @@ describe('PlayerCore loadMedia', () => {
       '1_abc123 — Intro',
       '<b>Hello</b> world',
     ]);
+  });
+});
+
+describe('PlayerCore clip end', () => {
+  const tick = (time: number, event = TIME_UPDATE_EVENT) => {
+    const player = remote.created[0].player!;
+    player.currentTime = time;
+    remote.emit(event);
+    return player;
+  };
+
+  it('pauses when playback reaches the rounded clipTo', async () => {
+    await render({ ...BASE_PROPS, startTime: 10, clipTo: 15.6 });
+    tick(16.1);
+    expect(remote.log).toEqual(['setup', 'loadMedia', 'pause']);
+  });
+
+  it('rewinds to the rounded startTime when it stops, so play can start the clip again', async () => {
+    await render({ ...BASE_PROPS, startTime: 10.4, clipTo: 16 });
+    expect(tick(16.2).currentTime).toBe(10);
+  });
+
+  it('rewinds to 0 when only clipTo is set', async () => {
+    await render({ ...BASE_PROPS, clipTo: 16 });
+    expect(tick(16.2).currentTime).toBe(0);
+  });
+
+  it('keeps playing before clipTo', async () => {
+    await render({ ...BASE_PROPS, startTime: 10, clipTo: 16 });
+    tick(15.9);
+    expect(remote.log).toEqual(['setup', 'loadMedia']);
+  });
+
+  it('does not watch playback without a clipTo', async () => {
+    await render({ ...BASE_PROPS, startTime: 10 });
+    tick(500);
+    expect(remote.log).toEqual(['setup', 'loadMedia']);
+  });
+
+  it('ignores a clipTo that is not after the start', async () => {
+    await render({ ...BASE_PROPS, startTime: 10, clipTo: 10 });
+    tick(500);
+    expect(remote.log).toEqual(['setup', 'loadMedia']);
+  });
+
+  it('listens to the plain timeupdate event when the player has no Event constants', async () => {
+    remote.setup = 'no-event-const';
+    await render({ ...BASE_PROPS, clipTo: 16 });
+    tick(16.2, 'timeupdate');
+    expect(remote.log).toEqual(['setup', 'loadMedia', 'pause']);
   });
 });

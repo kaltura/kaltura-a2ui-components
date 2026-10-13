@@ -10,12 +10,14 @@ export const scriptUrl = (partnerId: number, uiconfId: number) =>
 
 /** The name of the event the fake player uses for errors (`player.Event.ERROR`). */
 export const ERROR_EVENT = 'fake-player-error';
+/** The name of the event the fake player uses for time updates (`player.Event.TIME_UPDATE`). */
+export const TIME_UPDATE_EVENT = 'fake-time-update';
 
 export interface PlayerRemote {
   /** Calls in order: setup, loadMedia, destroy. */
   log: string[];
   /** Config and `loadMedia` calls of every `setup`. */
-  created: Array<{ config: PlayerSetupConfig; loads: Array<{ info: unknown; options: unknown }> }>;
+  created: Array<{ config: PlayerSetupConfig; loads: Array<{ info: unknown; options: unknown }>; player?: PlayerHandle }>;
   /** What the script tag does once it is in the page. `hold` never finishes. `no-api` and `no-setup` define no usable API. */
   script: 'load' | 'error' | 'hold' | 'no-api' | 'no-setup';
   /**
@@ -57,7 +59,7 @@ const api: PlayerApi = {
     const remote = active;
     if (!remote) throw new Error('no player remote');
     remote.log.push('setup');
-    const entry = { config, loads: [] as Array<{ info: unknown; options: unknown }> };
+    const entry: PlayerRemote['created'][number] = { config, loads: [] };
     remote.created.push(entry);
     if (remote.setup === 'throw') throw new Error(`cannot find element with id '${config.targetId}' ${String(config.provider.ks)}`);
     if (remote.setup === 'no-player') return undefined;
@@ -69,7 +71,11 @@ const api: PlayerApi = {
         remote.log.push('destroy');
         if (remote.setup === 'destroy-throws') throw new Error('destroy failed');
       },
-      ...(remote.setup === 'no-event-const' ? {} : { Event: { ERROR: ERROR_EVENT } }),
+      currentTime: 0,
+      pause: () => {
+        remote.log.push('pause');
+      },
+      ...(remote.setup === 'no-event-const' ? {} : { Event: { ERROR: ERROR_EVENT, TIME_UPDATE: TIME_UPDATE_EVENT } }),
       ...(remote.setup === 'no-add-listener'
         ? {}
         : {
@@ -80,7 +86,7 @@ const api: PlayerApi = {
       ...(remote.setup === 'no-load-media'
         ? {}
         : {
-            loadMedia: (info: { entryId: string }, options?: { seekFrom?: number; clipTo?: number }) => {
+            loadMedia: (info: { entryId: string }, options?: { startTime?: number }) => {
               remote.log.push('loadMedia');
               entry.loads.push({ info, options });
               if (remote.setup === 'load-throws') throw new Error(`load failed ${String(config.provider.ks)}`);
@@ -89,6 +95,7 @@ const api: PlayerApi = {
             },
           }),
     };
+    entry.player = handle;
     return handle;
   },
 };
