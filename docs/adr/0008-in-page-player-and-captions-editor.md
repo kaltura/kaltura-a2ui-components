@@ -22,6 +22,8 @@ Both use `PlayerEmbed`.
 2. `KalturaPlayer.setup({ targetId, provider: { partnerId, uiConfId, ks, useHeaderForKs: true }, playback })` builds the player.
 3. `player.loadMedia({ entryId }, { seekFrom, clipTo })` starts the entry.
 
+Clips assume the entry has transcoded (HLS or DASH) flavors. On an entry with only a source flavor, Kaltura serves `seekFrom` through a progressive MP4 with a CDN time offset. Browser `Range` requests then ignore the offset or get wrong bytes, so the clip can start at 0 or stall. Checked live on `nvp1` (Player 3.17.102). A transcoded entry honours `seekFrom` and `clipTo` in Chromium, Firefox and WebKit.
+
 `useHeaderForKs: true` is required. Checked live on `nvp1` with a real KS: with it, no request carried the KS in its URL. Without it, the `playManifest` requests carried the KS in the URL.
 
 The KS comes from `setKsProvider` first. The `ks` prop is the fallback. Flashcards ask the provider for `flashcards`. `autoplay` and `muted` go to `playback` only when the prop is set, so the uiconf defaults apply otherwise. The plugin set comes from the uiconf. The old `plugins=` URL parameter is gone.
@@ -88,7 +90,7 @@ Checked live on `nvp1`: the editor loaded and signed in (it reached "Current vid
 |---|---|
 | Keep the iframes with the KS in the URL | It leaves SEC-10 open. The KS reaches history, logs and `Referer` |
 | A `postMessage` bridge page on a separate origin that we host | The package is a static bundle. We would have to host and secure that origin, and every host would depend on it |
-| Ask Kaltura for a KS channel in the embeds (like Analytics `init`) | Still the right long-term fix, because it would restore isolation. It is a request to Kaltura, not something we can ship. If Kaltura adds it, this ADR can be superseded |
+| Ask Kaltura for a KS channel in the embeds (like Analytics `init`) | Not needed. Kaltura designed the Player and the captions editor to run in the host page, and the account owner controls the Player version per uiConf in KMC |
 
 ## Sources
 
