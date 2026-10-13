@@ -1,57 +1,71 @@
-import { createElement, useEffect, useMemo, type FC, type ReactNode } from 'react';
-import { ResolvedBinding } from '@a2ui/web_core/v0_9';
-import {
-  createComponentImplementation,
-  MarkdownContext,
-  useMarkdownRenderer,
-  useSignalValue,
-  type NodeViewProps,
-  type ReactComponentImplementation,
-} from '@a2ui/react/v0_9';
+import type { WebComponentImplementation } from '@a2ui/web_core/v0_9/universal';
+import { getMarkdownRenderer, type MarkdownRenderer } from '@a2ui/web_core/v0_9/basic_catalog';
 import { isAllowedMediaUrl } from '../../core/media-url';
 import { sanitizeMarkdownHtml } from '../../core/safe-markdown';
 import { reportError, type KalturaWidget } from '../../core/host-hooks';
 
 const MEDIA_WIDGETS: Record<string, KalturaWidget> = { Image: 'image', Video: 'video', AudioPlayer: 'audio-player' };
 
-/** True when `url` may load. Reports a set URL that may not. An unset URL renders nothing quietly. */
-function useAllowedUrl(name: string, url: unknown): boolean {
-  const allowed = isAllowedMediaUrl(url);
-  const rejected = !allowed && url !== undefined && url !== '';
-  useEffect(() => {
-    if (rejected) reportError('url-rejected', MEDIA_WIDGETS[name], `${name} url is not allowed`);
-  }, [name, rejected, url]);
-  return allowed;
+/** The parts of a basic catalog Lit element that the guard uses. */
+type BasicElement = new (...args: unknown[]) => HTMLElement & {
+  readonly controller?: { readonly props?: { readonly url?: unknown } };
+  render(): unknown;
+};
+
+const safeRenderers = new WeakMap<MarkdownRenderer, MarkdownRenderer>();
+
+/** The host's markdown renderer, then our sanitiser, so images load only from Kaltura hosts. */
+function safeRenderer(host: MarkdownRenderer | undefined): MarkdownRenderer | undefined {
+  if (!host) return undefined;
+  let safe = safeRenderers.get(host);
+  if (!safe) safeRenderers.set(host, (safe = (...args) => Promise.resolve(host(...args)).then(sanitizeMarkdownHtml)));
+  return safe;
 }
 
-/** Runs the host's markdown renderer, then our sanitiser, so images load only from Kaltura hosts. */
-function SafeMarkdown({ children }: { children: ReactNode }) {
-  const host = useMarkdownRenderer();
-  const safe = useMemo(() => host && ((...args: Parameters<typeof host>) => host(...args).then(sanitizeMarkdownHtml)), [host]);
-  return createElement(MarkdownContext.Provider, { value: safe }, children);
-}
+function guardedElement(name: string, Base: BasicElement): BasicElement {
+  const widget = MEDIA_WIDGETS[name];
+  class Guarded extends Base {
+    // The base caches its tag-scoped CSS on the class. Own copies scope it to our tag.
+    static _processedSheet = undefined;
+    static _processedCss = undefined;
+    static _processedStyle = undefined;
+    static _adoptedRoots = undefined;
+    #reported: unknown;
+    #consumed: MarkdownRenderer | undefined;
 
-function withSafeMarkdown<P extends object>(View: FC<P>): FC<P> {
-  return props => createElement(SafeMarkdown, null, createElement(View, props));
+    // Text reads this field. A Lit context provider sets it, A2uiSurface sets the global one.
+    get markdownRenderer() {
+      return safeRenderer(this.#consumed ?? getMarkdownRenderer());
+    }
+    set markdownRenderer(renderer: MarkdownRenderer | undefined) {
+      this.#consumed = renderer;
+    }
+
+    render() {
+      if (!widget) return super.render();
+      const url = this.controller?.props?.url;
+      if (isAllowedMediaUrl(url)) {
+        this.#reported = undefined;
+        return super.render();
+      }
+      if (url !== undefined && url !== '' && url !== this.#reported) {
+        this.#reported = url;
+        reportError('url-rejected', widget, `${name} url is not allowed`);
+      }
+      return undefined;
+    }
+  }
+  return Guarded;
 }
 
 /**
  * Wraps a basic Image, Video or AudioPlayer so its `url` loads only from a
  * Kaltura host or a `setExtraMediaOrigins` origin, and a basic Text so its
  * markdown shows only Kaltura images (SEC-05). Other components pass through.
+ * A guarded element gets the tag `kaltura-<basic tag>`, because one class
+ * cannot be defined under two tags.
  */
-export function guardBasic(base: ReactComponentImplementation): ReactComponentImplementation {
-  if (base.name === 'Text') return { ...base, render: withSafeMarkdown(base.render), view: base.view && withSafeMarkdown(base.view) };
-  if (!Object.hasOwn(MEDIA_WIDGETS, base.name)) return base;
-  const BaseView = base.view;
-  const GuardedView = ({ node, buildChild }: NodeViewProps) => {
-    const raw = (useSignalValue(node.props) as { url?: unknown }).url;
-    const url = raw instanceof ResolvedBinding ? raw.value : raw;
-    return useAllowedUrl(base.name, url) ? createElement(BaseView!, { node, buildChild }) : null;
-  };
-  const { render } = createComponentImplementation(base, ({ props, context, buildChild }) =>
-    useAllowedUrl(base.name, (props as { url?: unknown }).url) ? createElement(base.render, { context, buildChild }) : null,
-  );
-  // Without a base view the surface falls back to the guarded render.
-  return { ...base, render, view: BaseView && GuardedView };
+export function guardBasic(base: WebComponentImplementation): WebComponentImplementation {
+  if (base.name !== 'Text' && !Object.hasOwn(MEDIA_WIDGETS, base.name)) return base;
+  return { ...base, tagName: `kaltura-${base.tagName}`, element: guardedElement(base.name, base.element as BasicElement) };
 }

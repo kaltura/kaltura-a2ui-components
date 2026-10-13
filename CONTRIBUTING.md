@@ -14,7 +14,7 @@ npx playwright install chromium firefox webkit   # only for e2e and check:exampl
 |---|---|---|
 | `npm run check` | Types, lint, all unit tests | Before every push |
 | `npx vitest run test/path/file.test.ts` | One test file | While you work |
-| `npm run build` | `dist/kaltura-react.mjs`, `dist/kaltura-wc.js`, types | Before the commands below |
+| `npm run build` | `dist/kaltura-react.mjs` (with `dist/html-element-stub.mjs`), `dist/kaltura-wc.js`, types | Before the commands below |
 | `npm run e2e` | Playwright on three browsers against `dist/` | After a change to a component or the bundle |
 | `npm run check:examples` | README snippets and `examples/` in Chromium, against `dist/` | After a change to README, examples or the public API |
 | `npm run check:bundle`, `check:package`, `check:consumer`, `size` | Bundle contents, package contract, consumer install, size budget | After a change to build config, `package.json` or dependencies |
