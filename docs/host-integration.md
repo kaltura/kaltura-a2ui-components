@@ -103,7 +103,7 @@ A starting policy. Replace `'self'` and the Unisphere regions to fit your page.
 <!-- csp -->
 ```text
 default-src 'self';
-script-src 'self' https://unisphere.nvp1.ovp.kaltura.com https://unisphere.irp2.ovp.kaltura.com https://unisphere.frp2.ovp.kaltura.com https://unisphere.cap2.ovp.kaltura.com https://unisphere.syp2.ovp.kaltura.com https://static.avatar.us.kaltura.ai;
+script-src 'self' https://unisphere.nvp1.ovp.kaltura.com https://unisphere.irp2.ovp.kaltura.com https://unisphere.frp2.ovp.kaltura.com https://unisphere.cap2.ovp.kaltura.com https://unisphere.syp2.ovp.kaltura.com;
 style-src 'self' 'unsafe-inline';
 img-src 'self' data: https://*.kaltura.com;
 media-src 'self' https://*.kaltura.com;
@@ -115,13 +115,13 @@ base-uri 'none';
 
 | Directive | Why |
 |---|---|
-| `script-src` | Your own script, the Unisphere loaders (only the regions you use) and the avatar SDK (drop it if you do not use the avatar). If you load the bundle from the CDN, add `https://cdn.jsdelivr.net` and use SRI |
+| `script-src` | Your own script and the Unisphere loaders (only the regions you use). The avatar loads through the Unisphere loader too. If you load the bundle from the CDN, add `https://cdn.jsdelivr.net` and use SRI |
 | `style-src ... 'unsafe-inline'` | The bundle injects its CSS in a `<style>` tag and the charts set `style` attributes |
 | `img-src`, `media-src` | Flashcard thumbnails, markdown images and the basic media components. Add your `setExtraMediaOrigins` hosts |
 | `frame-src` | Player and flashcard clips (`cdnapisec`), captions editor and recorder (`www`), Analytics (`kmc`). Add the hosts of the widgets you use. A private cloud needs its own hosts |
-| `connect-src` | The geo map fetches `world-atlas` from jsDelivr. Unisphere widgets call Kaltura APIs |
+| `connect-src` | The geo map fetches `world-atlas` from jsDelivr. Unisphere widgets call Kaltura APIs. The avatar also calls `https://api.avatar.<region>.kaltura.ai`, which this policy does not list |
 | `object-src`, `base-uri` | Not needed by any component |
 
-What is tested: the Chart, Flashcards and Player run under this exact policy with no violation, and a script from a host that is not listed is blocked (`e2e/csp.spec.ts`). What is not tested: Unisphere widgets, the avatar and the other iframes. Watch the browser console for `Content Security Policy` messages the first time you enable one of them, and add the Kaltura host it names. Private cloud and on-prem Unisphere hosts also need entries in `script-src`, `connect-src` and `frame-src`.
+What is tested: the Chart, Flashcards, Player and the avatar loader (stubbed) run under this exact policy with no violation, and a script from a host that is not listed is blocked (`e2e/csp.spec.ts`). What is not tested: other Unisphere widgets, the other iframes and a live avatar session. Its API, WebSocket and WebRTC hosts are not verified. Watch the browser console for `Content Security Policy` messages the first time you enable one of them, and add the Kaltura host it names. Private cloud and on-prem Unisphere hosts also need entries in `script-src`, `connect-src` and `frame-src`.
 
 CSP does not replace the host controls above. Agent output stays untrusted: [SECURITY.md](../SECURITY.md).

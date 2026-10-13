@@ -11,7 +11,8 @@ export type KsWidget =
   | 'genie'
   | 'content-lab'
   | 'agents-widget'
-  | 'vod-avatar';
+  | 'vod-avatar'
+  | 'avatar';
 
 /**
  * Returns the Kaltura Session for the widget that asks, so the host can give

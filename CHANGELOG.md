@@ -2,6 +2,17 @@
 
 Newest first. 0.2.0 is the first release since v0.1.4. It holds the hardening work for SECF-30837 that this file listed before as "0.1.5 (not tagged)" (Phase 1, security), "0.1.6 (not tagged)" (Phase 2, robustness) and "Unreleased" (Phase 3). How each finding is closed and tested: [docs/security/SECF-30837.md](docs/security/SECF-30837.md). Upgrade steps: [docs/migration-0.2.md](docs/migration-0.2.md). Releases up to v0.1.4: [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
 
+## Unreleased
+
+### Breaking changes for hosts
+
+- **`KalturaAvatar` runs on the Unisphere embeds API** (`genieAvatar`). The old avatar web SDK script is gone, which closes SEC-08. New props: `partnerId` and `serverUrl` (required), `autoConnect`, `openingPhrase`, `captions` and `theme`. `avatarId`, `projectId`, `language`, `allowInterrupt` and `autoStart` are removed. The KS comes from `setKsProvider` (widget `avatar`) only. Steps: [docs/migration-0.3.md](docs/migration-0.3.md).
+- **CSP:** drop `https://static.avatar.us.kaltura.ai` from `script-src`.
+
+### Added
+
+- **`avatar-disconnected` event** for `setEventHandler`, with `{ reason, instanceId }`. `KalturaEvent` is now a union, so TypeScript hosts check `event.type` before they read `detail`.
+
 ## 0.2.0 - 2026-10-12
 
 Security and robustness release. Components check every prop and URL, follow prop changes and clean up after themselves. Shared libraries are now peers. **Distribution is jsDelivr only**, from the git tag `v0.2.0`. The package is not on npm. Each release has SRI hashes, an SBOM and a build provenance attestation. Hosts must change their install line or script URL: see [Breaking changes for hosts](#breaking-changes-for-hosts).

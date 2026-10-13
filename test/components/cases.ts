@@ -3,6 +3,7 @@
 // happy render, hostile input, unmount cleanup.
 import { vi, expect } from 'vitest';
 import { act, type ComponentType } from 'react';
+import { setKsProvider } from '../../src/core/ks';
 
 export const URL_A = 'https://unisphere.nvp1.ovp.kaltura.com/v1';
 export const LOADER_URL = 'https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js';
@@ -39,24 +40,38 @@ export function installRemote(): void {
       remote.log.push('create');
       return workspace('workspace');
     },
+    // The avatar uses the embeds API.
+    embeds: {
+      workspace: async () => {
+        if (remote.failWith !== null) throw new Error(remote.failWith);
+        remote.log.push('embeds workspace');
+        return {
+          apis: {
+            genieAvatar: {
+              contained: () => {
+                remote.log.push('contained');
+                return { remove: () => remote.log.push('remove') };
+              },
+            },
+          },
+          destroy: () => remote.log.push('destroy'),
+        };
+      },
+    },
   }));
 }
-
-/** Fake Avatar SDK. The core calls `window.KalturaAvatar.create`. */
-export const sdk = { create: vi.fn() };
 
 export function resetFakes(): void {
   remote.log = [];
   remote.failWith = null;
-  sdk.create.mockReset();
-  (window as { KalturaAvatar?: unknown }).KalturaAvatar = sdk;
+  // The avatar takes its KS from the provider only. The others fall back to their ks prop.
+  setKsProvider(widget => (widget === 'avatar' ? 'ks-1' : undefined));
   delete (window as { __pwned?: unknown }).__pwned;
 }
 
-/** Lets pending loads finish: fires `load` on injected SDK scripts, then waits. */
+/** Lets pending loads finish. */
 export async function settle(): Promise<void> {
   await act(async () => {
-    document.querySelectorAll('script').forEach(s => s.dispatchEvent(new Event('load')));
     await new Promise(r => setTimeout(r, 30));
   });
 }
@@ -191,13 +206,14 @@ export const CASES: Case[] = [
     tag: 'kaltura-avatar',
     component: 'KalturaAvatar',
     load: async () => (await import('../../src/core/avatar')).AvatarCore as ComponentType<never>,
-    valid: { avatarId: 'avatar-1' },
-    invalid: { avatarId: 5 },
-    hostile: { avatarId: PAYLOAD, projectId: PAYLOAD, language: PAYLOAD },
+    valid: { partnerId: 1, serverUrl: URL_A },
+    invalid: { partnerId: 1, serverUrl: URL_A, theme: 'custom' },
+    hostile: { partnerId: 1, serverUrl: URL_A, openingPhrase: PAYLOAD },
+    // Remote error text is replaced by fixed text: test/security/avatar.test.tsx.
     clearsWrapper: true,
     happy: el => expect(el.querySelector('div[id^="kaltura-avatar-"]')).not.toBeNull(),
-    effect: () => expect(sdk.create).toHaveBeenCalledTimes(1),
-    afterUnmount: () => expect(sdk.create).toHaveBeenCalledTimes(1),
+    effect: () => expect(remote.log).toEqual(['embeds workspace', 'contained']),
+    afterUnmount: () => expect(remote.log).toEqual(['embeds workspace', 'contained', 'remove', 'destroy']),
   },
   widget('genie', 'kaltura-genie-widget', 'KalturaGenie', async () => (await import('../../src/core/genie')).GenieCore as ComponentType<never>),
   widget('content lab', 'kaltura-content-lab', 'KalturaContentLab', async () => (await import('../../src/core/content-lab')).ContentLabCore as ComponentType<never>),

@@ -24,7 +24,7 @@ Checked against the guides on 2026-10-12. If a guide changes, the guide wins.
 | `KalturaRecorder` | `recorder` | USER | `editadmintags:*` | [Express Recorder guide](https://kaltura.md/KALTURA_EXPRESS_RECORDER_API/) |
 | `KalturaGenie` | `genie` | USER | `setrole:PLAYBACK_BASE_ROLE`, `sview:*` | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
 | `KalturaContentLab`, `KalturaAgentsWidget`, `KalturaVodAvatar` | `content-lab`, `agents-widget`, `vod-avatar` | USER | The Unisphere guide says the privileges depend on the services the runtime calls. Start with `setrole:PLAYBACK_BASE_ROLE` and widen only as the widget needs | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
-| `KalturaAvatar` | none | none | The avatar SDK takes no KS from this package | not applicable |
+| `KalturaAvatar` | `avatar` | USER | The KS selects the avatar agent. From the provider only, never a `ks` prop. Privileges not verified yet | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
 | `KalturaChart` | none | none | Renders the data it is given | not applicable |
 
 ## Where the KS goes

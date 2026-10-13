@@ -78,7 +78,7 @@ setErrorHandler((error: KalturaError) => log(error.code, error.widget, error.mes
 | `url-rejected` | A basic Image, Video or AudioPlayer `url` was refused |
 | `render-failed` | A chart threw while it rendered |
 
-`widget` is the `KsWidget` name (`player`, `analytics`, `recorder` …) or `flashcards`, `avatar`, `chart`, `image`, `video`, `audio-player`. `UnisphereWidgetCore` used directly reports `unisphere` unless you pass its `widget` prop.
+`widget` is the `KsWidget` name (`player`, `analytics`, `recorder` …) or `flashcards`, `chart`, `image`, `video`, `audio-player`. `UnisphereWidgetCore` used directly reports `unisphere` unless you pass its `widget` prop.
 
 `message` is fixed text plus prop names. It never holds a prop value, the KS or the text of a remote error. Example: `Failed to load player: Invalid entryId`. The on-screen text can hold more than `message`, such as a remote error text.
 
@@ -95,5 +95,6 @@ setEventHandler(event => {
 | Type | Widget | `detail` |
 |---|---|---|
 | `entry-selected` | `media-manager` | `{ entryId, name, instanceId, entries? }`, the same as the `kaltura-entry-selected` DOM event |
+| `avatar-disconnected` | `avatar` | `{ reason, instanceId }`. `reason` is a name such as `ConversationEnded`, or `UnknownReason`. `instanceId` is the avatar container id |
 
 The DOM event still fires. `name` comes from the media library or the agent: treat it as untrusted text. A handler that throws is ignored.
