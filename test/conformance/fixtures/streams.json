@@ -192,8 +192,7 @@
     ],
     "expect": {
       "iframeSrcContains": [
-        "partnerId=1",
-        "entryId=0_abc"
+        "https://kmc.kaltura.com/apps/kmc-analytics/latest/index.html"
       ]
     }
   },

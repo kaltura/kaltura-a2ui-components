@@ -64,7 +64,7 @@ setKsProvider(async (widget: KsWidget) => {
 setKsProvider(widget => (widget === 'analytics' ? session.adminKs : session.userKs));
 ```
 
-- Components never renew a KS. To use a new one, remount the component.
+- Components never renew a KS. To use a new one, remount the component. The Analytics KS must belong to an admin user that has a role ([security/ks.md](security/ks.md)).
 - Keep the KS out of the A2UI data model and out of agent messages. [security/ks.md](security/ks.md) has the full rules.
 
 ## Unisphere origins
@@ -132,7 +132,7 @@ base-uri 'none';
 | `script-src` | Your own script and the Unisphere loaders (only the regions you use). The avatar loads through the Unisphere loader too. If you load the bundle from the CDN, add `https://cdn.jsdelivr.net` and use SRI |
 | `style-src ... 'unsafe-inline'` | The bundle injects its CSS in a `<style>` tag and the charts set `style` attributes |
 | `img-src`, `media-src` | Flashcard thumbnails, markdown images and the basic media components. Add your `setExtraMediaOrigins` hosts |
-| `frame-src` | Player and flashcard clips (`cdnapisec`), captions editor and recorder (`www`), Analytics (`kmc`). In a region, the player, clips, captions editor and recorder use its API host (for example `https://api.eu.kaltura.com`) and Analytics uses its KMC host. All hosts are in [Regions](host-api.md#regions). Add the hosts of the widgets you use. A private cloud needs its own hosts |
+| `frame-src` | Player and flashcard clips (`cdnapisec`), captions editor and recorder (`www`), Analytics (`kmc`; its KS goes by `postMessage` to that origin, not in the URL). In a region, the player, clips, captions editor and recorder use its API host (for example `https://api.eu.kaltura.com`) and Analytics uses its KMC host. All hosts are in [Regions](host-api.md#regions). Add the hosts of the widgets you use. A private cloud needs its own hosts |
 | `connect-src` | The geo map fetches `world-atlas` from jsDelivr. Unisphere widgets call Kaltura APIs. The avatar also calls `https://api.avatar.<region>.kaltura.ai`, which this policy does not list |
 | `object-src`, `base-uri` | Not needed by any component |
 

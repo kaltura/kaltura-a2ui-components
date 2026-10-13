@@ -43,14 +43,15 @@ test.describe('provider supplies the KS, config has none', () => {
     await expectNoKsInTextOrLogs(h);
   });
 
-  test('captions editor and analytics iframes get the KS', async ({ harness: h }) => {
+  // The analytics iframe never gets the KS in its URL: it arrives by postMessage (see analytics.spec.ts).
+  test('captions editor iframe gets the KS and the analytics iframe URL has none', async ({ harness: h }) => {
     await h.open();
     await h.setKsProvider('sync', KS);
     await h.mount('kaltura-captions-editor', { partnerId: 1234567, entryId: '0_abc123' });
     await h.mount('kaltura-analytics', { partnerId: 1234567 });
     await h.settle();
     const srcs = await h.page.locator('#host iframe').evaluateAll((fs) => fs.map((f) => f.getAttribute('src')));
-    expect(srcs.map((s) => s?.includes(`ks=${encodeURIComponent(KS)}`))).toEqual([true, true]);
+    expect(srcs.map((s) => s?.includes(`ks=${encodeURIComponent(KS)}`))).toEqual([true, false]);
     await expectNoKsInTextOrLogs(h);
   });
 

@@ -244,7 +244,7 @@
     },
     "KalturaAnalytics": {
       "type": "object",
-      "description": "Kaltura Analytics Dashboard — embedded KMC analytics iframe with optional entry, report type, and date range filters.",
+      "description": "Kaltura Analytics Dashboard: the embedded Kaltura analytics app. The host supplies the Kaltura Session, so there is no ks prop. Shows one view, for a media entry or a report type, over a date range.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -256,25 +256,21 @@
               "type": "integer",
               "description": "Kaltura account/partner ID."
             },
-            "ks": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: the Analytics guide requires an ADMIN KS (type=2). The host must mint it on the server with a short TTL and narrow privileges, for example setrole and iprestrict."
-            },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Optional media entry ID to pre-filter the report."
+              "description": "Optional media entry ID. Shows the analytics of that entry. Wins over reportType."
             },
             "reportType": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Analytics report type to display on load."
+              "description": "Dashboard view to show when there is no entryId. One of engagement, content-interactions, technology, geo-location, contributors, overview, publisher, enduser or live. Default: engagement."
             },
             "fromDate": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Start date for the analytics date range (ISO 8601 or YYYY-MM-DD)."
+              "description": "Start of the date range, as YYYY-MM-DD. Needs toDate. Default range: the last 30 days."
             },
             "toDate": {
               "$ref": "#/$defs/DynamicString",
-              "description": "End date for the analytics date range (ISO 8601 or YYYY-MM-DD)."
+              "description": "End of the date range, as YYYY-MM-DD. Needs fromDate."
             }
           },
           "required": ["component", "partnerId"]

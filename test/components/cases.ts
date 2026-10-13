@@ -64,8 +64,8 @@ export function installRemote(): void {
 export function resetFakes(): void {
   remote.log = [];
   remote.failWith = null;
-  // The avatar takes its KS from the provider only. The others fall back to their ks prop.
-  setKsProvider(widget => (widget === 'avatar' ? 'ks-1' : undefined));
+  // The avatar and analytics take their KS from the provider only. The others fall back to their ks prop.
+  setKsProvider(widget => (widget === 'avatar' || widget === 'analytics' ? 'ks-1' : undefined));
   delete (window as { __pwned?: unknown }).__pwned;
 }
 
@@ -175,10 +175,10 @@ export const CASES: Case[] = [
     tag: 'kaltura-analytics',
     component: 'KalturaAnalytics',
     load: async () => (await import('../../src/core/analytics')).AnalyticsCore as ComponentType<never>,
-    valid: { partnerId: 1, ks: 'ks-1' },
-    invalid: { partnerId: 1, ks: 'ks-1', entryId: PAYLOAD },
-    hostile: { partnerId: 1, ks: 'ks-1', reportType: PAYLOAD, fromDate: PAYLOAD, toDate: PAYLOAD },
-    happy: el => expect(iframeSrc(el)).toContain('partnerId=1'),
+    valid: { partnerId: 1 },
+    invalid: { partnerId: 1, entryId: PAYLOAD },
+    hostile: { partnerId: 1, reportType: PAYLOAD, fromDate: PAYLOAD, toDate: PAYLOAD },
+    happy: el => expect(iframeSrc(el)).toBe('https://kmc.kaltura.com/apps/kmc-analytics/latest/index.html'),
   },
   {
     name: 'captions editor',

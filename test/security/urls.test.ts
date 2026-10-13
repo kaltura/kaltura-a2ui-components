@@ -4,10 +4,12 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { buildCaptionsEditorUrl, CaptionsEditorCore } from '../../src/core/captions-editor';
 import { buildAnalyticsUrl, AnalyticsCore } from '../../src/core/analytics';
 import { buildPlayerUrl, PlayerCore } from '../../src/core/player';
+import { setKsProvider } from '../../src/core/ks';
 import { mount } from '../helpers/render';
 
 afterEach(() => {
   document.body.innerHTML = '';
+  setKsProvider(undefined);
 });
 
 const INJECT = 'a&serviceurl=https://evil.example&x=1#frag';
@@ -102,72 +104,41 @@ describe('SEC-07: buildCaptionsEditorUrl', () => {
   });
 });
 
-describe('SEC-07: buildAnalyticsUrl', () => {
-  const base = { partnerId: 123, ks: 'ks1' };
+describe('SEC-07: analytics iframe URL and messages', () => {
+  const mountAnalytics = (props: Record<string, unknown>) => {
+    setKsProvider(() => 'ks1');
+    return mount(AnalyticsCore, props);
+  };
 
-  it('SEC-07: valid input keeps every parameter and origin', () => {
-    const u = new URL(
-      buildAnalyticsUrl({ ...base, entryId: '1_abc', reportType: 'engagement', fromDate: '2026-01-01', toDate: '2026-02-01' }),
-    );
-    expect(`${u.origin}${u.pathname}`).toBe('https://kmc.kaltura.com/index.php/kmcng/analytics');
-    expect(Object.fromEntries(u.searchParams)).toEqual({
-      ks: 'ks1',
-      partnerId: '123',
-      entryId: '1_abc',
-      reportType: 'engagement',
-      fromDate: '2026-01-01',
-      toDate: '2026-02-01',
-    });
+  it('SEC-07: the URL is fixed: no query string, no fragment', () => {
+    const u = new URL(buildAnalyticsUrl());
+    expect([`${u.origin}${u.pathname}`, u.search, u.hash]).toEqual(['https://kmc.kaltura.com/apps/kmc-analytics/latest/index.html', '', '']);
   });
 
-  it('SEC-07: the raw URL matches the pre-hardening format', () => {
-    expect(
-      buildAnalyticsUrl({ ...base, entryId: '1_abc', reportType: 'engagement', fromDate: '2026-01-01', toDate: '2026-02-01' }),
-    ).toBe(
-      'https://kmc.kaltura.com/index.php/kmcng/analytics' +
-        '?ks=ks1&partnerId=123&entryId=1_abc&reportType=engagement&fromDate=2026-01-01&toDate=2026-02-01',
-    );
+  it.each(['entryId', 'reportType', 'fromDate', 'toDate'])('SEC-07: a hostile %s cannot reach the iframe URL', async key => {
+    const { container } = await mountAnalytics({ partnerId: 123, fromDate: '2026-01-01', toDate: '2026-02-01', [key]: INJECT });
+    expect([container.querySelector('iframe'), container.textContent]).toEqual([null, `Failed to load analytics: Invalid ${key}`]);
   });
 
-  it('SEC-07: spaces in a value become %20, not +', () => {
-    expect(buildAnalyticsUrl({ ...base, reportType: 'top content' })).toBe(
-      'https://kmc.kaltura.com/index.php/kmcng/analytics?ks=ks1&partnerId=123&reportType=top%20content',
-    );
+  it.each(BAD_INTS.filter(v => v !== undefined).map(v => [v]))('SEC-07: rejects partnerId %j', async v => {
+    const { container } = await mountAnalytics({ partnerId: v });
+    expect([container.querySelector('iframe'), container.textContent]).toEqual([null, 'Failed to load analytics: Invalid partnerId']);
   });
 
-  it('SEC-07: omits optional parameters when not given', () => {
-    expect([...new URL(buildAnalyticsUrl(base)).searchParams.keys()]).toEqual(['ks', 'partnerId']);
-  });
-
-  it.each(['ks', 'reportType', 'fromDate', 'toDate'] as const)(
-    'SEC-07: hostile %s cannot add or replace parameters',
-    (key) => {
-      const url = buildAnalyticsUrl({ ...base, [key]: INJECT });
-      const u = new URL(url);
-      expect(u.searchParams.get(key)).toBe(INJECT);
-      expect(u.searchParams.has('serviceurl')).toBe(false);
-      expect(u.searchParams.getAll('partnerId')).toEqual(['123']);
-      expect(u.hash).toBe('');
-    },
-  );
-
-  it.each(BAD_INTS.map(v => [v]))('SEC-07: rejects partnerId %j', (v) => {
-    expect(() => buildAnalyticsUrl({ ...base, partnerId: v as number })).toThrow(/partnerId/);
-  });
-
-  it.each(BAD_IDS.filter(v => v !== '' && v != null).map(v => [v]))('SEC-07: rejects entryId %j', (v) => {
-    expect(() => buildAnalyticsUrl({ ...base, entryId: v as string })).toThrow(/entryId/);
+  it.each(BAD_IDS.filter(v => v !== '' && v != null).map(v => [v]))('SEC-07: rejects entryId %j', async v => {
+    const { container } = await mountAnalytics({ partnerId: 123, entryId: v });
+    expect([container.querySelector('iframe'), container.textContent]).toEqual([null, 'Failed to load analytics: Invalid entryId']);
   });
 
   it('SEC-07: component shows a plain-text error and no iframe for bad input', async () => {
-    const { container } = await mount(AnalyticsCore, { partnerId: '1&ks=x', ks: 'k' });
+    const { container } = await mountAnalytics({ partnerId: '1&ks=x' });
     expect(container.querySelector('iframe')).toBeNull();
     expect(container.textContent).toContain('Invalid partnerId');
     expect(container.querySelectorAll('*').length).toBe(1);
   });
 
   it('SEC-07: component mounts the iframe for valid input', async () => {
-    const { container } = await mount(AnalyticsCore, { partnerId: 123, ks: 'k' });
+    const { container } = await mountAnalytics({ partnerId: 123 });
     expect(container.querySelector('iframe')).not.toBeNull();
   });
 });
