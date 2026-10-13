@@ -102,6 +102,11 @@ describe('SEC-09: release.yml jobs', () => {
     expect(['actions/attest-build-provenance@', 'dist/kaltura-wc.js', 'dist/kaltura-react.mjs', 'src/catalog/kaltura_catalog.json', 'dist.tar.gz'].filter(text => !releaseJobs['release']?.includes(text))).toEqual([]);
   });
 
+  it('SEC-09: the tag is pushed with the release App token when one is set, and the App key is read only there', () => {
+    const job = releaseJobs['release'] ?? '';
+    expect([job.includes('GH_TOKEN: ${{ steps.app.outputs.token || github.token }}'), job.includes('permission-contents: write'), release.match(/RELEASE_APP_PRIVATE_KEY/g)?.length]).toEqual([true, true, 1]);
+  });
+
   it('SEC-09: there is no npm publish, no npm token and no registry', () => {
     expect(release).not.toMatch(/npm publish|NPM_TOKEN|NPM_PUBLISH|registry/);
   });

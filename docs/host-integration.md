@@ -70,7 +70,7 @@ Only `https:` origins with no path, query or user name are accepted. The list re
 setRegion('irp2'); // nvp1 (default), irp2, frp2, cap2, syp2
 ```
 
-It changes two hosts: the captions editor `serviceurl` and the flashcard thumbnail host. The Player, flashcard clip, Analytics and Recorder hosts stay on the US hosts, because no Kaltura guide lists a regional value for them. Unknown codes throw. `sgp2` (Singapore) is not supported. The host table and sources are in [host-api.md](host-api.md#regions).
+It changes every Kaltura host the components build: player, flashcard clips and thumbnails, captions editor, Analytics and recorder. Unknown codes throw. `sgp2` (Singapore) is not supported. The host table and sources are in [host-api.md](host-api.md#regions).
 
 ## Media URLs
 
@@ -119,7 +119,7 @@ base-uri 'none';
 | `script-src` | Your own script, the Unisphere loaders (only the regions you use) and the avatar SDK (drop it if you do not use the avatar). If you load the bundle from the CDN, add `https://cdn.jsdelivr.net` and use SRI |
 | `style-src ... 'unsafe-inline'` | The bundle injects its CSS in a `<style>` tag and the charts set `style` attributes |
 | `img-src`, `media-src` | Flashcard thumbnails, markdown images and the basic media components. Add your `setExtraMediaOrigins` hosts |
-| `frame-src` | Player and flashcard clips (`cdnapisec`), captions editor and recorder (`www`), Analytics (`kmc`). Add the hosts of the widgets you use. A private cloud needs its own hosts |
+| `frame-src` | Player and flashcard clips (`cdnapisec`), captions editor and recorder (`www`), Analytics (`kmc`). In a region, the player, clips, captions editor and recorder use its API host (for example `https://api.eu.kaltura.com`) and Analytics uses its KMC host. All hosts are in [Regions](host-api.md#regions). Add the hosts of the widgets you use. A private cloud needs its own hosts |
 | `connect-src` | The geo map fetches `world-atlas` from jsDelivr. Unisphere widgets call Kaltura APIs |
 | `object-src`, `base-uri` | Not needed by any component |
 
