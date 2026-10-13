@@ -20,7 +20,7 @@ main:  ── A ── B            (B: version bump, merged by PR)
 | `ci`, `e2e` | The normal suites, run again. | as in `ci.yml`, `e2e.yml` |
 | `build` | `npm ci --ignore-scripts`, build, bundle and size checks, tests. Stamps the tag URLs, the install line and both SRI hashes into the catalog (workspace only) and checks the result with `release-verify-stamp.mjs`. Makes `dist.tar.gz`, the SBOM, `hashes.json`, `SHA256SUMS` and the Release notes. Uploads one artifact. | `contents: read` |
 | `release` | Environment `release`. Skipped on a dry run. Checks the artifact (`SHA256SUMS`, SRI with `openssl`, catalog integrity), attests the files, makes the release commit, tags it, pushes only the tag and creates the GitHub Release. Runs no repo code. | `contents: write`, `id-token: write`, `attestations: write` |
-| `verify-cdn` | Fetches both bundles and the catalog from `cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@<tag>/`. Bytes and SRI must equal `hashes.json`. Tries 20 times, 60 seconds apart. | `contents: read` |
+| `verify-cdn` | Fetches both bundles, `html-element-stub.mjs` and the catalog from `cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@<tag>/`. Bytes and SRI must equal `hashes.json`. Tries 20 times, 60 seconds apart. | `contents: read` |
 
 The release commit is the same on every attempt: same tree, author `github-actions[bot]`, dates of the `main` commit and the run URL in the message. So a re-run finds its own tag and skips the push. A tag on any other commit fails the run. The workflow never pushes a branch and never forces.
 

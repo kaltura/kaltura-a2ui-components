@@ -14,7 +14,7 @@ The host owns the KS. The agent never sees it, writes it or asks for it.
 - **Order.** A non-empty provider result wins. If the provider returns `undefined` or `''`, or no provider is set, the component uses its `ks` prop. The prop exists only for older hosts.
 - **Async.** The component renders nothing until the provider's promise settles.
 - **Errors.** An invalid value, a throw or a rejected promise shows `Failed to load <widget>: Invalid ks`. The value and the error are never shown or logged.
-- **Components.** Player, Media Manager, Analytics, Captions Editor, Recorder, Genie, Content Lab, Agents Widget and VOD Avatar use the provider. Flashcards still reads only its `ks` prop.
+- **Components.** Player, Media Manager, Analytics, Captions Editor, Recorder, Genie, Content Lab, Agents Widget, VOD Avatar and Avatar use the provider. Flashcards still reads only its `ks` prop.
 - **No KS.** The player loads without one (public entries). The other widgets in the list above render nothing until a KS arrives. A web component gets no later config, so there they show `Failed to load <widget>: Invalid ks` instead.
 - **Renewal.** Components do not renew a KS. To use a new KS, remount the component.
 
@@ -56,6 +56,7 @@ The provider gets the widget name (`KsWidget`), so each widget can get its own l
 |---|---|
 | `'analytics'` | ADMIN KS (type=2), short expiry |
 | `'player'`, `'captions-editor'`, `'recorder'`, `'media-manager'`, `'genie'`, `'content-lab'`, `'agents-widget'`, `'vod-avatar'` | USER KS (type=0) with only the privileges that widget needs |
+| `'avatar'` | KS that selects the avatar agent, from the provider only (see [migration-0.3.md](../migration-0.3.md)) |
 
 ```ts
 setKsProvider(widget => (widget === 'analytics' ? session.adminKs : session.userKs));
