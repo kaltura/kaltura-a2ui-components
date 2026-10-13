@@ -69,7 +69,7 @@ setKsProvider(widget => (widget === 'analytics' ? session.adminKs : session.user
 
 ## Unisphere origins
 
-Unisphere widgets (Media Manager, Genie, Content Lab, Agents, VOD Avatar) import code from `serverUrl`. Only the five Kaltura regions load: `https://unisphere.{nvp1,irp2,frp2,cap2,syp2}.ovp.kaltura.com`. A private cloud or on-prem host needs your approval:
+Unisphere widgets (Media Manager, Genie, Content Lab, Agents, VOD Avatar, Avatar) import code from `serverUrl`. Only the five Kaltura regions load: `https://unisphere.{nvp1,irp2,frp2,cap2,syp2}.ovp.kaltura.com`. A private cloud or on-prem host needs your approval:
 
 ```ts
 setExtraAllowedOrigins(['https://unisphere.example.com']);
