@@ -11,16 +11,16 @@
     "react": {
       "description": "ESM bundle. React is an external peer — the host provides it. Register the Kaltura components by merging them into the host's catalog (see buildKalturaCatalog / kalturaReactCatalog).",
       "format": "esm",
-      "install": "npm i github:kaltura/kaltura-a2ui-components#__RELEASE_TAG__",
-      "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@__RELEASE_TAG__/dist/kaltura-react.mjs",
-      "integrity": "__REACT_SRI__",
+      "install": "npm i github:kaltura/kaltura-a2ui-components#v0.3.0",
+      "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-react.mjs",
+      "integrity": "sha384-C8TUYD3ZaF7Z8LOXb7tSe+0uOdq0JG25+0uSj1lvUu2ELshpR8MfCLFeAyccbEP4",
       "exports": ["kalturaReactCatalog", "buildKalturaCatalog", "loadKalturaCatalog", "kalturaComponentImpls", "kalturaClientFunctions"]
     },
     "webcomponent": {
       "description": "Self-contained IIFE (React inlined, CSS-in-JS). Drop in via <script> on plain-HTML hosts; registers all Kaltura custom elements on load. Verify with the integrity hash.",
       "format": "iife",
-      "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@__RELEASE_TAG__/dist/kaltura-wc.js",
-      "integrity": "__WC_SRI__",
+      "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js",
+      "integrity": "sha384-lSF7kHlAxL/tDi5sKgyc9mNde8ipyRRzHqFzayOE/fd5ORDWC9p1dXjeSgxrXzNR",
       "crossorigin": "anonymous",
       "customElements": [
         "kaltura-player",
