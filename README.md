@@ -130,6 +130,7 @@ const surface = processor.model.getSurface('s');
 if (surface) createRoot(document.getElementById('root')!).render(createElement(A2uiSurface, { surface }));
 ```
 
+- The catalog id is `https://kaltura.github.io/a2ui/v2/catalog.json` (0.4.0 and later). The `v1` id was the 0.3.x catalog: see [docs/migration-0.4.md](docs/migration-0.4.md#catalog-v2).
 - `buildKalturaCatalog(id?)` builds the same catalog under another id.
 - `loadKalturaCatalog(url)` fetches a catalog descriptor and keys the catalog by its `catalogId`.
 - Send `processor.getRendererCapabilities({ versions: ['v0.9'] })` to your agent as `a2uiClientCapabilities`, so it picks a catalog you registered ([docs/host-api.md](docs/host-api.md#capability-negotiation)).

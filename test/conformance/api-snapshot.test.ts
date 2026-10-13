@@ -22,7 +22,7 @@ interface Names {
 interface Snapshot {
   '.': Names;
   './webcomponent': Names;
-  './catalog': { topLevelKeys: string[]; components: string[]; defs: string[] };
+  './catalog': { topLevelKeys: string[]; components: string[]; functions: string[]; defs: string[] };
 }
 
 const ENTRIES = { '.': 'src/adapters/react/index.ts', './webcomponent': 'src/adapters/webcomponent/index.ts' } as const;
@@ -65,7 +65,7 @@ const catalog = loadCatalog();
 const current: Snapshot = {
   '.': compiled[ENTRIES['.']],
   './webcomponent': compiled[ENTRIES['./webcomponent']],
-  './catalog': { topLevelKeys: Object.keys(catalog), components: Object.keys(catalog.components), defs: Object.keys(catalog.$defs) },
+  './catalog': { topLevelKeys: Object.keys(catalog), components: Object.keys(catalog.components), functions: Object.keys(catalog.functions), defs: Object.keys(catalog.$defs) },
 };
 
 if (process.env.UPDATE_API_SNAPSHOT === '1') writeFileSync(SNAPSHOT, `${JSON.stringify(current, null, 2)}\n`);
@@ -76,7 +76,7 @@ describe('CONF-16: public API snapshot', () => {
     expect(current[entry]).toEqual(saved?.[entry]);
   });
 
-  it('CONF-16: entry "./catalog" has the snapshot keys, components and shared defs', () => {
+  it('CONF-16: entry "./catalog" has the snapshot keys, components, functions and shared defs', () => {
     expect(current['./catalog']).toEqual(saved?.['./catalog']);
   });
 

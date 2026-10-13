@@ -19,12 +19,11 @@ const ALL_COMPONENTS = [
 
 describe('scaffold', () => {
   it('exposes the Kaltura catalog id', () => {
-    expect(KALTURA_CATALOG_ID).toBe('https://kaltura.github.io/a2ui/v1/catalog.json');
+    expect(KALTURA_CATALOG_ID).toBe('https://kaltura.github.io/a2ui/v2/catalog.json');
   });
 
   it('ships all 12 experience components', () => {
-    const names = Object.keys((catalog as { components: Record<string, unknown> }).components);
-    expect(names).toEqual(expect.arrayContaining([...ALL_COMPONENTS]));
-    expect(names).toHaveLength(ALL_COMPONENTS.length);
+    const names = Object.keys((catalog as { components: Record<string, unknown> }).components).filter(name => name.startsWith('Kaltura'));
+    expect(names).toEqual([...ALL_COMPONENTS]);
   });
 });
