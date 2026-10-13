@@ -46,6 +46,7 @@ Follow the Kaltura Session Guide:
 - Keep the expiry short, for example 1 hour.
 - Grant least privilege. For playback: `setrole:PLAYBACK_BASE_ROLE`, `sview:<entryId>`, `privacycontext`, `appid`. Add `iprestrict` or `actionslimit` where you can.
 - Give each widget only what its guide lists, for example Genie `setrole:PLAYBACK_BASE_ROLE` and Express Recorder `editadmintags:*`.
+- The recorder KS needs `editadmintags:*`. The Express Recorder script runs in your page, so the KS is visible to the page's JavaScript and to any other script on that page. Keep its expiry short and mint it for one user.
 - Analytics is the exception: its guide requires an ADMIN KS (type=2). Mint it on the server with a short expiry and narrow it with `setrole` and `iprestrict`.
 
 ## One KS per widget

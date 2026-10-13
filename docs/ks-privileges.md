@@ -31,7 +31,8 @@ Checked against the guides on 2026-10-12. If a guide changes, the guide wins.
 
 | Widget | Transport |
 |---|---|
-| Player, flashcard clips, captions editor, recorder | In the iframe URL. The guides use this pattern. It reaches browser history and proxy logs, so keep the expiry short. This is finding SEC-10, accepted |
+| Player, flashcard clips, captions editor | In the iframe URL. The guides use this pattern. It reaches browser history and proxy logs, so keep the expiry short. This is finding SEC-10, accepted |
+| Recorder | In the `create` options of the Express Recorder script, which runs in your page. The KS is visible to every script on that page. See [ADR 0005](adr/0005-analytics-and-recorder-integration.md) |
 | Analytics | Our code puts it in the iframe URL. The guide says to send it with `postMessage`. See finding ANA-01 and [ADR 0005](adr/0005-analytics-and-recorder-integration.md) |
 | Unisphere widgets | In the workspace config, in page memory |
 

@@ -56,8 +56,10 @@ const IFRAME_CASES = [
   ['player', PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' }],
   ['analytics', AnalyticsCore, { partnerId: 1 }],
   ['captions editor', CaptionsEditorCore, { partnerId: 1, entryId: '0_abc' }],
-  ['recorder', RecorderCore, { partnerId: 1 }],
 ] as const;
+
+// The recorder keeps the KS out of the DOM. Where it lands is tested in recorder.test.tsx.
+const RECORDER_CASE = ['recorder', RecorderCore, { partnerId: 1, uiconfId: 2 }] as const;
 
 const UNISPHERE_CASES = [
   ['Kaltura Genie', GenieCore, unisphere],
@@ -135,7 +137,7 @@ describe('SEC-05: the provider learns which widget asks, for a least-privilege K
     ['player', PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' }],
     ['analytics', AnalyticsCore, { partnerId: 1 }],
     ['captions-editor', CaptionsEditorCore, { partnerId: 1, entryId: '0_abc' }],
-    ['recorder', RecorderCore, { partnerId: 1 }],
+    ['recorder', RecorderCore, { partnerId: 1, uiconfId: 2 }],
     ['media-manager', MediaManagerCore, unisphere],
     ['genie', GenieCore, unisphere],
     ['content-lab', ContentLabCore, unisphere],
@@ -156,12 +158,6 @@ describe('SEC-05: the provider learns which widget asks, for a least-privilege K
     const analytics = await mount(AnalyticsCore, { partnerId: 1 });
     const player = await mount(PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' });
     expect([iframeSrc(analytics.container).includes('ks=admin-ks'), iframeSrc(player.container).includes('ks=user-ks')]).toEqual([true, true]);
-  });
-
-  it('SEC-05: a zero-argument provider still works', async () => {
-    setKsProvider(() => HOST_KS);
-    const { container } = await mount(RecorderCore, { partnerId: 1 });
-    expect(iframeSrc(container)).toContain(`ks=${HOST_KS}`);
   });
 
   it('SEC-05: the provider is called once per mount, even after re-renders', async () => {
@@ -239,8 +235,8 @@ describe('SEC-05: invalid provider output', () => {
 
   it('SEC-05: the recorder shows the error inside its container', async () => {
     setKsProvider(() => SECRET);
-    const { container } = await mount(RecorderCore, { partnerId: 1 });
-    expect([container.textContent, container.querySelectorAll('iframe').length]).toEqual(['Failed to load recorder: Invalid ks', 0]);
+    const { container } = await mount(RecorderCore, { partnerId: 1, uiconfId: 2 });
+    expect(container.textContent).toBe('Failed to load recorder: Invalid ks');
   });
 
   it('SEC-05: a bad provider KS is refused even when the ks prop is fine', async () => {
@@ -255,14 +251,14 @@ describe('SEC-05: the provider KS never reaches DOM text or the console', () => 
   const spyConsole = () => methods.map(m => vi.spyOn(console, m).mockImplementation(() => {}));
   const logged = (spies: ReturnType<typeof spyConsole>) => JSON.stringify(spies.flatMap(s => s.mock.calls), (_k, v) => (v instanceof Error ? v.message : v));
 
-  it.each([...IFRAME_CASES, ...UNISPHERE_CASES])('SEC-05: %s with a valid KS', async (_label, component, props) => {
+  it.each([...IFRAME_CASES, RECORDER_CASE, ...UNISPHERE_CASES])('SEC-05: %s with a valid KS', async (_label, component, props) => {
     const spies = spyConsole();
     setKsProvider(() => HOST_KS);
     await mount(component, props);
     expect([document.body.textContent?.includes(HOST_KS), logged(spies).includes(HOST_KS)]).toEqual([false, false]);
   });
 
-  it.each([...IFRAME_CASES, ...UNISPHERE_CASES])('SEC-05: %s with an invalid KS', async (_label, component, props) => {
+  it.each([...IFRAME_CASES, RECORDER_CASE, ...UNISPHERE_CASES])('SEC-05: %s with an invalid KS', async (_label, component, props) => {
     const spies = spyConsole();
     setKsProvider(() => SECRET);
     await mount(component, props);

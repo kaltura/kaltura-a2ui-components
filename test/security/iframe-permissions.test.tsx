@@ -74,16 +74,6 @@ const CASES: [string, () => Promise<{ allow: string | null; sandbox: string | nu
     () => iframeOf(AnalyticsCore, { partnerId: 1, ks: 'k' }),
     { allow: 'fullscreen *', sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups' },
   ],
-  [
-    // The recorder records from camera, microphone and screen. It is the one
-    // iframe that needs capture, so the grant stays here.
-    'recorder',
-    () => iframeOf(RecorderCore, { partnerId: 1, ks: 'k' }),
-    {
-      allow: 'autoplay *; fullscreen *; encrypted-media *; camera *; microphone *; display-capture *',
-      sandbox: EDITOR_SANDBOX,
-    },
-  ],
 ];
 
 describe('SEC-14: iframe permissions', () => {
@@ -91,16 +81,16 @@ describe('SEC-14: iframe permissions', () => {
     expect(await read()).toEqual(expected);
   });
 
-  it.each(CASES.filter(([label]) => label !== 'recorder'))(
+  it.each(CASES)(
     'SEC-14: %s iframe has no camera, microphone or display-capture',
     async (_label, read) => {
       expect((await read()).allow).not.toMatch(CAPTURE);
     },
   );
 
-  it('SEC-14: recorder iframe keeps camera, microphone and display-capture (it records)', async () => {
-    const recorder = CASES.find(([label]) => label === 'recorder')!;
-    expect((await recorder[1]()).allow).toMatch(/camera.*microphone.*display-capture/);
+  it('REC-01: the recorder creates no iframe of its own: the Express Recorder script builds its UI in our container', async () => {
+    const { container } = await mount(RecorderCore, { partnerId: 1, uiconfId: 2, ks: 'k' });
+    expect(container.querySelectorAll('iframe').length).toBe(0);
   });
 });
 
