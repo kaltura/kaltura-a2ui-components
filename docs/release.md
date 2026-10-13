@@ -47,6 +47,18 @@ A version with a suffix, such as `0.3.0-rc.1`, makes a prerelease Release that i
 
 jsDelivr caches a file at a tag for a year and has no purge for that. A wrong release stays wrong at its tag, so always release a new version.
 
+## Catalog id URL
+
+The catalog id is `https://kaltura.github.io/a2ui/v2/catalog.json` (`KALTURA_CATALOG_ID`, and `$id` and `catalogId` in the JSON). A2UI treats it as a name, not as a link, so the React package and the A2UI clients never fetch it. Nothing in this repo or its workflows publishes to `kaltura.github.io`.
+
+Tooling that opens the id as a URL needs a file there. Serve this, unchanged, at that URL (done outside this repo, by whoever owns `kaltura.github.io`):
+
+| What | Where it comes from |
+|---|---|
+| The stamped `kaltura_catalog.json` of the newest release | The Release asset `kaltura_catalog.json`, or the same bytes at `https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@<tag>/src/catalog/kaltura_catalog.json` |
+
+Do not copy the file from `main`: it has placeholders instead of the tag URL and SRI hashes. Update the served copy with each release that changes the catalog. The old `v1` URL keeps the 0.3.0 file and needs no change.
+
 ## Third-party notices
 
 `scripts/gen-notices.mjs` (run by `npm run build`) writes `dist/THIRD_PARTY_NOTICES.txt`: one entry per package that has a file in `kaltura-react.mjs` or `kaltura-wc.js`, with the licence text from `node_modules`. The package list comes from the shipped source maps, so there is no list to edit. DOMPurify is used under its Apache-2.0 option. `check-bundle.mjs` fails if the file is missing or leaves out a bundled package. The file is in `dist/` (so in `dist.tar.gz` and on jsDelivr), and is a Release asset. Size budgets do not count it.

@@ -8,15 +8,24 @@
 //   JSON    descriptions and defaults (zod has neither, and zod .describe()
 //           would add about 5.7 kB raw to the web component bundle)
 // Everything outside components.*.allOf[n].properties and .required (header,
-// $defs, x-kaltura-adapters, component descriptions) is copied from the JSON.
-// A new prop gets an empty description. The conformance test fails until you
-// write one.
+// x-kaltura-adapters, component descriptions, Kaltura functions, Kaltura $defs)
+// is copied from the JSON. A new prop gets an empty description. The
+// conformance test fails until you write one.
+//
+// The A2UI part comes from the installed @a2ui/web_core, so the JSON lists what
+// the renderer serves (ADR 0006):
+//   components, functions      the basic ones first, then the Kaltura ones
+//   $defs                      all of common_types.json, the basic theme, and the
+//                              basic CatalogComponentCommon as BasicComponentCommon
+//   anyComponent, anyFunction  built from the keys of components and functions
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CATALOG_PATH = join(root, 'src/catalog/kaltura_catalog.json');
+const UPSTREAM_SCHEMAS = join(root, 'node_modules/@a2ui/web_core/src/v0_9/schemas');
+const COMMON_TYPES_ID = 'https://a2ui.org/specification/v0_9/common_types.json';
 
 /**
  * Differences between zod and the catalog that are on purpose. The conformance
@@ -34,10 +43,7 @@ export const INTENTIONAL_DIFFERENCES = [
  * on purpose or by an open decision. Each entry needs a reason. The
  * conformance test pins this list, so a change needs a decision.
  */
-export const KEPT_FROM_CATALOG = {
-  'KalturaPlayer.partnerId': 'Catalog allows a plain integer only. zod also allows a data binding. Decision pending.',
-  'KalturaPlayer.uiconfId': 'Catalog allows a plain integer only. zod also allows a data binding. Decision pending.',
-};
+export const KEPT_FROM_CATALOG = {};
 
 // Dynamic values accept a literal, a data binding or a function call.
 const DYNAMIC_PROBES = [
@@ -140,12 +146,58 @@ export function nodeFor(zodType, previous, named = false) {
   return inOrder(previous, node);
 }
 
+/** The basic catalog and the common types that ship in @a2ui/web_core. */
+export function loadUpstream() {
+  const read = path => JSON.parse(readFileSync(join(UPSTREAM_SCHEMAS, path), 'utf8'));
+  return { basic: read('catalogs/basic/catalog.json'), common: read('common_types.json') };
+}
+
+/**
+ * Makes common_types refs local (`catalog.json#/...` there means the catalog in use, which
+ * is this file) and points the basic common props at BasicComponentCommon.
+ */
+function localRefs(node) {
+  if (Array.isArray(node)) return node.map(localRefs);
+  if (!node || typeof node !== 'object') return node;
+  return Object.fromEntries(
+    Object.entries(node).map(([key, value]) => {
+      if (key !== '$ref') return [key, localRefs(value)];
+      if (value === '#/$defs/CatalogComponentCommon') return [key, '#/$defs/BasicComponentCommon'];
+      return [key, value.replace(`${COMMON_TYPES_ID}#`, '#').replace(/^catalog\.json#/, '#')];
+    }),
+  );
+}
+
+/** Basic entries first, then the entries of `map` that are not basic. */
+const basicFirst = (basic, map) => ({
+  ...localRefs(basic),
+  ...Object.fromEntries(Object.entries(map ?? {}).filter(([name]) => !(name in basic))),
+});
+
+/** The catalog with the basic components, functions and shared $defs from @a2ui/web_core. */
+function withBasic(catalog, { basic, common }) {
+  const out = structuredClone(catalog);
+  out.components = basicFirst(basic.components, catalog.components);
+  out.functions = basicFirst(basic.functions, catalog.functions);
+  const anyOf = group => ({ oneOf: Object.keys(out[group]).map(name => ({ $ref: `#/${group}/${name}` })) });
+  const generated = {
+    BasicComponentCommon: localRefs(basic.$defs.CatalogComponentCommon),
+    theme: localRefs(basic.$defs.theme),
+    anyComponent: anyOf('components'),
+    anyFunction: anyOf('functions'),
+  };
+  const shared = localRefs(common.$defs);
+  const kaltura = Object.fromEntries(Object.entries(catalog.$defs).filter(([name]) => !(name in shared || name in generated)));
+  out.$defs = { ...shared, ...kaltura, ...generated };
+  return out;
+}
+
 /**
  * Returns a new catalog object. `apis` is a list of `{ name, schema }` as
  * exported by src/schemas/*.ts. `keep` is the KEPT_FROM_CATALOG map.
  */
-export function generateCatalog(catalog, apis, keep = KEPT_FROM_CATALOG) {
-  const out = structuredClone(catalog);
+export function generateCatalog(catalog, apis, keep = KEPT_FROM_CATALOG, upstream = loadUpstream()) {
+  const out = withBasic(catalog, upstream);
   for (const { name, schema } of apis) {
     const component = out.components[name];
     if (!component) throw new Error(`${name} is not in the catalog. Add its description and allOf block first.`);

@@ -98,8 +98,9 @@ describe('CONF-09: every stream fixture is valid against the A2UI message schema
     expect(validate.errors ?? []).toEqual([]);
   });
 
-  it('CONF-09: the fixtures cover all 12 catalog components, once each', () => {
-    expect(STREAMS.map(stream => stream.component)).toEqual(Object.keys(readJson<{ components: object }>('src/catalog/kaltura_catalog.json').components));
+  it('CONF-09: the fixtures cover all 12 Kaltura components, once each', () => {
+    const names = Object.keys(readJson<{ components: object }>('src/catalog/kaltura_catalog.json').components);
+    expect(STREAMS.map(stream => stream.component)).toEqual(names.filter(name => name.startsWith('Kaltura')));
   });
 
   it('CONF-09: the catalog id in the streams is the id the adapter registers', () => {
