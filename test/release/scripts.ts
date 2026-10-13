@@ -17,11 +17,10 @@ export interface ReleaseScripts {
   check: {
     parseVersion(version: string): { version: string; tag: string; prerelease: boolean };
     parseTag(tag: string): { version: string; tag: string; prerelease: boolean };
-    changelogSection(changelog: string, version: string): { date: string; body: string };
-    checkRelease(version: string, inputs: { pkg: { version: string; private?: boolean }; changelog: string }): { version: string; tag: string; prerelease: boolean };
+    checkRelease(version: string, inputs: { pkg: { version: string; private?: boolean } }): { version: string; tag: string; prerelease: boolean };
   };
   notes: {
-    releaseNotes(options: { changelog: string; version: string; hashes: Hashes }): string;
+    releaseNotes(options: { version: string; hashes: Hashes }): string;
   };
   stamp: {
     GH_REPO: string;

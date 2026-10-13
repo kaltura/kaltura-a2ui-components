@@ -40,6 +40,12 @@ const KMC_HOST: Record<Exclude<KalturaRegion, 'nvp1'>, string> = {
   syp2: 'https://kmc.ap.kaltura.com',
 };
 
+/** The loader takes the workspace region from `env`, not from its own URL. Extra origins send none. */
+export function regionOf(serverUrl: string): KalturaRegion | undefined {
+  const region = /^https:\/\/unisphere\.([a-z0-9]+)\.ovp\.kaltura\.com(?:\/|$)/.exec(serverUrl)?.[1];
+  return KALTURA_REGIONS.find(code => code === region);
+}
+
 let region: KalturaRegion = 'nvp1';
 
 /**
@@ -51,6 +57,9 @@ export function setRegion(code: KalturaRegion): void {
   if (!KALTURA_REGIONS.includes(code)) throw new Error('Unknown Kaltura region');
   region = code;
 }
+
+/** The region set by `setRegion`. */
+export const currentRegion = (): KalturaRegion => region;
 
 /** Hosts for the current region. */
 export function kalturaHosts(): KalturaHosts {

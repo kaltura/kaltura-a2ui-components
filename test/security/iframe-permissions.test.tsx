@@ -1,29 +1,40 @@
-// Covers: SEC-14 (player and clip iframes granted camera, microphone and display-capture).
-// Turns green: plan item 2.10 (iframe permissions).
-// The table below is a snapshot of `allow` and `sandbox` per component. Any change
-// to a permission fails here and shows up in review.
+// Covers: SEC-14 (iframes granted camera, microphone and display-capture).
+// The table below is a snapshot of `allow` and `sandbox` per iframe component. Any change
+// to a permission fails here and shows up in review. The player and the flashcards clips
+// build no iframe (docs/adr/0008).
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { act } from 'react';
 import { mount } from '../helpers/render';
-import { setPlayerSandbox, PLAYER_SANDBOX_PRESET } from '../../src/core/host-hooks';
+import { playerRemote } from '../helpers/player-remote';
+import { captionsRemote } from '../helpers/captions-remote';
+import { setKsProvider } from '../../src/core/ks';
 import { PlayerCore } from '../../src/core/player';
 import { FlashcardsCore } from '../../src/core/flashcards';
 import { RecorderCore } from '../../src/core/recorder';
 import { AnalyticsCore } from '../../src/core/analytics';
 import { CaptionsEditorCore } from '../../src/core/captions-editor';
 
-afterEach(() => {
-  document.body.innerHTML = '';
+let player: ReturnType<typeof playerRemote>;
+let captions: ReturnType<typeof captionsRemote>;
+
+beforeEach(() => {
+  player = playerRemote();
+  captions = captionsRemote();
 });
 
-// Playback needs only these. The origin wildcard stays: the player page can
+afterEach(() => {
+  player.restore();
+  captions.restore();
+  document.body.innerHTML = '';
+  setKsProvider(undefined);
+});
+
+// Playback needs only these. The origin wildcard stays: the editor page can
 // navigate across Kaltura hosts, and a bare name would drop the grant on redirect.
-//  - autoplay: the `autoplay` and `muted` props
+//  - autoplay: the editor plays the entry
 //  - fullscreen: the fullscreen button
 //  - encrypted-media: DRM-protected entries
-const PLAYBACK_ALLOW = 'autoplay *; fullscreen *; encrypted-media *';
-// No sandbox on player iframes by default: a sandbox can break downloads and
-// Cast/Presentation. Hosts opt in with `setPlayerSandbox` (see the last block).
+const PLAYBACK_ALLOW = ['autoplay', 'fullscreen', 'encrypted-media'].map(feature => `${feature} 'self' https://cdnapisec.kaltura.com`).join('; ');
 const EDITOR_SANDBOX = 'allow-scripts allow-same-origin allow-forms allow-popups allow-downloads';
 
 const CAPTURE = /camera|microphone|display-capture/;
@@ -33,86 +44,70 @@ async function iframeOf(component: unknown, props: Record<string, unknown>, befo
   await beforeRead?.(container);
   const iframe = container.querySelector('iframe');
   if (!iframe) throw new Error('no iframe rendered');
-  return { allow: iframe.getAttribute('allow'), sandbox: iframe.getAttribute('sandbox') };
+  // The editor sets `allow` as a property. jsdom keeps it as a plain field, a browser reflects it.
+  return { allow: iframe.getAttribute('allow') ?? iframe.allow, sandbox: iframe.getAttribute('sandbox') };
 }
 
-// The clip iframe only exists after the card is opened.
-const openFirstCard = async (container: Element) => {
-  const start = container.querySelector<HTMLButtonElement>('.flashcard-action-btn');
-  await act(async () => start?.click());
+// The editor iframe exists once the editor page is fetched.
+const editorReady = async () => {
+  await captions.ready();
 };
 
 const CASES: [string, () => Promise<{ allow: string | null; sandbox: string | null }>, { allow: string; sandbox: string | null }][] = [
   [
-    'player',
-    () => iframeOf(PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc', ks: 'k' }),
-    { allow: PLAYBACK_ALLOW, sandbox: null },
-  ],
-  [
-    'flashcards clip',
-    () =>
-      iframeOf(
-        FlashcardsCore,
-        {
-          title: 'Deck',
-          cards: [{ title: 'C1', content: 'x', clips: [{ entryId: '1_abc', startTime: 0, endTime: 1 }] }],
-          partnerId: 1,
-          uiconfId: 2,
-          ks: 'k',
-        },
-        openFirstCard,
-      ),
-    { allow: PLAYBACK_ALLOW, sandbox: null },
-  ],
-  [
     'captions editor',
-    () => iframeOf(CaptionsEditorCore, { partnerId: 1, entryId: '0_abc', ks: 'k' }),
+    () => iframeOf(CaptionsEditorCore, { partnerId: 1, entryId: '0_abc', ks: 'k' }, editorReady),
     { allow: PLAYBACK_ALLOW, sandbox: EDITOR_SANDBOX },
   ],
   [
     'analytics',
-    () => iframeOf(AnalyticsCore, { partnerId: 1, ks: 'k' }),
+    () => {
+      setKsProvider(() => 'k');
+      return iframeOf(AnalyticsCore, { partnerId: 1 });
+    },
     { allow: 'fullscreen *', sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups' },
   ],
-  [
-    // The recorder records from camera, microphone and screen. It is the one
-    // iframe that needs capture, so the grant stays here.
-    'recorder',
-    () => iframeOf(RecorderCore, { partnerId: 1, ks: 'k' }),
-    {
-      allow: 'autoplay *; fullscreen *; encrypted-media *; camera *; microphone *; display-capture *',
-      sandbox: EDITOR_SANDBOX,
-    },
-  ],
 ];
+
+// The clip player only exists after the card is opened.
+const openFirstCard = async (container: Element) => {
+  const start = container.querySelector<HTMLButtonElement>('.flashcard-action-btn');
+  await act(async () => start?.click());
+};
 
 describe('SEC-14: iframe permissions', () => {
   it.each(CASES)('SEC-14: %s iframe allow and sandbox snapshot', async (_label, read, expected) => {
     expect(await read()).toEqual(expected);
   });
 
-  it.each(CASES.filter(([label]) => label !== 'recorder'))(
+  it.each(CASES)(
     'SEC-14: %s iframe has no camera, microphone or display-capture',
     async (_label, read) => {
       expect((await read()).allow).not.toMatch(CAPTURE);
     },
   );
 
-  it('SEC-14: recorder iframe keeps camera, microphone and display-capture (it records)', async () => {
-    const recorder = CASES.find(([label]) => label === 'recorder')!;
-    expect((await recorder[1]()).allow).toMatch(/camera.*microphone.*display-capture/);
+  it('SEC-14: the player builds no iframe: the Kaltura Player script builds its UI in our container', async () => {
+    const { container } = await mount(PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc', ks: 'k' });
+    await player.ready();
+    expect([container.querySelectorAll('iframe').length, container.querySelectorAll('.fake-player-ui').length]).toEqual([0, 1]);
   });
-});
 
-// With the opt-in host sandbox, only the player and clip iframes change.
-const PLAYER_FRAMES = ['player', 'flashcards clip'];
+  it('SEC-14: a flashcards clip builds no iframe either', async () => {
+    const { container } = await mount(FlashcardsCore, {
+      title: 'Deck',
+      cards: [{ title: 'C1', content: 'x', clips: [{ entryId: '1_abc', startTime: 0, endTime: 1 }] }],
+      partnerId: 1,
+      uiconfId: 2,
+      ks: 'k',
+    });
+    await openFirstCard(container);
+    await player.ready();
+    expect([container.querySelectorAll('iframe').length, container.querySelectorAll('.fake-player-ui').length]).toEqual([0, 1]);
+  });
 
-describe('SEC-14: iframe permissions with setPlayerSandbox(PLAYER_SANDBOX_PRESET)', () => {
-  beforeEach(() => setPlayerSandbox(PLAYER_SANDBOX_PRESET));
-  afterEach(() => setPlayerSandbox(undefined));
-
-  it.each(CASES)('SEC-14: %s iframe allow and sandbox snapshot with the preset', async (label, read, expected) => {
-    const sandbox = PLAYER_FRAMES.includes(label) ? PLAYER_SANDBOX_PRESET.join(' ') : expected.sandbox;
-    expect(await read()).toEqual({ ...expected, sandbox });
+  it('REC-01: the recorder creates no iframe of its own: the Express Recorder script builds its UI in our container', async () => {
+    const { container } = await mount(RecorderCore, { partnerId: 1, uiconfId: 2, ks: 'k' });
+    expect(container.querySelectorAll('iframe').length).toBe(0);
   });
 });

@@ -1,5 +1,7 @@
 import { test as base, expect, type ConsoleMessage, type Page, type Request } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { ORIGIN_A, ORIGIN_B } from './constants';
 
 export type KsProviderMode = 'sync' | 'async' | 'throw' | 'reject';
@@ -15,6 +17,13 @@ interface KsWindow {
 }
 
 const KALTURA_HOST = /^https?:\/\/[^/]*\.kaltura\.com\//;
+const RECORDER_PATH = '/apps/expressrecorder/v2.2.10/express-recorder.js';
+const RECORDER_STUB = readFileSync(resolve(process.cwd(), 'e2e/fixtures/express-recorder-stub.js'), 'utf8');
+const PLAYER_SCRIPT_PATH = /^\/p\/\d+\/embedPlaykitJs\//;
+const PLAYER_STUB = readFileSync(resolve(process.cwd(), 'e2e/fixtures/kaltura-player-stub.js'), 'utf8');
+const EDITOR_DIR = '/apps/captionstudio/v1.3.10/';
+// The real v1.3.10 page: the editor checks its sha384 hash. Its scripts and styles are served empty.
+const EDITOR_PAGE = '<!DOCTYPE html><html lang="en" class="closed-captions-html"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no"><meta name="theme-color" content="#000000"><base href="https://www.kaltura.com/apps/captionstudio/v1.3.10/index.html" /><link rel="stylesheet" href="bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"><title>Closed Captions Studio</title><link href="./static/css/main.74b8a353.css" rel="stylesheet"></head><body class="closed-captions-body"><noscript>You need to enable JavaScript to run this app.</noscript><div id="root" class="closed-captions-studio"></div><script type="text/javascript" src="./static/js/main.6315bf26.js"></script></body></html>';
 const LOADER_PATH = /\/loader\/index\.esm\.js(\?|$)/;
 
 /**
@@ -30,6 +39,10 @@ export class Harness {
   readonly consoleText: string[] = [];
   /** What stubbed *.kaltura.com hosts serve. Real Kaltura hosts are never contacted. */
   kalturaMode: LoaderMode = 'ok';
+  /** What the stubbed recorder script URL does: serve the stub, fail, or serve a script with no API. */
+  recorderMode: 'ok' | 'fail' | 'no-api' = 'ok';
+  /** What the stubbed Kaltura Player script URL does: serve the stub, fail, or serve a script with no API. */
+  playerMode: 'ok' | 'fail' | 'no-api' = 'ok';
 
   constructor(readonly page: Page) {
     page.on('request', (r: Request) => this.requests.push(r.url()));
@@ -54,6 +67,37 @@ export class Harness {
         body: await res.body(),
       });
     });
+    await this.page.route(
+      (url) => url.pathname === RECORDER_PATH && KALTURA_HOST.test(url.href),
+      (route) =>
+        this.recorderMode === 'fail'
+          ? route.abort()
+          : route.fulfill({
+              status: 200,
+              contentType: 'text/javascript',
+              headers: { 'Access-Control-Allow-Origin': '*' },
+              body: this.recorderMode === 'ok' ? RECORDER_STUB : '/* no recorder API */',
+            }),
+    );
+    await this.page.route(
+      (url) => PLAYER_SCRIPT_PATH.test(url.pathname) && KALTURA_HOST.test(url.href),
+      (route) =>
+        this.playerMode === 'fail'
+          ? route.abort()
+          : route.fulfill({
+              status: 200,
+              contentType: 'text/javascript',
+              headers: { 'Access-Control-Allow-Origin': '*' },
+              body: this.playerMode === 'ok' ? PLAYER_STUB : '/* no player API */',
+            }),
+    );
+    await this.page.route(
+      (url) => url.pathname.startsWith(EDITOR_DIR) && KALTURA_HOST.test(url.href),
+      (route) =>
+        route.request().url().endsWith('/embed.php')
+          ? route.fulfill({ status: 200, contentType: 'text/html', headers: { 'Access-Control-Allow-Origin': '*' }, body: EDITOR_PAGE })
+          : route.fulfill({ status: 200, contentType: 'text/plain', headers: { 'Access-Control-Allow-Origin': '*' }, body: '' }),
+    );
     await this.page.goto(`${ORIGIN_A}/harness.html`);
   }
 

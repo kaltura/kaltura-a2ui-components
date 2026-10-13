@@ -11,7 +11,7 @@ import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
 import { A2uiSurface } from '@a2ui/react/v0_9';
-import { installRemote, remote, resetFakes, settle } from '../components/cases';
+import { installRemote, remote, resetFakes, settle, fakes } from '../components/cases';
 import { setKsProvider } from '../../src/core/ks';
 import { messageListValidator, componentValidator, readJson } from './helpers';
 import streamsJson from './fixtures/streams.json';
@@ -58,11 +58,26 @@ afterEach(() => {
 
 const process = (processor: MessageProcessor<never>, messages: Record<string, unknown>[]) => processor.processMessages(messages as never);
 
+// The fixture key `iframeSrcContains` dates from when every embed was an iframe URL. The analytics
+// widget still is one. The player has no iframe, and the captions editor sets its ids as data
+// attributes. So the facts are read where they live now, and written the way the fixtures write them.
+function embedFacts(): string {
+  const frame = host.querySelector('iframe');
+  const facts = [frame?.getAttribute('src') ?? ''];
+  for (const { name, value } of frame?.attributes ?? []) if (name.startsWith('data-')) facts.push(`${name.slice(5)}=${value}`);
+  const player = fakes.player.created.at(-1);
+  if (player) {
+    const { partnerId, uiConfId } = player.config.provider;
+    facts.push(`/partner_id/${partnerId}/uiconf_id/${uiConfId}`, ...player.loads.map(load => `entry_id=${(load.info as { entryId: string }).entryId}`));
+  }
+  return facts.join(' ');
+}
+
 function check(expected: Expect): void {
-  const iframe = host.querySelector('iframe')?.getAttribute('src') ?? '';
+  const facts = embedFacts();
   if (expected.selector) expect(host.querySelector(expected.selector)).not.toBeNull();
   for (const text of expected.textContains ?? []) expect(host.textContent).toContain(text);
-  for (const part of expected.iframeSrcContains ?? []) expect(iframe).toContain(part);
+  for (const part of expected.iframeSrcContains ?? []) expect(facts).toContain(part);
 }
 
 async function mount(messages: Record<string, unknown>[]) {

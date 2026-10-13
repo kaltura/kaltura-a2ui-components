@@ -7,16 +7,16 @@ import { ALLOWED_HOSTS } from './fixtures/constants';
 const SERVER_URL = `${ALLOWED_HOSTS[0]}/v1`;
 const KALTURA_HOST = /^https?:\/\/[^/]*\.kaltura\.com\//;
 const MODULE = `
-export const createWorkspace = async () => ({
+export const createWorkspace = async (cfg) => (window.__wsCfgs = window.__wsCfgs || []).push(cfg) && ({
   kill() {},
   getRuntimeAsync: async () => ({
-    mountVisual: async (visual) => { (window.__visuals = window.__visuals || []).push(visual); return 'v1'; },
+    mountVisual: async (visual) => { (window.__visuals = window.__visuals || []).push(visual); return { id: 'v1' }; },
     unmountVisual() {},
   }),
 });`;
 
 type Seen = { target: string; bubbles: boolean; composed: boolean; detail: { entryId: string; name: string; instanceId: string } };
-interface EventWindow { __visuals: { settings: { rowActions: { buttons: { onClick(r: unknown): void }[] } } }[]; __seen: Record<string, Seen[]> }
+interface EventWindow { __visuals: { settings: { context: { rowActions: { buttons: { onClick(r: unknown): void }[] } } } }[]; __seen: Record<string, Seen[]> }
 
 async function mountManager(h: Harness, extra: Record<string, unknown> = {}) {
   await h.open();
@@ -45,7 +45,7 @@ async function mountManager(h: Harness, extra: Record<string, unknown> = {}) {
   await h.page.waitForFunction(() => (window as unknown as EventWindow).__visuals?.length > 0);
   await h.page.evaluate(() => {
     const w = window as unknown as EventWindow;
-    w.__visuals[0].settings.rowActions.buttons[0].onClick({ id: '0_abc123', name: 'Intro' });
+    w.__visuals[0].settings.context.rowActions.buttons[0].onClick({ id: '0_abc123', name: 'Intro' });
   });
 }
 
@@ -75,10 +75,18 @@ test.describe('SEC-18: kaltura-entry-selected', () => {
   });
 });
 
+test.describe('F1: Media Manager workspace config', () => {
+  test('F1: createWorkspace gets appVersion, a region env and the session', async ({ harness: h }) => {
+    await mountManager(h);
+    const cfgs = await h.page.evaluate(() => (window as unknown as { __wsCfgs: { config: unknown }[] }).__wsCfgs);
+    expect(cfgs[0].config).toMatchObject({ appVersion: expect.any(String), env: 'nvp1', session: { ks: 'e2e-ks', partnerId: 1234567 } });
+  });
+});
+
 test.describe('QA-03: Unisphere widget config', () => {
   test('QA-03: the loader config has no hard-coded appVersion', async ({ harness: h }) => {
     await h.open();
-    await h.mount('kaltura-genie-widget', { partnerId: 1234567, ks: 'e2e-ks', serverUrl: SERVER_URL });
+    await h.mount('kaltura-genie-widget', { partnerId: 1234567, uiconfId: 2, ks: 'e2e-ks', serverUrl: SERVER_URL });
     await h.page.waitForFunction(() => (window as unknown as { __loaderCfgs?: unknown[] }).__loaderCfgs?.length);
     expect(await h.loaderConfigs()).toEqual([expect.not.objectContaining({ appVersion: expect.anything() })]);
   });

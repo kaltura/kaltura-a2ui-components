@@ -42,14 +42,16 @@ const CASES: Record<string, () => Promise<Record<string, unknown>>> = {
   },
   'invalid-ks': async () => {
     const { AnalyticsCore } = await import('../../src/core/analytics');
-    const props = { partnerId: 1, ks: `${KS}\u0001${HOSTILE}` };
+    const { setKsProvider } = await import('../../src/core/ks');
+    const props = { partnerId: 1 };
+    setKsProvider(() => `${KS}\u0001${HOSTILE}`);
     await render(AnalyticsCore, props);
     return props;
   },
   'origin-not-allowed': async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { GenieCore } = await import('../../src/core/genie');
-    const props = { partnerId: 1, ks: KS, serverUrl: `https://evil.invalid/${HOSTILE}` };
+    const props = { partnerId: 1, uiconfId: 2, ks: KS, serverUrl: `https://evil.invalid/${HOSTILE}` };
     await render(GenieCore, props);
     return props;
   },
@@ -60,7 +62,7 @@ const CASES: Record<string, () => Promise<Record<string, unknown>>> = {
       },
     });
     const { GenieCore } = await import('../../src/core/genie');
-    const props = { partnerId: 1, ks: KS, serverUrl: URL_A };
+    const props = { partnerId: 1, uiconfId: 2, ks: KS, serverUrl: URL_A };
     await render(GenieCore, props);
     return props;
   },
@@ -115,7 +117,7 @@ describe('3.3e: setErrorHandler gets a typed error for each error state', () => 
   it('3.3e: a bad recorder ks is reported as invalid-ks', async () => {
     await hooks();
     const { RecorderCore } = await import('../../src/core/recorder');
-    await render(RecorderCore, { partnerId: 1, ks: '' });
+    await render(RecorderCore, { partnerId: 1, uiconfId: 2, ks: '' });
     expect(errors).toEqual([{ code: 'invalid-ks', widget: 'recorder', message: 'Failed to load recorder: Invalid ks' }]);
   });
 
@@ -153,7 +155,7 @@ describe('3.3e: setErrorHandler gets a typed error for each error state', () => 
     });
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { GenieCore } = await import('../../src/core/genie');
-    const view = await render(GenieCore, { partnerId: 1, ks: KS, serverUrl: 'https://evil.invalid/v1' });
+    const view = await render(GenieCore, { partnerId: 1, uiconfId: 2, ks: KS, serverUrl: 'https://evil.invalid/v1' });
     expect(view.container.querySelector('[role=alert]')?.textContent).toBe(
       'Failed to load Kaltura Genie: serverUrl is not an allowed Unisphere origin',
     );
@@ -182,7 +184,7 @@ describe('3.3e: setEventHandler gets the Media Manager selection', () => {
     setEventHandler(onEvent);
     const { MediaManagerCore } = await import('../../src/core/media-manager');
     const view = await render(MediaManagerCore, { partnerId: 1, ks: KS, serverUrl: URL_A });
-    const buttons = (visuals[0].settings.rowActions as { buttons: { onClick(r: unknown): void }[] }).buttons;
+    const buttons = ((visuals[0].settings.context as { rowActions: unknown }).rowActions as { buttons: { onClick(r: unknown): void }[] }).buttons;
     return { view, select: (row: unknown) => act(() => buttons[0].onClick(row)) };
   }
 

@@ -1,15 +1,21 @@
-// Covers: SEC-05 (a USER KS must not travel through agent output or the A2UI data model).
+// Covers: SEC-05 (a USER KS must not travel through agent output or the A2UI data model),
+// SEC-10 (the Flashcards clips take the KS from the provider, not from a prop).
+// The player and the flashcards clips get the KS in the player setup config. The captions editor gets it
+// as a data attribute of its iframe. Neither puts it in a URL.
 // Plan item 3.1, pulled forward: the host supplies the KS through setKsProvider.
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
 import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
 import { mount } from '../helpers/render';
+import { playerRemote } from '../helpers/player-remote';
+import { captionsRemote } from '../helpers/captions-remote';
 import { setKsProvider, type KsWidget } from '../../src/core/ks';
 import { kalturaReactCatalog, KALTURA_CATALOG_ID } from '../../src/adapters/react/index';
 import { PlayerCore } from '../../src/core/player';
 import { AnalyticsCore } from '../../src/core/analytics';
+import { FlashcardsCore } from '../../src/core/flashcards';
 import { CaptionsEditorCore } from '../../src/core/captions-editor';
 import { RecorderCore } from '../../src/core/recorder';
 import { GenieCore } from '../../src/core/genie';
@@ -39,7 +45,17 @@ vi.mock('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js', () => (
   },
 }));
 
+let player: ReturnType<typeof playerRemote>;
+let captions: ReturnType<typeof captionsRemote>;
+
+beforeEach(() => {
+  player = playerRemote();
+  captions = captionsRemote();
+});
+
 afterEach(() => {
+  player.restore();
+  captions.restore();
   setKsProvider(undefined);
   document.body.innerHTML = '';
   seen.configs = [];
@@ -48,16 +64,26 @@ afterEach(() => {
 
 const HOST_KS = 'djJ8MTIzfHVzZXIta3MtZnJvbS1ob3N0';
 const AGENT_KS = 'agent-written-ks';
-const iframeSrc = (container: Element) => container.querySelector('iframe')?.getAttribute('src') ?? '';
-const unisphere = { partnerId: 1, serverUrl: SERVER_URL };
+// Where the KS lands. The player gets it in the setup config of the bundle, the captions editor in a data attribute.
+const playerKs = async () => {
+  await player.ready();
+  return player.created.at(-1)?.config.provider.ks;
+};
+const editorKs = async (container: Element) => {
+  await captions.ready();
+  return container.querySelector('iframe')?.getAttribute('data-ks');
+};
+const unisphere = { partnerId: 1, serverUrl: SERVER_URL, uiconfId: 2, entryId: '0_abc' };
 
-// [label, component, props without ks, where the KS lands]
-const IFRAME_CASES = [
-  ['player', PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' }],
-  ['analytics', AnalyticsCore, { partnerId: 1 }],
-  ['captions editor', CaptionsEditorCore, { partnerId: 1, entryId: '0_abc' }],
-  ['recorder', RecorderCore, { partnerId: 1 }],
+// [label, component, props without ks, reads the KS the widget got]. No URL holds it.
+const EMBED_CASES = [
+  ['player', PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' }, () => playerKs()],
+  ['captions editor', CaptionsEditorCore, { partnerId: 1, entryId: '0_abc' }, (container: Element) => editorKs(container)],
 ] as const;
+
+// The analytics iframe gets its KS by postMessage: test/security/analytics.test.tsx.
+// The recorder keeps the KS out of the DOM. Where it lands is tested in recorder.test.tsx.
+const LEAK_CASES = [...EMBED_CASES.map(([label, component, props]) => [label, component, props] as const), ['analytics', AnalyticsCore, { partnerId: 1 }], ['recorder', RecorderCore, { partnerId: 1, uiconfId: 2 }]] as const;
 
 const UNISPHERE_CASES = [
   ['Kaltura Genie', GenieCore, unisphere],
@@ -69,10 +95,10 @@ const UNISPHERE_CASES = [
 ] as const;
 
 describe('SEC-05: setKsProvider supplies the KS', () => {
-  it.each(IFRAME_CASES)('SEC-05: %s uses the provider KS with no ks prop', async (_label, component, props) => {
+  it.each(EMBED_CASES)('SEC-05: %s uses the provider KS with no ks prop', async (_label, component, props, read) => {
     setKsProvider(() => HOST_KS);
     const { container } = await mount(component, props);
-    expect(iframeSrc(container)).toContain(`ks=${HOST_KS}`);
+    expect(await read(container)).toBe(HOST_KS);
   });
 
   it.each(UNISPHERE_CASES)('SEC-05: %s passes the provider KS to Unisphere', async (_label, component, props) => {
@@ -83,8 +109,16 @@ describe('SEC-05: setKsProvider supplies the KS', () => {
 
   it('SEC-05: an async provider is awaited', async () => {
     setKsProvider(async () => HOST_KS);
-    const { container } = await mount(AnalyticsCore, { partnerId: 1 });
-    expect(iframeSrc(container)).toContain(`ks=${HOST_KS}`);
+    const { container } = await mount(CaptionsEditorCore, { partnerId: 1, entryId: '0_abc' });
+    expect(await editorKs(container)).toBe(HOST_KS);
+  });
+
+  it('SEC-05: a flashcards clip uses the provider KS and ignores the ks prop', async () => {
+    setKsProvider(widget => (widget === 'flashcards' ? HOST_KS : undefined));
+    const cards = [{ title: 'C', content: 'x', clips: [{ entryId: '1_abc', startTime: 0, endTime: 1 }] }];
+    const { container } = await mount(FlashcardsCore, { title: 'Deck', partnerId: 1, uiconfId: 2, cards, ks: AGENT_KS });
+    await act(async () => container.querySelector<HTMLButtonElement>('.flashcard-action-btn')!.click());
+    expect([await playerKs(), JSON.stringify(player.created).includes(AGENT_KS)]).toEqual([HOST_KS, false]);
   });
 
   it('SEC-05: nothing renders while the async provider is still running', async () => {
@@ -93,10 +127,10 @@ describe('SEC-05: setKsProvider supplies the KS', () => {
     expect([container.textContent, container.querySelectorAll('iframe, [role="alert"]').length]).toEqual(['', 0]);
   });
 
-  it('SEC-05: the provider KS wins over a ks prop', async () => {
+  it.each(EMBED_CASES)('SEC-05: for the %s the provider KS wins over a ks prop', async (_label, component, props, read) => {
     setKsProvider(() => HOST_KS);
-    const { container } = await mount(AnalyticsCore, { partnerId: 1, ks: AGENT_KS });
-    expect([iframeSrc(container).includes(HOST_KS), iframeSrc(container).includes(AGENT_KS)]).toEqual([true, false]);
+    const { container } = await mount(component, { ...props, ks: AGENT_KS });
+    expect([await read(container), document.body.innerHTML.includes(AGENT_KS), JSON.stringify(player.created).includes(AGENT_KS)]).toEqual([HOST_KS, false, false]);
   });
 
   it('SEC-05: the real A2UI pipeline renders a component the agent sent without ks', async () => {
@@ -104,7 +138,7 @@ describe('SEC-05: setKsProvider supplies the KS', () => {
     const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatalog]);
     processor.processMessages([
       { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
-      { version: 'v0.9', updateComponents: { surfaceId: 's', components: [{ id: 'root', component: 'KalturaAnalytics', partnerId: 1 }] } },
+      { version: 'v0.9', updateComponents: { surfaceId: 's', components: [{ id: 'root', component: 'KalturaCaptionsEditor', partnerId: 1, entryId: '0_abc' }] } },
     ] as never);
     const container = document.createElement('div');
     document.body.appendChild(container);
@@ -114,19 +148,31 @@ describe('SEC-05: setKsProvider supplies the KS', () => {
     await act(async () => {
       await new Promise(r => setTimeout(r, 30));
     });
-    expect(iframeSrc(container)).toContain(`ks=${HOST_KS}`);
+    expect(await editorKs(container)).toBe(HOST_KS);
   });
 
   it('SEC-05: the web component uses the provider KS', async () => {
-    const { defineAnalyticsWebComponent, ANALYTICS_TAG } = await import('../../src/adapters/webcomponent/analytics');
-    defineAnalyticsWebComponent();
+    const { defineCaptionsEditorWebComponent, CAPTIONS_EDITOR_TAG } = await import('../../src/adapters/webcomponent/captions-editor');
+    defineCaptionsEditorWebComponent();
     setKsProvider(() => HOST_KS);
-    const el = document.createElement(ANALYTICS_TAG) as HTMLElement & { config: Record<string, unknown> };
-    el.config = { partnerId: 1 };
+    const el = document.createElement(CAPTIONS_EDITOR_TAG) as HTMLElement & { config: Record<string, unknown> };
+    el.config = { partnerId: 1, entryId: '0_abc' };
     await act(async () => {
       document.body.appendChild(el);
     });
-    expect(iframeSrc(el)).toContain(`ks=${HOST_KS}`);
+    expect(await editorKs(el)).toBe(HOST_KS);
+  });
+
+  it('SEC-05: the player web component uses the provider KS', async () => {
+    const { definePlayerWebComponent, PLAYER_TAG } = await import('../../src/adapters/webcomponent/player');
+    definePlayerWebComponent();
+    setKsProvider(() => HOST_KS);
+    const el = document.createElement(PLAYER_TAG) as HTMLElement & { config: Record<string, unknown> };
+    el.config = { partnerId: 1, uiconfId: 2, entryId: '0_abc' };
+    await act(async () => {
+      document.body.appendChild(el);
+    });
+    expect(await playerKs()).toBe(HOST_KS);
   });
 });
 
@@ -134,8 +180,9 @@ describe('SEC-05: the provider learns which widget asks, for a least-privilege K
   const WIDGETS = [
     ['player', PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' }],
     ['analytics', AnalyticsCore, { partnerId: 1 }],
+    ['flashcards', FlashcardsCore, { title: 'Deck', partnerId: 1, uiconfId: 2, cards: [] }],
     ['captions-editor', CaptionsEditorCore, { partnerId: 1, entryId: '0_abc' }],
-    ['recorder', RecorderCore, { partnerId: 1 }],
+    ['recorder', RecorderCore, { partnerId: 1, uiconfId: 2 }],
     ['media-manager', MediaManagerCore, unisphere],
     ['genie', GenieCore, unisphere],
     ['content-lab', ContentLabCore, unisphere],
@@ -151,25 +198,18 @@ describe('SEC-05: the provider learns which widget asks, for a least-privilege K
     expect(provider.mock.calls).toEqual([[widget]]);
   });
 
-  it('SEC-05: a provider can give the ADMIN KS to analytics only', async () => {
-    setKsProvider(widget => (widget === 'analytics' ? 'admin-ks' : 'user-ks'));
-    const analytics = await mount(AnalyticsCore, { partnerId: 1 });
-    const player = await mount(PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' });
-    expect([iframeSrc(analytics.container).includes('ks=admin-ks'), iframeSrc(player.container).includes('ks=user-ks')]).toEqual([true, true]);
-  });
-
   it('SEC-05: a zero-argument provider still works', async () => {
     setKsProvider(() => HOST_KS);
-    const { container } = await mount(RecorderCore, { partnerId: 1 });
-    expect(iframeSrc(container)).toContain(`ks=${HOST_KS}`);
+    await mount(PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' });
+    expect(await playerKs()).toBe(HOST_KS);
   });
 
   it('SEC-05: the provider is called once per mount, even after re-renders', async () => {
     const provider = vi.fn(() => HOST_KS);
     setKsProvider(provider);
     const { root } = await mount(AnalyticsCore, { partnerId: 1 });
-    await act(async () => root.render(createElement(AnalyticsCore, { partnerId: 1, reportType: 'top' })));
-    await act(async () => root.render(createElement(AnalyticsCore, { partnerId: 2, reportType: 'top' })));
+    await act(async () => root.render(createElement(AnalyticsCore, { partnerId: 1, reportType: 'live' })));
+    await act(async () => root.render(createElement(AnalyticsCore, { partnerId: 2, reportType: 'live' })));
     expect(provider).toHaveBeenCalledTimes(1);
   });
 });
@@ -198,15 +238,15 @@ describe('SEC-05: widgets that need a KS wait for it and refuse a bad one', () =
 });
 
 describe('SEC-05: ks prop fallback', () => {
-  it('SEC-05: with no provider the ks prop is used', async () => {
-    const { container } = await mount(AnalyticsCore, { partnerId: 1, ks: AGENT_KS });
-    expect(iframeSrc(container)).toContain(`ks=${AGENT_KS}`);
+  it.each(EMBED_CASES)('SEC-05: with no provider the ks prop is used by the %s', async (_label, component, props, read) => {
+    const { container } = await mount(component, { ...props, ks: AGENT_KS });
+    expect(await read(container)).toBe(AGENT_KS);
   });
 
   it.each([undefined, ''])('SEC-05: a provider that returns %j falls back to the ks prop', async value => {
     setKsProvider(() => value);
-    const { container } = await mount(AnalyticsCore, { partnerId: 1, ks: AGENT_KS });
-    expect(iframeSrc(container)).toContain(`ks=${AGENT_KS}`);
+    const { container } = await mount(CaptionsEditorCore, { partnerId: 1, entryId: '0_abc', ks: AGENT_KS });
+    expect(await editorKs(container)).toBe(AGENT_KS);
   });
 
   it('SEC-05: with no provider and no ks prop a widget that needs a KS renders nothing', async () => {
@@ -215,8 +255,9 @@ describe('SEC-05: ks prop fallback', () => {
   });
 
   it('SEC-05: with no provider and no ks prop the player still renders', async () => {
-    const { container } = await mount(PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' });
-    expect([container.querySelectorAll('iframe').length, iframeSrc(container).includes('ks=')]).toEqual([1, false]);
+    await mount(PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' });
+    await player.ready();
+    expect(player.created.map(created => 'ks' in created.config.provider)).toEqual([false]);
   });
 });
 
@@ -239,8 +280,8 @@ describe('SEC-05: invalid provider output', () => {
 
   it('SEC-05: the recorder shows the error inside its container', async () => {
     setKsProvider(() => SECRET);
-    const { container } = await mount(RecorderCore, { partnerId: 1 });
-    expect([container.textContent, container.querySelectorAll('iframe').length]).toEqual(['Failed to load recorder: Invalid ks', 0]);
+    const { container } = await mount(RecorderCore, { partnerId: 1, uiconfId: 2 });
+    expect(container.textContent).toBe('Failed to load recorder: Invalid ks');
   });
 
   it('SEC-05: a bad provider KS is refused even when the ks prop is fine', async () => {
@@ -255,14 +296,14 @@ describe('SEC-05: the provider KS never reaches DOM text or the console', () => 
   const spyConsole = () => methods.map(m => vi.spyOn(console, m).mockImplementation(() => {}));
   const logged = (spies: ReturnType<typeof spyConsole>) => JSON.stringify(spies.flatMap(s => s.mock.calls), (_k, v) => (v instanceof Error ? v.message : v));
 
-  it.each([...IFRAME_CASES, ...UNISPHERE_CASES])('SEC-05: %s with a valid KS', async (_label, component, props) => {
+  it.each([...LEAK_CASES, ...UNISPHERE_CASES])('SEC-05: %s with a valid KS', async (_label, component, props) => {
     const spies = spyConsole();
     setKsProvider(() => HOST_KS);
     await mount(component, props);
     expect([document.body.textContent?.includes(HOST_KS), logged(spies).includes(HOST_KS)]).toEqual([false, false]);
   });
 
-  it.each([...IFRAME_CASES, ...UNISPHERE_CASES])('SEC-05: %s with an invalid KS', async (_label, component, props) => {
+  it.each([...LEAK_CASES, ...UNISPHERE_CASES])('SEC-05: %s with an invalid KS', async (_label, component, props) => {
     const spies = spyConsole();
     setKsProvider(() => SECRET);
     await mount(component, props);

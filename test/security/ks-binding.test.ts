@@ -6,7 +6,6 @@ import { deriveLoaderUrl } from '../../src/core/unisphere-loader';
 import { KalturaPlayerApi } from '../../src/schemas/player';
 import { KalturaFlashcardsApi } from '../../src/schemas/flashcards';
 import { KalturaMediaManagerApi } from '../../src/schemas/media-manager';
-import { KalturaAnalyticsApi } from '../../src/schemas/analytics';
 import { KalturaCaptionsEditorApi } from '../../src/schemas/captions-editor';
 import { KalturaRecorderApi } from '../../src/schemas/recorder';
 import { KalturaGenieApi } from '../../src/schemas/genie';
@@ -18,7 +17,6 @@ const WITH_KS = [
   KalturaPlayerApi,
   KalturaFlashcardsApi,
   KalturaMediaManagerApi,
-  KalturaAnalyticsApi,
   KalturaCaptionsEditorApi,
   KalturaRecorderApi,
   KalturaGenieApi,
@@ -73,12 +71,9 @@ describe('SEC-05: catalog ks descriptions', () => {
     ]).toEqual([true, true, false]);
   });
 
-  it.each(ksDescriptions.filter(([name]) => name !== 'KalturaAnalytics'))(
-    'SEC-05: %s asks for a USER KS and does not mention ADMIN',
-    (_name, description) => {
-      expect([description.includes('USER KS'), /ADMIN/.test(description)]).toEqual([true, false]);
-    },
-  );
+  it.each(ksDescriptions)('SEC-05: %s asks for a USER KS and does not mention ADMIN', (_name, description) => {
+    expect([description.includes('USER KS'), /ADMIN/.test(description)]).toEqual([true, false]);
+  });
 
   it('SEC-05: Media Manager no longer asks for an ADMIN KS in manage mode', () => {
     expect(catalogProps('KalturaMediaManager').ks.description).not.toMatch(/ADMIN|type=2|manage mode/);

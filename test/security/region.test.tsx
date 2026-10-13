@@ -1,42 +1,56 @@
 // Covers: REG-01 (hard-coded US hosts). setRegion maps every host per region.
-// The default (nvp1) URLs are byte-identical to the URLs before setRegion existed.
+// The default (nvp1) hosts are the same as before setRegion existed.
 // The guide lists no regional CDN host: the player and the recorder use the regional web host.
 // The KMC uses the kmc host the guide lists.
-import { describe, it, expect, afterEach } from 'vitest';
-import { act } from 'react';
-import { mount } from '../helpers/render';
+import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { setRegion, type KalturaRegion } from '../../src/adapters/react/index';
-import { buildPlayerUrl } from '../../src/core/player';
-import { buildClipUrl, buildThumbnailUrl } from '../../src/core/flashcards';
-import { buildCaptionsEditorUrl } from '../../src/core/captions-editor';
+import { playerScriptUrl } from '../../src/core/player-script';
+import { buildThumbnailUrl } from '../../src/core/flashcards';
+import { CaptionsEditorCore } from '../../src/core/captions-editor';
 import { buildAnalyticsUrl } from '../../src/core/analytics';
-import { RecorderCore } from '../../src/core/recorder';
+import { recorderScriptUrl } from '../../src/core/recorder-script';
+import { mount } from '../helpers/render';
+import { captionsRemote } from '../helpers/captions-remote';
 
 const clip = { entryId: '0_abc', startTime: 4, endTime: 9 };
 
-// Captured from the builders before plan item 3.1c.
+// Captured before plan item 3.1c. Analytics changed on purpose with ANA-01. The player and the
+// flashcards clips use one script URL. The captions editor sends its page request to the service
+// host and gets the CDN and service hosts as data attributes.
 const US = {
-  player:
-    'https://cdnapisec.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2?iframeembed=true&entry_id=0_abc&plugins=uiManagers%2Cyoutube%2Cdualscreen%2Ctimeline%2CkalturaCuepoints%2Civq%2Ckava',
-  clip: 'https://cdnapisec.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2?iframeembed=true&entry_id=0_abc&kalturaSeekFrom=4&kalturaClipTo=9',
+  player: 'https://cdnapisec.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2',
   thumbnail: 'https://cfvod.kaltura.com/p/1/thumbnail/entry_id/0_abc/width/200/vid_sec/5',
-  captions:
-    'https://www.kaltura.com/apps/captionstudio/latest/index.html?pid=1&ks=k&entryid=0_abc&cdnurl=https://cdnapisec.kaltura.com&serviceurl=https://www.kaltura.com',
-  analytics: 'https://kmc.kaltura.com/index.php/kmcng/analytics?ks=k&partnerId=1',
-  recorder: 'https://www.kaltura.com/index.php/extwidget/preview/partner_id/1/uiconf_id/0/entry_id//embed/iframe?ks=k&showRecordButton=true',
+  captions: {
+    page: 'https://www.kaltura.com/apps/captionstudio/v1.3.10/embed.php',
+    cdnurl: 'https://cdnapisec.kaltura.com',
+    serviceurl: 'https://www.kaltura.com',
+  },
+  analytics: 'https://kmc.kaltura.com/apps/kmc-analytics/latest/index.html',
+  recorder: 'https://www.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js',
 };
 
+let captions: ReturnType<typeof captionsRemote>;
+
+beforeEach(() => {
+  captions = captionsRemote();
+});
+
 async function urls() {
-  const { container, root } = await mount(RecorderCore, { partnerId: 1, ks: 'k' });
-  const recorder = container.querySelector('iframe')?.src;
-  act(() => root.unmount());
+  const pages = captions.blobs.length + 1;
+  captions.fetches.length = 0;
+  const { container } = await mount(CaptionsEditorCore, { partnerId: 1, ks: 'k', entryId: '0_abc' });
+  await captions.ready(pages);
+  const iframe = container.querySelector('iframe')!;
   return {
-    player: buildPlayerUrl({ partnerId: 1, uiconfId: 2, entryId: '0_abc' }),
-    clip: buildClipUrl(clip, 1, 2),
+    player: playerScriptUrl(1, 2),
     thumbnail: buildThumbnailUrl(clip, 1),
-    captions: buildCaptionsEditorUrl({ partnerId: 1, ks: 'k', entryId: '0_abc' }),
-    analytics: buildAnalyticsUrl({ partnerId: 1, ks: 'k' }),
-    recorder,
+    captions: {
+      page: captions.fetches[0].url,
+      cdnurl: iframe.getAttribute('data-cdnurl'),
+      serviceurl: iframe.getAttribute('data-serviceurl'),
+    },
+    analytics: buildAnalyticsUrl(),
+    recorder: recorderScriptUrl(),
   };
 }
 
@@ -49,16 +63,17 @@ const REGIONAL: Record<Exclude<KalturaRegion, 'nvp1'>, { api: string; vod: strin
 };
 
 afterEach(() => {
+  captions.restore();
   setRegion('nvp1');
   document.body.innerHTML = '';
 });
 
 describe('REG-01: setRegion', () => {
-  it('REG-01: the default URLs are byte-identical to the US URLs', async () => {
+  it('REG-01: the default hosts are the US hosts', async () => {
     expect(await urls()).toEqual(US);
   });
 
-  it('REG-01: setRegion("nvp1") gives the default URLs', async () => {
+  it('REG-01: setRegion("nvp1") gives the default hosts', async () => {
     setRegion('irp2');
     setRegion('nvp1');
     expect(await urls()).toEqual(US);
@@ -69,9 +84,12 @@ describe('REG-01: setRegion', () => {
     const cdn = 'https://cdnapisec.kaltura.com';
     expect(await urls()).toEqual({
       player: US.player.replace(cdn, hosts.web),
-      clip: US.clip.replace(cdn, hosts.web),
       thumbnail: US.thumbnail.replace('https://cfvod.kaltura.com', hosts.vod),
-      captions: US.captions.replace(`cdnurl=${cdn}`, `cdnurl=${hosts.web}`).replace('serviceurl=https://www.kaltura.com', `serviceurl=${hosts.api}`),
+      captions: {
+        page: US.captions.page.replace('https://www.kaltura.com', hosts.api),
+        cdnurl: hosts.web,
+        serviceurl: hosts.api,
+      },
       analytics: US.analytics.replace('https://kmc.kaltura.com', hosts.kmc),
       recorder: US.recorder.replace('https://www.kaltura.com', hosts.web),
     });

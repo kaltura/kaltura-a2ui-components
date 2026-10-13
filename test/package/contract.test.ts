@@ -62,6 +62,6 @@ describe('QA-11: package contract', () => {
   });
 
   it('QA-11: every URL builder is exported from the React entry', () => {
-    expect(['buildPlayerUrl', 'buildClipUrl', 'buildAnalyticsUrl', 'buildCaptionsEditorUrl'].filter((name) => typeof (reactAdapter as Record<string, unknown>)[name] !== 'function')).toEqual([]);
+    expect(['buildAnalyticsUrl'].filter((name) => typeof (reactAdapter as Record<string, unknown>)[name] !== 'function')).toEqual([]);
   });
 });

@@ -1,0 +1,19 @@
+changelog:
+  exclude:
+    labels:
+      - dependencies
+    authors:
+      - dependabot[bot]
+  categories:
+    - title: Breaking changes for hosts
+      labels:
+        - breaking
+    - title: Security
+      labels:
+        - security
+    - title: Fixes
+      labels:
+        - bug
+    - title: Features and changes
+      labels:
+        - "*"

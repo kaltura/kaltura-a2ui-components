@@ -79,7 +79,7 @@ export function fakeWorkspaceModule(opts: {
             mountVisual: async (visual: MountedVisual) => {
               opts.visuals.push(visual);
               await opts.waitMount;
-              return `visual-${n}`;
+              return { id: `visual-${n}` };
             },
             unmountVisual: (id: string) => opts.log.push(`unmount ${id}`),
           };

@@ -16,7 +16,7 @@ test.describe('invalid serverUrl shows a generic plain-text error', () => {
     for (const [name, serverUrl] of Object.entries(BAD_URLS)) {
       test(`${tag}: ${name}`, async ({ harness: h }) => {
         await h.open();
-        await h.mount(tag, { partnerId: 1234567, ks: KS, serverUrl });
+        await h.mount(tag, { partnerId: 1234567, uiconfId: 2, ks: KS, serverUrl });
         await h.settle();
         const text = await h.hostText();
         expect(text).toMatch(/^Failed to load /);
@@ -33,13 +33,13 @@ test.describe('error states use one alert box', () => {
   const player = { partnerId: 1234567, uiconfId: 12345678, entryId: '0_abc123' };
   const cases: Array<{ name: string; tag: string; config: Record<string, unknown>; kalturaMode?: 'throw' | 'notfound' }> = [
     { name: 'player with a bad entryId', tag: 'kaltura-player', config: { ...player, entryId: 'bad id' } },
-    { name: 'recorder with a bad partnerId (inside the container)', tag: 'kaltura-recorder', config: { partnerId: -1, ks: KS } },
-    { name: 'recorder with an empty ks', tag: 'kaltura-recorder', config: { partnerId: 1234567, ks: '' } },
+    { name: 'recorder with a bad partnerId (inside the container)', tag: 'kaltura-recorder', config: { partnerId: -1, uiconfId: 7654321, ks: KS } },
+    { name: 'recorder with an empty ks', tag: 'kaltura-recorder', config: { partnerId: 1234567, uiconfId: 7654321, ks: '' } },
     { name: 'captions editor with a bad entryId', tag: 'kaltura-captions-editor', config: { partnerId: 1234567, ks: KS, entryId: 'bad id' } },
     { name: 'flashcards with no cards array', tag: 'kaltura-flashcards', config: { title: 'Deck', cards: 'nope' } },
     { name: 'media manager with a bad serverUrl', tag: 'kaltura-media-manager', config: { partnerId: 1234567, ks: KS, serverUrl: 'https://evil.invalid/v1' } },
     { name: 'media manager, loader 404', tag: 'kaltura-media-manager', config: { partnerId: 1234567, ks: KS, serverUrl: SERVER_URL }, kalturaMode: 'notfound' },
-    { name: 'genie, loader throws', tag: 'kaltura-genie-widget', config: { partnerId: 1234567, ks: KS, serverUrl: SERVER_URL }, kalturaMode: 'throw' },
+    { name: 'genie, loader throws', tag: 'kaltura-genie-widget', config: { partnerId: 1234567, uiconfId: 2, ks: KS, serverUrl: SERVER_URL }, kalturaMode: 'throw' },
   ];
   for (const c of cases) {
     test(c.name, async ({ harness: h }) => {
@@ -62,6 +62,7 @@ test.describe('error states use one alert box', () => {
     await h.settle();
     await expect(alerts(h)).toHaveText('Failed to load player: Invalid entryId');
     await expect(h.page.locator('#host iframe')).toHaveCount(0);
+    expect(h.requests.filter((url) => url.includes('embedPlaykitJs'))).toEqual([]);
   });
 });
 
@@ -92,12 +93,15 @@ test.describe('flashcards: one bad clip does not hide the deck', () => {
 
     await h.page.getByRole('button', { name: 'Start' }).click();
     await expect(h.page.locator('.flashcard-counter')).toHaveText('2 / 3');
-    await expect(active.locator('iframe')).toHaveAttribute('src', /entry_id=0_good123/);
+    await expect(active.locator('.stub-player-ui')).toHaveCount(1);
+    expect(await h.page.evaluate(() => (window as unknown as { __playerLoads: Array<{ info: unknown }> }).__playerLoads.map((load) => load.info))).toEqual([
+      { entryId: '0_good123' },
+    ]);
     await expect(alerts(h)).toHaveCount(0);
 
     await active.getByRole('button', { name: 'Bad clip' }).click();
     await expect(active.locator('[role=alert]')).toHaveText('This clip cannot be shown.');
-    await expect(active.locator('iframe')).toHaveCount(0);
+    await expect(active.locator('.stub-player-ui')).toHaveCount(0);
     await expect(deck).toBeVisible();
 
     // The card ignores navigation while it animates. The arrow buttons are disabled then.

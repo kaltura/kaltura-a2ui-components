@@ -46,7 +46,7 @@ More in [test/README.md](test/README.md) and [e2e/README.md](e2e/README.md).
 - **Test titles start with an ID**: `SEC-06: ...`, `CONF-15: ...`. IDs come from [docs/security/SECF-30837.md](docs/security/SECF-30837.md) or the conformance suite. The traceability test fails when a row names a test file that lacks the ID.
 - **Red first.** Write the test, see it fail for the right reason, then fix.
 - **Pending convention.** A test that waits for a fix is skipped inside its file with `it.skipIf(!process.env.RUN_PENDING)` and the title prefix `[pending ID]`. E2E cases use the same prefix and run with `E2E_PENDING=1`. Whole files go in `test/pending.ts`. `test/pending.ts` is empty today, and the traceability test keeps it empty. Never merge a pending case without a row in the traceability table that says what blocks it.
-- **Public API change.** A new export, a removed export or a new tag fails `test/conformance/api-snapshot.test.ts`. Update the snapshot with `UPDATE_API_SNAPSHOT=1 npx vitest run test/conformance/api-snapshot`, add a [CHANGELOG.md](CHANGELOG.md) line and, for a breaking change, a [migration note](docs/migration-0.2.md).
+- **Public API change.** A new export, a removed export or a new tag fails `test/conformance/api-snapshot.test.ts`. Update the snapshot with `UPDATE_API_SNAPSHOT=1 npx vitest run test/conformance/api-snapshot`, describe it in the PR (the title becomes a Release notes line, label a breaking change `breaking`) and, for a breaking change, add a [migration note](docs/migration-0.2.md).
 - **New or changed prop.** Change the zod schema, run `npm run gen:catalog -- --write`, write the description in the JSON (it is not generated), and add a case to `test/components/cases.ts`.
 - **Docs follow the code.** Change the doc in the same commit as the behaviour. A doc that names a function must name one that exists: `test/conformance/docs-content.test.ts` checks this.
 - **Peers.** CI tests the lowest version each peer range allows (`test/conformance/peers.test.ts`). It has no run on the newest. To try one: `npm install --no-save @a2ui/web_core@latest @a2ui/react@latest`, then `npm run test:conformance`. Restore with `npm ci`.
@@ -58,9 +58,9 @@ Copy this into your PR (the PR template has it). Agent output is untrusted input
 
 - [ ] Every new prop has a zod rule, and a hostile value shows a plain-text error.
 - [ ] No `innerHTML`, `dangerouslySetInnerHTML`, `srcdoc`, `eval`, `new Function` or `document.write`. Markdown goes through `src/core/safe-markdown.ts`.
-- [ ] Remote code loads only through `src/core/unisphere-loader.ts`, behind the allowlist.
+- [ ] Remote code loads only through a fixed loader (`src/core/unisphere-loader.ts` behind the allowlist, `src/core/recorder-script.ts`, `src/core/player-script.ts`) or the captions editor fetch, from a Kaltura host.
 - [ ] Every URL built from props encodes its values and starts from a fixed Kaltura host.
-- [ ] The KS never appears in props, the data model, logs, error text or `setErrorHandler` messages.
+- [ ] The KS never appears in props, the data model, logs, error text, `setErrorHandler` messages or a URL.
 - [ ] Error text is fixed. It holds no prop value and no remote error text.
 - [ ] A new host option is a function the host calls. It is never a prop an agent can set.
 - [ ] A new iframe has the smallest `allow` list it needs.

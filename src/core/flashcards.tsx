@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FC, type KeyboardEvent } from 'react';
 import { isEntryId, isPositiveInt } from './ids';
 import { renderSafeMarkdown } from './safe-markdown';
-import { toKalturaCdnUrl } from './media-url';
+import { isAllowedMediaUrl } from './media-url';
 import { KalturaFlashcardsApi } from '../schemas/flashcards';
 import { LoadError, withValidatedProps } from './validate-props';
 import { kalturaHosts } from './region';
-import { PlayerFrame } from './player';
+import { PlayerEmbed } from './player';
+import { withKs } from './ks';
 
 const GRADIENTS = [
   'radial-gradient(315% 315% at 50% 214%, rgba(0,110,250,0) 0%, rgba(0,110,250,0.5) 100%), #000',
@@ -43,35 +44,14 @@ export interface FlashcardsCoreProps {
 }
 
 /**
- * Pure helper: builds the clip iframe embed URL.
- * Returns an empty string when partnerId, uiconfId or entryId is missing or invalid.
- */
-export function buildClipUrl(
-  clip: Clip,
-  partnerId?: number,
-  uiconfId?: number,
-  ks?: string,
-): string {
-  if (!isPositiveInt(partnerId) || !isPositiveInt(uiconfId) || !isEntryId(clip.entryId)) return '';
-  const base = `${kalturaHosts().cdn}/p/${encodeURIComponent(partnerId)}/embedPlaykitJs/partner_id/${encodeURIComponent(partnerId)}/uiconf_id/${encodeURIComponent(uiconfId)}`;
-  const params = new URLSearchParams({
-    iframeembed: 'true',
-    entry_id: clip.entryId,
-    kalturaSeekFrom: String(Math.round(clip.startTime)),
-    kalturaClipTo: String(Math.round(clip.endTime)),
-  });
-  if (ks) params.set('ks', ks);
-  return `${base}?${params}`;
-}
-
-/**
  * CDN thumbnail URL for a clip — seeks to startTime+1s for a meaningful frame.
- * Uses the clip's own thumbnail field only when it is an https Kaltura CDN URL
- * (see toKalturaCdnUrl). Otherwise builds the CDN URL, or returns an empty string.
+ * Uses the clip's own thumbnail field only when isAllowedMediaUrl accepts it (an https
+ * Kaltura CDN URL or a host-added media origin, with no api_v3 path or KS). Otherwise builds the CDN URL, or returns an
+ * empty string.
  */
 export function buildThumbnailUrl(clip: Clip, partnerId?: number): string {
-  const own = toKalturaCdnUrl(clip.thumbnail);
-  if (own) return own;
+  const own = clip.thumbnail;
+  if (own && isAllowedMediaUrl(own)) return new URL(own).href;
   if (!isPositiveInt(partnerId) || !isEntryId(clip.entryId)) return '';
   const sec = Math.round(clip.startTime) + 1;
   return `${kalturaHosts().vod}/p/${encodeURIComponent(partnerId)}/thumbnail/entry_id/${encodeURIComponent(clip.entryId)}/width/200/vid_sec/${sec}`;
@@ -149,21 +129,27 @@ function ClipPlayer({
   ks?: string;
   active: boolean;
 }) {
-  const url = useMemo(
-    () => buildClipUrl(clip, partnerId, uiconfId, ks),
-    [clip, partnerId, uiconfId, ks],
-  );
-
   if (!active) return null;
   const invalid =
     !isEntryId(clip.entryId) ||
     (partnerId !== undefined && !isPositiveInt(partnerId)) ||
     (uiconfId !== undefined && !isPositiveInt(uiconfId));
   if (invalid) return <LoadError widget="flashcards">This clip cannot be shown.</LoadError>;
-  if (!url) return null;
+  // Without partnerId and uiconfId there is nothing to play.
+  if (partnerId === undefined || uiconfId === undefined) return null;
 
   return (
-    <PlayerFrame src={url} className="flashcard-clip-player" title={clip.title ?? 'Video clip'} />
+    <PlayerEmbed
+      partnerId={partnerId}
+      uiconfId={uiconfId}
+      entryId={clip.entryId}
+      ks={ks}
+      seekFrom={clip.startTime}
+      clipTo={clip.endTime}
+      title={clip.title ?? 'Video clip'}
+      widget="flashcards"
+      className="flashcard-clip-player"
+    />
   );
 }
 
@@ -210,6 +196,7 @@ function ClipGallery({
                     src={thumbUrl}
                     alt={clip.title ?? `Clip ${ci + 1}`}
                     className="clip-thumb-img"
+                    referrerPolicy="no-referrer"
                   />
                 ) : (
                   <span className="clip-thumb-fallback" />
@@ -358,9 +345,7 @@ const FlashcardsView: FC<FlashcardsCoreProps> = ({
 };
 
 // Bad partnerId or uiconfId only disables the clips (SEC-11), so they are not checked here.
-export const FlashcardsCore = withValidatedProps(
-  KalturaFlashcardsApi.schema.omit({ partnerId: true, uiconfId: true }),
+export const FlashcardsCore = withKs(
   'flashcards',
-  FlashcardsView,
-  'flashcards',
+  withValidatedProps(KalturaFlashcardsApi.schema.omit({ partnerId: true, uiconfId: true }), 'flashcards', FlashcardsView, 'flashcards'),
 );

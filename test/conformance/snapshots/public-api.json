@@ -11,7 +11,6 @@
       "GenieCore",
       "KALTURA_CATALOG_ID",
       "MediaManagerCore",
-      "PLAYER_SANDBOX_PRESET",
       "PlayerCore",
       "RecorderCore",
       "UnisphereWidgetCore",
@@ -21,10 +20,7 @@
       "avatarReactImpl",
       "buildAllCards",
       "buildAnalyticsUrl",
-      "buildCaptionsEditorUrl",
-      "buildClipUrl",
       "buildKalturaCatalog",
-      "buildPlayerUrl",
       "buildWorkspaceConfig",
       "captionsEditorReactImpl",
       "chartReactImpl",
@@ -45,7 +41,6 @@
       "setExtraAllowedOrigins",
       "setExtraMediaOrigins",
       "setKsProvider",
-      "setPlayerSandbox",
       "setRegion",
       "vodAvatarReactImpl"
     ],
@@ -88,7 +83,6 @@
       "GENIE_WIDGET_TAG",
       "KALTURA_WC_TAGS",
       "MEDIA_MANAGER_TAG",
-      "PLAYER_SANDBOX_PRESET",
       "PLAYER_TAG",
       "RECORDER_TAG",
       "VOD_AVATAR_TAG",
@@ -110,7 +104,6 @@
       "setEventHandler",
       "setExtraAllowedOrigins",
       "setKsProvider",
-      "setPlayerSandbox",
       "setRegion"
     ],
     "types": [
