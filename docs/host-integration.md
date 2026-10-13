@@ -117,10 +117,10 @@ A starting policy. Replace `'self'` and the Unisphere regions to fit your page.
 <!-- csp -->
 ```text
 default-src 'self';
-script-src 'self' https://unisphere.nvp1.ovp.kaltura.com https://unisphere.irp2.ovp.kaltura.com https://unisphere.frp2.ovp.kaltura.com https://unisphere.cap2.ovp.kaltura.com https://unisphere.syp2.ovp.kaltura.com;
+script-src 'self' https://www.kaltura.com https://cdnapisec.kaltura.com https://unisphere.nvp1.ovp.kaltura.com https://unisphere.irp2.ovp.kaltura.com https://unisphere.frp2.ovp.kaltura.com https://unisphere.cap2.ovp.kaltura.com https://unisphere.syp2.ovp.kaltura.com;
 style-src 'self' 'unsafe-inline';
 img-src 'self' data: https://*.kaltura.com;
-media-src 'self' https://*.kaltura.com;
+media-src 'self' blob: https://*.kaltura.com;
 frame-src https://cdnapisec.kaltura.com https://www.kaltura.com https://kmc.kaltura.com;
 connect-src 'self' https://cdn.jsdelivr.net https://*.kaltura.com;
 object-src 'none';
@@ -129,13 +129,15 @@ base-uri 'none';
 
 | Directive | Why |
 |---|---|
-| `script-src` | Your own script and the Unisphere loaders (only the regions you use). The avatar loads through the Unisphere loader too. If you load the bundle from the CDN, add `https://cdn.jsdelivr.net` and use SRI |
+| `script-src` | Your own script and the Unisphere loaders (only the regions you use). The avatar loads through the Unisphere loader too. The recorder loads `express-recorder.js` from `www` and that script loads the player from `cdnapisec`. In a region both come from its API host (for example `https://api.eu.kaltura.com`). If you load the bundle from the CDN, add `https://cdn.jsdelivr.net` and use SRI |
 | `style-src ... 'unsafe-inline'` | The bundle injects its CSS in a `<style>` tag and the charts set `style` attributes |
-| `img-src`, `media-src` | Flashcard thumbnails, markdown images and the basic media components. Add your `setExtraMediaOrigins` hosts |
-| `frame-src` | Player and flashcard clips (`cdnapisec`), captions editor and recorder (`www`), Analytics (`kmc`; its KS goes by `postMessage` to that origin, not in the URL). In a region, the player, clips, captions editor and recorder use its API host (for example `https://api.eu.kaltura.com`) and Analytics uses its KMC host. All hosts are in [Regions](host-api.md#regions). Add the hosts of the widgets you use. A private cloud needs its own hosts |
-| `connect-src` | The geo map fetches `world-atlas` from jsDelivr. Unisphere widgets call Kaltura APIs. The avatar also calls `https://api.avatar.<region>.kaltura.ai`, which this policy does not list |
+| `img-src`, `media-src` | Flashcard thumbnails, markdown images and the basic media components. Add your `setExtraMediaOrigins` hosts. `blob:` in `media-src` is for the recorder preview |
+| `frame-src` | Player and flashcard clips (`cdnapisec`), captions editor (`www`), Analytics (`kmc`; its KS goes by `postMessage` to that origin, not in the URL). The recorder has no iframe. In a region, the player, clips and captions editor use its API host (for example `https://api.eu.kaltura.com`) and Analytics uses its KMC host. All hosts are in [Regions](host-api.md#regions). Add the hosts of the widgets you use. A private cloud needs its own hosts |
+| `connect-src` | The geo map fetches `world-atlas` from jsDelivr. Unisphere widgets and the recorder (uploads) call Kaltura APIs. The avatar also calls `https://api.avatar.<region>.kaltura.ai`, which this policy does not list |
 | `object-src`, `base-uri` | Not needed by any component |
 
-What is tested: the Chart, Flashcards, Player and the avatar loader (stubbed) run under this exact policy with no violation, and a script from a host that is not listed is blocked (`e2e/csp.spec.ts`). What is not tested: other Unisphere widgets, the other iframes and a live avatar session. Its API, WebSocket and WebRTC hosts are not verified. Watch the browser console for `Content Security Policy` messages the first time you enable one of them, and add the Kaltura host it names. Private cloud and on-prem Unisphere hosts also need entries in `script-src`, `connect-src` and `frame-src`.
+What is tested: the Chart, Flashcards, Player, the avatar loader (stubbed) and the recorder (stub script) run under this exact policy with no violation, and a script from a host that is not listed is blocked (`e2e/csp.spec.ts`). The real recorder script was also checked once under this policy: its UI rendered with no violation. A real recording and upload was not checked under it, so watch for `connect-src` and `media-src` messages. Not tested: other Unisphere widgets, the other iframes and a live avatar session. Its API, WebSocket and WebRTC hosts are not verified. Watch the browser console for `Content Security Policy` messages the first time you enable one of them, and add the Kaltura host it names. Private cloud and on-prem Unisphere hosts also need entries in `script-src`, `connect-src` and `frame-src`.
+
+The recorder script runs in your page origin and gets the KS in its `create` options. Any script on the page can read it. The other widgets keep the KS inside an iframe or a Unisphere module. This is the cost of the documented Express Recorder API. Use a short-lived KS with `editadmintags:*` only. See [ADR 0005](adr/0005-analytics-and-recorder-integration.md).
 
 CSP does not replace the host controls above. Agent output stays untrusted: [SECURITY.md](../SECURITY.md).

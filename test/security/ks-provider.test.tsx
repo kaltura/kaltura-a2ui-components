@@ -55,11 +55,11 @@ const unisphere = { partnerId: 1, serverUrl: SERVER_URL };
 const IFRAME_CASES = [
   ['player', PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' }],
   ['captions editor', CaptionsEditorCore, { partnerId: 1, entryId: '0_abc' }],
-  ['recorder', RecorderCore, { partnerId: 1 }],
 ] as const;
 
 // The analytics iframe gets its KS by postMessage: test/security/analytics.test.tsx.
-const LEAK_CASES = [...IFRAME_CASES, ['analytics', AnalyticsCore, { partnerId: 1 }]] as const;
+// The recorder keeps the KS out of the DOM. Where it lands is tested in recorder.test.tsx.
+const LEAK_CASES = [...IFRAME_CASES, ['analytics', AnalyticsCore, { partnerId: 1 }], ['recorder', RecorderCore, { partnerId: 1, uiconfId: 2 }]] as const;
 
 const UNISPHERE_CASES = [
   ['Kaltura Genie', GenieCore, unisphere],
@@ -137,7 +137,7 @@ describe('SEC-05: the provider learns which widget asks, for a least-privilege K
     ['player', PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' }],
     ['analytics', AnalyticsCore, { partnerId: 1 }],
     ['captions-editor', CaptionsEditorCore, { partnerId: 1, entryId: '0_abc' }],
-    ['recorder', RecorderCore, { partnerId: 1 }],
+    ['recorder', RecorderCore, { partnerId: 1, uiconfId: 2 }],
     ['media-manager', MediaManagerCore, unisphere],
     ['genie', GenieCore, unisphere],
     ['content-lab', ContentLabCore, unisphere],
@@ -155,7 +155,7 @@ describe('SEC-05: the provider learns which widget asks, for a least-privilege K
 
   it('SEC-05: a zero-argument provider still works', async () => {
     setKsProvider(() => HOST_KS);
-    const { container } = await mount(RecorderCore, { partnerId: 1 });
+    const { container } = await mount(PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' });
     expect(iframeSrc(container)).toContain(`ks=${HOST_KS}`);
   });
 
@@ -234,8 +234,8 @@ describe('SEC-05: invalid provider output', () => {
 
   it('SEC-05: the recorder shows the error inside its container', async () => {
     setKsProvider(() => SECRET);
-    const { container } = await mount(RecorderCore, { partnerId: 1 });
-    expect([container.textContent, container.querySelectorAll('iframe').length]).toEqual(['Failed to load recorder: Invalid ks', 0]);
+    const { container } = await mount(RecorderCore, { partnerId: 1, uiconfId: 2 });
+    expect(container.textContent).toBe('Failed to load recorder: Invalid ks');
   });
 
   it('SEC-05: a bad provider KS is refused even when the ks prop is fine', async () => {

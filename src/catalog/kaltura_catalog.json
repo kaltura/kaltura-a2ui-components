@@ -330,10 +330,31 @@
             },
             "uiconfId": {
               "type": "integer",
-              "description": "Optional uiConf ID for the recorder widget."
+              "description": "Player uiConf ID. The recorder uses it to load the player for the recorded entry."
+            },
+            "entryName": {
+              "type": "string",
+              "maxLength": 256,
+              "description": "Name for the new entry. Plain text."
+            },
+            "allowVideo": {
+              "type": "boolean",
+              "description": "Allow webcam video recording."
+            },
+            "allowAudio": {
+              "type": "boolean",
+              "description": "Allow audio-only recording."
+            },
+            "allowScreenShare": {
+              "type": "boolean",
+              "description": "Allow screen recording."
+            },
+            "maxRecordingTime": {
+              "type": "integer",
+              "description": "Longest recording in seconds. At most 86400."
             }
           },
-          "required": ["component", "partnerId"]
+          "required": ["component", "partnerId", "uiconfId"]
         }
       ],
       "unevaluatedProperties": false

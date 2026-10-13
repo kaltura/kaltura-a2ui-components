@@ -46,6 +46,7 @@ Follow the Kaltura Session Guide:
 - Keep the expiry short, for example 1 hour.
 - Grant least privilege. For playback: `setrole:PLAYBACK_BASE_ROLE`, `sview:<entryId>`, `privacycontext`, `appid`. Add `iprestrict` or `actionslimit` where you can.
 - Give each widget only what its guide lists, for example Genie `setrole:PLAYBACK_BASE_ROLE` and Express Recorder `editadmintags:*`.
+- The recorder KS needs `editadmintags:*`. The Express Recorder script runs in your page, so the KS is visible to the page's JavaScript and to any other script on that page. Keep its expiry short and mint it for one user.
 - Analytics is the exception: its guide requires an ADMIN KS (type=2). Mint it on the server with a short expiry and narrow it with `setrole` and `iprestrict`.
 - **The Analytics KS must belong to an admin user that has a role.** A KS with no role makes the app fail with "Invalid object id [0]". This is the concern of your KS provider: the component cannot check it. Pick the user with `user.list` and `isAdminEqual=1`, and use one that has `roleIds`.
 - Analytics receives the KS in a `postMessage` to the Kaltura Analytics origin, never in the iframe URL. A message is accepted only from that origin and from our iframe. See [ADR 0005](../adr/0005-analytics-and-recorder-integration.md).

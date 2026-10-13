@@ -33,8 +33,8 @@ test.describe('error states use one alert box', () => {
   const player = { partnerId: 1234567, uiconfId: 12345678, entryId: '0_abc123' };
   const cases: Array<{ name: string; tag: string; config: Record<string, unknown>; kalturaMode?: 'throw' | 'notfound' }> = [
     { name: 'player with a bad entryId', tag: 'kaltura-player', config: { ...player, entryId: 'bad id' } },
-    { name: 'recorder with a bad partnerId (inside the container)', tag: 'kaltura-recorder', config: { partnerId: -1, ks: KS } },
-    { name: 'recorder with an empty ks', tag: 'kaltura-recorder', config: { partnerId: 1234567, ks: '' } },
+    { name: 'recorder with a bad partnerId (inside the container)', tag: 'kaltura-recorder', config: { partnerId: -1, uiconfId: 7654321, ks: KS } },
+    { name: 'recorder with an empty ks', tag: 'kaltura-recorder', config: { partnerId: 1234567, uiconfId: 7654321, ks: '' } },
     { name: 'captions editor with a bad entryId', tag: 'kaltura-captions-editor', config: { partnerId: 1234567, ks: KS, entryId: 'bad id' } },
     { name: 'flashcards with no cards array', tag: 'kaltura-flashcards', config: { title: 'Deck', cards: 'nope' } },
     { name: 'media manager with a bad serverUrl', tag: 'kaltura-media-manager', config: { partnerId: 1234567, ks: KS, serverUrl: 'https://evil.invalid/v1' } },
