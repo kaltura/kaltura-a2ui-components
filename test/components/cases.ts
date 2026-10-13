@@ -195,11 +195,12 @@ export const CASES: Case[] = [
     tag: 'kaltura-recorder',
     component: 'KalturaRecorder',
     load: async () => (await import('../../src/core/recorder')).RecorderCore as ComponentType<never>,
-    valid: { partnerId: 1, ks: 'ks-1' },
-    invalid: { partnerId: -1, ks: 'ks-1' },
-    hostile: { partnerId: 1, ks: PAYLOAD },
+    valid: { partnerId: 1, uiconfId: 2, ks: 'ks-1' },
+    invalid: { partnerId: -1, uiconfId: 2, ks: 'ks-1' },
+    hostile: { partnerId: 1, uiconfId: 2, ks: PAYLOAD },
     clearsWrapper: true,
-    happy: el => expect(iframeSrc(el)).toContain('/partner_id/1/'),
+    // The script never loads here (jsdom fetches nothing): the container is ready for it.
+    happy: el => expect(el.querySelector('.kaltura-recorder-container')?.id).toMatch(/^kaltura-recorder-/),
   },
   {
     name: 'avatar',

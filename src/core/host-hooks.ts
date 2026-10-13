@@ -34,6 +34,12 @@ export type KalturaEvent =
       type: 'avatar-disconnected';
       widget: 'avatar';
       detail: { reason: string; instanceId: string };
+    }
+  | {
+      /** The recorder finished an upload. `entryId` is present when the recorder gave a valid one. */
+      type: 'recorder-upload-ended';
+      widget: 'recorder';
+      detail: { entryId?: string; instanceId: string };
     };
 
 /** An error whose message is fixed text, safe to show and report. */

@@ -1,5 +1,7 @@
 import { test as base, expect, type ConsoleMessage, type Page, type Request } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { ORIGIN_A, ORIGIN_B } from './constants';
 
 export type KsProviderMode = 'sync' | 'async' | 'throw' | 'reject';
@@ -15,6 +17,8 @@ interface KsWindow {
 }
 
 const KALTURA_HOST = /^https?:\/\/[^/]*\.kaltura\.com\//;
+const RECORDER_PATH = '/apps/expressrecorder/latest/express-recorder.js';
+const RECORDER_STUB = readFileSync(resolve(process.cwd(), 'e2e/fixtures/express-recorder-stub.js'), 'utf8');
 const LOADER_PATH = /\/loader\/index\.esm\.js(\?|$)/;
 
 /**
@@ -30,6 +34,8 @@ export class Harness {
   readonly consoleText: string[] = [];
   /** What stubbed *.kaltura.com hosts serve. Real Kaltura hosts are never contacted. */
   kalturaMode: LoaderMode = 'ok';
+  /** What the stubbed recorder script URL does: serve the stub, fail, or serve a script with no API. */
+  recorderMode: 'ok' | 'fail' | 'no-api' = 'ok';
 
   constructor(readonly page: Page) {
     page.on('request', (r: Request) => this.requests.push(r.url()));
@@ -54,6 +60,18 @@ export class Harness {
         body: await res.body(),
       });
     });
+    await this.page.route(
+      (url) => url.pathname === RECORDER_PATH && KALTURA_HOST.test(url.href),
+      (route) =>
+        this.recorderMode === 'fail'
+          ? route.abort()
+          : route.fulfill({
+              status: 200,
+              contentType: 'text/javascript',
+              headers: { 'Access-Control-Allow-Origin': '*' },
+              body: this.recorderMode === 'ok' ? RECORDER_STUB : '/* no recorder API */',
+            }),
+    );
     await this.page.goto(`${ORIGIN_A}/harness.html`);
   }
 

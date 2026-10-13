@@ -51,7 +51,7 @@ setPlayerSandbox(undefined); // back to no sandbox
 - Allowed tokens: `allow-downloads`, `allow-forms`, `allow-modals`, `allow-orientation-lock`, `allow-pointer-lock`, `allow-popups`, `allow-popups-to-escape-sandbox`, `allow-presentation`, `allow-same-origin`, `allow-scripts`, `allow-storage-access-by-user-activation`, `allow-top-navigation-by-user-activation`. Any other token throws (`Sandbox token not allowed: …`) and keeps the current value. `allow-top-navigation` and `allow-top-navigation-to-custom-protocols` are refused: they let the player page replace your page without a click.
 - An empty list gives the strictest sandbox: no scripts, so no player.
 - No prop or element `config` sets it. The iframe reads only the host value, so a `sandbox` prop from an agent has no effect.
-- The recorder, captions editor and analytics iframes keep their own fixed `sandbox`.
+- The captions editor and analytics iframes keep their own fixed `sandbox`. The recorder has no iframe: it is the Express Recorder script (see [host-integration.md](host-integration.md)).
 
 `PLAYER_SANDBOX_PRESET` keeps playback, fullscreen, downloads, Cast/Presentation and share pop-ups. It blocks top navigation, `alert`/`confirm` dialogs, pointer lock and storage access prompts.
 
@@ -84,9 +84,9 @@ Codes: `nvp1` (default, US), `irp2`, `frp2`, `cap2`, `syp2`. Any other code thro
 | vod | `https://cfvod.kaltura.com` | `https://cfvod.irp2.ovp.kaltura.com` | `https://cfvod.frp2.ovp.kaltura.com` | `https://cfvod.cap2.ovp.kaltura.com` | `https://cfvod.syp2.ovp.kaltura.com` | Flashcards thumbnails |
 | cdn | `https://cdnapisec.kaltura.com` | `https://api.eu.kaltura.com` | `https://api.de.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | Player, flashcard clips, captions editor `cdnurl` |
 | kmc | `https://kmc.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` | `https://kmc.de.kaltura.com` | `https://kmc.ca.kaltura.com` | `https://kmc.ap.kaltura.com` | Analytics (`/index.php/kmcng/analytics`) |
-| recorder | `https://www.kaltura.com` | same as cdn | same as cdn | same as cdn | same as cdn | Recorder iframe (`/index.php/extwidget/preview`) |
+| recorder | `https://www.kaltura.com` | same as cdn | same as cdn | same as cdn | same as cdn | Express Recorder script (`/apps/expressrecorder/latest/express-recorder.js`) |
 
-The guide lists no regional CDN host, so the player uses the regional API host shown in the cdn row. The recorder uses the same host with the US path.
+The guide lists no regional CDN host, so the player uses the regional API host shown in the cdn row. The recorder script always loads from `https://www.kaltura.com`. It gets the regional API host as `serviceUrl` and the cdn host as `playerUrl`.
 
 Sources:
 
@@ -115,7 +115,7 @@ setErrorHandler((error: KalturaError) => log(error.code, error.widget, error.mes
 | `origin-not-allowed` | `serverUrl` is not an allowed Unisphere origin |
 | `load-failed` | A remote module, SDK or workspace failed to load |
 | `url-rejected` | A basic Image, Video or AudioPlayer `url` was refused |
-| `render-failed` | A chart threw while it rendered |
+| `render-failed` | A chart threw while it rendered, or the recorder reported an error (fixed text `Recorder error`) |
 
 `widget` is the `KsWidget` name (`player`, `analytics`, `recorder` …) or `flashcards`, `chart`, `image`, `video`, `audio-player`. `UnisphereWidgetCore` used directly reports `unisphere` unless you pass its `widget` prop.
 
@@ -134,6 +134,7 @@ setEventHandler(event => {
 | Type | Widget | `detail` |
 |---|---|---|
 | `entry-selected` | `media-manager` | `{ entryId, name, instanceId, entries? }`, the same as the `kaltura-entry-selected` DOM event |
+| `recorder-upload-ended` | `recorder` | `{ entryId?, instanceId }`. `entryId` is there only when the recorder sent a valid entry id. `instanceId` is the recorder container id |
 | `avatar-disconnected` | `avatar` | `{ reason, instanceId }`. `reason` is a name such as `ConversationEnded`, or `UnknownReason`. `instanceId` is the avatar container id |
 
 The DOM event still fires. `name` comes from the media library or the agent: treat it as untrusted text. A handler that throws is ignored.

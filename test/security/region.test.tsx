@@ -3,14 +3,12 @@
 // The guide lists no regional CDN host: the player and the recorder use the regional web host.
 // The KMC uses the kmc host the guide lists.
 import { describe, it, expect, afterEach } from 'vitest';
-import { act } from 'react';
-import { mount } from '../helpers/render';
 import { setRegion, type KalturaRegion } from '../../src/adapters/react/index';
 import { buildPlayerUrl } from '../../src/core/player';
 import { buildClipUrl, buildThumbnailUrl } from '../../src/core/flashcards';
 import { buildCaptionsEditorUrl } from '../../src/core/captions-editor';
 import { buildAnalyticsUrl } from '../../src/core/analytics';
-import { RecorderCore } from '../../src/core/recorder';
+import { recorderScriptUrl } from '../../src/core/recorder-script';
 
 const clip = { entryId: '0_abc', startTime: 4, endTime: 9 };
 
@@ -23,20 +21,17 @@ const US = {
   captions:
     'https://www.kaltura.com/apps/captionstudio/latest/index.html?pid=1&ks=k&entryid=0_abc&cdnurl=https://cdnapisec.kaltura.com&serviceurl=https://www.kaltura.com',
   analytics: 'https://kmc.kaltura.com/index.php/kmcng/analytics?ks=k&partnerId=1',
-  recorder: 'https://www.kaltura.com/index.php/extwidget/preview/partner_id/1/uiconf_id/0/entry_id//embed/iframe?ks=k&showRecordButton=true',
+  recorder: 'https://www.kaltura.com/apps/expressrecorder/latest/express-recorder.js',
 };
 
 async function urls() {
-  const { container, root } = await mount(RecorderCore, { partnerId: 1, ks: 'k' });
-  const recorder = container.querySelector('iframe')?.src;
-  act(() => root.unmount());
   return {
     player: buildPlayerUrl({ partnerId: 1, uiconfId: 2, entryId: '0_abc' }),
     clip: buildClipUrl(clip, 1, 2),
     thumbnail: buildThumbnailUrl(clip, 1),
     captions: buildCaptionsEditorUrl({ partnerId: 1, ks: 'k', entryId: '0_abc' }),
     analytics: buildAnalyticsUrl({ partnerId: 1, ks: 'k' }),
-    recorder,
+    recorder: recorderScriptUrl(),
   };
 }
 

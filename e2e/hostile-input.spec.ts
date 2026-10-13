@@ -115,15 +115,16 @@ test.describe('case 5: allowlist control', () => {
   }
 });
 
-test.describe('case 12 and 13: recorder iframe', () => {
-  const FIXED_ATTRS = ['allow', 'allowfullscreen', 'sandbox', 'src', 'style', 'title'];
+test.describe('case 12 and 13: recorder script', () => {
   const srcdoc = "1\" srcdoc=\"<script>parent.__pwned.push('srcdoc')<\\/script>";
-  const hostileIds: Record<string, Record<string, string>> = {
-    'partnerId with srcdoc': { partnerId: srcdoc },
-    'partnerId with onload': { partnerId: '1" onload="window.__pwned.push(\'onload\')' },
-    'partnerId with path traversal': { partnerId: '../../evil' },
-    'uiconfId with srcdoc': { partnerId: '1234567', uiconfId: srcdoc },
-    'uiconfId with onload': { partnerId: '1234567', uiconfId: '1" onload="window.__pwned.push(\'onload\')' },
+  const created = (h: Harness) =>
+    h.page.evaluate(() => (window as unknown as { __recorderCreates?: unknown[] }).__recorderCreates ?? []);
+  const hostileIds: Record<string, Record<string, unknown>> = {
+    'partnerId with srcdoc': { partnerId: srcdoc, uiconfId: 7654321 },
+    'partnerId with onload': { partnerId: '1" onload="window.__pwned.push(\'onload\')', uiconfId: 7654321 },
+    'partnerId with path traversal': { partnerId: '../../evil', uiconfId: 7654321 },
+    'uiconfId with srcdoc': { partnerId: 1234567, uiconfId: srcdoc },
+    'uiconfId with onload': { partnerId: 1234567, uiconfId: '1" onload="window.__pwned.push(\'onload\')' },
   };
 
   for (const [name, ids] of Object.entries(hostileIds)) {
@@ -131,25 +132,21 @@ test.describe('case 12 and 13: recorder iframe', () => {
       await h.open();
       await h.mount('kaltura-recorder', { ks: 'DUMMY_KS_NOT_REAL', ...ids });
       await h.settle();
-      const attrs = await h.page.evaluate(() =>
-        [...document.querySelectorAll('#host iframe')].map((f) => f.getAttributeNames().sort()),
-      );
-      for (const names of attrs) expect(names.filter((n) => !FIXED_ATTRS.includes(n))).toEqual([]);
-      const srcs = await h.page.locator('#host iframe').evaluateAll((fs) => fs.map((f) => f.getAttribute('src')));
-      for (const src of srcs) expect(src).toMatch(/\/partner_id\/\d+\/uiconf_id\/\d+\//);
-      expect(await h.pwned()).toEqual([]);
+      expect([
+        await created(h),
+        await h.page.locator('#host iframe, #host img').count(),
+        await h.page.locator('#host [role=alert]').allTextContents(),
+        await h.pwned(),
+      ]).toEqual([[], 0, [expect.stringMatching(/^Failed to load recorder: Invalid (partnerId|uiconfId)$/)], []]);
     });
   }
 
-  test('ks is URL-encoded and adds no element', async ({ harness: h }) => {
+  test('a ks with markup stays in the create options and adds no element', async ({ harness: h }) => {
     const ks = `"><img src=x onerror="window.__pwned.push('ks')">`;
     await h.open();
-    await h.mount('kaltura-recorder', { partnerId: 1234567, ks });
-    await h.settle();
-    const src = await h.page.locator('#host iframe').getAttribute('src');
-    expect(src).toContain(`ks=${encodeURIComponent(ks)}`);
-    expect(await h.page.locator('#host img').count()).toBe(0);
-    expect(await h.pwned()).toEqual([]);
+    await h.mount('kaltura-recorder', { partnerId: 1234567, uiconfId: 7654321, ks });
+    await expect.poll(async () => (await created(h)).length).toBe(1);
+    expect([await h.page.locator('#host img').count(), await h.hostText(), await h.pwned()]).toEqual([0, 'stub recorder', []]);
   });
 });
 

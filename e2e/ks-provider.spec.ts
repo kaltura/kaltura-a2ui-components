@@ -15,6 +15,9 @@ const UNISPHERE_TAGS = [
   'kaltura-vod-avatar-wc',
   'kaltura-agents-widget',
 ];
+const recorderConfig = { partnerId: 1234567, uiconfId: 7654321 };
+const recorderCreates = (h: Harness) =>
+  h.page.evaluate(() => (window as unknown as { __recorderCreates?: Array<{ options: { ks?: string } }> }).__recorderCreates ?? []);
 const unisphereConfig = { partnerId: 1234567, serverUrl: SERVER_URL, entryId: '0_dummy' };
 
 /** The KS must not appear in any visible text or console line. */
@@ -25,12 +28,12 @@ async function expectNoKsInTextOrLogs(h: Harness) {
 }
 
 test.describe('provider supplies the KS, config has none', () => {
-  test('recorder iframe gets the KS from a sync provider', async ({ harness: h }) => {
+  test('recorder gets the KS from a sync provider, in its create options only', async ({ harness: h }) => {
     await h.open();
     await h.setKsProvider('sync', KS);
-    await h.mount('kaltura-recorder', { partnerId: 1234567 });
-    await h.settle();
-    expect(await iframeSrc(h)).toContain(`ks=${encodeURIComponent(KS)}`);
+    await h.mount('kaltura-recorder', recorderConfig);
+    await expect.poll(async () => (await recorderCreates(h)).map((c) => c.options.ks)).toEqual([KS]);
+    expect(await h.page.locator('#host iframe').count()).toBe(0);
     await expectNoKsInTextOrLogs(h);
   });
 
@@ -71,17 +74,17 @@ test.describe('provider supplies the KS, config has none', () => {
   test('an async provider renders nothing until it resolves', async ({ harness: h }) => {
     await h.open();
     await h.setKsProvider('async', KS);
-    await h.mount('kaltura-recorder', { partnerId: 1234567 });
+    await h.mount('kaltura-recorder', recorderConfig);
     expect(await h.page.locator('kaltura-recorder').innerHTML()).toBe('');
-    await expect.poll(() => iframeSrc(h)).toContain(`ks=${encodeURIComponent(KS)}`);
+    await expect.poll(async () => (await recorderCreates(h)).map((c) => c.options.ks)).toEqual([KS]);
     await expectNoKsInTextOrLogs(h);
   });
 
   test('the provider is called once per mounted component', async ({ harness: h }) => {
     await h.open();
     await h.setKsProvider('sync', KS);
-    await h.mount('kaltura-recorder', { partnerId: 1234567 });
-    await h.mount('kaltura-recorder', { partnerId: 1234567 });
+    await h.mount('kaltura-recorder', recorderConfig);
+    await h.mount('kaltura-recorder', recorderConfig);
     await h.settle();
     expect(await h.providerCalls()).toBe(2);
   });
@@ -89,7 +92,7 @@ test.describe('provider supplies the KS, config has none', () => {
   test('the provider receives the widget name', async ({ harness: h }) => {
     await h.open();
     await h.setKsProvider('sync', KS);
-    await h.mount('kaltura-recorder', { partnerId: 1234567 });
+    await h.mount('kaltura-recorder', recorderConfig);
     await h.mount('kaltura-analytics', { partnerId: 1234567 });
     await h.mount('kaltura-genie-widget', unisphereConfig);
     await h.settle();
@@ -99,27 +102,24 @@ test.describe('provider supplies the KS, config has none', () => {
   test('the provider wins over a ks prop', async ({ harness: h }) => {
     await h.open();
     await h.setKsProvider('sync', KS);
-    await h.mount('kaltura-recorder', { partnerId: 1234567, ks: PROP_KS });
+    await h.mount('kaltura-recorder', { ...recorderConfig, ks: PROP_KS });
     await h.settle();
-    const src = await iframeSrc(h);
-    expect([src?.includes(encodeURIComponent(KS)), src?.includes(PROP_KS)]).toEqual([true, false]);
+    await expect.poll(async () => (await recorderCreates(h)).map((c) => c.options.ks)).toEqual([KS]);
   });
 });
 
 test.describe('no provider result falls back to the ks prop', () => {
   test('no provider set', async ({ harness: h }) => {
     await h.open();
-    await h.mount('kaltura-recorder', { partnerId: 1234567, ks: PROP_KS });
-    await h.settle();
-    expect(await iframeSrc(h)).toContain(`ks=${PROP_KS}`);
+    await h.mount('kaltura-recorder', { ...recorderConfig, ks: PROP_KS });
+    await expect.poll(async () => (await recorderCreates(h)).map((c) => c.options.ks)).toEqual([PROP_KS]);
   });
 
   test('provider returns an empty string', async ({ harness: h }) => {
     await h.open();
     await h.setKsProvider('sync', '');
-    await h.mount('kaltura-recorder', { partnerId: 1234567, ks: PROP_KS });
-    await h.settle();
-    expect(await iframeSrc(h)).toContain(`ks=${PROP_KS}`);
+    await h.mount('kaltura-recorder', { ...recorderConfig, ks: PROP_KS });
+    await expect.poll(async () => (await recorderCreates(h)).map((c) => c.options.ks)).toEqual([PROP_KS]);
   });
 });
 
@@ -128,7 +128,7 @@ test.describe('missing KS', () => {
   test('widgets that need a KS show the error and load nothing', async ({ harness: h }) => {
     await h.open();
     for (const tag of UNISPHERE_TAGS) await h.mount(tag, unisphereConfig);
-    await h.mount('kaltura-recorder', { partnerId: 1234567 });
+    await h.mount('kaltura-recorder', recorderConfig);
     await h.settle();
     expect(await h.page.locator('#host iframe').count()).toBe(0);
     expect(await h.page.locator('#host [role=alert]').allTextContents()).toEqual(
@@ -155,10 +155,10 @@ test.describe('bad provider output is refused and never echoed', () => {
     test(name, async ({ harness: h }) => {
       await h.open();
       await h.setKsProvider(mode, ks);
-      await h.mount('kaltura-recorder', { partnerId: 1234567, ks: PROP_KS });
+      await h.mount('kaltura-recorder', { ...recorderConfig, ks: PROP_KS });
       await h.mount('kaltura-media-manager', unisphereConfig);
       await h.settle();
-      expect(await h.page.locator('#host iframe').count()).toBe(0);
+      expect([await h.page.locator('#host iframe').count(), (await recorderCreates(h)).length]).toEqual([0, 0]);
       expect(h.loaderRequests()).toEqual([]);
       expect(await h.hostText()).toContain('Invalid ks');
       await expectNoKsInTextOrLogs(h);
@@ -171,7 +171,7 @@ test.describe('bad provider output is refused and never echoed', () => {
 test('SEC-05: a rejected provider leaves no unhandled rejection', async ({ harness: h }) => {
   await h.open();
   await h.setKsProvider('reject', KS);
-  await h.mount('kaltura-recorder', { partnerId: 1234567 });
+  await h.mount('kaltura-recorder', recorderConfig);
   await h.settle();
   expect(h.pageErrors).toEqual([]);
 });
