@@ -190,7 +190,7 @@ jobs:
             [ "$got" = "$want" ] || { echo "::error::${file} does not match hashes.json."; exit 1; }
           done
           jq -e --slurpfile h "${assets}/hashes.json" \
-            '."x-kaltura-adapters" | .webcomponent.integrity == $h[0].cdn["dist/kaltura-wc.js"] and .react.integrity == $h[0].cdn["dist/kaltura-react.mjs"]' \
+            '."x-kaltura-adapters" | .webcomponent.integrity == $h[0].cdn["dist/kaltura-wc.js"] and .react.integrity == $h[0].cdn["dist/kaltura-react.mjs"] and .react.stubIntegrity == $h[0].cdn["dist/html-element-stub.mjs"]' \
             src/catalog/kaltura_catalog.json > /dev/null \
             || { echo '::error::The catalog integrity values do not match hashes.json.'; exit 1; }
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2

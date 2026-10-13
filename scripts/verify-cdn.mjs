@@ -79,6 +79,10 @@ export async function verifyCdn({ base, catalogBase = base, expected, retry }) {
     if (wc && webcomponent.integrity !== wc.sri) problems.push(`catalog webcomponent.integrity ${webcomponent.integrity} is not the served ${wc.sri}`);
     const bundle = seen['dist/kaltura-react.mjs'];
     // A release (expected given) must carry the React SRI. Tags before 0.2.0 do not have the key.
+    // Catalogs of tags up to v0.3.0 have no stub keys, so check them only where present.
+    const stub = seen['dist/html-element-stub.mjs'];
+    if (react.stubCdn !== undefined && react.stubCdn !== `${catalogBase}dist/html-element-stub.mjs`) problems.push(`catalog react.stubCdn is ${react.stubCdn}`);
+    if (stub && react.stubIntegrity !== undefined && react.stubIntegrity !== stub.sri) problems.push(`catalog react.stubIntegrity ${react.stubIntegrity} is not the served ${stub.sri}`);
     if (bundle && (expected || react.integrity !== undefined) && react.integrity !== bundle.sri) problems.push(`catalog react.integrity ${react.integrity} is not the served ${bundle.sri}`);
   }
   return problems;

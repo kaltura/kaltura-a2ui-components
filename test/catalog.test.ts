@@ -78,9 +78,11 @@ describe('x-kaltura-adapters', () => {
   // workspace only (scripts/stamp-catalog.mjs). The stamped result is checked by
   // scripts/release-verify-stamp.mjs and test/release/stamped-catalog.test.ts.
   it('carries the release placeholders that the release workflow substitutes', () => {
-    expect([adapters.react.cdn, adapters.react.integrity, adapters.webcomponent.cdn, adapters.webcomponent.integrity]).toEqual([
+    expect([adapters.react.cdn, adapters.react.integrity, adapters.react.stubCdn, adapters.react.stubIntegrity, adapters.webcomponent.cdn, adapters.webcomponent.integrity]).toEqual([
       expect.stringContaining('@__RELEASE_TAG__/dist/kaltura-react.mjs'),
       '__REACT_SRI__',
+      expect.stringContaining('@__RELEASE_TAG__/dist/html-element-stub.mjs'),
+      '__STUB_SRI__',
       expect.stringContaining('@__RELEASE_TAG__/dist/kaltura-wc.js'),
       '__WC_SRI__',
     ]);
