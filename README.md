@@ -170,7 +170,7 @@ A full page with a KS provider and an error handler: [examples/plain-html](examp
 |---|---|
 | Supply the Kaltura Session (KS) | `setKsProvider`. [docs/host-integration.md](docs/host-integration.md), [docs/ks-privileges.md](docs/ks-privileges.md), [docs/security/ks.md](docs/security/ks.md) |
 | Private cloud or on-prem Unisphere | `setExtraAllowedOrigins`. [docs/host-integration.md](docs/host-integration.md) |
-| Region, media URL allowlist, error and event hooks | [docs/host-api.md](docs/host-api.md) |
+| Region, media URL allowlist, error and event hooks, player sandbox | [docs/host-api.md](docs/host-api.md) |
 | Trust model and CSP | [SECURITY.md](SECURITY.md) |
 | Upgrade from 0.1.x | [docs/migration-0.2.md](docs/migration-0.2.md) |
 

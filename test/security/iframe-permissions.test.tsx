@@ -2,9 +2,10 @@
 // Turns green: plan item 2.10 (iframe permissions).
 // The table below is a snapshot of `allow` and `sandbox` per component. Any change
 // to a permission fails here and shows up in review.
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { act } from 'react';
 import { mount } from '../helpers/render';
+import { setPlayerSandbox, PLAYER_SANDBOX_PRESET } from '../../src/core/host-hooks';
 import { PlayerCore } from '../../src/core/player';
 import { FlashcardsCore } from '../../src/core/flashcards';
 import { RecorderCore } from '../../src/core/recorder';
@@ -21,8 +22,8 @@ afterEach(() => {
 //  - fullscreen: the fullscreen button
 //  - encrypted-media: DRM-protected entries
 const PLAYBACK_ALLOW = 'autoplay *; fullscreen *; encrypted-media *';
-// No sandbox on player iframes: any sandbox breaks downloads and Cast/Presentation.
-// A sandbox for them is a Phase 3 item in internal-review-PLAN.md.
+// No sandbox on player iframes by default: a sandbox can break downloads and
+// Cast/Presentation. Hosts opt in with `setPlayerSandbox` (see the last block).
 const EDITOR_SANDBOX = 'allow-scripts allow-same-origin allow-forms allow-popups allow-downloads';
 
 const CAPTURE = /camera|microphone|display-capture/;
@@ -100,5 +101,18 @@ describe('SEC-14: iframe permissions', () => {
   it('SEC-14: recorder iframe keeps camera, microphone and display-capture (it records)', async () => {
     const recorder = CASES.find(([label]) => label === 'recorder')!;
     expect((await recorder[1]()).allow).toMatch(/camera.*microphone.*display-capture/);
+  });
+});
+
+// With the opt-in host sandbox, only the player and clip iframes change.
+const PLAYER_FRAMES = ['player', 'flashcards clip'];
+
+describe('SEC-14: iframe permissions with setPlayerSandbox(PLAYER_SANDBOX_PRESET)', () => {
+  beforeEach(() => setPlayerSandbox(PLAYER_SANDBOX_PRESET));
+  afterEach(() => setPlayerSandbox(undefined));
+
+  it.each(CASES)('SEC-14: %s iframe allow and sandbox snapshot with the preset', async (label, read, expected) => {
+    const sandbox = PLAYER_FRAMES.includes(label) ? PLAYER_SANDBOX_PRESET.join(' ') : expected.sandbox;
+    expect(await read()).toEqual({ ...expected, sandbox });
   });
 });

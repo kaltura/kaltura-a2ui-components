@@ -10,6 +10,7 @@ Options the host page sets. Agents never call these. Set them once, before the c
 | `setRegion(code)` | yes | yes | Picks the Kaltura region for the hosts in the table below |
 | `setErrorHandler(fn)` | yes | yes | Gets a `KalturaError` for each error state |
 | `setEventHandler(fn)` | yes | yes | Gets a `KalturaEvent` for widget events |
+| `setPlayerSandbox(tokens)` | yes | yes | Opt-in `sandbox` for player and flashcard clip iframes. Off by default |
 
 In the web component bundle they are on `window.KalturaA2UIWebComponents`. That bundle has no basic Image, Video or AudioPlayer, so it has no `setExtraMediaOrigins`.
 
@@ -34,6 +35,40 @@ setExtraMediaOrigins(['https://media.example.com']);
 `setExtraMediaOrigins` throws on an entry that is not an `https` origin (no path, query or user name).
 
 **Register the Kaltura catalog only.** The agent picks the catalog by id in `createSurface`. Importing the package guards the shared `basicCatalog` in place (Image, Video, AudioPlayer and Text), so an agent that picks it gets these checks too. A catalog you build yourself from the raw `Image`, `Video`, `AudioPlayer` or `Text` exports, or from a second copy of `@a2ui/react`, is not guarded. To keep the basic catalog id for older agents, register `buildKalturaCatalog(basicCatalog.id)` in its place.
+
+## Player sandbox
+
+Player and flashcard clip iframes have no `sandbox` attribute by default. A sandbox that leaves out a token the player needs breaks a feature without an error, and none was tested on real devices. Turn it on only after you test your players with it.
+
+```ts
+import { setPlayerSandbox, PLAYER_SANDBOX_PRESET } from '@kaltura/a2ui-react';
+
+setPlayerSandbox(PLAYER_SANDBOX_PRESET); // or a list, or 'allow-scripts allow-same-origin'
+setPlayerSandbox(undefined); // back to no sandbox
+```
+
+- It applies to player and clip iframes that mount after the call. A player already on the page keeps the value it mounted with. Remount it to change it.
+- Allowed tokens: `allow-downloads`, `allow-forms`, `allow-modals`, `allow-orientation-lock`, `allow-pointer-lock`, `allow-popups`, `allow-popups-to-escape-sandbox`, `allow-presentation`, `allow-same-origin`, `allow-scripts`, `allow-storage-access-by-user-activation`, `allow-top-navigation-by-user-activation`. Any other token throws (`Sandbox token not allowed: …`) and keeps the current value. `allow-top-navigation` and `allow-top-navigation-to-custom-protocols` are refused: they let the player page replace your page without a click.
+- An empty list gives the strictest sandbox: no scripts, so no player.
+- No prop or element `config` sets it. The iframe reads only the host value, so a `sandbox` prop from an agent has no effect.
+- The recorder, captions editor and analytics iframes keep their own fixed `sandbox`.
+
+`PLAYER_SANDBOX_PRESET` keeps playback, fullscreen, downloads, Cast/Presentation and share pop-ups. It blocks top navigation, `alert`/`confirm` dialogs, pointer lock and storage access prompts.
+
+| Token | Why the preset has it |
+|---|---|
+| `allow-scripts` | The player is a script app |
+| `allow-same-origin` | The player page (`cdnapisec.kaltura.com`) keeps its own origin, so its API calls, cookies, storage and DRM license requests work. It is cross-origin to your page, so it gets no access to your page |
+| `allow-presentation` | Cast and other Presentation API devices |
+| `allow-downloads` | The player download button |
+| `allow-popups` | Share and "open in new window" links |
+| `allow-popups-to-escape-sandbox` | Those new windows open as normal pages. A sandboxed share page often fails |
+| `allow-forms` | Player plugins with forms, such as quizzes |
+| `allow-orientation-lock` | Landscape lock in fullscreen on phones |
+
+Fullscreen needs no token: the iframe keeps `allowfullscreen` and `allow="fullscreen *"`.
+
+What is tested (`e2e/player-sandbox.spec.ts`, Chromium, Firefox and WebKit, with a local stub page in place of the player): with the preset the page loads, runs script and keeps its origin, fullscreen from inside works, an `<a download>` link downloads, and a `target=_top` link click does not leave your page. What is not tested: the real Kaltura player, Cast and AirPlay devices, DRM playback, mobile browsers and player plugins. Test those with your own players before you turn it on.
 
 ## Regions
 
