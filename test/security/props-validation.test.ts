@@ -153,6 +153,8 @@ const BAD: Array<[string, Record<string, unknown>, string]> = [
   ['chart', { chartType: 'bar', data: [null] }, 'data.0'],
   ['chart', { chartType: 'bar', data: 'rows' }, 'data'],
   ['chart', { chartType: 'bar', data: [{ a: 1 }], height: '300' }, 'height'],
+  ['chart', { chartType: 'bar', data: [{ a: 1 }], colors: ['url(https://example.invalid/x)'] }, 'colors.0'],
+  ['chart', { chartType: 'bar', data: [{ a: 1 }], annotations: [{ x: 'a', label: 'l', color: 'url(https://example.invalid/x)' }] }, 'annotations.0.color'],
 ];
 
 describe('SEC-03: invalid props show a plain-text error and never the widget', () => {
@@ -449,4 +451,20 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
     );
     expect(calls.loader).toBe(1);
   });
+});
+
+describe('SEC-05: chart colors', () => {
+  it.each(['#0af', '#00aaff80', 'rgb(0, 170, 255)', 'rgba(0 170 255 / 50%)', 'hsl(200deg 100% 50%)', 'var(--brand-color)', 'rebeccapurple'])(
+    'SEC-05: %s is accepted',
+    (value) => {
+      expect(KalturaChartApi.schema.safeParse({ chartType: 'bar', data: [{ a: 1 }], colors: [value] }).success).toBe(true);
+    },
+  );
+
+  it.each(['url(https://example.invalid/x)', 'image-set(red)', 'rgb(0,0,0); fill: url(x)', 'red url(x)', '#12'])(
+    'SEC-05: %s is rejected',
+    (value) => {
+      expect(KalturaChartApi.schema.safeParse({ chartType: 'bar', data: [{ a: 1 }], colors: [value] }).success).toBe(false);
+    },
+  );
 });
