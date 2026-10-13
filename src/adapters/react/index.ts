@@ -28,7 +28,7 @@ import { guardBasic } from './basic-media';
 // Every import above has run, so @a2ui/react has loaded.
 removeHtmlElementStub();
 
-export const KALTURA_CATALOG_ID = 'https://kaltura.github.io/a2ui/v1/catalog.json';
+export const KALTURA_CATALOG_ID = 'https://kaltura.github.io/a2ui/v2/catalog.json';
 
 // basicCatalog is the host's own copy (a peer), and 0.1.x told hosts to
 // register it next to ours. Guard it in place, so an agent that picks it by
@@ -70,6 +70,8 @@ export function buildKalturaCatalog(
     [...guardedBasics, ...kalturaComponentImpls],
     // Later entries win, so the safe openUrl replaces the basic one.
     [...basicCatalog.functions.values(), ...kalturaClientFunctions, SafeOpenUrlImplementation],
+    // The catalog JSON theme is the basic one.
+    basicCatalog.themeSchema,
   );
 }
 

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import {
   KALTURA_CATALOG_ID,
@@ -59,6 +60,30 @@ describe('buildKalturaCatalog', () => {
     const custom = buildKalturaCatalog('https://example.com/catalog.json');
     expect(custom.id).toBe('https://example.com/catalog.json');
     expect(custom.components.has('KalturaPlayer')).toBe(true);
+  });
+});
+
+describe('kaltura_catalog.json matches what the renderer serves (F9)', () => {
+  const json = JSON.parse(readFileSync('src/catalog/kaltura_catalog.json', 'utf8')) as {
+    catalogId: string;
+    components: Record<string, unknown>;
+    functions: Record<string, unknown>;
+  };
+
+  it('F9: the component names are the same', () => {
+    expect([...kalturaReactCatalog.components.keys()].sort()).toEqual(Object.keys(json.components).sort());
+  });
+
+  it('F9: the function names are the same', () => {
+    expect([...kalturaReactCatalog.functions.keys()].sort()).toEqual(Object.keys(json.functions).sort());
+  });
+
+  it('F9: the catalog id is the same', () => {
+    expect(kalturaReactCatalog.id).toBe(json.catalogId);
+  });
+
+  it('F30: the theme schema is the basic one, as in the JSON', () => {
+    expect(kalturaReactCatalog.themeSchema).toBe(basicCatalog.themeSchema);
   });
 });
 

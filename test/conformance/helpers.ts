@@ -18,20 +18,31 @@ export interface CatalogJson {
   $id: string;
   catalogId: string;
   components: Record<string, { allOf: { $ref?: string; properties?: Record<string, { const?: string }> }[]; unevaluatedProperties?: boolean }>;
-  $defs: Record<string, unknown> & { anyComponent: { oneOf: { $ref: string }[] } };
+  functions: Record<string, unknown>;
+  $defs: Record<string, unknown> & { anyComponent: { oneOf: { $ref: string }[] }; anyFunction: { oneOf: { $ref: string }[] } };
   'x-kaltura-adapters': Record<string, unknown>;
   [key: string]: unknown;
 }
+
+/** The Kaltura components: the catalog also lists the A2UI basic ones. */
+export const kalturaNames = (catalog: CatalogJson) => Object.keys(catalog.components).filter(name => name.startsWith('Kaltura'));
 
 export const loadCatalog = () => readJson<CatalogJson>('src/catalog/kaltura_catalog.json');
 
 // The Ajv class is a CommonJS default export, so the import shape differs by loader.
 const AjvClass = ((Ajv2020 as unknown as { default?: typeof Ajv2020 }).default ?? Ajv2020) as typeof Ajv2020;
 
-/** Strict Ajv (2020-12) that knows the A2UI keys `catalogId` and `components` and the Kaltura extension. */
+/**
+ * Strict Ajv (2020-12) that knows the A2UI keys `catalogId`, `components` and `functions` and the
+ * Kaltura extension. `strictRequired` and `strictTypes` are off because A2UI's own schemas break
+ * them: the `length` function lists `min` and `max` in `required` without defining them, and
+ * `DynamicString` has an `allOf` branch with `properties` and no `type`. Unknown keywords and typos
+ * still fail. The Kaltura components get the `required` check in CONF-01. Formats (`uri`, `date`) are
+ * not checked, because ajv-formats is not a dependency.
+ */
 export function newAjv(strict = true) {
-  const ajv = new AjvClass({ strict, allErrors: true, allowUnionTypes: true });
-  if (strict) for (const keyword of ['catalogId', 'components', 'x-kaltura-adapters']) ajv.addKeyword(keyword);
+  const ajv = new AjvClass({ strict, strictRequired: false, strictTypes: false, validateFormats: false, allErrors: true, allowUnionTypes: true });
+  if (strict) for (const keyword of ['catalogId', 'components', 'functions', 'x-kaltura-adapters']) ajv.addKeyword(keyword);
   return ajv;
 }
 
