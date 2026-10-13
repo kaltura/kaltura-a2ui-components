@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from 'react';
-import { reportError } from '../host-hooks';
+import { reportError, ReporterContext, type KalturaReporter } from '../host-hooks';
 
 interface Props {
   /** When this value changes after an error, the boundary tries to render again. */
@@ -12,6 +12,8 @@ interface State {
 }
 
 export class ChartErrorBoundary extends Component<Props, State> {
+  static contextType = ReporterContext;
+  declare context: KalturaReporter;
   state: State = { hasError: false };
 
   static getDerivedStateFromError(): State {
@@ -20,7 +22,7 @@ export class ChartErrorBoundary extends Component<Props, State> {
 
   // The thrown error may hold data values: report fixed text only.
   componentDidCatch() {
-    reportError('render-failed', 'chart', 'Unable to render chart.');
+    reportError('render-failed', 'chart', 'Unable to render chart.', this.context);
   }
 
   componentDidUpdate(prevProps: Props) {

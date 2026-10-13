@@ -100,6 +100,12 @@ describe('CONF-07: the generator notices drift (so the test above is not vacuous
     const next = generator.generateCatalog(catalog, [...APIS.filter(api => api.name !== 'KalturaAvatar'), avatar]);
     expect((ownBlock(next, 'KalturaAvatar').properties.openingPhrase as { maxLength: number }).maxLength).toBe(7);
   });
+
+  it('CONF-07: the input catalog is not changed, so the check compares two different objects', () => {
+    const input = structuredClone(catalog);
+    generator.generateCatalog(input, [player({ ...shape, volume: z.number().optional() }), ...others]);
+    expect(input).toEqual(catalog);
+  });
 });
 
 describe('CONF-08: differences between zod and the catalog are on purpose', () => {

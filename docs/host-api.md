@@ -123,7 +123,7 @@ import { setErrorHandler, type KalturaError } from '@kaltura/a2ui-react';
 setErrorHandler((error: KalturaError) => log(error.code, error.widget, error.message));
 ```
 
-`KalturaError` is `{ code, widget, message }`. The handler runs when a component shows an error state. A handler that throws is ignored.
+`KalturaError` is `{ code, widget, message, surfaceId? }`. The handler runs when a component shows an error state. A handler that throws is ignored. `surfaceId` is the A2UI surface of the component. It is missing when the component is not on a surface, as in the web component bundle.
 
 | Code | When |
 |---|---|
@@ -154,7 +154,59 @@ setEventHandler(event => {
 | `recorder-upload-ended` | `recorder` | `{ entryId?, instanceId }`. `entryId` is there only when the recorder sent a valid entry id. `instanceId` is the recorder container id |
 | `avatar-disconnected` | `avatar` | `{ reason, instanceId }`. `reason` is a name such as `ConversationEnded`, or `UnknownReason`. `instanceId` is the avatar container id |
 
-The DOM event still fires. `name` comes from the media library or the agent: treat it as untrusted text. A handler that throws is ignored.
+Each event also has `surfaceId`, as in `KalturaError`. The DOM event still fires. `name` comes from the media library or the agent: treat it as untrusted text. A handler that throws is ignored.
+
+## Agent feedback
+
+Give a Kaltura component an `action` prop and its errors and events go to the agent as A2UI actions. The prop has the shape of the basic Button `action`. It is optional, and without it nothing is sent.
+
+```json
+{ "id": "rec", "component": "KalturaRecorder", "partnerId": 1234567, "uiconfId": 7654321,
+  "action": { "event": { "name": "recorderFeedback", "context": { "step": "upload" } } } }
+```
+
+With `event`, the `MessageProcessor` action handler gets `{ name, surfaceId, sourceComponentId, timestamp, context }`, as for a Button. `context` is the agent's own context, resolved, plus the fields below. They replace agent keys of the same name. Their type is `KalturaActionContext` (without the first three).
+
+| Field | Value |
+|---|---|
+| `component`, `componentId`, `surfaceId` | The component type (such as `KalturaRecorder`), its id and its surface |
+| `widget` | As in `KalturaError` |
+| `event` | `error`, `entry-selected`, `recorder-upload-ended` or `avatar-disconnected` |
+| `code` | The [error code](#errors), on `error` only |
+| `entryId` | On `entry-selected` (one entry) and `recorder-upload-ended`, only in the `1_abc12345` form (digit, underscore, up to 16 lowercase letters or digits) |
+| `entryIds` | On `entry-selected` with `multiSelect`, ids in that form only, 5 at most |
+
+With `functionCall`, the function runs on the client on each error and event, and the agent gets nothing.
+
+| Component | Sends |
+|---|---|
+| All 12 Kaltura components | `error` |
+| `KalturaMediaManager` | `entry-selected` |
+| `KalturaRecorder` | `recorder-upload-ended` |
+| `KalturaAvatar` | `avatar-disconnected` |
+
+A Flashcards clip player reports as `KalturaFlashcards`, widget `flashcards`. The Player has no `ended` event. The basic Image, Video and AudioPlayer have no `action`: only the error handler gets `url-rejected`.
+
+The context goes into the model's prompt. Remote error text can hold the KS or markup, so it is never sent. The Kaltura fields hold only fixed names, codes and checked entry ids: never the KS, `message`, an entry `name`, an avatar `reason` or other text from a remote service or the page.
+
+### Web component bundle
+
+Set `config.action` to `{ event: { name } }`. On each error and event the element fires a `kaltura-action` DOM event (it bubbles and crosses shadow roots) with `detail: { name, context }`. `context` has `widget`, `event`, `code`, `entryId` and `entryIds`, as above. There is no surface, so there is no `component`, `componentId` or `surfaceId`. `config.action.event.context` is not sent back, and `functionCall` does nothing. Forward `detail` to your agent yourself:
+
+```js
+document.addEventListener('kaltura-action', event => agent.send(event.detail));
+```
+
+### Client error messages
+
+`toClientError(error, surfaceId?)` turns a `KalturaError` into an A2UI v0.9 client `error` message. It is in both bundles and has no side effects.
+
+```ts
+setErrorHandler(error => agent.send(toClientError(error)));
+// { version: 'v0.9', error: { code: 'invalid-props', widget: 'player', surfaceId: 's', message: 'Kaltura player error: invalid-props' } }
+```
+
+`message` is built from the code and the widget, never from `error.message`. `surfaceId` defaults to `error.surfaceId`, then `''`.
 
 ## Client functions
 

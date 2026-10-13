@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useRef, useState } from 'react';
 import { loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
 import { KalturaMediaManagerApi } from '../schemas/media-manager';
 import { withValidatedProps } from './validate-props';
 import { withKs } from './ks';
 import { isEntryId } from './ids';
-import { emitEvent, KalturaFailure, type KalturaEvent } from './host-hooks';
+import { emitEvent, KalturaFailure, ReporterContext, type KalturaEvent } from './host-hooks';
 
 export { deriveLoaderUrl } from './unisphere-loader';
 
@@ -116,6 +116,7 @@ function MediaManagerView(props: MediaManagerCoreProps) {
   const isMultiSelect = props.multiSelect === true;
   const legacy = props.legacyDocumentEvents !== false;
   const themeProp = props.theme;
+  const reporter = useContext(ReporterContext);
 
   /**
    * `kaltura-entry-selected` fires on the host element (the web component tag,
@@ -130,7 +131,7 @@ function MediaManagerView(props: MediaManagerCoreProps) {
     if (!wrapper) return;
     const host = wrapper.closest('kaltura-media-manager');
     const detail = { ...selection, instanceId: instanceIdRef.current };
-    emitEvent({ type: 'entry-selected', widget: 'media-manager', detail });
+    emitEvent({ type: 'entry-selected', widget: 'media-manager', detail }, reporter);
     const event = new CustomEvent('kaltura-entry-selected', {
       detail,
       bubbles: true,
@@ -224,16 +225,16 @@ function MediaManagerView(props: MediaManagerCoreProps) {
     })().catch(err => {
       if (cancelled) return;
       console.error('[MediaManager] Load failed');
-      renderLoadError(container, 'Media Manager', err, 'media-manager');
+      renderLoadError(container, 'Media Manager', err, 'media-manager', reporter);
     });
 
     return () => {
       cancelled = true;
       dispose();
     };
-    // announce reads only refs and the stable legacy flag.
+    // announce reads only refs, the stable legacy flag and the stable reporter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partnerId, ks, serverUrl, themeProp, mode, contextId, isMultiSelect, legacy]);
+  }, [partnerId, ks, serverUrl, themeProp, mode, contextId, isMultiSelect, legacy, reporter]);
 
   const handleConfirmSelection = () => {
     if (selected.length === 0) return;

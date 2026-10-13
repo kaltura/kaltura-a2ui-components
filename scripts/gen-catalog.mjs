@@ -91,6 +91,8 @@ export function nodeFor(zodType, previous, named = false) {
   let node;
   if (kind) {
     node = { $ref: `#/$defs/${kind}` };
+  } else if (type.description?.startsWith('REF:#/$defs/Action|')) {
+    node = { $ref: '#/$defs/Action' };
   } else {
     switch (type._def.typeName) {
       case 'ZodString': {
@@ -177,8 +179,8 @@ const basicFirst = (basic, map) => ({
 /** The catalog with the basic components, functions and shared $defs from @a2ui/web_core. */
 function withBasic(catalog, { basic, common }) {
   const out = structuredClone(catalog);
-  out.components = basicFirst(basic.components, catalog.components);
-  out.functions = basicFirst(basic.functions, catalog.functions);
+  out.components = basicFirst(basic.components, out.components);
+  out.functions = basicFirst(basic.functions, out.functions);
   const anyOf = group => ({ oneOf: Object.keys(out[group]).map(name => ({ $ref: `#/${group}/${name}` })) });
   const generated = {
     BasicComponentCommon: localRefs(basic.$defs.CatalogComponentCommon),
