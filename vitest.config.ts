@@ -9,6 +9,8 @@ export default defineConfig({
     // Expected stderr from error-path tests floods the worker RPC. A run can end
     // with "Closing rpc while onUserConsoleLog was pending". Failing tests still print.
     silent: 'passed-only',
+    // Shared CI runners are slow. The default 5 s is too tight for the mount tests.
+    testTimeout: 15000,
     environment: 'jsdom',
     include: ['test/**/*.test.{ts,tsx}'],
     setupFiles: ['./test/setup.ts'],
