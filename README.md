@@ -84,7 +84,7 @@ Tags up to `v0.1.4` serve the old bundles, without the 0.2.0 fixes or host funct
 | `KalturaPlayer` | `<kaltura-player>` | iframe (Player v7) |
 | `KalturaFlashcards` | `<kaltura-flashcards>` | React carousel with Player iframes for clips |
 | `KalturaMediaManager` | `<kaltura-media-manager>` | Unisphere ES module |
-| `KalturaAnalytics` | `<kaltura-analytics>` | iframe |
+| `KalturaAnalytics` | `<kaltura-analytics>` | iframe, `postMessage` handshake |
 | `KalturaCaptionsEditor` | `<kaltura-captions-editor>` | iframe |
 | `KalturaRecorder` | `<kaltura-recorder>` | sandboxed iframe (`extwidget/preview`) |
 | `KalturaAvatar` | `<kaltura-avatar>` | Unisphere embeds API (`genieAvatar`) |
@@ -174,6 +174,7 @@ A full page with a KS provider and an error handler: [examples/plain-html](examp
 | Trust model and CSP | [SECURITY.md](SECURITY.md) |
 | Upgrade from 0.1.x | [docs/migration-0.2.md](docs/migration-0.2.md) |
 | Upgrade from 0.2.x (avatar props) | [docs/migration-0.3.md](docs/migration-0.3.md) |
+| Upgrade from 0.3.x (analytics) | [docs/migration-0.4.md](docs/migration-0.4.md) |
 
 ## Security behaviour
 

@@ -1,42 +1,132 @@
+import { createElement, useLayoutEffect, useRef, useState } from 'react';
 import type { FC } from 'react';
-import { isEntryId, isPositiveInt } from './ids';
-import { KalturaAnalyticsApi } from '../schemas/analytics';
+import { z } from 'zod';
+import { ANALYTICS_REPORT_TYPES, KalturaAnalyticsApi } from '../schemas/analytics';
 import { LoadError, withValidatedProps } from './validate-props';
 import { withKs } from './ks';
 import { kalturaHosts } from './region';
 
 export interface AnalyticsCoreProps {
   partnerId: number;
-  ks: string;
   entryId?: string;
   reportType?: string;
   fromDate?: string;
   toDate?: string;
 }
 
-export function buildAnalyticsUrl(p: AnalyticsCoreProps): string {
-  if (!isPositiveInt(p.partnerId)) throw new Error('Invalid partnerId');
-  if (p.entryId && !isEntryId(p.entryId)) throw new Error('Invalid entryId');
-  let src =
-    `${kalturaHosts().kmc}/index.php/kmcng/analytics` +
-    `?ks=${encodeURIComponent(p.ks)}&partnerId=${p.partnerId}`;
-  if (p.entryId) src += `&entryId=${encodeURIComponent(p.entryId)}`;
-  if (p.reportType) src += `&reportType=${encodeURIComponent(p.reportType)}`;
-  if (p.fromDate) src += `&fromDate=${encodeURIComponent(p.fromDate)}`;
-  if (p.toDate) src += `&toDate=${encodeURIComponent(p.toDate)}`;
-  return src;
+export interface AnalyticsNavigation {
+  navigate: { url: string; queryParams?: { id: string } };
+  filters: Record<string, string>;
 }
 
-const AnalyticsView: FC<AnalyticsCoreProps> = (props) => {
-  let src: string;
-  try {
-    src = buildAnalyticsUrl(props);
-  } catch (e) {
-    return <LoadError widget="analytics">{`Failed to load analytics: ${(e as Error).message}`}</LoadError>;
-  }
+const MIN_HEIGHT = 400;
+const MAX_HEIGHT = 10000;
+
+/** The Analytics app of the current region. It holds no KS and no ids: those travel by `postMessage`. */
+export function buildAnalyticsUrl(): string {
+  return `${kalturaHosts().kmc}/apps/kmc-analytics/latest/index.html`;
+}
+
+function isIsoDate(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(value);
+  return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value);
+}
+
+/**
+ * Maps the props to the `navigate` and `updateFilters` messages. An entry wins
+ * over a report type. Both dates are needed for a range, else the last 30 days.
+ * Throws a plain `Invalid <prop>` error for a bad value.
+ */
+export function analyticsNavigation({ entryId, reportType, fromDate, toDate }: Omit<AnalyticsCoreProps, 'partnerId'>): AnalyticsNavigation {
+  if (reportType && !(ANALYTICS_REPORT_TYPES as readonly string[]).includes(reportType)) throw new Error('Invalid reportType');
+  const ranged = Boolean(fromDate || toDate);
+  if (ranged && !isIsoDate(fromDate)) throw new Error('Invalid fromDate');
+  if (ranged && !isIsoDate(toDate)) throw new Error('Invalid toDate');
+  return {
+    navigate: entryId ? { url: '/analytics/entry', queryParams: { id: entryId } } : { url: `/analytics/${reportType || 'engagement'}` },
+    filters: ranged ? { dateFrom: fromDate as string, dateTo: toDate as string } : { dateBy: 'last30days' },
+  };
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+/**
+ * The iframe and its `postMessage` handshake. The KS goes only into the `init`
+ * and `updateConfig` messages, sent to the Analytics origin and nowhere else.
+ * A new `ks` prop renews the session in place, with no reload.
+ */
+export const AnalyticsFrame: FC<{ partnerId: number; ks: string; nav: AnalyticsNavigation }> = ({ partnerId, ks, nav }) => {
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = useState<number>();
+  const src = buildAnalyticsUrl();
+  const origin = new URL(src).origin;
+  const latest = useRef({ partnerId, ks, nav });
+  const session = useRef({ ready: false, sentKs: '' });
+  const navKey = JSON.stringify(nav);
+
+  const post = (messageType: string, payload?: unknown) => frameRef.current?.contentWindow?.postMessage({ messageType, payload }, origin);
+  const sendNav = () => {
+    post('navigate', latest.current.nav.navigate);
+    post('updateFilters', { queryParams: latest.current.nav.filters });
+  };
+  const sendKs = () => {
+    session.current.sentKs = latest.current.ks;
+    post('updateConfig', { ks: latest.current.ks });
+  };
+
+  latest.current = { partnerId, ks, nav };
+
+  useLayoutEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      const frame = frameRef.current;
+      if (!frame || event.origin !== origin || event.source !== frame.contentWindow || !isRecord(event.data)) return;
+      const { messageType, payload } = event.data;
+      if (messageType === 'analyticsInit') {
+        const hosts = kalturaHosts();
+        const viewsConfig = isRecord(payload) && isRecord(payload.viewsConfig) ? payload.viewsConfig : undefined;
+        session.current = { ready: false, sentKs: latest.current.ks };
+        post('init', {
+          kalturaServer: { uri: hosts.serviceUrl },
+          cdnServers: { serverUri: hosts.cdn, securedServerUri: hosts.cdn },
+          ks: latest.current.ks,
+          pid: latest.current.partnerId,
+          locale: 'en',
+          live: { pollInterval: 30, healthNotificationsCount: 50 },
+          menuConfig: { showMenu: false },
+          ...(viewsConfig ? { viewsConfig } : {}),
+        });
+      } else if (messageType === 'analyticsInitComplete') {
+        session.current.ready = true;
+        sendNav();
+        if (session.current.sentKs !== latest.current.ks) sendKs();
+      } else if (messageType === 'updateLayout' && isRecord(payload) && typeof payload.height === 'number' && Number.isFinite(payload.height)) {
+        setHeight(Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, payload.height)));
+      }
+    };
+    window.addEventListener('message', onMessage);
+    return () => {
+      window.removeEventListener('message', onMessage);
+      session.current.ready = false;
+    };
+    // post, sendNav and sendKs only read refs and the origin.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [origin]);
+
+  useLayoutEffect(() => {
+    if (session.current.ready && session.current.sentKs !== ks) sendKs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ks]);
+
+  useLayoutEffect(() => {
+    if (session.current.ready) sendNav();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navKey]);
+
   return (
-    <div className="kaltura-analytics-container" style={{ width: '100%', aspectRatio: '16/9' }}>
+    <div className="kaltura-analytics-container" style={height ? { width: '100%', height } : { width: '100%', aspectRatio: '16/9' }}>
       <iframe
+        ref={frameRef}
         src={src}
         style={{ width: '100%', height: '100%', border: 0 }}
         allow="fullscreen *"
@@ -47,7 +137,17 @@ const AnalyticsView: FC<AnalyticsCoreProps> = (props) => {
   );
 };
 
-export const AnalyticsCore = withKs(
-  'analytics',
-  withValidatedProps(KalturaAnalyticsApi.schema.required({ ks: true }), 'analytics', AnalyticsView, 'analytics'),
-);
+const AnalyticsView: FC<AnalyticsCoreProps & { ks: string }> = ({ partnerId, ks, ...filters }) => {
+  let nav: AnalyticsNavigation;
+  try {
+    nav = analyticsNavigation(filters);
+  } catch (e) {
+    return <LoadError widget="analytics">{`Failed to load analytics: ${(e as Error).message}`}</LoadError>;
+  }
+  return <AnalyticsFrame partnerId={partnerId} ks={ks} nav={nav} />;
+};
+
+const Validated = withKs('analytics', withValidatedProps(KalturaAnalyticsApi.schema.extend({ ks: z.string() }), 'analytics', AnalyticsView, 'analytics'));
+
+/** The analytics app takes its KS from `setKsProvider` only. A `ks` prop is dropped: it is an ADMIN KS. */
+export const AnalyticsCore: FC<AnalyticsCoreProps> = props => createElement(Validated, { ...props, ks: undefined });

@@ -42,7 +42,9 @@ const CASES: Record<string, () => Promise<Record<string, unknown>>> = {
   },
   'invalid-ks': async () => {
     const { AnalyticsCore } = await import('../../src/core/analytics');
-    const props = { partnerId: 1, ks: `${KS}\u0001${HOSTILE}` };
+    const { setKsProvider } = await import('../../src/core/ks');
+    const props = { partnerId: 1 };
+    setKsProvider(() => `${KS}\u0001${HOSTILE}`);
     await render(AnalyticsCore, props);
     return props;
   },

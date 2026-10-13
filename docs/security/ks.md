@@ -11,12 +11,12 @@ The host owns the KS. The agent never sees it, writes it or asks for it.
 | 3 | A component that needs a KS calls the provider once, when it mounts, with its widget name. |
 | 4 | The component checks the value with the ks rule: a non-empty string with no control characters. |
 
-- **Order.** A non-empty provider result wins. If the provider returns `undefined` or `''`, or no provider is set, the component uses its `ks` prop. The prop exists only for older hosts.
+- **Order.** A non-empty provider result wins. If the provider returns `undefined` or `''`, or no provider is set, the component uses its `ks` prop. The prop exists only for older hosts. Analytics and Avatar have no `ks` prop: the provider is the only source.
 - **Async.** The component renders nothing until the provider's promise settles.
 - **Errors.** An invalid value, a throw or a rejected promise shows `Failed to load <widget>: Invalid ks`. The value and the error are never shown or logged.
 - **Components.** Player, Media Manager, Analytics, Captions Editor, Recorder, Genie, Content Lab, Agents Widget, VOD Avatar and Avatar use the provider. Flashcards still reads only its `ks` prop.
 - **No KS.** The player loads without one (public entries). The other widgets in the list above render nothing until a KS arrives. A web component gets no later config, so there they show `Failed to load <widget>: Invalid ks` instead.
-- **Renewal.** Components do not renew a KS. To use a new KS, remount the component.
+- **Renewal.** Components do not renew a KS. To use a new KS, remount the component. Analytics can take a new KS in place (`updateConfig` message), but the provider is still read once at mount, so remount for now.
 
 ## Wire it
 
@@ -47,6 +47,8 @@ Follow the Kaltura Session Guide:
 - Grant least privilege. For playback: `setrole:PLAYBACK_BASE_ROLE`, `sview:<entryId>`, `privacycontext`, `appid`. Add `iprestrict` or `actionslimit` where you can.
 - Give each widget only what its guide lists, for example Genie `setrole:PLAYBACK_BASE_ROLE` and Express Recorder `editadmintags:*`.
 - Analytics is the exception: its guide requires an ADMIN KS (type=2). Mint it on the server with a short expiry and narrow it with `setrole` and `iprestrict`.
+- **The Analytics KS must belong to an admin user that has a role.** A KS with no role makes the app fail with "Invalid object id [0]". This is the concern of your KS provider: the component cannot check it. Pick the user with `user.list` and `isAdminEqual=1`, and use one that has `roleIds`.
+- Analytics receives the KS in a `postMessage` to the Kaltura Analytics origin, never in the iframe URL. A message is accepted only from that origin and from our iframe. See [ADR 0005](../adr/0005-analytics-and-recorder-integration.md).
 
 ## One KS per widget
 

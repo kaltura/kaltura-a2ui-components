@@ -1,6 +1,6 @@
 # 0005. Analytics and recorder integration
 
-Status: proposed. Needs confirmation from the owning teams (Analytics, Express Recorder). No code changes yet.
+Status: ANA-01 accepted and implemented. REC-01 proposed: needs confirmation from the Express Recorder team. No recorder code changes yet.
 
 Covers ANA-01 (plan item 3.1b) and REC-01 (plan item 3.1d). Sources were read on 2026-10-12.
 
@@ -8,38 +8,46 @@ Covers ANA-01 (plan item 3.1b) and REC-01 (plan item 3.1d). Sources were read on
 
 ### Context
 
-| | Our code (`src/core/analytics.tsx`) | Kaltura guide |
+| | Before (0.3) | Kaltura guide |
 |---|---|---|
 | URL | `https://kmc.kaltura.com/index.php/kmcng/analytics?ks=…&partnerId=…` | `https://kmc.kaltura.com/apps/kmc-analytics/latest/index.html` |
 | KS transport | Query string of the iframe URL | `postMessage`, in the `init` message |
-| KS type | Any | ADMIN (type=2) with analytics permissions |
+| KS type | Any | ADMIN (type=2) of a user that has a role |
 | Filters | `entryId`, `reportType`, `fromDate`, `toDate` as query parameters | `navigate` and `updateFilters` messages |
 | KS renewal | Remount | `updateConfig` message with the new KS |
 
 The guide's handshake:
 
 1. The iframe sends `analyticsInit` with `payload.viewsConfig`.
-2. The host replies `init` with `kalturaServer.uri`, `cdnServers.securedServerUri`, `ks`, `pid`, `locale`, `menuConfig` and `viewsConfig`.
+2. The host replies `init` with `kalturaServer.uri`, `cdnServers`, `ks`, `pid`, `locale`, `live`, `menuConfig` and `viewsConfig`.
 3. The iframe sends `analyticsInitComplete`.
 4. The host sends `navigate` and `updateFilters`.
+5. The iframe sends `updateLayout` with the height it needs.
 
 The guide says to accept messages from `kmc.kaltura.com` only. Its code sample sends `init`, which holds the ADMIN KS, with target origin `'*'`.
 
-The `kmcng/analytics` URL we use does not appear in the guide. We do not know if it is supported.
+The `kmcng/analytics` URL did not appear in the guide.
 
-### Decision (proposed)
+### Decision (accepted)
 
-Ask the Analytics team if `kmcng/analytics?ks=` is supported. If not, move `AnalyticsCore` to the documented handshake:
+`AnalyticsCore` uses the documented handshake. The `kmcng/analytics?ks=` URL is gone.
 
-- Send `init` with target origin `https://kmc.kaltura.com`, never `'*'`.
-- Accept a message only when `event.origin` is `https://kmc.kaltura.com` and `event.source` is our iframe's `contentWindow`.
-- Map our props to `navigate` and `updateFilters`. Renew the KS with `updateConfig`.
+- The iframe `src` is `kalturaHosts().kmc` plus `/apps/kmc-analytics/latest/index.html`. It holds no KS and no ids.
+- `init` goes out with the KMC origin as target origin, never `'*'`.
+- A message is accepted only when `event.origin` is the KMC origin and `event.source` is our iframe's `contentWindow`. Other messages and unknown types are ignored.
+- The KS comes from `setKsProvider` only. The `ks` prop is removed, like on the avatar, because it is an ADMIN KS.
+- `kalturaServer.uri` and the CDN servers come from the region (`src/core/region.ts`).
+- Props map to messages: `entryId` or `reportType` to `navigate`, `fromDate` and `toDate` to `updateFilters`. `reportType` must be one of the views in `ANALYTICS_REPORT_TYPES`. Dates must be `YYYY-MM-DD` and come as a pair. A bad value shows a plain-text error and loads nothing.
+- `updateLayout` sets the container height, clamped to 400 to 10000 px (400 px is the CSS minimum of the iframe).
+- A new KS from a re-rendered `AnalyticsFrame` is sent with `updateConfig`, with no reload.
 
 ### Consequences
 
-- The ADMIN KS leaves the iframe URL, so it is no longer in history, logs or `Referer`.
-- The component needs message handling and a test for the origin and source checks.
-- The regional KMC host is still unknown (see REG-01 in docs/host-api.md).
+- The ADMIN KS is no longer in the iframe URL, history, logs or `Referer`.
+- The KS must belong to an admin user that has a role. Without a role the app fails with "Invalid object id [0]". The host KS provider owns this (docs/security/ks.md).
+- Breaking for hosts: the `ks` prop, `buildAnalyticsUrl(args)` and the old URL are gone. See docs/migration-0.4.md.
+- Gap: `setKsProvider` is read once at mount, so there is no trigger for a new KS yet. `updateConfig` is ready for a provider that can signal renewal. Until then a host renews by remounting the widget.
+- Regional KMC hosts come from `region.ts` (see REG-01 in docs/host-api.md).
 
 ## REC-01: Recorder
 

@@ -49,8 +49,8 @@ vi.mock('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js', () => (
   unobserve() {}
 };
 
-// The avatar takes its KS from the provider only. The others fall back to their ks prop.
-beforeEach(() => setKsProvider(widget => (widget === 'avatar' ? 'dummy-ks' : undefined)));
+// The avatar and analytics take their KS from the provider only. The others fall back to their ks prop.
+beforeEach(() => setKsProvider(widget => (widget === 'avatar' || widget === 'analytics' ? 'dummy-ks' : undefined)));
 afterEach(() => {
   setKsProvider(undefined);
   document.body.innerHTML = '';
@@ -73,7 +73,7 @@ const ENTRIES: Entry[] = [
   { label: 'player', load: async () => (await import('../../src/core/player')).PlayerCore, api: KalturaPlayerApi as never, valid: { ...base, uiconfId: 2, entryId: '0_abc' } },
   { label: 'flashcards', load: async () => (await import('../../src/core/flashcards')).FlashcardsCore, api: KalturaFlashcardsApi as never, valid: { title: 'Deck', cards: [{ title: 'C', content: 'x', clips: [{ entryId: '0_abc', startTime: 0, endTime: 1 }] }] } },
   { label: 'Media Manager', load: async () => (await import('../../src/core/media-manager')).MediaManagerCore, api: KalturaMediaManagerApi as never, valid: unisphere },
-  { label: 'analytics', load: async () => (await import('../../src/core/analytics')).AnalyticsCore, api: KalturaAnalyticsApi as never, valid: base },
+  { label: 'analytics', load: async () => (await import('../../src/core/analytics')).AnalyticsCore, api: KalturaAnalyticsApi as never, valid: { partnerId: 1 } },
   { label: 'captions editor', load: async () => (await import('../../src/core/captions-editor')).CaptionsEditorCore, api: KalturaCaptionsEditorApi as never, valid: { ...base, entryId: '0_abc' } },
   { label: 'recorder', load: async () => (await import('../../src/core/recorder')).RecorderCore, api: KalturaRecorderApi as never, valid: base },
   { label: 'Kaltura Avatar', load: async () => (await import('../../src/core/avatar')).AvatarCore, api: KalturaAvatarApi as never, valid: { partnerId: 1, serverUrl: SERVER_URL } },
@@ -118,7 +118,12 @@ const BAD: Array<[string, Record<string, unknown>, string]> = [
   ['analytics', { ...base, partnerId: '1&serviceurl=https://evil.example' }, 'partnerId'],
   ['analytics', { ...base, partnerId: '123' }, 'partnerId'],
   ['analytics', { ...base, entryId: 'a b' }, 'entryId'],
-  ['analytics', { ...base, ks: '' }, 'ks'],
+  ['analytics', { partnerId: 1, reportType: 'top' }, 'reportType'],
+  ['analytics', { partnerId: 1, reportType: '<b>x</b>' }, 'reportType'],
+  ['analytics', { partnerId: 1, fromDate: '2026-01-01' }, 'toDate'],
+  ['analytics', { partnerId: 1, toDate: '2026-01-01' }, 'fromDate'],
+  ['analytics', { partnerId: 1, fromDate: '2026-02-31', toDate: '2026-03-01' }, 'fromDate'],
+  ['analytics', { partnerId: 1, fromDate: '2026-01-01', toDate: 'yesterday' }, 'toDate'],
   ['captions editor', { ...base, entryId: '0_abc', uiconfId: 0 }, 'uiconfId'],
   ['recorder', { ...base, uiconfId: null }, 'uiconfId'],
   ['Kaltura Avatar', { partnerId: 1, serverUrl: SERVER_URL, theme: 'custom' }, 'theme'],
@@ -181,7 +186,7 @@ const PENDING_CASES: Array<[string, Record<string, unknown>, string]> = [
   ['Kaltura Avatar', { partnerId: 1 }, 'serverUrl'],
   ['Kaltura Genie', { ...unisphere, ks: undefined }, 'ks'],
   ['Kaltura VOD Avatar', unisphere, 'entryId'],
-  ['analytics', { partnerId: 1 }, 'ks'],
+  ['analytics', {}, 'partnerId'],
   ['player', { ...base, uiconfId: 2 }, 'entryId'],
   ['chart', { chartType: 'bar' }, 'data'],
 ];
@@ -239,8 +244,8 @@ describe('SEC-03: a required prop that is still undefined is pending, not an err
   it('SEC-03: the widget appears once the missing prop arrives', async () => {
     const entry = byLabel('analytics');
     const Component = (await entry.load()) as never;
-    const { container, root } = await mount(Component, { partnerId: 1 });
-    await act(async () => root.render(createElement(Component, base)));
+    const { container, root } = await mount(Component, {});
+    await act(async () => root.render(createElement(Component, { partnerId: 1 })));
     expect([container.querySelectorAll('iframe').length, container.querySelectorAll('[role="alert"]').length]).toEqual([1, 0]);
   });
 });
@@ -372,14 +377,14 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
 
   it('SEC-03: a required binding with no data yields nothing, no error and no widget', async () => {
     const container = await renderSurface(
-      { component: 'KalturaAnalytics', partnerId: 1, ...bound },
+      { component: 'KalturaCaptionsEditor', partnerId: 1, entryId: '0_abc', ...bound },
       {},
     );
     expect([container.querySelectorAll('iframe, [role="alert"]').length, container.textContent]).toEqual([0, '']);
   });
 
   it('SEC-03: the widget appears when the bound data arrives later', async () => {
-    const { container, processor } = await startSurface({ component: 'KalturaAnalytics', partnerId: 1, ...bound }, {});
+    const { container, processor } = await startSurface({ component: 'KalturaCaptionsEditor', partnerId: 1, entryId: '0_abc', ...bound }, {});
     await act(async () => {
       processor.processMessages([
         { version: 'v0.9', updateDataModel: { surfaceId: 's', path: '/session', value: { ks: 'late-ks' } } },
@@ -390,10 +395,10 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
 
   it('SEC-03: a bound value that arrives invalid shows the error', async () => {
     const { container } = await startSurface(
-      { component: 'KalturaAnalytics', partnerId: 1, ks: { path: '/session/ks' } },
+      { component: 'KalturaCaptionsEditor', partnerId: 1, entryId: '0_abc', ks: { path: '/session/ks' } },
       { session: { ks: 'a\nb' } },
     );
-    expect(container.textContent).toBe('Failed to load analytics: Invalid ks');
+    expect(container.textContent).toBe('Failed to load captions editor: Invalid ks');
   });
 
   it('SEC-03: a hostile entryId arriving through the data model is refused', async () => {

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>analytics stub</title>
+<!-- Stands in for the KMC Analytics app in e2e/analytics.spec.ts. It follows the handshake of the embed guide and logs what the host sends. -->
+<script>
+  window.__log = [];
+  window.sendToHost = (data) => parent.postMessage(data, '__HOST_ORIGIN__');
+  addEventListener('message', (event) => {
+    const data = event.data || {};
+    window.__log.push({ type: data.messageType, payload: data.payload, origin: event.origin });
+    if (data.messageType === 'init') window.sendToHost({ messageType: 'analyticsInitComplete' });
+  });
+  window.sendToHost({ messageType: 'analyticsInit', payload: { menuConfig: {}, viewsConfig: { entry: { backBtn: {} } } } });
+</script>

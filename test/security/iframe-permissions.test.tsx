@@ -6,6 +6,7 @@ import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { act } from 'react';
 import { mount } from '../helpers/render';
 import { setPlayerSandbox, PLAYER_SANDBOX_PRESET } from '../../src/core/host-hooks';
+import { setKsProvider } from '../../src/core/ks';
 import { PlayerCore } from '../../src/core/player';
 import { FlashcardsCore } from '../../src/core/flashcards';
 import { RecorderCore } from '../../src/core/recorder';
@@ -14,6 +15,7 @@ import { CaptionsEditorCore } from '../../src/core/captions-editor';
 
 afterEach(() => {
   document.body.innerHTML = '';
+  setKsProvider(undefined);
 });
 
 // Playback needs only these. The origin wildcard stays: the player page can
@@ -71,7 +73,10 @@ const CASES: [string, () => Promise<{ allow: string | null; sandbox: string | nu
   ],
   [
     'analytics',
-    () => iframeOf(AnalyticsCore, { partnerId: 1, ks: 'k' }),
+    () => {
+      setKsProvider(() => 'k');
+      return iframeOf(AnalyticsCore, { partnerId: 1 });
+    },
     { allow: 'fullscreen *', sandbox: 'allow-scripts allow-same-origin allow-forms allow-popups' },
   ],
   [

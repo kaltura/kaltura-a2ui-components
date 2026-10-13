@@ -4,6 +4,14 @@ Newest first. 0.2.0 is the first release since v0.1.4. It holds the hardening wo
 
 ## Unreleased
 
+### Breaking changes for hosts
+
+- **`KalturaAnalytics` uses the documented `postMessage` handshake** (ANA-01). The iframe loads `https://<kmc host>/apps/kmc-analytics/latest/index.html` with no KS and no ids in the URL. The KS goes in the `init` message, sent to the KMC origin and never to `'*'`. A message is accepted only from that origin and from our iframe. Props map to `navigate` and `updateFilters`. The iframe height follows `updateLayout`, clamped to 400 to 10000 px. See [ADR 0005](docs/adr/0005-analytics-and-recorder-integration.md).
+- **The `ks` prop of `KalturaAnalytics` is removed.** The KS comes from `setKsProvider` (widget `analytics`) only, as on the avatar. It must be an ADMIN KS of a user that has a role, else the app fails with "Invalid object id [0]".
+- **Analytics props are validated.** `reportType` must be one of `engagement`, `content-interactions`, `technology`, `geo-location`, `contributors`, `overview`, `publisher`, `enduser` or `live`. `fromDate` and `toDate` must be `YYYY-MM-DD` and come as a pair. A bad value shows a plain-text error and loads nothing.
+- **`buildAnalyticsUrl()` takes no arguments** and returns the fixed Analytics app URL of the region.
+- **CSP:** `frame-src` still needs the KMC host of your region. Steps: [docs/migration-0.4.md](docs/migration-0.4.md).
+
 ### Added
 
 - **SRI for the SSR stub in the catalog.** `x-kaltura-adapters.react` has `stubCdn` and `stubIntegrity` for `dist/html-element-stub.mjs`, which `kaltura-react.mjs` imports. Before, a client that loaded the module from the catalog had no SRI for that second file. The release stamps and checks them, and `verify-cdn` compares `stubIntegrity` with the served stub. Catalogs of 0.3.0 and older have no stub keys. See [docs/host-integration.md](docs/host-integration.md#server-imports-ssr).

@@ -14,7 +14,7 @@ import { RecorderCore } from '../../src/core/recorder';
 
 const clip = { entryId: '0_abc', startTime: 4, endTime: 9 };
 
-// Captured from the builders before plan item 3.1c.
+// Captured from the builders before plan item 3.1c. Analytics changed on purpose with ANA-01.
 const US = {
   player:
     'https://cdnapisec.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2?iframeembed=true&entry_id=0_abc&plugins=uiManagers%2Cyoutube%2Cdualscreen%2Ctimeline%2CkalturaCuepoints%2Civq%2Ckava',
@@ -22,7 +22,7 @@ const US = {
   thumbnail: 'https://cfvod.kaltura.com/p/1/thumbnail/entry_id/0_abc/width/200/vid_sec/5',
   captions:
     'https://www.kaltura.com/apps/captionstudio/latest/index.html?pid=1&ks=k&entryid=0_abc&cdnurl=https://cdnapisec.kaltura.com&serviceurl=https://www.kaltura.com',
-  analytics: 'https://kmc.kaltura.com/index.php/kmcng/analytics?ks=k&partnerId=1',
+  analytics: 'https://kmc.kaltura.com/apps/kmc-analytics/latest/index.html',
   recorder: 'https://www.kaltura.com/index.php/extwidget/preview/partner_id/1/uiconf_id/0/entry_id//embed/iframe?ks=k&showRecordButton=true',
 };
 
@@ -35,7 +35,7 @@ async function urls() {
     clip: buildClipUrl(clip, 1, 2),
     thumbnail: buildThumbnailUrl(clip, 1),
     captions: buildCaptionsEditorUrl({ partnerId: 1, ks: 'k', entryId: '0_abc' }),
-    analytics: buildAnalyticsUrl({ partnerId: 1, ks: 'k' }),
+    analytics: buildAnalyticsUrl(),
     recorder,
   };
 }

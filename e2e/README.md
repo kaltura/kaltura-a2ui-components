@@ -26,6 +26,7 @@ The `ok` loader records what the widget passed in: `harness.loaderConfigs()` (fr
 | `iframe-permissions.spec.ts` | `allow` and `sandbox` per iframe, no capture on the player and clip (SEC-14) |
 | `avatar.spec.ts` | Avatar on the embeds API: provider KS only, no script tag, teardown order, disconnect event (SEC-08, QA-04) |
 | `csp.spec.ts` | The recommended CSP from docs/host-integration.md, including the avatar (SEC-08) |
+| `analytics.spec.ts` | Analytics `postMessage` handshake against a stub KMC page: `init` content, `navigate`, `updateFilters`, `updateLayout` clamp, wrong origin and wrong source rejected (ANA-01) |
 | `player-sandbox.spec.ts` | Opt-in `setPlayerSandbox` against a stub player page: script, origin, fullscreen and downloads work, top navigation is blocked (SEC-14) |
 
 Add a case: import `test` from `./fixtures/harness`, call `h.open()` and `h.mount(tag, config)`, then assert on `h.pwned()` and the logs.

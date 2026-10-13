@@ -18,7 +18,7 @@ const { partnerId, uiconfId, entryId, ks } = SAMPLE;
 const BUILT: Record<string, string> = {
   KalturaPlayer: buildPlayerUrl({ partnerId, uiconfId, entryId, ks, autoplay: true, muted: true, startTime: 1, clipTo: 2 }),
   KalturaCaptionsEditor: buildCaptionsEditorUrl({ partnerId, ks, entryId, uiconfId }),
-  KalturaAnalytics: buildAnalyticsUrl({ partnerId, ks, entryId }),
+  KalturaAnalytics: buildAnalyticsUrl(),
 };
 const names = (url: string) => [...new URL(url).searchParams.keys()];
 const base = (url: string) => url.split('?')[0];
