@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import type { CSSProperties, FC } from 'react';
 import { isEntryId, isPositiveInt } from './ids';
 import { KalturaPlayerApi } from '../schemas/player';
 import { LoadError, withValidatedProps } from './validate-props';
 import { withKs } from './ks';
-import { KalturaFailure, reportError } from './host-hooks';
+import { KalturaFailure, reportError, ReporterContext } from './host-hooks';
 import { renderLoadError } from './render-load-error';
 import { loadPlayerScript, type PlayerHandle } from './player-script';
 import { refusedIdProp } from './allowed-ids';
@@ -52,6 +52,7 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const invalid = invalidProp(props);
   const refused = invalid ? undefined : refusedIdProp(props);
+  const reporter = useContext(ReporterContext);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -88,7 +89,7 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
         if (!player?.loadMedia || !player.addEventListener) throw new Error();
         // Remote error text can hold the KS or markup. Never report it.
         player.addEventListener(player.Event?.ERROR ?? 'error', () => {
-          if (!cancelled) reportError('render-failed', widget, 'Player error');
+          if (!cancelled) reportError('render-failed', widget, 'Player error', reporter);
         });
         return player.loadMedia(
           { entryId },
@@ -107,6 +108,7 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
           'player',
           err instanceof KalturaFailure ? err : new KalturaFailure('render-failed', 'Player could not start'),
           widget,
+          reporter,
         );
       });
 
@@ -115,7 +117,7 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
       destroy();
       container.replaceChildren();
     };
-  }, [partnerId, uiconfId, entryId, ks, autoplay, muted, seekFrom, clipTo, widget, invalid, refused]);
+  }, [partnerId, uiconfId, entryId, ks, autoplay, muted, seekFrom, clipTo, widget, invalid, refused, reporter]);
 
   if (invalid) return <LoadError widget={widget}>{`Failed to load player: Invalid ${invalid}`}</LoadError>;
   if (refused) return <LoadError widget={widget} code="origin-not-allowed">{`Failed to load player: ${refused} is not allowed`}</LoadError>;

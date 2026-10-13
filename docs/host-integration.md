@@ -130,6 +130,8 @@ setEventHandler(event => event.type === 'entry-selected' && pick(event.detail.en
 
 `message` never holds a prop value or the KS. `detail.name` of `entry-selected` is untrusted text: show it as text. Codes and shapes: [host-api.md](host-api.md#errors).
 
+To tell the agent, give the component an `action` prop, or send `toClientError(error)` from the error handler: [Agent feedback](host-api.md#agent-feedback).
+
 ## Content Security Policy
 
 A starting policy for the US region (`nvp1`). Replace `'self'` and the Unisphere regions to fit your page. For another region, use the [region table](#regions-in-the-policy). Roll it out in report-only mode first: see [Rollout](#rollout).

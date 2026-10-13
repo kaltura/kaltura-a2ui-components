@@ -1015,7 +1015,8 @@
             "entryDescription": {
               "$ref": "#/$defs/DynamicString",
               "description": "Optional entry description shown under the player. HTML tags are stripped."
-            }
+            },
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
           "required": ["component", "partnerId", "uiconfId", "entryId"]
         }
@@ -1105,7 +1106,8 @@
                 "required": ["title", "content"],
                 "additionalProperties": false
               }
-            }
+            },
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
           "required": ["component", "title", "cards"]
         }
@@ -1153,7 +1155,8 @@
             "contextId": {
               "$ref": "#/$defs/DynamicString",
               "description": "ID of the content scope (e.g. category ID to browse)."
-            }
+            },
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
           "required": ["component", "partnerId", "serverUrl"]
         }
@@ -1189,7 +1192,8 @@
             "toDate": {
               "$ref": "#/$defs/DynamicString",
               "description": "End of the date range, as YYYY-MM-DD. Needs fromDate."
-            }
+            },
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
           "required": ["component", "partnerId"]
         }
@@ -1221,7 +1225,8 @@
             "uiconfId": {
               "type": "integer",
               "description": "Optional uiConf ID for the captions editor player."
-            }
+            },
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
           "required": ["component", "partnerId", "entryId"]
         }
@@ -1270,7 +1275,8 @@
             "maxRecordingTime": {
               "type": "integer",
               "description": "Longest recording in seconds. At most 86400."
-            }
+            },
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
           "required": ["component", "partnerId", "uiconfId"]
         }
@@ -1313,7 +1319,8 @@
               "type": "string",
               "enum": ["light", "dark", "studio"],
               "description": "Colour theme. Default: 'light' when the page has data-theme=\"light\", otherwise 'dark'."
-            }
+            },
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
           "required": ["component", "partnerId", "serverUrl"]
         }
@@ -1353,7 +1360,8 @@
             "uiconfId": {
               "type": "integer",
               "description": "Player UI configuration ID (uiConf). Genie needs it to start."
-            }
+            },
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
           "required": ["component", "partnerId", "serverUrl", "uiconfId"]
         }
@@ -1389,7 +1397,8 @@
             "uiconfId": {
               "type": "integer",
               "description": "Player UI configuration ID (uiConf) for the video preview."
-            }
+            },
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
           "required": ["component", "partnerId", "serverUrl", "uiconfId", "entryId"]
         }
@@ -1421,7 +1430,8 @@
             "agentId": {
               "$ref": "#/$defs/DynamicString",
               "description": "Ignored. The agents runtime has no setting for it."
-            }
+            },
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
           "required": ["component", "partnerId", "serverUrl"]
         }
@@ -1457,7 +1467,8 @@
             "avatarStyle": {
               "$ref": "#/$defs/DynamicString",
               "description": "Ignored. The studio runtime has no setting for it."
-            }
+            },
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
           "required": ["component", "partnerId", "serverUrl"]
         }
@@ -1537,7 +1548,8 @@
                 "required": ["x", "label"],
                 "additionalProperties": false
               }
-            }
+            },
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
           "required": ["component", "chartType", "data"]
         }

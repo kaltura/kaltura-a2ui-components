@@ -1,9 +1,9 @@
-import { createElement, useEffect, useRef } from 'react';
+import { createElement, useContext, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { z } from 'zod';
 import { loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
-import { KalturaFailure, emitEvent } from './host-hooks';
+import { KalturaFailure, emitEvent, ReporterContext } from './host-hooks';
 import { regionOf } from './region';
 import { KalturaAvatarApi } from '../schemas/avatar';
 import { withValidatedProps } from './validate-props';
@@ -41,6 +41,7 @@ const safeReason = (reason: unknown) => (typeof reason === 'string' && /^[A-Za-z
 const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { partnerId, ks, serverUrl, autoConnect, openingPhrase, captions, theme } = props;
+  const reporter = useContext(ReporterContext);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -83,7 +84,7 @@ const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
         const embed = avatar.contained({ elementId: id, autoConnect: autoConnect === true });
         teardown.push(() => embed?.remove?.());
         const off = avatar.disconnectData?.onChanges?.(data => {
-          if (data && !cancelled) emitEvent({ type: 'avatar-disconnected', widget: 'avatar', detail: { reason: safeReason(data.reason), instanceId: id } });
+          if (data && !cancelled) emitEvent({ type: 'avatar-disconnected', widget: 'avatar', detail: { reason: safeReason(data.reason), instanceId: id } }, reporter);
         });
         teardown.push(() => (typeof off === 'function' ? off() : (off as { unsubscribe?: () => void } | undefined)?.unsubscribe?.()));
       })
@@ -91,7 +92,7 @@ const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
         stop();
         if (cancelled) return;
         // Remote error text can hold the KS or markup. Show fixed text only.
-        renderLoadError(container, LABEL, err instanceof KalturaFailure ? err : new KalturaFailure('load-failed', 'Avatar could not start'), 'avatar');
+        renderLoadError(container, LABEL, err instanceof KalturaFailure ? err : new KalturaFailure('load-failed', 'Avatar could not start'), 'avatar', reporter);
       });
 
     return () => {
@@ -99,7 +100,7 @@ const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
       stop();
       container.replaceChildren();
     };
-  }, [partnerId, ks, serverUrl, autoConnect, openingPhrase, captions, theme]);
+  }, [partnerId, ks, serverUrl, autoConnect, openingPhrase, captions, theme, reporter]);
 
   return <div ref={containerRef} className="kaltura-avatar-container" style={{ width: '100%', aspectRatio: '16/9' }} />;
 };

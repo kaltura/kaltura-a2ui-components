@@ -8,5 +8,6 @@ export const KalturaAgentsWidgetApi = {
     ks: CommonSchemas.DynamicString.optional(),
     serverUrl: CommonSchemas.DynamicString,
     agentId: CommonSchemas.DynamicString.optional(),
+    action: CommonSchemas.Action.optional(),
   }),
 };

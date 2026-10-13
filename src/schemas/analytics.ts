@@ -24,5 +24,6 @@ export const KalturaAnalyticsApi = {
     reportType: CommonSchemas.DynamicString.optional(),
     fromDate: CommonSchemas.DynamicString.optional(),
     toDate: CommonSchemas.DynamicString.optional(),
+    action: CommonSchemas.Action.optional(),
   }),
 };
