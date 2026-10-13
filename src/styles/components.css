@@ -562,14 +562,6 @@
   background: var(--kaltura-surface-deep);
 }
 
-.kaltura-recorder-container iframe {
-  width: 100%;
-  aspect-ratio: 16/9;
-  border: 0;
-  display: block;
-  min-height: 280px;
-}
-
 /* ─── KalturaAvatar ─── */
 .kaltura-avatar-container {
   margin: 12px 0;

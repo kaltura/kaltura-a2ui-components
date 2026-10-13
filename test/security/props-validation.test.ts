@@ -75,7 +75,7 @@ const ENTRIES: Entry[] = [
   { label: 'Media Manager', load: async () => (await import('../../src/core/media-manager')).MediaManagerCore, api: KalturaMediaManagerApi as never, valid: unisphere },
   { label: 'analytics', load: async () => (await import('../../src/core/analytics')).AnalyticsCore, api: KalturaAnalyticsApi as never, valid: { partnerId: 1 } },
   { label: 'captions editor', load: async () => (await import('../../src/core/captions-editor')).CaptionsEditorCore, api: KalturaCaptionsEditorApi as never, valid: { ...base, entryId: '0_abc' } },
-  { label: 'recorder', load: async () => (await import('../../src/core/recorder')).RecorderCore, api: KalturaRecorderApi as never, valid: base },
+  { label: 'recorder', load: async () => (await import('../../src/core/recorder')).RecorderCore, api: KalturaRecorderApi as never, valid: { ...base, uiconfId: 2 } },
   { label: 'Kaltura Avatar', load: async () => (await import('../../src/core/avatar')).AvatarCore, api: KalturaAvatarApi as never, valid: { partnerId: 1, serverUrl: SERVER_URL } },
   { label: 'Kaltura Genie', load: async () => (await import('../../src/core/genie')).GenieCore, api: KalturaGenieApi as never, valid: unisphere },
   { label: 'Kaltura Content Lab', load: async () => (await import('../../src/core/content-lab')).ContentLabCore, api: KalturaContentLabApi as never, valid: unisphere },
@@ -201,9 +201,9 @@ describe('SEC-03: a required prop that is still undefined is pending, not an err
     },
   );
 
-  it('SEC-03: recorder with ks undefined shows no error and no iframe', async () => {
+  it('SEC-03: recorder with ks undefined shows no error and loads no script', async () => {
     const entry = byLabel('recorder');
-    const { container } = await mount(await entry.load(), { partnerId: 1 });
+    const { container } = await mount(await entry.load(), { partnerId: 1, uiconfId: 2 });
     expect([container.textContent, container.querySelectorAll('iframe, [role="alert"]').length]).toEqual(['', 0]);
   });
 

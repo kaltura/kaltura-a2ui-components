@@ -1,6 +1,6 @@
 // SEC-14: iframe permissions, checked in real browsers.
 // Player and clip iframes get no camera, microphone or display-capture. The recorder
-// iframe keeps them: it records from all three.
+// has no iframe (REC-01): its script runs in the host page and the host grants capture.
 import { test, expect, type Harness } from './fixtures/harness';
 
 const KS = 'e2e-iframe-permissions-ks';
@@ -60,12 +60,10 @@ test.describe('SEC-14: iframe permissions', () => {
     expect((await frameFacts(h)).allow).not.toMatch(CAPTURE);
   });
 
-  test('SEC-14: recorder iframe keeps camera, microphone and display-capture', async ({ harness: h, browserName }) => {
-    await h.mount('kaltura-recorder', { partnerId: 1234567 });
-    await h.settle();
-    const facts = await frameFacts(h);
-    expect(facts.allow).toMatch(/camera.*microphone.*display-capture/);
-    if (browserName === 'chromium') expect(facts.camera).toBe(true);
+  test('REC-01: the recorder adds no iframe of its own (capture is the host page permission)', async ({ harness: h }) => {
+    await h.mount('kaltura-recorder', { partnerId: 1234567, uiconfId: 7654321 });
+    await expect(h.page.locator('#host .stub-recorder-ui')).toHaveCount(1);
+    await expect(h.page.locator('#host iframe')).toHaveCount(0);
   });
 
   test('SEC-14: player and clip iframes have no sandbox (it breaks downloads and Cast/Presentation)', async ({

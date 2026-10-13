@@ -11,9 +11,11 @@ Newest first. 0.2.0 is the first release since v0.1.4. It holds the hardening wo
 - **Analytics props are validated.** `reportType` must be one of `engagement`, `content-interactions`, `technology`, `geo-location`, `contributors`, `overview`, `publisher`, `enduser` or `live`. `fromDate` and `toDate` must be `YYYY-MM-DD` and come as a pair. A bad value shows a plain-text error and loads nothing.
 - **`buildAnalyticsUrl()` takes no arguments** and returns the fixed Analytics app URL of the region.
 - **CSP:** `frame-src` still needs the KMC host of your region. Steps: [docs/migration-0.4.md](docs/migration-0.4.md).
+- **`KalturaRecorder` runs the Express Recorder script** instead of the `extwidget/preview` iframe (REC-01). `uiconfId` is now required. New optional props: `entryName`, `allowVideo`, `allowAudio`, `allowScreenShare`, `maxRecordingTime`. The KS comes from `setKsProvider` (widget `recorder`, privilege `editadmintags:*`), with the `ks` prop as fallback. CSP: add `https://www.kaltura.com` and `https://cdnapisec.kaltura.com` to `script-src` and `blob:` to `media-src`. The script runs in your page origin, so it can read the KS. It has no SRI yet: the Kaltura CDN has no versioned path and no CORS header. Steps: [docs/migration-0.4.md](docs/migration-0.4.md).
 
 ### Added
 
+- **`recorder-upload-ended` event** for `setEventHandler`, with `entryId` and `instanceId`. A recorder `error` reaches `setErrorHandler` as `render-failed` (or `invalid-ks`) with the fixed text `Recorder error`.
 - **SRI for the SSR stub in the catalog.** `x-kaltura-adapters.react` has `stubCdn` and `stubIntegrity` for `dist/html-element-stub.mjs`, which `kaltura-react.mjs` imports. Before, a client that loaded the module from the catalog had no SRI for that second file. The release stamps and checks them, and `verify-cdn` compares `stubIntegrity` with the served stub. Catalogs of 0.3.0 and older have no stub keys. See [docs/host-integration.md](docs/host-integration.md#server-imports-ssr).
 
 ### Security

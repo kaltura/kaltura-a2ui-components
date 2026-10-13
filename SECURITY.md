@@ -37,7 +37,7 @@ Agent output is untrusted input. Every A2UI message and every prop value can be 
 | Host app | The Kaltura Session (KS), the `serverUrl` allowlist, the region, the media URL list, the CSP, which catalog is registered | Puts the KS in agent output or the data model. Adds an origin it does not trust to run code in its page |
 | Agent | Component types and props, within the schema | Sets the KS, an origin, a region or a handler. It cannot: those are host functions, not props |
 | This package | Validating every prop before use, rendering errors as plain text, blocking unlisted origins and URLs | Mints, stores, logs or renews a KS |
-| Kaltura services | The pages inside the iframes (Player, Captions editor, Recorder, Analytics) and the Unisphere modules | |
+| Kaltura services | The pages inside the iframes (Player, Captions editor, Analytics), the Express Recorder script and the Unisphere modules | |
 
 The host controls are in [docs/host-integration.md](docs/host-integration.md):
 
@@ -52,7 +52,7 @@ What the package does on its own:
 - Every component validates its resolved props. A bad value shows a fixed, plain-text message. It never echoes a prop value, the KS or a remote error.
 - Markdown is sanitised in Flashcards and in the basic Text. The basic Text uses the renderer you put in `MarkdownContext`, then our sanitiser. Images in markdown load only from the hosts the basic Image allows. `openUrl` opens `https:` URLs only.
 - The basic Image, Video and AudioPlayer load only Kaltura URLs and `setExtraMediaOrigins` origins. They refuse URLs with `api_v3`, `partnerservices2` or a `ks` parameter or path segment. This check goes by name: a KS under another name passes. The real control is that agents never get the KS, because it stays out of the data model. Hosts must not put a KS into the data model or into URLs on an extra origin.
-- Player, flashcard clip and captions iframes carry no camera, microphone or display-capture permission. Only the recorder does.
+- Player, flashcard clip and captions iframes carry no camera, microphone or display-capture permission. The recorder is a script in your page, not an iframe. It asks the browser for camera and microphone itself.
 - CSV downloads neutralise spreadsheet formulas.
 
 Which finding each control answers, and which test proves it: [docs/security/SECF-30837.md](docs/security/SECF-30837.md).

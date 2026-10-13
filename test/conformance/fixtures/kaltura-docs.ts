@@ -119,7 +119,6 @@ export const GUIDE_LOADER_URL = 'https://unisphere.nvp1.ovp.kaltura.com/v1/loade
 export const KNOWN_DIVERGENCES: Record<string, string> = {
   'KalturaPlayer:params': 'We send autoplay, mute and plugins as query parameters. The guide sets playback options in config[playback]. Not decided.',
   'KalturaCaptionsEditor:params': 'We never send assetid or maxcharsperline, and we add uiconfid. The guide lists no uiconfid.',
-  'KalturaRecorder:integration': 'REC-01. The guide loads express-recorder.js in the host page. We embed an extwidget/preview iframe. See docs/adr/0005-analytics-and-recorder-integration.md.',
   'KalturaGenie:runtime': 'We pass runtimeName kaltura-genie. The guide and the live manifest list chat, avatar and the tools. Needs the Genie team.',
   'KalturaContentLab:runtime': 'We pass runtimeName kaltura-content-lab. The guide and the live manifest list application and ai-consent. Needs the Content Lab team.',
   'KalturaAgentsWidget:runtime': 'We pass runtimeName kaltura-agents. The guide lists manager. Needs the Agents team.',

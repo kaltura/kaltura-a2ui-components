@@ -74,9 +74,9 @@ describe('CONF-15: Unisphere widget and runtime names against the guide', () => 
 });
 
 describe('CONF-15: the Recorder', () => {
-  it('CONF-15: it is an extwidget iframe, not the express-recorder.js script (REC-01), and the divergence is listed', () => {
-    const text = source('src/core/recorder.tsx');
-    expect([text.includes('extwidget/preview'), text.includes('express-recorder.js'), 'KalturaRecorder:integration' in KNOWN_DIVERGENCES]).toEqual([true, false, true]);
+  it('CONF-15: it loads the express-recorder.js script from the host page like the guide, and no divergence is listed', () => {
+    const text = source('src/core/recorder-script.ts');
+    expect([text.includes('/apps/expressrecorder/latest/express-recorder.js'), source('src/core/recorder.tsx').includes('extwidget'), 'KalturaRecorder:integration' in KNOWN_DIVERGENCES]).toEqual([true, false, false]);
   });
 });
 

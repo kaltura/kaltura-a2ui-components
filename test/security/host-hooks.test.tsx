@@ -117,7 +117,7 @@ describe('3.3e: setErrorHandler gets a typed error for each error state', () => 
   it('3.3e: a bad recorder ks is reported as invalid-ks', async () => {
     await hooks();
     const { RecorderCore } = await import('../../src/core/recorder');
-    await render(RecorderCore, { partnerId: 1, ks: '' });
+    await render(RecorderCore, { partnerId: 1, uiconfId: 2, ks: '' });
     expect(errors).toEqual([{ code: 'invalid-ks', widget: 'recorder', message: 'Failed to load recorder: Invalid ks' }]);
   });
 

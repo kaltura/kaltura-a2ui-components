@@ -231,7 +231,7 @@
   },
   {
     "component": "KalturaRecorder",
-    "description": "Recorder iframe.",
+    "description": "Recorder container for the Express Recorder script.",
     "messages": [
       {
         "version": "v0.9",
@@ -248,16 +248,15 @@
             {
               "id": "root",
               "component": "KalturaRecorder",
-              "partnerId": 1
+              "partnerId": 1,
+              "uiconfId": 2
             }
           ]
         }
       }
     ],
     "expect": {
-      "iframeSrcContains": [
-        "/partner_id/1/"
-      ]
+      "selector": "div[id^=\"kaltura-recorder-\"]"
     }
   },
   {

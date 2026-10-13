@@ -86,7 +86,7 @@ Tags up to `v0.1.4` serve the old bundles, without the 0.2.0 fixes or host funct
 | `KalturaMediaManager` | `<kaltura-media-manager>` | Unisphere ES module |
 | `KalturaAnalytics` | `<kaltura-analytics>` | iframe, `postMessage` handshake |
 | `KalturaCaptionsEditor` | `<kaltura-captions-editor>` | iframe |
-| `KalturaRecorder` | `<kaltura-recorder>` | sandboxed iframe (`extwidget/preview`) |
+| `KalturaRecorder` | `<kaltura-recorder>` | Express Recorder script (`apps/expressrecorder`) |
 | `KalturaAvatar` | `<kaltura-avatar>` | Unisphere embeds API (`genieAvatar`) |
 | `KalturaGenie` | `<kaltura-genie-widget>` | Unisphere ES module |
 | `KalturaContentLab` | `<kaltura-content-lab>` | Unisphere ES module |
