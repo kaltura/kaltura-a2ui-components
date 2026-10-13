@@ -52,8 +52,11 @@ Not code. The workflow cannot do these, and it does not check them. Do them befo
 
 1. **Environment.** Settings, Environments, New environment `release`. Under Deployment branches and tags, pick "Selected branches and tags" and add `main`. Do this first: GitHub creates an unprotected environment on first use.
 2. **Required reviewers.** In the same environment, tick Required reviewers, add the people or teams who approve releases (up to 6) and save. Tick "Prevent self-review" to need a second person.
-3. **Tag ruleset.** Settings, Rules, Rulesets, New tag ruleset. Target pattern `v*`. Rules: Restrict updates and Restrict deletions. Enforcement Active. This keeps every released tag on its commit.
+3. **Tag ruleset.** Settings, Rules, Rulesets, New tag ruleset. Target pattern `v*`. Rules: Restrict creations, Restrict updates and Restrict deletions. Bypass list: the repository roles Admin and Maintain, and the release App (step 5). Enforcement Active. Only those can create a tag, and no tag can move or go.
 4. **Branch ruleset on `main`.** Settings, Rules, Rulesets, New branch ruleset for the default branch. Require a pull request, require the [checks below](#required-checks), block force pushes and restrict deletions. `release.yml` trusts that everything on `main` was reviewed.
+5. **Release App.** The job token cannot create tags under step 3. Create a GitHub App owned by the org with only the repository permission Contents: read and write, and install it on this repository only. Add it to the tag ruleset bypass list. In the `release` environment add the variable `RELEASE_APP_CLIENT_ID` and the secret `RELEASE_APP_PRIVATE_KEY`. The release job mints a short-lived token from them for the tag push only. The key is readable only by jobs that pass the environment gate (`main` and the reviewer). Until the variable is set, the job falls back to its own token, and the push fails once step 3 is active.
+
+GitHub has no per-role switch for creating Releases. A Release needs a tag, and only the roles above can create one, so only they can release a new version.
 
 ### Required checks
 

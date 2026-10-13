@@ -1,7 +1,7 @@
-// Covers: REG-01 (hard-coded US hosts). Plan item 3.1c: setRegion maps the
-// serviceurl and vod hosts per region. The default (nvp1) URLs are
-// byte-identical to the URLs before setRegion existed. Hosts the guides do not
-// list per region (cdn, kmc, recorder) stay on the US host.
+// Covers: REG-01 (hard-coded US hosts). setRegion maps every host per region.
+// The default (nvp1) URLs are byte-identical to the URLs before setRegion existed.
+// The guide lists no regional CDN host: the player and the recorder use the regional web host.
+// The KMC uses the kmc host the guide lists.
 import { describe, it, expect, afterEach } from 'vitest';
 import { act } from 'react';
 import { mount } from '../helpers/render';
@@ -40,12 +40,12 @@ async function urls() {
   };
 }
 
-// From kaltura.md API Getting Started §4.1 (Core API) and §4.3 (VOD delivery).
-const REGIONAL: Record<Exclude<KalturaRegion, 'nvp1'>, { api: string; vod: string }> = {
-  irp2: { api: 'https://api.eu.kaltura.com', vod: 'https://cfvod.irp2.ovp.kaltura.com' },
-  frp2: { api: 'https://api.de.kaltura.com', vod: 'https://cfvod.frp2.ovp.kaltura.com' },
-  cap2: { api: 'https://api.ca.kaltura.com', vod: 'https://cfvod.cap2.ovp.kaltura.com' },
-  syp2: { api: 'https://api.ap.kaltura.com', vod: 'https://cfvod.syp2.ovp.kaltura.com' },
+// api, vod and kmc: kaltura.md API Getting Started §4. web: the regional API host (player, recorder).
+const REGIONAL: Record<Exclude<KalturaRegion, 'nvp1'>, { api: string; vod: string; web: string; kmc: string }> = {
+  irp2: { api: 'https://api.eu.kaltura.com', vod: 'https://cfvod.irp2.ovp.kaltura.com', web: 'https://api.eu.kaltura.com', kmc: 'https://kmc.irp2.ovp.kaltura.com' },
+  frp2: { api: 'https://api.de.kaltura.com', vod: 'https://cfvod.frp2.ovp.kaltura.com', web: 'https://api.de.kaltura.com', kmc: 'https://kmc.de.kaltura.com' },
+  cap2: { api: 'https://api.ca.kaltura.com', vod: 'https://cfvod.cap2.ovp.kaltura.com', web: 'https://api.cap2.ovp.kaltura.com', kmc: 'https://kmc.ca.kaltura.com' },
+  syp2: { api: 'https://api.ap.kaltura.com', vod: 'https://cfvod.syp2.ovp.kaltura.com', web: 'https://api.syp2.ovp.kaltura.com', kmc: 'https://kmc.ap.kaltura.com' },
 };
 
 afterEach(() => {
@@ -64,12 +64,16 @@ describe('REG-01: setRegion', () => {
     expect(await urls()).toEqual(US);
   });
 
-  it.each(Object.entries(REGIONAL))('REG-01: %s maps the serviceurl and vod hosts only', async (code, hosts) => {
+  it.each(Object.entries(REGIONAL))('REG-01: %s maps every host', async (code, hosts) => {
     setRegion(code as KalturaRegion);
+    const cdn = 'https://cdnapisec.kaltura.com';
     expect(await urls()).toEqual({
-      ...US,
+      player: US.player.replace(cdn, hosts.web),
+      clip: US.clip.replace(cdn, hosts.web),
       thumbnail: US.thumbnail.replace('https://cfvod.kaltura.com', hosts.vod),
-      captions: US.captions.replace('serviceurl=https://www.kaltura.com', `serviceurl=${hosts.api}`),
+      captions: US.captions.replace(`cdnurl=${cdn}`, `cdnurl=${hosts.web}`).replace('serviceurl=https://www.kaltura.com', `serviceurl=${hosts.api}`),
+      analytics: US.analytics.replace('https://kmc.kaltura.com', hosts.kmc),
+      recorder: US.recorder.replace('https://www.kaltura.com', hosts.web),
     });
   });
 

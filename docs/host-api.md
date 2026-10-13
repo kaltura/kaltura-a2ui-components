@@ -82,15 +82,19 @@ Codes: `nvp1` (default, US), `irp2`, `frp2`, `cap2`, `syp2`. Any other code thro
 |---|---|---|---|---|---|---|
 | serviceUrl | `https://www.kaltura.com` | `https://api.eu.kaltura.com` | `https://api.de.kaltura.com` | `https://api.ca.kaltura.com` | `https://api.ap.kaltura.com` | Captions editor `serviceurl` |
 | vod | `https://cfvod.kaltura.com` | `https://cfvod.irp2.ovp.kaltura.com` | `https://cfvod.frp2.ovp.kaltura.com` | `https://cfvod.cap2.ovp.kaltura.com` | `https://cfvod.syp2.ovp.kaltura.com` | Flashcards thumbnails |
-| cdn | `https://cdnapisec.kaltura.com` | same as nvp1 | same as nvp1 | same as nvp1 | same as nvp1 | Player, flashcard clips, captions editor `cdnurl` |
-| kmc | `https://kmc.kaltura.com` | same as nvp1 | same as nvp1 | same as nvp1 | same as nvp1 | Analytics |
-| recorder | `https://www.kaltura.com` | same as nvp1 | same as nvp1 | same as nvp1 | same as nvp1 | Recorder iframe |
+| cdn | `https://cdnapisec.kaltura.com` | `https://api.eu.kaltura.com` | `https://api.de.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | Player, flashcard clips, captions editor `cdnurl` |
+| kmc | `https://kmc.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` | `https://kmc.de.kaltura.com` | `https://kmc.ca.kaltura.com` | `https://kmc.ap.kaltura.com` | Analytics (`/index.php/kmcng/analytics`) |
+| recorder | `https://www.kaltura.com` | same as cdn | same as cdn | same as cdn | same as cdn | Recorder iframe (`/index.php/extwidget/preview`) |
 
-Sources, read on 2026-10-12:
+The guide lists no regional CDN host, so the player uses the regional API host shown in the cdn row. The recorder uses the same host with the US path.
+
+Sources:
 
 - serviceUrl: https://kaltura.md/KALTURA_API_GETTING_STARTED/ §4.1 lists the API base URL per region (`https://api.eu.kaltura.com/api_v3` and so on). The captions editor takes it without `/api_v3`, as in https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/.
 - vod: the same guide, §4.3, gives `cfvod.{code}.ovp.kaltura.com`.
-- cdn, kmc, recorder: no guide lists a regional host. https://kaltura.md/KALTURA_PLAYER_EMBED_GUIDE/ says the CDN "may differ by region" but gives no value. These stay on the US host until the owning teams confirm one.
+- kmc: the same guide, §4, "Rich Media CMS" row of each region.
+- cdn, recorder: the guide lists no regional CDN host. Kaltura confirmed (2026-10-13) that regional accounts serve the player from the API host and that the recorder uses the US path on it. The Canada and Australia API hosts use the internal `{code}.ovp` form.
+- The captions editor page itself stays on `www.kaltura.com`. Check it on a regional account before you rely on it.
 
 `sgp2` (Singapore) is in the API guide but not supported here: the guide says it runs no microservices, so there is no Unisphere host for it.
 
