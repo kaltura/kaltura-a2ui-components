@@ -86,7 +86,7 @@ Codes: `nvp1` (default, US), `irp2`, `frp2`, `cap2`, `syp2`. Any other code thro
 | kmc | `https://kmc.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` | `https://kmc.de.kaltura.com` | `https://kmc.ca.kaltura.com` | `https://kmc.ap.kaltura.com` | Analytics (`/apps/kmc-analytics/latest/index.html`, and the `postMessage` origin) |
 | recorder | `https://www.kaltura.com` | same as cdn | same as cdn | same as cdn | same as cdn | Express Recorder script (`/apps/expressrecorder/latest/express-recorder.js`) |
 
-The guide lists no regional CDN host, so the player uses the regional API host shown in the cdn row. The recorder script always loads from `https://www.kaltura.com`. It gets the regional API host as `serviceUrl` and the cdn host as `playerUrl`.
+The guide lists no regional CDN host, so the player uses the regional API host shown in the cdn row. The recorder script loads from the recorder host of the row above. It gets the regional API host as `serviceUrl` and the cdn host as `playerUrl`.
 
 Sources:
 

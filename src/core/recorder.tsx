@@ -22,7 +22,7 @@ export interface RecorderCoreProps {
 
 const RUNTIME_SCHEMA = KalturaRecorderApi.schema.required({ ks: true });
 
-const detailOf = (event: unknown): { entryId?: unknown; code?: unknown } => (event as { detail?: object } | null)?.detail ?? {};
+const detailOf = (event: unknown): { entryId?: unknown } => (event as { detail?: object } | null)?.detail ?? {};
 
 const RecorderView: FC<RecorderCoreProps> = (props) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -85,10 +85,10 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
             detail: { ...(isEntryId(entryId) ? { entryId } : {}), instanceId: id },
           });
         });
-        // Remote error text can hold the KS or markup. Only the code picks a fixed message.
-        instance.addEventListener('error', event => {
+        // Remote error text can hold the KS or markup. Never report it.
+        instance.addEventListener('error', () => {
           if (cancelled) return;
-          reportError(detailOf(event).code === 'PERMISSION_DENIED' ? 'invalid-ks' : 'render-failed', 'recorder', 'Recorder error');
+          reportError('render-failed', 'recorder', 'Recorder error');
         });
       })
       .catch(err => {
