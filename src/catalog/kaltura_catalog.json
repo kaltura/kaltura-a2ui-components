@@ -599,7 +599,7 @@
             },
             "colors": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": { "type": "string", "maxLength": 64 },
               "description": "Optional color overrides for chart series (hex or CSS color strings)."
             },
             "height": {
@@ -614,7 +614,7 @@
                 "properties": {
                   "x": { "type": ["string", "number"], "description": "x-axis value to annotate." },
                   "label": { "type": "string", "description": "Annotation label text." },
-                  "color": { "type": "string", "description": "Annotation color (hex or CSS). Default: accent color." }
+                  "color": { "type": "string", "maxLength": 64, "description": "Annotation color (hex or CSS). Default: accent color." }
                 },
                 "required": ["x", "label"],
                 "additionalProperties": false
