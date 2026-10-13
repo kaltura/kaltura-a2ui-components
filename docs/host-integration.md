@@ -9,9 +9,10 @@ What the page or app that embeds the components must set up. Agents never call t
 | Another Kaltura region | `setRegion` | [Region](#region) |
 | Images, video or audio from your own host | `setExtraMediaOrigins` (React only) | [Media URLs](#media-urls) |
 | Logs and selection events | `setErrorHandler`, `setEventHandler` | [Errors and events](#errors-and-events) |
+| A `sandbox` on player iframes (opt-in) | `setPlayerSandbox` | [host-api.md](host-api.md#player-sandbox) |
 | A CSP | See below | [CSP](#content-security-policy) |
 
-All six functions come from `@kaltura/a2ui-react`. The script-tag bundle has the same functions, except `setExtraMediaOrigins`, on `window.KalturaA2UIWebComponents`. Signatures and codes: [host-api.md](host-api.md).
+All seven functions come from `@kaltura/a2ui-react`. The script-tag bundle has the same functions, except `setExtraMediaOrigins`, on `window.KalturaA2UIWebComponents`. Signatures and codes: [host-api.md](host-api.md).
 
 ## Register the Kaltura catalog alone
 

@@ -24,6 +24,7 @@ The `ok` loader records what the widget passed in: `harness.loaderConfigs()` (fr
 | `unisphere-lifecycle.spec.ts` | Unisphere widgets follow props and kill the workspace; `kaltura-entry-selected` scope (QA-03, QA-07, SEC-18) |
 | `css-tokens.spec.ts` | Design tokens resolve with and without host variables (QA-02, SEC-25) |
 | `iframe-permissions.spec.ts` | `allow` and `sandbox` per iframe, no capture on the player and clip (SEC-14) |
+| `player-sandbox.spec.ts` | Opt-in `setPlayerSandbox` against a stub player page: script, origin, fullscreen and downloads work, top navigation is blocked (SEC-14) |
 
 Add a case: import `test` from `./fixtures/harness`, call `h.open()` and `h.mount(tag, config)`, then assert on `h.pwned()` and the logs.
 Title cases that wait for a fix `[pending SEC-xx]`. They are skipped unless `E2E_PENDING=1`. Remove the prefix in the fix commit. List them: `grep -rn "\[pending" e2e`.
