@@ -1,5 +1,5 @@
 // The Content Security Policy recommended in docs/host-integration.md: the web
-// component bundle, a chart, flashcards, a Player iframe and the recorder script run under it with no
+// component bundle, a chart, flashcards, the Player script and the recorder script run under it with no
 // violation, and the same policy blocks a script from a host that is not listed.
 // The page is served from a fake origin by page.route, so the test needs no port
 // and no network. Requests to Kaltura hosts get an empty answer. The avatar
@@ -40,6 +40,19 @@ document.body.appendChild(recorder);
 `;
 
 const RECORDER_STUB = readFileSync(resolve(process.cwd(), 'e2e/fixtures/express-recorder-stub.js'), 'utf8');
+const PLAYER_STUB = readFileSync(resolve(process.cwd(), 'e2e/fixtures/kaltura-player-stub.js'), 'utf8');
+
+const EDITOR_PAGE = `<!doctype html><html lang="en"><body>
+<script src="/kaltura-wc.js"></script>
+<script src="/editor.js"></script>
+</body></html>`;
+
+const EDITOR_JS = `
+KalturaA2UIWebComponents.setKsProvider(() => 'csp-ks');
+const editor = document.createElement('kaltura-captions-editor');
+editor.config = { partnerId: 1, entryId: '0_abc' };
+document.body.appendChild(editor);
+`;
 
 const AVATAR_PAGE = `<!doctype html><html lang="en"><body>
 <kaltura-avatar id="avatar"></kaltura-avatar>
@@ -69,12 +82,17 @@ test.beforeEach(async ({ page }) => {
     if (path === '/page.js') return route.fulfill(serve(PAGE_JS, 'text/javascript'));
     if (path === '/avatar') return route.fulfill(serve(AVATAR_PAGE, 'text/html'));
     if (path === '/avatar.js') return route.fulfill(serve(AVATAR_JS, 'text/javascript'));
+    if (path === '/editor') return route.fulfill(serve(EDITOR_PAGE, 'text/html'));
+    if (path === '/editor.js') return route.fulfill(serve(EDITOR_JS, 'text/javascript'));
     if (path === '/recorder') return route.fulfill(serve(RECORDER_PAGE, 'text/html'));
     if (path === '/recorder.js') return route.fulfill(serve(RECORDER_JS, 'text/javascript'));
     if (path === '/kaltura-wc.js') return route.fulfill(serve(readFileSync(resolve(process.cwd(), 'dist/kaltura-wc.js'), 'utf8'), 'text/javascript'));
     return route.fulfill({ status: 404, body: '' });
   });
   await page.route((url) => url.origin !== ORIGIN, (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '' }));
+  await page.route('https://cdnapisec.kaltura.com/p/1/embedPlaykitJs/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/javascript', body: PLAYER_STUB }),
+  );
 });
 
 const violations = (page: import('@playwright/test').Page) => page.evaluate(() => (window as unknown as { __csp: string[] }).__csp);
@@ -83,11 +101,11 @@ test('the recommended policy is in docs/host-integration.md', () => {
   expect(POLICY).toContain("default-src 'self'");
 });
 
-test('CSP: chart, flashcards and a Player iframe run under the recommended policy', async ({ page }) => {
+test('CSP: chart, flashcards and the Player script run under the recommended policy', async ({ page }) => {
   await page.goto(`${ORIGIN}/`);
   await expect(page.locator('kaltura-chart h4.kaltura-chart-title')).toHaveText('Visits');
   await expect(page.locator('kaltura-flashcards')).toContainText('Cell');
-  await expect(page.locator('kaltura-player iframe')).toHaveAttribute('src', /^https:\/\/cdnapisec\.kaltura\.com\/p\/1\/embedPlaykitJs\//);
+  await expect(page.locator('kaltura-player .stub-player-ui')).toHaveCount(1);
   expect(await violations(page)).toEqual([]);
 });
 
@@ -119,4 +137,30 @@ test('CSP: the recorder script loads from the Kaltura host and runs under the re
   await page.goto(`${ORIGIN}/recorder`);
   await expect(page.locator('kaltura-recorder .stub-recorder-ui')).toHaveCount(1);
   expect(await violations(page)).toEqual([]);
+});
+
+test('CSP: the captions editor page keeps its base tag and stylesheets in a blob frame under the recommended policy', async ({ page }) => {
+  // The real page has a base tag and relative stylesheet and font URLs (checked by hand against embed.php).
+  const base = 'https://www.kaltura.com/apps/captionstudio/latest/index.html';
+  const blocked: string[] = [];
+  page.on('console', (message) => {
+    if (message.text().includes('Content Security Policy')) blocked.push(message.text());
+  });
+  await page.route('https://www.kaltura.com/apps/captionstudio/latest/embed.php', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: `<!doctype html><base href="${base}"><link rel="stylesheet" href="main.css"><title>editor stub</title>`,
+    }),
+  );
+  await page.route('https://www.kaltura.com/apps/captionstudio/latest/main.css', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/css', body: 'body{margin:0}' }),
+  );
+  await page.goto(`${ORIGIN}/editor`);
+  await expect(page.locator('kaltura-captions-editor iframe')).toHaveAttribute('src', /^blob:/);
+  const editorFrame = () => page.frames().find((candidate) => candidate !== page.mainFrame());
+  await expect.poll(() => editorFrame()?.evaluate(() => document.baseURI)).toBe(base);
+  await expect.poll(() => editorFrame()?.evaluate(() => document.styleSheets.length)).toBe(1);
+  expect([await violations(page), blocked]).toEqual([[], []]);
 });

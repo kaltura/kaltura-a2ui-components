@@ -19,6 +19,10 @@ interface KsWindow {
 const KALTURA_HOST = /^https?:\/\/[^/]*\.kaltura\.com\//;
 const RECORDER_PATH = '/apps/expressrecorder/latest/express-recorder.js';
 const RECORDER_STUB = readFileSync(resolve(process.cwd(), 'e2e/fixtures/express-recorder-stub.js'), 'utf8');
+const PLAYER_SCRIPT_PATH = /^\/p\/\d+\/embedPlaykitJs\//;
+const PLAYER_STUB = readFileSync(resolve(process.cwd(), 'e2e/fixtures/kaltura-player-stub.js'), 'utf8');
+const EDITOR_PATH = '/apps/captionstudio/latest/embed.php';
+const EDITOR_PAGE = '<!doctype html><title>editor stub</title><p>editor stub</p>';
 const LOADER_PATH = /\/loader\/index\.esm\.js(\?|$)/;
 
 /**
@@ -36,6 +40,8 @@ export class Harness {
   kalturaMode: LoaderMode = 'ok';
   /** What the stubbed recorder script URL does: serve the stub, fail, or serve a script with no API. */
   recorderMode: 'ok' | 'fail' | 'no-api' = 'ok';
+  /** What the stubbed Kaltura Player script URL does: serve the stub, fail, or serve a script with no API. */
+  playerMode: 'ok' | 'fail' | 'no-api' = 'ok';
 
   constructor(readonly page: Page) {
     page.on('request', (r: Request) => this.requests.push(r.url()));
@@ -71,6 +77,23 @@ export class Harness {
               headers: { 'Access-Control-Allow-Origin': '*' },
               body: this.recorderMode === 'ok' ? RECORDER_STUB : '/* no recorder API */',
             }),
+    );
+    await this.page.route(
+      (url) => PLAYER_SCRIPT_PATH.test(url.pathname) && KALTURA_HOST.test(url.href),
+      (route) =>
+        this.playerMode === 'fail'
+          ? route.abort()
+          : route.fulfill({
+              status: 200,
+              contentType: 'text/javascript',
+              headers: { 'Access-Control-Allow-Origin': '*' },
+              body: this.playerMode === 'ok' ? PLAYER_STUB : '/* no player API */',
+            }),
+    );
+    await this.page.route(
+      (url) => url.pathname === EDITOR_PATH && KALTURA_HOST.test(url.href),
+      (route) =>
+        route.fulfill({ status: 200, contentType: 'text/html', headers: { 'Access-Control-Allow-Origin': '*' }, body: EDITOR_PAGE }),
     );
     await this.page.goto(`${ORIGIN_A}/harness.html`);
   }

@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { buildPlayerUrl } from '../src/core/player';
+// What PlayerCore gives the Kaltura Player bundle: the script URL, the setup config and the loadMedia call.
+// The bundle is a fake from test/helpers/player-remote.ts. Security checks: test/security/player.test.tsx.
+import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { mount } from './helpers/render';
+import { playerRemote, loadPlayer, scriptUrl, type PlayerRemote } from './helpers/player-remote';
 
 const BASE_PROPS = {
   partnerId: 1234567,
@@ -7,53 +10,96 @@ const BASE_PROPS = {
   entryId: '1_abc123',
 };
 
-describe('buildPlayerUrl', () => {
-  it('builds the correct base URL with partnerId, uiconfId, entryId, and plugins', () => {
-    const url = buildPlayerUrl(BASE_PROPS);
+let remote: PlayerRemote & { restore: () => void };
 
-    expect(url).toContain('https://cdnapisec.kaltura.com');
-    expect(url).toContain(`/p/${BASE_PROPS.partnerId}/embedPlaykitJs`);
-    expect(url).toContain(`/partner_id/${BASE_PROPS.partnerId}`);
-    expect(url).toContain(`/uiconf_id/${BASE_PROPS.uiconfId}`);
-    expect(url).toContain(`entry_id=${BASE_PROPS.entryId}`);
-    expect(url).toContain('iframeembed=true');
-    expect(url).toContain('plugins=uiManagers%2Cyoutube%2Cdualscreen%2Ctimeline%2CkalturaCuepoints%2Civq%2Ckava');
+beforeEach(() => {
+  remote = playerRemote();
+});
+
+afterEach(() => {
+  remote.restore();
+  document.body.innerHTML = '';
+});
+
+async function render(props: Record<string, unknown>) {
+  const { PlayerCore } = await loadPlayer();
+  const view = await mount(PlayerCore, props);
+  await remote.ready();
+  return view;
+}
+
+describe('PlayerCore script and setup', () => {
+  it('loads the bundle of the partner and uiconf from the Kaltura CDN', async () => {
+    await render(BASE_PROPS);
+    expect(remote.urls).toEqual([scriptUrl(BASE_PROPS.partnerId, BASE_PROPS.uiconfId)]);
   });
 
-  it('rounds startTime and clipTo to integers for kalturaSeekFrom and kalturaClipTo', () => {
-    const url = buildPlayerUrl({ ...BASE_PROPS, startTime: 12.7, clipTo: 99.3 });
-    const parsed = new URL(url);
-
-    expect(parsed.searchParams.get('kalturaSeekFrom')).toBe('13');
-    expect(parsed.searchParams.get('kalturaClipTo')).toBe('99');
+  it('sets the player up in its own container with the ids and the header option', async () => {
+    const { container } = await render(BASE_PROPS);
+    const holder = container.querySelector('[role="region"]')!;
+    expect([remote.created[0].config, holder.id]).toEqual([
+      {
+        targetId: holder.id,
+        provider: { partnerId: 1234567, uiConfId: 47011143, useHeaderForKs: true },
+        playback: {},
+      },
+      expect.stringMatching(/^kaltura-player-[0-9a-f-]{36}$/),
+    ]);
   });
 
-  it('sets ks param when ks is provided, omits it when absent', () => {
-    const withKs = buildPlayerUrl({ ...BASE_PROPS, ks: 'djJ8MTIzNDU2N3w...' });
-    const withoutKs = buildPlayerUrl(BASE_PROPS);
-
-    const parsedWith = new URL(withKs);
-    const parsedWithout = new URL(withoutKs);
-
-    expect(parsedWith.searchParams.get('ks')).toBe('djJ8MTIzNDU2N3w...');
-    expect(parsedWithout.searchParams.has('ks')).toBe(false);
+  it('the player builds its UI inside the container, with no iframe', async () => {
+    const { container } = await render(BASE_PROPS);
+    expect([container.querySelectorAll('[role="region"] .fake-player-ui').length, container.querySelectorAll('iframe').length]).toEqual([1, 0]);
   });
 
-  it('sets autoplay and mute params when autoplay/muted are true, omits them when false/absent', () => {
-    const with_ = buildPlayerUrl({ ...BASE_PROPS, autoplay: true, muted: true });
-    const without = buildPlayerUrl({ ...BASE_PROPS, autoplay: false, muted: false });
-    const absent = buildPlayerUrl(BASE_PROPS);
+  it('the container is a labelled region with the aspect ratio of the prop', async () => {
+    const { container } = await render({ ...BASE_PROPS, aspectRatio: '4/3' });
+    const holder = container.querySelector<HTMLElement>('[role="region"]')!;
+    expect([holder.getAttribute('aria-label'), holder.style.aspectRatio]).toEqual(['Kaltura Player v7', '4/3']);
+  });
 
-    const parsedWith = new URL(with_);
-    expect(parsedWith.searchParams.get('autoplay')).toBe('true');
-    expect(parsedWith.searchParams.get('mute')).toBe('true');
+  it('puts the ks prop in the provider config', async () => {
+    await render({ ...BASE_PROPS, ks: 'djJ8MTIzNDU2N3w' });
+    expect(remote.created[0].config.provider).toEqual({ partnerId: 1234567, uiConfId: 47011143, ks: 'djJ8MTIzNDU2N3w', useHeaderForKs: true });
+  });
 
-    const parsedWithout = new URL(without);
-    expect(parsedWithout.searchParams.has('autoplay')).toBe(false);
-    expect(parsedWithout.searchParams.has('mute')).toBe(false);
+  it('passes autoplay and muted when they are true', async () => {
+    await render({ ...BASE_PROPS, autoplay: true, muted: true });
+    expect(remote.created[0].config.playback).toEqual({ autoplay: true, muted: true });
+  });
 
-    const parsedAbsent = new URL(absent);
-    expect(parsedAbsent.searchParams.has('autoplay')).toBe(false);
-    expect(parsedAbsent.searchParams.has('mute')).toBe(false);
+  it('passes false as false', async () => {
+    await render({ ...BASE_PROPS, autoplay: false, muted: false });
+    expect(remote.created[0].config.playback).toEqual({ autoplay: false, muted: false });
+  });
+
+  it('passes only the playback options that are set', async () => {
+    await render({ ...BASE_PROPS, muted: true });
+    expect(remote.created[0].config.playback).toEqual({ muted: true });
+  });
+});
+
+describe('PlayerCore loadMedia', () => {
+  it('loads the entry with no seek options when none are set', async () => {
+    await render(BASE_PROPS);
+    expect(remote.created[0].loads).toEqual([{ info: { entryId: '1_abc123' }, options: {} }]);
+  });
+
+  it('rounds startTime and clipTo to whole seconds for seekFrom and clipTo', async () => {
+    await render({ ...BASE_PROPS, startTime: 12.7, clipTo: 99.3 });
+    expect(remote.created[0].loads[0].options).toEqual({ seekFrom: 13, clipTo: 99 });
+  });
+
+  it('keeps a startTime of 0', async () => {
+    await render({ ...BASE_PROPS, startTime: 0 });
+    expect(remote.created[0].loads[0].options).toEqual({ seekFrom: 0 });
+  });
+
+  it('shows the entry id and name, and the description without markup', async () => {
+    const { container } = await render({ ...BASE_PROPS, entryName: 'Intro', entryDescription: '<b>Hello</b> world' });
+    expect([container.querySelector('.player-title')?.textContent, container.querySelector('.player-desc')?.textContent]).toEqual([
+      '1_abc123 — Intro',
+      'Hello world',
+    ]);
   });
 });

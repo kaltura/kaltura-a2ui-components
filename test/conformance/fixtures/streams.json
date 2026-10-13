@@ -41,9 +41,9 @@
       }
     ],
     "expect": {
-      "iframeSrcContains": [
-        "/partner_id/1/uiconf_id/2",
-        "entry_id=0_abc"
+      "selector": ".kaltura-player-container [role=\"region\"]",
+      "textContains": [
+        "0_abc"
       ]
     },
     "after": {
@@ -58,8 +58,8 @@
         }
       ],
       "expect": {
-        "iframeSrcContains": [
-          "entry_id=0_def"
+        "textContains": [
+          "0_def"
         ]
       }
     }
@@ -198,7 +198,7 @@
   },
   {
     "component": "KalturaCaptionsEditor",
-    "description": "Captions editor iframe.",
+    "description": "Captions editor container. The iframe is added after the editor page is fetched.",
     "messages": [
       {
         "version": "v0.9",
@@ -223,10 +223,7 @@
       }
     ],
     "expect": {
-      "iframeSrcContains": [
-        "pid=1",
-        "entryid=0_abc"
-      ]
+      "selector": ".kaltura-captions-editor-container"
     }
   },
   {

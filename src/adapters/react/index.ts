@@ -115,10 +115,9 @@ export {
   vodAvatarReactImpl,
   chartReactImpl,
 };
-export { PlayerCore, buildPlayerUrl, type PlayerCoreProps } from '../../core/player';
+export { PlayerCore, type PlayerCoreProps } from '../../core/player';
 export {
   FlashcardsCore,
-  buildClipUrl,
   buildAllCards,
   type FlashcardsCoreProps,
   type FlashCard,
@@ -140,15 +139,13 @@ export { setRegion, type KalturaRegion } from '../../core/region';
 export {
   setErrorHandler,
   setEventHandler,
-  setPlayerSandbox,
-  PLAYER_SANDBOX_PRESET,
   type KalturaError,
   type KalturaErrorCode,
   type KalturaEvent,
   type KalturaWidget,
 } from '../../core/host-hooks';
 export { AnalyticsCore, buildAnalyticsUrl, type AnalyticsCoreProps } from '../../core/analytics';
-export { CaptionsEditorCore, buildCaptionsEditorUrl, type CaptionsEditorCoreProps } from '../../core/captions-editor';
+export { CaptionsEditorCore, type CaptionsEditorCoreProps } from '../../core/captions-editor';
 export { RecorderCore, type RecorderCoreProps } from '../../core/recorder';
 export { AvatarCore, type AvatarCoreProps } from '../../core/avatar';
 export { GenieCore, type GenieCoreProps } from '../../core/genie';

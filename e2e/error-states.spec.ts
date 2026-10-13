@@ -62,6 +62,7 @@ test.describe('error states use one alert box', () => {
     await h.settle();
     await expect(alerts(h)).toHaveText('Failed to load player: Invalid entryId');
     await expect(h.page.locator('#host iframe')).toHaveCount(0);
+    expect(h.requests.filter((url) => url.includes('embedPlaykitJs'))).toEqual([]);
   });
 });
 
@@ -92,12 +93,15 @@ test.describe('flashcards: one bad clip does not hide the deck', () => {
 
     await h.page.getByRole('button', { name: 'Start' }).click();
     await expect(h.page.locator('.flashcard-counter')).toHaveText('2 / 3');
-    await expect(active.locator('iframe')).toHaveAttribute('src', /entry_id=0_good123/);
+    await expect(active.locator('.stub-player-ui')).toHaveCount(1);
+    expect(await h.page.evaluate(() => (window as unknown as { __playerLoads: Array<{ info: unknown }> }).__playerLoads.map((load) => load.info))).toEqual([
+      { entryId: '0_good123' },
+    ]);
     await expect(alerts(h)).toHaveCount(0);
 
     await active.getByRole('button', { name: 'Bad clip' }).click();
     await expect(active.locator('[role=alert]')).toHaveText('This clip cannot be shown.');
-    await expect(active.locator('iframe')).toHaveCount(0);
+    await expect(active.locator('.stub-player-ui')).toHaveCount(0);
     await expect(deck).toBeVisible();
 
     // The card ignores navigation while it animates. The arrow buttons are disabled then.

@@ -1,4 +1,6 @@
 // What the Kaltura guides say, next to what our code does (plan item 3.3c).
+// The Player and the Captions editor have no URL row: they build no URL any more (ADR 0008).
+// Their guide iframe embeds are listed in KNOWN_DIVERGENCES as `integration`.
 // Read on 2026-10-12. Guide URLs:
 //   Player        https://kaltura.md/KALTURA_PLAYER_EMBED_GUIDE/
 //   Captions      https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/
@@ -18,37 +20,17 @@ export interface UrlRow {
   /** Component name in the catalog. */
   component: string;
   guide: string;
-  /** Base URL (origin and path) the guide documents, with the sample ids filled in. */
+  /** Base URL (origin and path) the guide documents. */
   guideBase: string;
   /** Query parameter names the guide documents. */
   guideParams: string[];
-  /** Base URL our code builds for the same sample ids. */
+  /** Base URL our code builds. */
   oursBase: string;
   /** Query parameter names our code sends. */
   oursParams: string[];
 }
 
-// Sample ids used for every URL row.
-export const SAMPLE = { partnerId: 1, uiconfId: 2, entryId: '0_abc', ks: 'ks-1' } as const;
-
 export const URL_ROWS: UrlRow[] = [
-  {
-    component: 'KalturaPlayer',
-    guide: 'https://kaltura.md/KALTURA_PLAYER_EMBED_GUIDE/ (Iframe embed)',
-    guideBase: 'https://cdnapisec.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2',
-    guideParams: ['iframeembed', 'ks', 'entry_id', 'kalturaSeekFrom', 'kalturaClipTo', 'config[playback]'],
-    oursBase: 'https://cdnapisec.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2',
-    // The guide sets autoplay and muted in config[playback]. We send the short flags below.
-    oursParams: ['iframeembed', 'entry_id', 'plugins', 'ks', 'kalturaSeekFrom', 'kalturaClipTo', 'autoplay', 'mute'],
-  },
-  {
-    component: 'KalturaCaptionsEditor',
-    guide: 'https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/ (Embedding via iframe)',
-    guideBase: 'https://www.kaltura.com/apps/captionstudio/latest/index.html',
-    guideParams: ['pid', 'ks', 'entryid', 'assetid', 'maxcharsperline', 'cdnurl', 'serviceurl'],
-    oursBase: 'https://www.kaltura.com/apps/captionstudio/latest/index.html',
-    oursParams: ['pid', 'ks', 'entryid', 'cdnurl', 'serviceurl', 'uiconfid'],
-  },
   {
     component: 'KalturaAnalytics',
     guide: 'https://kaltura.md/KALTURA_ANALYTICS_EMBED_API/ (Embedding, postMessage protocol)',
@@ -117,8 +99,8 @@ export const GUIDE_LOADER_URL = 'https://unisphere.nvp1.ovp.kaltura.com/v1/loade
 
 /** Where the code and the guide differ today. Each key is `<component>:<aspect>`. */
 export const KNOWN_DIVERGENCES: Record<string, string> = {
-  'KalturaPlayer:params': 'We send autoplay, mute and plugins as query parameters. The guide sets playback options in config[playback]. Not decided.',
-  'KalturaCaptionsEditor:params': 'We never send assetid or maxcharsperline, and we add uiconfid. The guide lists no uiconfid.',
+  'KalturaPlayer:integration': 'The guide shows an iframe embed with the KS in the URL. We load the embedPlaykitJs script and pass the KS in the player config with useHeaderForKs. See docs/adr/0008.',
+  'KalturaCaptionsEditor:integration': 'The guide shows an iframe with pid, ks and entryid in the URL. We load embed.php into a blob URL iframe and set data-* attributes. See docs/adr/0008.',
   'KalturaGenie:runtime': 'We pass runtimeName kaltura-genie. The guide and the live manifest list chat, avatar and the tools. Needs the Genie team.',
   'KalturaContentLab:runtime': 'We pass runtimeName kaltura-content-lab. The guide and the live manifest list application and ai-consent. Needs the Content Lab team.',
   'KalturaAgentsWidget:runtime': 'We pass runtimeName kaltura-agents. The guide lists manager. Needs the Agents team.',

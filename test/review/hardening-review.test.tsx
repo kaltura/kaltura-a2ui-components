@@ -1,17 +1,18 @@
 // Review regression tests for the Phase 1 and 1b fixes. Inputs that the earlier
 // security tests did not cover: unicode hosts, nested markup, odd types, a
 // numeric chart annotation, a malformed clip and an alert left behind.
-import { describe, it, expect, afterAll, afterEach, beforeAll } from 'vitest';
+import { describe, it, expect, afterAll, afterEach, beforeAll, beforeEach } from 'vitest';
 import { createElement, act } from 'react';
 import { deriveLoaderUrl } from '../../src/core/unisphere-loader';
 import { sanitizeMarkdownHtml } from '../../src/core/safe-markdown';
 import { toKalturaCdnUrl } from '../../src/core/media-url';
 import { checkProps } from '../../src/core/validate-props';
-import { buildPlayerUrl } from '../../src/core/player';
-import { buildClipUrl, buildThumbnailUrl } from '../../src/core/flashcards';
+import { PlayerCore } from '../../src/core/player';
+import { buildThumbnailUrl } from '../../src/core/flashcards';
 import { KalturaPlayerApi } from '../../src/schemas/player';
 import { KalturaGenieApi } from '../../src/schemas/genie';
 import { mount } from '../helpers/render';
+import { playerRemote } from '../helpers/player-remote';
 
 const parse = (html: string) => {
   const el = document.createElement('div');
@@ -97,8 +98,13 @@ describe('SEC-05: sanitizeMarkdownHtml nested and namespaced markup', () => {
   });
 });
 
-describe('SEC-11: URL builders reject odd types and encodings', () => {
+describe('SEC-11: the player and the thumbnail URL reject odd types and encodings', () => {
   const base = { partnerId: 1, uiconfId: 2, entryId: '0_abc' };
+  let player: ReturnType<typeof playerRemote>;
+  beforeEach(() => {
+    player = playerRemote();
+  });
+  afterEach(() => player.restore());
   it.each([
     { entryId: '0_abc%2f..' },
     { entryId: '0_abс' }, // Cyrillic es
@@ -107,12 +113,13 @@ describe('SEC-11: URL builders reject odd types and encodings', () => {
     { partnerId: '1' },
     { partnerId: 1e21 },
     { uiconfId: true },
-  ])('SEC-11: buildPlayerUrl %j', patch => {
-    expect(() => buildPlayerUrl({ ...base, ...patch } as never)).toThrow();
+  ])('SEC-11: the player refuses %j and loads no script', async patch => {
+    const { container } = await mount(PlayerCore, { ...base, ...patch });
+    expect([container.querySelector('[role="region"]'), player.urls]).toEqual([null, []]);
   });
-  it('SEC-11: buildClipUrl and buildThumbnailUrl refuse a non-string entryId', () => {
+  it('SEC-11: buildThumbnailUrl refuses a non-string entryId', () => {
     const clip = { entryId: { toString: () => '0_abc' }, startTime: 0, endTime: 1 } as never;
-    expect([buildClipUrl(clip, 1, 2), buildThumbnailUrl(clip, 1)]).toEqual(['', '']);
+    expect(buildThumbnailUrl(clip, 1)).toBe('');
   });
 });
 

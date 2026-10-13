@@ -1,47 +1,69 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { buildClipUrl, buildAllCards, buildThumbnailUrl } from '../src/core/flashcards';
+import { act } from 'react';
+import { buildAllCards, buildThumbnailUrl } from '../src/core/flashcards';
+import { mount } from './helpers/render';
+import { playerRemote, loadPlayer, scriptUrl } from './helpers/player-remote';
 
-// ── buildClipUrl ─────────────────────────────────────────────────────────────
+// ── Clip player ──────────────────────────────────────────────────────────────
 
-describe('buildClipUrl', () => {
-  const clip = { entryId: '1_abc123', startTime: 10.7, endTime: 45.2 };
+describe('FlashcardsCore clip player', () => {
+  const clip = { entryId: '1_abc123', startTime: 10.7, endTime: 45.2, title: 'Intro' };
+  let remote: ReturnType<typeof playerRemote>;
 
-  it('returns empty string when partnerId is missing', () => {
-    expect(buildClipUrl(clip, undefined, 12345)).toBe('');
+  beforeEach(() => {
+    remote = playerRemote();
   });
 
-  it('returns empty string when uiconfId is missing', () => {
-    expect(buildClipUrl(clip, 99999, undefined)).toBe('');
+  afterEach(() => {
+    remote.restore();
+    document.body.innerHTML = '';
   });
 
-  it('returns empty string when both are missing', () => {
-    expect(buildClipUrl(clip)).toBe('');
+  async function openClip(props: Record<string, unknown>) {
+    const { FlashcardsCore } = await loadPlayer();
+    const { container } = await mount(FlashcardsCore, { title: 'Deck', cards: [{ title: 'C', content: 'x', clips: [clip] }], ...props });
+    await act(async () => container.querySelector<HTMLButtonElement>('.flashcard-action-btn')!.click());
+    return container;
+  }
+
+  it('shows no player when partnerId is missing', async () => {
+    await openClip({ uiconfId: 12345 });
+    expect(remote.created).toEqual([]);
   });
 
-  it('builds a valid URL with entry_id and rounded seek params', () => {
-    const url = buildClipUrl(clip, 99999, 12345);
-    expect(url).toContain('entry_id=1_abc123');
-    expect(url).toContain('kalturaSeekFrom=11');   // Math.round(10.7)
-    expect(url).toContain('kalturaClipTo=45');      // Math.round(45.2)
-    expect(url).toContain('/p/99999/embedPlaykitJs/partner_id/99999/uiconf_id/12345');
-    expect(url).toContain('iframeembed=true');
+  it('shows no player when uiconfId is missing', async () => {
+    await openClip({ partnerId: 99999 });
+    expect(remote.created).toEqual([]);
   });
 
-  it('appends ks when provided', () => {
-    const url = buildClipUrl(clip, 99999, 12345, 'mysessiontoken');
-    expect(url).toContain('ks=mysessiontoken');
+  it('loads the bundle of the partner and uiconf', async () => {
+    await openClip({ partnerId: 99999, uiconfId: 12345 });
+    await remote.ready();
+    expect(remote.urls).toEqual([scriptUrl(99999, 12345)]);
   });
 
-  it('omits ks param when ks is not provided', () => {
-    const url = buildClipUrl(clip, 99999, 12345);
-    expect(url).not.toContain('ks=');
+  it('loads the entry with rounded seek and clip end', async () => {
+    await openClip({ partnerId: 99999, uiconfId: 12345 });
+    await remote.ready();
+    expect(remote.created[0].loads).toEqual([{ info: { entryId: '1_abc123' }, options: { seekFrom: 11, clipTo: 45 } }]);
   });
 
-  it('rounds startTime and endTime correctly for integer values', () => {
-    const intClip = { entryId: '1_xyz', startTime: 30, endTime: 60 };
-    const url = buildClipUrl(intClip, 1, 2);
-    expect(url).toContain('kalturaSeekFrom=30');
-    expect(url).toContain('kalturaClipTo=60');
+  it('rounds whole-second times as they are', async () => {
+    await openClip({ partnerId: 1, uiconfId: 2, cards: [{ title: 'C', content: 'x', clips: [{ entryId: '1_xyz', startTime: 30, endTime: 60 }] }] });
+    await remote.ready();
+    expect(remote.created[0].loads[0].options).toEqual({ seekFrom: 30, clipTo: 60 });
+  });
+
+  it('gives the KS to the player setup, not to a URL', async () => {
+    await openClip({ partnerId: 99999, uiconfId: 12345, ks: 'mysessiontoken' });
+    await remote.ready();
+    expect([remote.created[0].config.provider.ks, remote.urls.some(url => url.includes('mysessiontoken'))]).toEqual(['mysessiontoken', false]);
+  });
+
+  it('sets up the player without a ks key when there is no KS', async () => {
+    await openClip({ partnerId: 99999, uiconfId: 12345 });
+    await remote.ready();
+    expect('ks' in remote.created[0].config.provider).toBe(false);
   });
 });
 
