@@ -33,7 +33,7 @@ import { A2uiSurface } from '@a2ui/react/v0_9';
 
 This makes the import work. It does not make surfaces render on the server: `A2uiSurface` renders in the browser only. Browsers and jsdom need no import order.
 
-If you load `kaltura-react.mjs` from jsDelivr with an import map and `integrity`, add the Release's hash for `dist/html-element-stub.mjs` too. The bundle imports it.
+If you load `kaltura-react.mjs` from jsDelivr with an import map and `integrity`, pin `dist/html-element-stub.mjs` too. The bundle imports it. The catalog `x-kaltura-adapters.react` gives `stubCdn` and `stubIntegrity` for it, next to `cdn` and `integrity` (releases after 0.3.0). For 0.3.0 and older, take the hash from the Release's `hashes.json`.
 
 ## DOMPurify override
 

@@ -18,9 +18,9 @@ main:  ── A ── B            (B: version bump, merged by PR)
 |---|---|---|
 | `verify-inputs` | Run must be on `main` and its commit must be the head of `origin/main`. `version` must be semver, equal `package.json` and have a dated `## X.Y.Z - YYYY-MM-DD` section in `CHANGELOG.md`. `package.json` must be private. Tag `vX.Y.Z` must not exist, in the clone or on GitHub. `git ls-files dist` must be empty. | `contents: read` |
 | `ci`, `e2e` | The normal suites, run again. | as in `ci.yml`, `e2e.yml` |
-| `build` | `npm ci --ignore-scripts`, build, bundle and size checks, tests. Stamps the tag URLs, the install line and both SRI hashes into the catalog (workspace only) and checks the result with `release-verify-stamp.mjs`. Makes `dist.tar.gz`, the SBOM, `hashes.json`, `SHA256SUMS` and the Release notes. Uploads one artifact. | `contents: read` |
-| `release` | Environment `release`. Skipped on a dry run. Checks the artifact (`SHA256SUMS`, SRI with `openssl`, catalog integrity), attests the files, makes the release commit, tags it, pushes only the tag and creates the GitHub Release. Runs no repo code. | `contents: write`, `id-token: write`, `attestations: write` |
-| `verify-cdn` | Fetches both bundles, `html-element-stub.mjs` and the catalog from `cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@<tag>/`. Bytes and SRI must equal `hashes.json`. Tries 20 times, 60 seconds apart. | `contents: read` |
+| `build` | `npm ci --ignore-scripts`, build, bundle and size checks, tests. Stamps the tag URLs, the install line and the SRI hashes of both bundles and the stub into the catalog (workspace only) and checks the result with `release-verify-stamp.mjs`. Makes `dist.tar.gz`, the SBOM, `hashes.json`, `SHA256SUMS` and the Release notes. Uploads one artifact. | `contents: read` |
+| `release` | Environment `release`. Skipped on a dry run. Checks the artifact (`SHA256SUMS`, SRI with `openssl`, catalog integrity for both bundles and the stub), attests the files, makes the release commit, tags it, pushes only the tag and creates the GitHub Release. Runs no repo code. | `contents: write`, `id-token: write`, `attestations: write` |
+| `verify-cdn` | Fetches both bundles, `html-element-stub.mjs` and the catalog from `cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@<tag>/`. Bytes and SRI must equal `hashes.json`. The catalog `integrity` and `stubIntegrity` must equal the served bytes (`stubIntegrity` only if the tag's catalog has it). Tries 20 times, 60 seconds apart. | `contents: read` |
 
 The release commit is the same on every attempt: same tree, author `github-actions[bot]`, dates of the `main` commit and the run URL in the message. So a re-run finds its own tag and skips the push. A tag on any other commit fails the run. The workflow never pushes a branch and never forces.
 
@@ -90,7 +90,7 @@ It does not mount a widget or use a partner.
 | Command | Use |
 |---|---|
 | `npm run release:check -- 1.2.3` | Checks the version. Prints `version=`, `tag=` and `prerelease=`. |
-| `npm run release:stamp -- --tag v1.2.3` | Stamps the tag and both SRI hashes from `dist/` into the catalog. |
+| `npm run release:stamp -- --tag v1.2.3` | Stamps the tag and the SRI of both bundles and the stub from `dist/` into the catalog. |
 | `node scripts/release-verify-stamp.mjs --tag v1.2.3` | Checks the stamped catalog against `dist/`. Fails on any left-over placeholder. |
 | `npm run release:hashes -- --version 1.2.3 --out DIR` | `hashes.json` (from the working tree) and `SHA256SUMS` of every file in `DIR`. |
 | `npm run release:notes -- --version 1.2.3 --hashes DIR/hashes.json` | Prints the Release notes. |

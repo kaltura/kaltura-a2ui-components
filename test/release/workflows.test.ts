@@ -102,6 +102,11 @@ describe('SEC-09: release.yml jobs', () => {
     expect(['actions/attest-build-provenance@', 'dist/kaltura-wc.js', 'dist/kaltura-react.mjs', 'dist/html-element-stub.mjs', 'src/catalog/kaltura_catalog.json', 'dist.tar.gz'].filter(text => !releaseJobs['release']?.includes(text))).toEqual([]);
   });
 
+  it('SEC-19: the release job checks all three catalog SRI values against hashes.json', () => {
+    const job = releaseJobs['release'] ?? '';
+    expect(['.webcomponent.integrity == $h[0].cdn["dist/kaltura-wc.js"]', '.react.integrity == $h[0].cdn["dist/kaltura-react.mjs"]', '.react.stubIntegrity == $h[0].cdn["dist/html-element-stub.mjs"]'].filter(text => !job.includes(text))).toEqual([]);
+  });
+
   it('SEC-09: the tag is pushed with the release App token when one is set, and the App key is read only there', () => {
     const job = releaseJobs['release'] ?? '';
     expect([job.includes('GH_TOKEN: ${{ steps.app.outputs.token || github.token }}'), job.includes('permission-contents: write'), release.match(/RELEASE_APP_PRIVATE_KEY/g)?.length]).toEqual([true, true, 1]);
