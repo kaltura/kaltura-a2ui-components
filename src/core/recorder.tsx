@@ -7,6 +7,7 @@ import { withKs } from './ks';
 import { emitEvent, invalidCode, KalturaFailure, reportError } from './host-hooks';
 import { kalturaHosts } from './region';
 import { isEntryId } from './ids';
+import { refusedIdProp } from './allowed-ids';
 import { loadRecorderScript, type ExpressRecorderHandle } from './recorder-script';
 
 export interface RecorderCoreProps {
@@ -42,6 +43,13 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
       };
     }
     if (pending) return;
+    const refused = refusedIdProp({ partnerId, uiconfId });
+    if (refused) {
+      renderLoadError(container, 'recorder', new KalturaFailure('origin-not-allowed', `${refused} is not allowed`), 'recorder');
+      return () => {
+        container.replaceChildren();
+      };
+    }
 
     let cancelled = false;
     let recorder: ExpressRecorderHandle | undefined;

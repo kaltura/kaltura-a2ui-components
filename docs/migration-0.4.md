@@ -21,6 +21,7 @@ The full list is in [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-co
 | 3 | Hosts and agents | Check `reportType`, `fromDate` and `toDate` | Bad values now show an error. See [Props](#props) |
 | 4 | Hosts that call `buildAnalyticsUrl` | Call it with no arguments | It returns a fixed URL. See [URL](#url) |
 | 5 | Hosts with a CSP | Keep the KMC host of your region in `frame-src` | See [host-integration.md](host-integration.md#content-security-policy) |
+| 6 | Hosts that render agent output | Call `setAllowedPartners` and `setAllowedUiconfs` with your own ids (optional) | The agent picks the ids, and a uiconf decides which code runs in your page. See [Allowed partners and uiconfs](#allowed-partners-and-uiconfs) |
 
 ## KS
 
@@ -64,6 +65,17 @@ After:
 ```json
 { "id": "a", "component": "KalturaAnalytics", "partnerId": 1234567, "reportType": "geo-location", "fromDate": "2026-01-01", "toDate": "2026-03-31" }
 ```
+
+## Allowed partners and uiconfs
+
+New and optional. Owning a uiconf means running code in your page origin with your KS, and the agent picks `partnerId` and `uiconfId`. Limit both to your own ids. Nothing changes until you call them.
+
+```ts
+setAllowedPartners([1234567]);
+setAllowedUiconfs([2000001, /^20000[0-9]{2}$/]);
+```
+
+A refused id loads nothing and the error handler gets `origin-not-allowed`. Rules, components and details: [host-api.md](host-api.md#allowed-partners-and-uiconfs).
 
 ## Recorder
 
