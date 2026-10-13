@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "sha384 subresource-integrity values are public hashes, not keys"
+targetRules = ["generic-api-key"]
+regexes = ['''sha384-[A-Za-z0-9+/]{64}''']
