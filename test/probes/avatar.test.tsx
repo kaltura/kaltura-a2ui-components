@@ -1,74 +1,199 @@
-// Covers: SEC-08 / QA-04 (Avatar SDK: `latest` URL, no SRI, id-keyed script
-// tag breaks StrictMode and multi-instance).
-// Plan item 1.9 (avatar). The QA-04 tests are green. SEC-08 is vendor-blocked
-// (status "blocked" in docs/security/SECF-30837.md): the avatar team has not
-// published a versioned SDK URL and an SRI hash, so the SEC-08 pin test is
-// skipped. Remove `.skip` when `SDK_SRC` and `SDK_INTEGRITY` in
-// src/core/avatar.tsx are set.
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+// Covers: QA-04 (avatar lifecycle: StrictMode, many instances, unmount races).
+// The avatar runs on the Unisphere embeds API: one workspace and one contained
+// embed per mount, removed and destroyed on unmount.
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { StrictMode, createElement, act } from 'react';
-import { createRoot, type Root } from 'react-dom/client';
+import { mount } from '../helpers/render';
+import { avatarRemote, loadAvatar, SERVER_URL, type RemoteOptions } from '../helpers/avatar-remote';
 
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+const VALID = { partnerId: 1, serverUrl: SERVER_URL };
 
-type AvatarWindow = Window & { KalturaAvatar?: { create: (cfg: unknown) => unknown } };
-const win = window as AvatarWindow;
-
-const roots: Root[] = [];
-async function render(...children: ReturnType<typeof createElement>[]) {
-  for (const child of children) {
-    const root = createRoot(document.body.appendChild(document.createElement('div')));
-    roots.push(root);
-    await act(async () => root.render(child));
-  }
-}
-const avatar = async (id: string) => createElement((await import('../../src/core/avatar')).AvatarCore, { avatarId: id });
-const newCreate = () => vi.fn<(cfg: unknown) => unknown>();
-const finishLoading = (create: ReturnType<typeof newCreate>) => {
-  win.KalturaAvatar = { create };
-  return act(async () => {
-    document.querySelectorAll('script').forEach(s => s.dispatchEvent(new Event('load')));
-  });
-};
-
-beforeEach(() => {
-  vi.resetModules();
+// vitest fails the second of two parallel imports of a mocked URL, and
+// StrictMode runs the effect twice. So this file serves the fake module
+// without import(). The allowlist check still runs. The real import() is
+// covered in test/security/avatar.test.tsx and e2e/avatar.spec.ts.
+const served = vi.hoisted(() => ({ module: {} as unknown }));
+vi.mock('../../src/core/unisphere-loader', async (original: () => Promise<typeof import('../../src/core/unisphere-loader')>) => {
+  const real = await original();
+  return { ...real, loadUnisphereModule: async (url: string) => (real.deriveLoaderUrl(url), served.module) };
 });
+
 afterEach(() => {
-  roots.splice(0).forEach(r => act(() => r.unmount()));
   document.body.innerHTML = '';
-  document.head.innerHTML = '';
-  delete win.KalturaAvatar;
+  document.documentElement.removeAttribute('data-theme');
+  vi.restoreAllMocks();
 });
 
-describe('SEC-08 / QA-04: AvatarCore SDK loading', () => {
-  // Vendor block: needs the SDK versioned URL and SRI hash from the avatar team.
-  it.skip('SEC-08 (vendor block: SDK versioned URL and SRI hash from the avatar team): SDK script is pinned (not `latest`) and has integrity + crossorigin', async () => {
-    await render(await avatar('av1'));
-    const script = document.querySelector('script');
-    expect([script?.src.includes('/latest/'), script?.hasAttribute('integrity'), script?.crossOrigin]).toEqual([
-      false,
+async function setup(options?: RemoteOptions) {
+  const remote = avatarRemote(options);
+  served.module = remote.module;
+  const api = await loadAvatar(remote.module);
+  api.setKsProvider(() => 'ks-1');
+  return { remote, ...api };
+}
+
+const settle = () => act(async () => new Promise(r => setTimeout(r, 30)));
+
+describe('QA-04: one embed per mount', () => {
+  it('QA-04: StrictMode makes one workspace and one embed', async () => {
+    const { remote, AvatarCore } = await setup();
+    await mount(StrictMode, { children: createElement(AvatarCore, VALID) });
+    await remote.mounted();
+    expect(remote.log).toEqual(['workspace', 'contained']);
+  });
+
+  it('QA-04: the embed mounts into the container by its own unique id', async () => {
+    const { remote, AvatarCore } = await setup();
+    const first = await mount(AvatarCore, VALID);
+    await remote.mounted();
+    const second = await mount(AvatarCore, VALID);
+    await vi.waitFor(() => expect(remote.params).toHaveLength(2));
+    const ids = [first, second].map(({ container }) => container.querySelector('.kaltura-avatar-container')?.id);
+    expect([remote.params.map(p => p.elementId), ids[0] !== ids[1], ids[0]?.startsWith('kaltura-avatar-')]).toEqual([ids, true, true]);
+  });
+
+  it('QA-04: a prop change removes the old embed and makes a new one', async () => {
+    const { remote, AvatarCore } = await setup();
+    const { root } = await mount(AvatarCore, VALID);
+    await remote.mounted();
+    await act(async () => root.render(createElement(AvatarCore, { ...VALID, openingPhrase: 'Hello' })));
+    await vi.waitFor(() => expect(remote.log).toEqual(['workspace', 'contained', 'unsubscribe', 'remove', 'destroy', 'workspace', 'contained']));
+  });
+});
+
+describe('QA-04: unmount cleans up', () => {
+  it('QA-04: unmount unsubscribes, removes the embed, destroys the workspace and empties the container', async () => {
+    const { remote, AvatarCore } = await setup();
+    const { container, root } = await mount(AvatarCore, VALID);
+    await remote.mounted();
+    const box = container.querySelector('.kaltura-avatar-container')!;
+    box.append(document.createElement('canvas'));
+    await act(async () => root.unmount());
+    expect([remote.log, box.childElementCount]).toEqual([['workspace', 'contained', 'unsubscribe', 'remove', 'destroy'], 0]);
+  });
+
+  it('QA-04: the live loader name `destory` is called when there is no `destroy`', async () => {
+    const { remote, AvatarCore } = await setup({ destroyName: 'destory' });
+    const { root } = await mount(AvatarCore, VALID);
+    await remote.mounted();
+    await act(async () => root.unmount());
+    expect(remote.log.at(-1)).toBe('destroy');
+  });
+
+  it('QA-04: unmount while the workspace loads destroys it when it arrives and never mounts the embed', async () => {
+    let open = () => {};
+    const gate = new Promise<void>(resolve => (open = resolve));
+    const { remote, AvatarCore } = await setup({ gate });
+    const { root } = await mount(AvatarCore, VALID);
+    await vi.waitFor(() => expect(remote.log).toEqual(['workspace']));
+    await act(async () => root.unmount());
+    open();
+    await vi.waitFor(() => expect(remote.log).toEqual(['workspace', 'destroy']));
+  });
+
+  it('QA-04: unmount before the loader arrives never creates a workspace', async () => {
+    const remote = avatarRemote();
+    let open = () => {};
+    const gate = new Promise<void>(resolve => (open = resolve));
+    served.module = gate.then(() => remote.module);
+    const { AvatarCore, setKsProvider } = await loadAvatar(remote.module);
+    setKsProvider(() => 'ks-1');
+    const { root } = await mount(AvatarCore, VALID);
+    await act(async () => root.unmount());
+    open();
+    await settle();
+    expect(remote.log).toEqual([]);
+  });
+
+  it('QA-04: a throwing remove or destroy does not break unmount', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const remote = avatarRemote();
+    const { embeds } = remote.module as { embeds: { workspace: (c: never) => Promise<Record<string, unknown>> } };
+    const broken = {
+      embeds: {
+        workspace: async (config: never) => {
+          const ws = (await embeds.workspace(config)) as { apis: { genieAvatar: { contained: (p: never) => unknown } } };
+          const contained = ws.apis.genieAvatar.contained;
+          ws.apis.genieAvatar.contained = p => ({ ...(contained(p) as object), remove: () => { throw new Error('remove'); } });
+          return { ...ws, destroy: () => { throw new Error('destroy'); } };
+        },
+      },
+    };
+    served.module = broken;
+    const { AvatarCore, setKsProvider } = await loadAvatar(broken);
+    setKsProvider(() => 'ks-1');
+    const { container, root } = await mount(AvatarCore, VALID);
+    await remote.mounted();
+    await act(async () => root.unmount());
+    expect([container.innerHTML, errors.mock.calls.length]).toEqual(['', 0]);
+  });
+});
+
+describe('QA-04: props map to the embed', () => {
+  it('QA-04: autoConnect, openingPhrase, captions and theme', async () => {
+    const { remote, AvatarCore } = await setup();
+    await mount(AvatarCore, { ...VALID, autoConnect: true, openingPhrase: 'Hi', captions: true, theme: 'studio' });
+    await remote.mounted();
+    expect([remote.configs[0]?.apis, remote.params[0]?.autoConnect]).toEqual([
+      [{ name: 'genieAvatar', settings: { openingPhrase: 'Hi', captions: { enable: true }, theme: { type: 'studio' } } }],
       true,
-      'anonymous',
     ]);
   });
 
-  it('QA-04: StrictMode creates the avatar exactly once after the SDK loads', async () => {
-    const create = newCreate();
-    await render(createElement(StrictMode, null, await avatar('av1')));
-    await finishLoading(create);
-    expect(create).toHaveBeenCalledTimes(1);
+  it.each([
+    ['light', 'light'],
+    ['dark', 'dark'],
+    [null, 'dark'],
+  ])('QA-04: data-theme %s gives theme %s', async (attribute, type) => {
+    if (attribute) document.documentElement.setAttribute('data-theme', attribute);
+    const { remote, AvatarCore } = await setup();
+    await mount(AvatarCore, VALID);
+    await remote.mounted();
+    expect(remote.configs[0]?.apis[0]?.settings.theme).toEqual({ type });
   });
 
-  it('QA-04: two instances of the same avatar both initialise', async () => {
-    const create = newCreate();
-    await render(await avatar('same'), await avatar('same'));
-    await finishLoading(create);
-    expect(create).toHaveBeenCalledTimes(2);
+  it('QA-04: the region of serverUrl goes to the workspace as env', async () => {
+    const { remote, AvatarCore } = await setup();
+    await mount(AvatarCore, VALID);
+    await remote.mounted();
+    expect(remote.configs[0]?.env).toBe('nvp1');
   });
 
-  it('QA-04: two different avatar ids add one SDK script tag', async () => {
-    await render(await avatar('a'), await avatar('b'));
-    expect(document.querySelectorAll('script').length).toBe(1);
+  it('QA-04: a host-added origin sends no env', async () => {
+    const remote = avatarRemote();
+    served.module = remote.module;
+    const { AvatarCore, setKsProvider, setExtraAllowedOrigins } = await loadAvatar(remote.module);
+    setExtraAllowedOrigins(['https://unisphere.example.com']);
+    setKsProvider(() => 'ks-1');
+    await mount(AvatarCore, { ...VALID, serverUrl: 'https://unisphere.example.com/v1' });
+    await remote.mounted();
+    expect([remote.log, 'env' in (remote.configs[0] ?? {})]).toEqual([['workspace', 'contained'], false]);
+  });
+});
+
+describe('QA-04: disconnect events', () => {
+  it.each([
+    ['ConversationEnded', 'ConversationEnded'],
+    ['<b>x</b>', 'UnknownReason'],
+    [42, 'UnknownReason'],
+  ])('QA-04: reason %j reaches the host as %s', async (reason, expected) => {
+    const { remote, AvatarCore, setEventHandler } = await setup();
+    const events = vi.fn();
+    setEventHandler(events);
+    const { container } = await mount(AvatarCore, VALID);
+    await remote.mounted();
+    remote.disconnect({ reason, error: new Error('remote text') });
+    const instanceId = container.querySelector('.kaltura-avatar-container')?.id;
+    expect(events.mock.calls).toEqual([[{ type: 'avatar-disconnected', widget: 'avatar', detail: { reason: expected, instanceId } }]]);
+  });
+
+  it('QA-04: null disconnect data sends no event', async () => {
+    const { remote, AvatarCore, setEventHandler } = await setup();
+    const events = vi.fn();
+    setEventHandler(events);
+    await mount(AvatarCore, VALID);
+    await remote.mounted();
+    remote.disconnect(null);
+    expect(events).not.toHaveBeenCalled();
   });
 });

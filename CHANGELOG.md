@@ -2,9 +2,34 @@
 
 Newest first. 0.2.0 is the first release since v0.1.4. It holds the hardening work for SECF-30837 that this file listed before as "0.1.5 (not tagged)" (Phase 1, security), "0.1.6 (not tagged)" (Phase 2, robustness) and "Unreleased" (Phase 3). How each finding is closed and tested: [docs/security/SECF-30837.md](docs/security/SECF-30837.md). Upgrade steps: [docs/migration-0.2.md](docs/migration-0.2.md). Releases up to v0.1.4: [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
 
-## Unreleased
+## 0.3.0 - 2026-10-12
+
+### Breaking changes for hosts
+
+- **`KalturaAvatar` runs on the Unisphere embeds API** (`genieAvatar`). The old avatar web SDK script is gone, which closes SEC-08. New props: `partnerId` and `serverUrl` (required), `autoConnect`, `openingPhrase`, `captions` and `theme`. `avatarId`, `projectId`, `language`, `allowInterrupt` and `autoStart` are removed. The KS comes from `setKsProvider` (widget `avatar`) only. Steps: [docs/migration-0.3.md](docs/migration-0.3.md).
+- **CSP:** drop `https://static.avatar.us.kaltura.ai` from `script-src`.
+- **Peers move to the A2UI 0.13 line.** `@a2ui/react ^0.13.0` and `@a2ui/web_core ^0.13.0`. 0.11 is no longer supported. Steps: [docs/migration-a2ui-0.13.md](docs/migration-a2ui-0.13.md).
+- **0.13 changes upstream that hosts see.** `basicCatalog` comes from `@a2ui/web_core/v0_9/basic_catalog`. The basic components are Lit custom elements, and every component renders inside an `<a2ui-react-<name>>` element (`display: contents`). The guarded basic Image, Video, AudioPlayer and Text use the tags `kaltura-a2ui-image`, `kaltura-a2ui-video`, `kaltura-a2ui-audioplayer` and `kaltura-a2ui-basic-text`. The v0.9 basic catalog drops `add`, `subtract`, `multiply`, `divide`, `equals`, `notEquals`, `greaterThan`, `lessThan`, `contains`, `startsWith` and `endsWith`.
+
+### Added
+
+- **Opt-in player sandbox** (SEC-14). `setPlayerSandbox(tokens)` sets a `sandbox` on player and flashcard clip iframes that mount after the call. `PLAYER_SANDBOX_PRESET` keeps playback, fullscreen, downloads, Cast/Presentation and share pop-ups, and blocks top navigation. Unknown tokens, `allow-top-navigation` and `allow-top-navigation-to-custom-protocols` throw. Both the React adapter and `window.KalturaA2UIWebComponents` have it. The default is unchanged: no sandbox. Tested against a stub player page only, not the real player, Cast, DRM or mobile. Test your players before you turn it on. See [docs/host-api.md](docs/host-api.md#player-sandbox).
+- **`avatar-disconnected` event** for `setEventHandler`, with `{ reason, instanceId }`. `KalturaEvent` is now a union, so TypeScript hosts check `event.type` before they read `detail`.
+
+### Changed
 
 - **Regions** (REG-01). `setRegion` now maps the player, flashcard clips, analytics and recorder hosts too. The player and recorder use the regional API host (for example `https://api.eu.kaltura.com`). Analytics uses the regional KMC host (for example `https://kmc.de.kaltura.com`). Add the hosts you use to `frame-src` in your CSP. Details: [docs/host-api.md](docs/host-api.md#regions).
+
+### Fixed
+
+- **The ESM imports in Node** although `@a2ui/react` 0.13.0 throws `HTMLElement is not defined` there ([a2ui#3158](https://github.com/a2ui-project/a2ui/issues/3158)). A one-file stub runs first and is removed after the imports. In Node, import `@kaltura/a2ui-react` before `@a2ui/react`. See [ADR 0007](docs/adr/0007-ssr-html-element-stub.md).
+
+### Security
+
+- The basic Image, Video, AudioPlayer and Text guards work on the 0.13 Lit elements: same URL rules, same markdown filter, also for a renderer from a Lit context provider.
+- A basic Button `openUrl` action now runs in the browser (0.13). It goes through the package's safe `openUrl`.
+- `@a2ui/markdown-it` 0.2.1 still pins `dompurify` 3.4.11. Keep the host override.
+- `kaltura-react.mjs` imports a second file, `dist/html-element-stub.mjs`. It is in `hashes.json`, the Release notes and the build provenance attestation.
 
 ## 0.2.0 - 2026-10-12
 

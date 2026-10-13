@@ -36,6 +36,30 @@ export const createWorkspace = async () => { throw new Error('stub'); };`,
 export const createWorkspace = async (cfg) => {
   (window.__workspaceCfgs = window.__workspaceCfgs || []).push(cfg);
   return { getRuntimeAsync: async () => ({ mountVisual: async () => 'v1', unmountVisual() {} }) };
+};
+export const embeds = {
+  workspace: async (cfg) => {
+    (window.__embedsCfgs = window.__embedsCfgs || []).push(cfg);
+    const log = (window.__avatarLog = window.__avatarLog || []);
+    log.push('workspace');
+    return {
+      apis: {
+        genieAvatar: {
+          contained: (p) => {
+            log.push(document.getElementById(p.elementId) ? 'contained' : 'contained-no-element');
+            return { remove: () => log.push('remove') };
+          },
+          disconnectData: {
+            onChanges: (cb) => {
+              window.__avatarDisconnect = cb;
+              return () => log.push('unsubscribe');
+            },
+          },
+        },
+      },
+      destory: () => log.push('destroy'),
+    };
+  },
 };`,
 };
 const SLOW_MS = 3000;

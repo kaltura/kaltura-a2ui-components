@@ -34,7 +34,8 @@ test.beforeAll(async () => {
             ? `import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { A2uiSurface, MarkdownContext, basicCatalog } from '@a2ui/react/v0_9';
+import { basicCatalog } from '@a2ui/web_core/v0_9/basic_catalog';
+import { A2uiSurface, MarkdownContext } from '@a2ui/react/v0_9';
 import { renderMarkdown } from '@a2ui/markdown-it';
 import { buildKalturaCatalog, setErrorHandler } from ${JSON.stringify(adapter)};
 window.__reports = [];

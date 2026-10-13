@@ -3,7 +3,7 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { CASES, PAYLOAD, installRemote, remote, sdk, resetFakes, settle, expectInert, type Case } from './cases';
+import { CASES, PAYLOAD, installRemote, remote, resetFakes, settle, expectInert, type Case } from './cases';
 
 // The first import of a core loads its libraries, which is slow on a busy machine.
 vi.setConfig({ testTimeout: 30000, hookTimeout: 60000 });
@@ -71,25 +71,5 @@ describe.each(CASES.filter(c => c.remoteFailure))('QA-18: $name remote failure',
     const box = host.querySelector('[role="alert"]');
     expect([box?.children.length, box?.textContent?.includes(PAYLOAD)]).toEqual([0, true]);
     expectInert(host);
-  });
-});
-
-describe('QA-18: avatar SDK timing', () => {
-  it('QA-18: unmount before the SDK loads never creates an avatar', async () => {
-    vi.resetModules();
-    const { AvatarCore } = await import('../../src/core/avatar');
-    await act(async () => root.render(createElement(AvatarCore, { avatarId: 'a' })));
-    await act(async () => root.unmount());
-    root = createRoot(host);
-    await settle();
-    expect(sdk.create).not.toHaveBeenCalled();
-  });
-
-  it('QA-18: a hostile avatarId reaches the SDK as data, not markup', async () => {
-    vi.resetModules();
-    const { AvatarCore } = await import('../../src/core/avatar');
-    await act(async () => root.render(createElement(AvatarCore, { avatarId: PAYLOAD })));
-    await settle();
-    expect([sdk.create.mock.calls[0]?.[0]?.avatarId, host.querySelector('img')]).toEqual([PAYLOAD, null]);
   });
 });
