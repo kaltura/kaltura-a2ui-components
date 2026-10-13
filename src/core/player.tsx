@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import type { FC } from 'react';
+import { useMemo, useState } from 'react';
+import type { CSSProperties, FC } from 'react';
+import { getPlayerSandbox } from './host-hooks';
 import { isEntryId, isPositiveInt } from './ids';
 import { KalturaPlayerApi } from '../schemas/player';
 import { LoadError, withValidatedProps } from './validate-props';
@@ -42,6 +43,12 @@ export function buildPlayerUrl(p: PlayerCoreProps): string {
   return `${base}?${params}`;
 }
 
+/** Iframe for a Kaltura player page. The host sandbox is read once, when it mounts. */
+export function PlayerFrame(props: { src: string; title: string; className?: string; style?: CSSProperties }) {
+  const [sandbox] = useState(getPlayerSandbox);
+  return <iframe {...props} allow="autoplay *; fullscreen *; encrypted-media *" allowFullScreen sandbox={sandbox} />;
+}
+
 const PlayerView: FC<PlayerCoreProps> = (props) => {
   const aspectRatio = props.aspectRatio || '16/9';
 
@@ -81,11 +88,9 @@ const PlayerView: FC<PlayerCoreProps> = (props) => {
 
   return (
     <div className="kaltura-player-container">
-      <iframe
+      <PlayerFrame
         src={playerUrl}
         style={{ width: '100%', aspectRatio, border: 0, display: 'block', minHeight: 280 }}
-        allow="autoplay *; fullscreen *; encrypted-media *"
-        allowFullScreen
         title="Kaltura Player v7"
       />
       <div className="kaltura-player-label">
