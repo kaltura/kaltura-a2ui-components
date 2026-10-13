@@ -34,7 +34,7 @@ afterEach(() => {
 //  - autoplay: the editor plays the entry
 //  - fullscreen: the fullscreen button
 //  - encrypted-media: DRM-protected entries
-const PLAYBACK_ALLOW = 'autoplay *; fullscreen *; encrypted-media *';
+const PLAYBACK_ALLOW = ['autoplay', 'fullscreen', 'encrypted-media'].map(feature => `${feature} 'self' https://cdnapisec.kaltura.com`).join('; ');
 const EDITOR_SANDBOX = 'allow-scripts allow-same-origin allow-forms allow-popups allow-downloads';
 
 const CAPTURE = /camera|microphone|display-capture/;

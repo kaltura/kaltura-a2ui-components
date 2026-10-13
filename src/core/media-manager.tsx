@@ -4,6 +4,7 @@ import { renderLoadError } from './render-load-error';
 import { KalturaMediaManagerApi } from '../schemas/media-manager';
 import { withValidatedProps } from './validate-props';
 import { withKs } from './ks';
+import { isEntryId } from './ids';
 import { emitEvent, KalturaFailure, type KalturaEvent } from './host-hooks';
 
 export { deriveLoaderUrl } from './unisphere-loader';
@@ -26,24 +27,35 @@ export interface MediaManagerCoreProps {
   legacyDocumentEvents?: boolean;
 }
 
+/** Longest entry name kept from the media library. */
+const MAX_NAME_LENGTH = 500;
+
 interface SelectedEntry {
   entryId: string;
   name: string;
 }
 
-/** Builds the createWorkspace config for an isolated Media Manager instance. */
+/**
+ * Builds the createWorkspace config for an isolated Media Manager instance.
+ * The live loader needs `appVersion`, `env` (the region code of the Unisphere
+ * host, `nvp1` in `unisphere.nvp1.ovp.kaltura.com`) and `session`.
+ */
 export function buildWorkspaceConfig(props: {
   ks: string;
   partnerId: number;
   instanceId: string;
   theme: 'dark' | 'light';
+  serverUrl: string;
 }): {
   config: {
     appId: string;
+    appVersion: string;
+    env: string;
+    session: { ks: string; partnerId: number };
     experiences: {
       'media-manager': {
         'kaltura-media-manager': {
-          settings: { ks: string; partnerId: number; supportDocuments: boolean };
+          settings: { ks: string; partnerId: number };
         };
       };
     };
@@ -54,13 +66,16 @@ export function buildWorkspaceConfig(props: {
   return {
     config: {
       appId: `kaltura-agent-${props.instanceId}`,
+      // Names this integration, not the package, so it does not track releases.
+      appVersion: '1.0.0',
+      env: /^unisphere\.([a-z0-9]+)\.ovp\.kaltura\.com$/.exec(new URL(props.serverUrl).hostname)?.[1] ?? '',
+      session: { ks: props.ks, partnerId: props.partnerId },
       experiences: {
         'media-manager': {
           'kaltura-media-manager': {
             settings: {
               ks: props.ks,
               partnerId: props.partnerId,
-              supportDocuments: true,
             },
           },
         },
@@ -88,7 +103,7 @@ interface RemoteWorkspace {
 }
 
 interface RemoteRuntime {
-  mountVisual: (opts: unknown) => Promise<string>;
+  mountVisual: (opts: unknown) => Promise<{ id: string }>;
   unmountVisual?: (id: string) => void;
 }
 
@@ -157,10 +172,11 @@ function MediaManagerView(props: MediaManagerCoreProps) {
 
     const context = contextId ? { type: 'category', initialCategoryId: contextId } : { type: 'myMedia' };
 
-    const onSelect = (row: { id?: string; name?: string }) => {
-      if (cancelled || !row?.id) return;
+    const onSelect = (row: { id?: unknown; name?: unknown }) => {
+      // The row comes from the remote runtime: check the id and cap the name before use.
+      if (cancelled || !isEntryId(row?.id)) return;
       const entryId = row.id;
-      const name = row.name || entryId;
+      const name = typeof row.name === 'string' && row.name ? row.name.slice(0, MAX_NAME_LENGTH) : entryId;
       if (isMultiSelect) {
         setSelected(prev =>
           prev.some(s => s.entryId === entryId) || prev.length >= 5 ? prev : [...prev, { entryId, name }],
@@ -177,32 +193,37 @@ function MediaManagerView(props: MediaManagerCoreProps) {
       if (cancelled) return;
       if (typeof createWorkspace !== 'function') throw new KalturaFailure('load-failed', 'Unisphere createWorkspace is missing');
 
-      workspace = (await createWorkspace(buildWorkspaceConfig({ ks, partnerId, instanceId, theme }))) as RemoteWorkspace;
+      workspace = (await createWorkspace(buildWorkspaceConfig({ ks, partnerId, instanceId, theme, serverUrl }))) as RemoteWorkspace;
       // The effect was cleaned up while this ran: nobody else will kill it.
       if (cancelled) return dispose();
 
-      // runtimeName MUST be the fixed manifest id 'kaltura-items-media-manager'.
-      // A per-instance name can't resolve to any bundle in /v1/runtime.json.
+      // runtimeName MUST be a manifest id of /v1/runtime.json, and the one that takes
+      // `context` and `rowActions`. 'kaltura-items-media-manager' has no working
+      // row-selected callback in the live loader. A per-instance name resolves to no bundle.
       const rt = (await workspace.getRuntimeAsync(
         'unisphere.widget.media-manager',
-        'kaltura-items-media-manager',
+        'kaltura-media-manager',
       )) as RemoteRuntime;
       if (cancelled) return;
       runtime = rt;
 
       // After a cleanup mid-mount the workspace is already killed: nothing is left to undo.
-      visualId = await rt.mountVisual({
+      // The runtime has no `mode` setting: manage mode just shows no select button.
+      const visual = await rt.mountVisual({
         type: 'table',
         target: instanceId,
         settings: {
-          mode: mode ?? 'select',
-          context,
-          rowActions: { buttons: [{ type: 'select', onClick: onSelect }] },
+          context: {
+            ...context,
+            filtersByType: { allowDocuments: true },
+            ...(mode === 'manage' ? {} : { rowActions: { buttons: [{ type: 'select', onClick: onSelect }] } }),
+          },
         },
       });
+      visualId = visual.id;
     })().catch(err => {
       if (cancelled) return;
-      console.error('[MediaManager] Load failed:', err);
+      console.error('[MediaManager] Load failed');
       renderLoadError(container, 'Media Manager', err, 'media-manager');
     });
 

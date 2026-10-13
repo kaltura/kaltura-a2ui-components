@@ -5,6 +5,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { NOTICES_FILE, bundledPackages, entryHeader } from './gen-notices.mjs';
 
 const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 const bundles = { esm: 'kaltura-react.mjs', iife: 'kaltura-wc.js' };
@@ -98,6 +99,20 @@ if (maps.iife !== undefined) {
   for (const library of ['@a2ui/markdown-it', 'dompurify', 'zod']) {
     if (!maps.iife.sources.some((s) => s.includes(`node_modules/${library}/`))) {
       fail('IIFE-SELF-CONTAINED', `dist/${bundles.iife} does not inline ${library}. The script-tag bundle must be self-contained.`);
+    }
+  }
+}
+
+// F33: the bundles inline MIT, ISC, BSD and Apache code, so dist/ must carry its notices. The
+// package list comes from the source maps, so a new dependency is caught without a list to edit.
+const noticesPath = join(dist, NOTICES_FILE);
+if (!existsSync(noticesPath)) {
+  fail('NOTICES-EXISTS', `dist/${NOTICES_FILE} is missing. Run "npm run build" first.`);
+} else if (Object.keys(maps).length === Object.keys(bundles).length) {
+  const notices = readFileSync(noticesPath, 'utf8');
+  for (const pkg of bundledPackages(dist)) {
+    if (!notices.includes(`\n${entryHeader(pkg)}\n`)) {
+      fail('NOTICES-COMPLETE', `dist/${NOTICES_FILE} does not list ${pkg.name}@${pkg.version}, which is bundled. Run "npm run build:notices".`);
     }
   }
 }

@@ -24,7 +24,7 @@ export const remote = { log: [] as string[], failWith: null as string | null };
 const workspace = (name: string) => ({
   kill: () => remote.log.push(`kill ${name}`),
   getRuntimeAsync: async () => ({
-    mountVisual: async () => 'visual-1',
+    mountVisual: async () => ({ id: 'visual-1' }),
     unmountVisual: () => remote.log.push('unmount visual'),
   }),
 });

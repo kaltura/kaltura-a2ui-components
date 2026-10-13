@@ -19,7 +19,7 @@ export const buildHashes = ({ version, read }) => ({ version, cdn: Object.fromEn
 /** `sha256sum` format: "<hex>  <name>" per file, sorted by name. */
 export function sha256sums(files) {
   const lines = [...files]
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort((a, b) => (a.name < b.name ? -1 : 1))
     .map(({ name, bytes }) => `${createHash('sha256').update(bytes).digest('hex')}  ${name}`);
   return `${lines.join('\n')}\n`;
 }

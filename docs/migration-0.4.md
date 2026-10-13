@@ -1,6 +1,6 @@
 # Migrate from 0.3.x to 0.4.0
 
-0.4.0 changes four widgets. The KS no longer goes into any URL.
+0.4.0 changes four widgets. The KS no longer goes into an iframe or script URL. The one exception: the Captions editor's own player requests a `playManifest` URL with the KS in its path ([Rollout](host-integration.md#rollout)).
 
 | Widget | Change | Section |
 |---|---|---|
@@ -72,14 +72,14 @@ After:
 |---|---|---|---|
 | 1 | Hosts with a recorder | Send `uiconfId` (positive integer) | It is now required. The Express Recorder needs a recorder uiConf |
 | 2 | Hosts with a recorder | Return a KS for the `recorder` widget from `setKsProvider`. It needs `editadmintags:*` | The script gets the KS in its `create` options. The `ks` prop still works as a fallback |
-| 3 | Hosts with a CSP | Add `https://www.kaltura.com` and `https://cdnapisec.kaltura.com` to `script-src` and `blob:` to `media-src`. Drop the recorder from `frame-src` | See [CSP](host-integration.md#content-security-policy) |
+| 3 | Hosts with a CSP | Add `https://www.kaltura.com/apps/` and `https://cdnapisec.kaltura.com/p/` to `script-src`, `blob:` and `data:` to `media-src`, and `worker-src blob:`. Drop the recorder from `frame-src` | See [CSP](host-integration.md#content-security-policy) |
 | 4 | Hosts that read recorder state | Use `setEventHandler` for `recorder-upload-ended` | See [host-api.md](host-api.md) |
 
 New optional props: `entryName`, `allowVideo`, `allowAudio`, `allowScreenShare`, `maxRecordingTime`. `conversionProfileId` is not offered.
 
 Trade-off: the script runs in your page origin and can read the KS. Use a short expiry. Details: [docs/security/ks.md](security/ks.md).
 
-The script has no SRI today. The Kaltura CDN has no versioned path and sends no CORS header.
+The script is pinned to `/apps/expressrecorder/v2.2.10/`. It has no SRI yet, because the Kaltura CDN sends no CORS header for it. The loader can take a hash once Kaltura sends one.
 
 ## Player, Flashcards and Captions editor
 
@@ -106,14 +106,14 @@ PLAYER_SANDBOX_PRESET
 |---|---|---|---|
 | 1 | Hosts that call a removed function | Delete the call | No URL is built any more |
 | 2 | Hosts that set a player sandbox | Isolate on your own: embed the component in a page on a separate origin, or use a CSP | There is no player iframe left to sandbox. The script runs in your page origin |
-| 3 | Hosts with a CSP | Player and clips: allow the region `cdn` host in `script-src`. Captions editor: add `blob:` to `frame-src`, and the `serviceUrl` host to `connect-src`, `style-src`, `font-src`, `script-src` and `base-uri`. Drop `cdnapisec` and `www` from `frame-src` | See [CSP](host-integration.md#content-security-policy) |
+| 3 | Hosts with a CSP | Player and clips: allow the region `cdn` host (path `/p/`) in `script-src`, `data:` in `media-src` and `worker-src blob:`. Captions editor: add `blob:` to `frame-src`, and the `serviceUrl` host to `connect-src`, `style-src`, `font-src`, `script-src` and `base-uri`. Drop `cdnapisec` and `www` from `frame-src` | See [CSP](host-integration.md#content-security-policy) |
 | 4 | Hosts and uiconf owners | Check that the uiconf holds the plugins you need | The plugin set now comes from the uiconf. The `plugins=` URL parameter is gone |
 | 5 | Hosts with tests or selectors on the player iframe | Select the container (`role="region"`) instead | The player builds its UI inside a `div`. The Captions editor is still an iframe |
 
 ### Behaviour changes
 
 - The player bundle runs in your page origin and can read the KS and your page. The captions iframe `sandbox` has `allow-same-origin` and `allow-scripts`, so it is no boundary. This is the same trade-off as the recorder. Use a short expiry.
-- No SRI: the player bundle has no versioned path and changes on each rebuild.
+- Versions: the player version is the one the customer admin picks for the uiConf in KMC, so the uiConf is the pin. The Captions editor is pinned to `v1.3.10` and checked with `integrity` (page, `main.js`, `main.css`). Pins cover the first hop only. SRI is out of scope while all remote code comes from Kaltura.
 - New globals on `window`: `KalturaPlayer`, `__kalturaplayerdata`, `regeneratorRuntime`.
 - Two uiconfs on one page: each bundle replaces `window.KalturaPlayer`, so the loader loads a bundle again when the uiconf switches.
 - The player reads `kalturaSeekFrom`, `kalturaClipTo` and `kalturaStartTime` from the query string of your page. A link with those parameters can change which part of a clip plays.

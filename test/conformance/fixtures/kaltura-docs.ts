@@ -66,7 +66,7 @@ export const WIDGET_ROWS: WidgetRow[] = [
     guideWidget: 'unisphere.widget.media-manager',
     guideRuntimes: ['kaltura-items-media-manager'],
     oursWidget: 'unisphere.widget.media-manager',
-    oursRuntime: 'kaltura-items-media-manager',
+    oursRuntime: 'kaltura-media-manager',
   },
   {
     component: 'KalturaContentLab',
@@ -101,6 +101,7 @@ export const GUIDE_LOADER_URL = 'https://unisphere.nvp1.ovp.kaltura.com/v1/loade
 export const KNOWN_DIVERGENCES: Record<string, string> = {
   'KalturaPlayer:integration': 'The guide shows an iframe embed with the KS in the URL. We load the embedPlaykitJs script and pass the KS in the player config with useHeaderForKs. See docs/adr/0008.',
   'KalturaCaptionsEditor:integration': 'The guide shows an iframe with pid, ks and entryid in the URL. We load embed.php into a blob URL iframe and set data-* attributes. See docs/adr/0008.',
+  'KalturaMediaManager:runtime': 'We pass runtimeName kaltura-media-manager (live manifest, v1.12.0). The guide lists kaltura-items-media-manager, but its onRowSelected cannot be subscribed to in the live loader (v1.26.0), so a table has no way to report a selection. Checked live on 2026-10-13. Needs the Media Manager team.',
   'KalturaGenie:runtime': 'We pass runtimeName kaltura-genie. The guide and the live manifest list chat, avatar and the tools. Needs the Genie team.',
   'KalturaContentLab:runtime': 'We pass runtimeName kaltura-content-lab. The guide and the live manifest list application and ai-consent. Needs the Content Lab team.',
   'KalturaAgentsWidget:runtime': 'We pass runtimeName kaltura-agents. The guide lists manager. Needs the Agents team.',

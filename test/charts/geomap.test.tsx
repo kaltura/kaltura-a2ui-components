@@ -69,6 +69,19 @@ describe('QA-15: GeoMap loading', () => {
     expect(fetchMock.mock.calls[0][0]).toMatch(/\/npm\/world-atlas@\d+\.\d+\.\d+\/countries-110m\.json$/);
   });
 
+  it('SEC-16: the request carries the sha384 hash of the pinned world-atlas version', async () => {
+    // Bump the version and the hash together: this table fails if only one changes.
+    const PINNED = { '2.0.2': 'sha384-yOCJ+8ShBm8UDqtAVtAvxTDDf4gXo5edxl/YG0FmVC5OTmqVLl7utuVGBDEeZWHf' } as Record<string, string>;
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => okResponse());
+    vi.stubGlobal('fetch', fetchMock);
+    const GeoMap = await freshGeoMap();
+    const { root } = mountRoot();
+    await act(async () => root.render(createElement(GeoMap, props)));
+    await flush();
+    const [url, init] = fetchMock.mock.calls[0];
+    expect([PINNED[/world-atlas@([\d.]+)\//.exec(url)?.[1] ?? '']]).toEqual([init?.integrity]);
+  });
+
   it('QA-15: draws the countries from a good response', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => okResponse()));
     const GeoMap = await freshGeoMap();

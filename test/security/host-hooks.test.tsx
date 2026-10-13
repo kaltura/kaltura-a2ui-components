@@ -184,7 +184,7 @@ describe('3.3e: setEventHandler gets the Media Manager selection', () => {
     setEventHandler(onEvent);
     const { MediaManagerCore } = await import('../../src/core/media-manager');
     const view = await render(MediaManagerCore, { partnerId: 1, ks: KS, serverUrl: URL_A });
-    const buttons = (visuals[0].settings.rowActions as { buttons: { onClick(r: unknown): void }[] }).buttons;
+    const buttons = ((visuals[0].settings.context as { rowActions: unknown }).rowActions as { buttons: { onClick(r: unknown): void }[] }).buttons;
     return { view, select: (row: unknown) => act(() => buttons[0].onClick(row)) };
   }
 

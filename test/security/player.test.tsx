@@ -33,6 +33,22 @@ async function setup() {
 
 const region = (container: HTMLElement) => container.querySelector('[role="region"]') as HTMLElement;
 
+describe('F15: a long entryDescription renders fast and as plain text', () => {
+  it('F15: 200k "<" characters render in under 1 s', async () => {
+    const { PlayerCore } = await setup();
+    const start = performance.now();
+    const { container } = await mount(PlayerCore, { ...VALID, entryName: '<'.repeat(200_000), entryDescription: '<'.repeat(200_000) });
+    expect(performance.now() - start).toBeLessThan(1000);
+    expect(container.querySelector('.player-desc')?.textContent?.length).toBeLessThanOrEqual(1000);
+  });
+
+  it('F15: markup in entryDescription shows as text, not as elements', async () => {
+    const { PlayerCore } = await setup();
+    const { container } = await mount(PlayerCore, { ...VALID, entryDescription: '<img src=x onerror=1> hi' });
+    expect([container.querySelector('.player-desc')?.textContent, container.querySelector('.player-desc img')]).toEqual(['<img src=x onerror=1> hi', null]);
+  });
+});
+
 describe('SEC-10: the script comes from one fixed place', () => {
   it('SEC-10: a valid player adds one script tag with the Kaltura CDN URL of its partner and uiconf', async () => {
     const { PlayerCore } = await setup();

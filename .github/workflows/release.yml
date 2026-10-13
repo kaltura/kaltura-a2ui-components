@@ -124,6 +124,7 @@ jobs:
           TAG: ${{ needs.verify-inputs.outputs.tag }}
         run: node scripts/release-verify-stamp.mjs --tag "$TAG"
       # The SBOM lists every locked package, dev ones too: the bundles inline some devDependencies.
+      # THIRD_PARTY_NOTICES.txt is made by "npm run build" and is also inside dist.tar.gz.
       - name: Archive, SBOM, hashes and notes
         env:
           VERSION: ${{ needs.verify-inputs.outputs.version }}
@@ -135,6 +136,7 @@ jobs:
           npm sbom --sbom-format cyclonedx --package-lock-only > "${assets}/sbom.cdx.json"
           tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner -cf - dist | gzip -n > "${assets}/dist.tar.gz"
           cp src/catalog/kaltura_catalog.json "${assets}/kaltura_catalog.json"
+          cp dist/THIRD_PARTY_NOTICES.txt "${assets}/THIRD_PARTY_NOTICES.txt"
           node scripts/release-hashes.mjs --version "$VERSION" --out "$assets"
           node scripts/release-notes.mjs --version "$VERSION" --hashes "${assets}/hashes.json" > "${out}/notes.md"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -199,8 +201,12 @@ jobs:
             dist/kaltura-wc.js
             dist/kaltura-react.mjs
             dist/html-element-stub.mjs
+            dist/THIRD_PARTY_NOTICES.txt
             src/catalog/kaltura_catalog.json
             ${{ runner.temp }}/release/assets/dist.tar.gz
+            ${{ runner.temp }}/release/assets/sbom.cdx.json
+            ${{ runner.temp }}/release/assets/hashes.json
+            ${{ runner.temp }}/release/assets/SHA256SUMS
       # Same inputs give the same commit, so a re-run finds its own tag and skips the push.
       # Pushes the tag only, never main and never forced.
       - name: Release commit and tag
@@ -240,6 +246,10 @@ jobs:
             echo "::error::Tag ${TAG} is on ${remote}, not ${commit}. Tags never move."
             exit 1
           fi
+      # An asset that is already on the Release is never overwritten. A re-run adds only
+      # missing assets. A new Release is created as a draft. The draft is compared with the build and
+      # published last, so with immutable releases on (docs/release.md) it is complete and checked
+      # when it locks. A draft left by a failed run is checked and published the same way.
       - name: Create or update the GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -251,10 +261,18 @@ jobs:
           flags=()
           [ "$PRERELEASE" != 'true' ] || flags=(--prerelease --latest=false)
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" &> /dev/null; then
-            gh release upload "$TAG" "$out"/assets/* --clobber --repo "$GITHUB_REPOSITORY"
+            have="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
+            for file in "$out"/assets/*; do
+              grep -qxF -- "$(basename "$file")" <<< "$have" || gh release upload "$TAG" "$file" --repo "$GITHUB_REPOSITORY"
+            done
           else
-            gh release create "$TAG" "$out"/assets/* --repo "$GITHUB_REPOSITORY" --verify-tag \
+            gh release create "$TAG" "$out"/assets/* --repo "$GITHUB_REPOSITORY" --verify-tag --draft \
               --title "$TAG" --notes-file "${out}/notes.md" --generate-notes "${flags[@]}"
+          fi
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir "${out}/published"
+          diff -r "${out}/published" "${out}/assets"
+          if [ "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = 'true' ]; then
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false "${flags[@]}"
           fi
 
   verify-cdn:

@@ -6,8 +6,10 @@ import { CHART_COLORS, useThemeColors } from './theme';
 import { formatNumber } from './utils';
 import { resolveCountryValue, normalizeCountryCode } from './countryCodes';
 
-// Exact version, so the map data cannot change under a released build.
+// Exact version, so the map data cannot change under a released build. The hash is the sha384 of
+// that file: change both together.
 const WORLD_TOPO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json';
+const WORLD_TOPO_INTEGRITY = 'sha384-yOCJ+8ShBm8UDqtAVtAvxTDDf4gXo5edxl/YG0FmVC5OTmqVLl7utuVGBDEeZWHf';
 // Lowest fill opacity of a country that has data. Works for any CSS colour.
 const MIN_OPACITY = 0.1;
 
@@ -16,7 +18,7 @@ let worldCache: CountryFeature[] | null = null;
 
 async function loadWorld(signal: AbortSignal): Promise<CountryFeature[]> {
   if (worldCache) return worldCache;
-  const response = await fetch(WORLD_TOPO_URL, { signal });
+  const response = await fetch(WORLD_TOPO_URL, { signal, integrity: WORLD_TOPO_INTEGRITY });
   if (!response.ok) throw new Error(`Map data request failed: ${response.status}`);
   const topo = (await response.json()) as Topology;
   const geo = topojson.feature(

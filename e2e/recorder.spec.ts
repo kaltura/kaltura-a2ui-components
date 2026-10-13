@@ -4,7 +4,7 @@
 import { test, expect, type Harness } from './fixtures/harness';
 
 const KS = 'E2E_RECORDER_KS_marker_91c2';
-const SCRIPT_URL = 'https://www.kaltura.com/apps/expressrecorder/latest/express-recorder.js';
+const SCRIPT_URL = 'https://www.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js';
 const CONFIG = { partnerId: 1234567, uiconfId: 7654321 };
 
 interface RecorderWindow {

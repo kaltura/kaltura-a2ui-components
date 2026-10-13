@@ -23,6 +23,7 @@ describe('buildWorkspaceConfig', () => {
     partnerId: 1234567,
     instanceId: 'unisphere-mm-test-123',
     theme: 'dark' as const,
+    serverUrl: 'https://unisphere.nvp1.ovp.kaltura.com/v1',
   };
 
   it('sets workspaceName to the instanceId', () => {
@@ -45,10 +46,16 @@ describe('buildWorkspaceConfig', () => {
     expect(settings.partnerId).toBe(1234567);
   });
 
-  it('sets supportDocuments to true in the experience settings', () => {
-    const cfg = buildWorkspaceConfig(baseProps);
-    const settings = cfg.config.experiences['media-manager']['kaltura-media-manager'].settings;
-    expect(settings.supportDocuments).toBe(true);
+  it('sets appVersion', () => {
+    expect(buildWorkspaceConfig(baseProps).config.appVersion).toEqual(expect.any(String));
+  });
+
+  it('takes env from the region in serverUrl', () => {
+    expect(buildWorkspaceConfig(baseProps).config.env).toBe('nvp1');
+  });
+
+  it('puts ks and partnerId in the session', () => {
+    expect(buildWorkspaceConfig(baseProps).config.session).toEqual({ ks: 'test-ks', partnerId: 1234567 });
   });
 
   it('propagates theme into ui config', () => {

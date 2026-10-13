@@ -132,6 +132,7 @@ if (surface) createRoot(document.getElementById('root')!).render(createElement(A
 
 - `buildKalturaCatalog(id?)` builds the same catalog under another id.
 - `loadKalturaCatalog(url)` fetches a catalog descriptor and keys the catalog by its `catalogId`.
+- Send `processor.getRendererCapabilities({ versions: ['v0.9'] })` to your agent as `a2uiClientCapabilities`, so it picks a catalog you registered ([docs/host-api.md](docs/host-api.md#capability-negotiation)).
 - Register the Kaltura catalog alone. It already holds the basic components, with checks on media URLs and markdown images ([docs/host-api.md](docs/host-api.md)).
 
 A full page: [examples/react](examples/react).
@@ -171,7 +172,8 @@ A full page with a KS provider and an error handler: [examples/plain-html](examp
 | Supply the Kaltura Session (KS) | `setKsProvider`. [docs/host-integration.md](docs/host-integration.md), [docs/ks-privileges.md](docs/ks-privileges.md), [docs/security/ks.md](docs/security/ks.md) |
 | Private cloud or on-prem Unisphere | `setExtraAllowedOrigins`. [docs/host-integration.md](docs/host-integration.md) |
 | Region, media URL allowlist, error and event hooks | [docs/host-api.md](docs/host-api.md) |
-| Trust model and CSP | [SECURITY.md](SECURITY.md) |
+| Tell the agent which catalogs you render | [docs/host-api.md](docs/host-api.md#capability-negotiation) |
+| Trust model and CSP | [SECURITY.md](SECURITY.md), [docs/host-integration.md](docs/host-integration.md#content-security-policy) |
 | Upgrade from 0.1.x | [docs/migration-0.2.md](docs/migration-0.2.md) |
 | Upgrade from 0.2.x (avatar props) | [docs/migration-0.3.md](docs/migration-0.3.md) |
 | Upgrade from 0.3.x (analytics, recorder, player, captions editor) | [docs/migration-0.4.md](docs/migration-0.4.md) |
@@ -179,7 +181,7 @@ A full page with a KS provider and an error handler: [examples/plain-html](examp
 ## Security behaviour
 
 - **Agent output is untrusted.** The host owns `ks`, the allowed origins and the media URL list. Agent messages cannot change them. See [SECURITY.md](SECURITY.md).
-- **KS.** `setKsProvider(widget => ks)` is the way to supply it. The provider gets the widget name, so it can mint a least-privilege KS per widget. Keep the KS out of the A2UI data model. The KS is in no URL. The Player, Recorder and Captions editor run Kaltura code in your page origin, which can read it ([ADR 0008](docs/adr/0008-in-page-player-and-captions-editor.md)).
+- **KS.** `setKsProvider(widget => ks)` is the way to supply it. The provider gets the widget name, so it can mint a least-privilege KS per widget. Keep the KS out of the A2UI data model. The KS is in no script or iframe URL (the Captions editor's own player does request a media URL with it, so redact CSP reports). The Player, Recorder and Captions editor run Kaltura code in your page origin, which can read it ([ADR 0008](docs/adr/0008-in-page-player-and-captions-editor.md)).
 - **Private clouds.** `setExtraAllowedOrigins(['https://unisphere.example.com'])` before the first load. Only `https:` origins are accepted.
 - **`openUrl`.** Only absolute `https:` URLs open. Everything else is blocked with a console warning.
 - **Validation.** Web component config goes through the same schema as the A2UI path. Invalid values (bad ids, ks, urls, enums) show a plain-text alert. Numeric-string ids such as `partnerId: "123"` are rejected: pass a number.

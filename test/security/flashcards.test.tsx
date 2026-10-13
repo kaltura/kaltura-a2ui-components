@@ -179,7 +179,7 @@ describe('SEC-11: flashcards clips and thumbnails: valid and invalid ids', () =>
   });
 });
 
-describe('SEC-12: clip.thumbnail only on Kaltura CDN hosts', () => {
+describe('SEC-12: clip.thumbnail only on Kaltura CDN hosts or host-added media origins', () => {
   const base = { entryId: '0_a', startTime: 0, endTime: 1 };
   const cdn = 'https://cfvod.kaltura.com/p/1/thumbnail/entry_id/0_a/width/200/vid_sec/1';
   it.each([
@@ -209,6 +209,31 @@ describe('SEC-12: clip.thumbnail only on Kaltura CDN hosts', () => {
   ])('SEC-12: %j is accepted', async t => {
     const { buildThumbnailUrl } = await import('../../src/core/flashcards');
     expect(buildThumbnailUrl({ ...base, thumbnail: t }, 1)).toMatch(/^https:\/\/[a-z.]+\.kaltura\.com\//);
+  });
+});
+
+describe('F21: clip.thumbnail refuses API and KS URLs', () => {
+  const base = { entryId: '0_a', startTime: 0, endTime: 1 };
+  const cdn = 'https://cfvod.kaltura.com/p/1/thumbnail/entry_id/0_a/width/200/vid_sec/1';
+  it.each([
+    'https://www.kaltura.com/api_v3/service/thumbAsset/action/serve',
+    'https://cdnapisec.kaltura.com/p/1/sp/100/thumbnail/entry_id/0_a/ks/djJ8abc',
+    'https://cfvod.kaltura.com/p/1/thumbnail/entry_id/0_a?ks=djJ8abc',
+    'https://cfvod.kaltura.com/p/1/thumbnail/entry_id/0_a?x=1&KS=djJ8abc',
+  ])('F21: %j falls back to the CDN URL', async t => {
+    const { buildThumbnailUrl } = await import('../../src/core/flashcards');
+    expect(buildThumbnailUrl({ ...base, thumbnail: t }, 1)).toBe(cdn);
+  });
+  it('F21: the thumbnail <img> sends no referrer', async () => {
+    const { FlashcardsCore } = await import('../../src/core/flashcards');
+    const { container } = await mount(FlashcardsCore, {
+      title: 'Deck',
+      partnerId: 1,
+      uiconfId: 2,
+      cards: [{ title: 'C', content: 'x', clips: [base, { ...base, entryId: '0_b' }] }],
+    });
+    await act(async () => container.querySelector<HTMLButtonElement>('.flashcard-action-btn')!.click());
+    expect(container.querySelector('img.clip-thumb-img')?.getAttribute('referrerpolicy')).toBe('no-referrer');
   });
 });
 

@@ -95,11 +95,11 @@ describe('PlayerCore loadMedia', () => {
     expect(remote.created[0].loads[0].options).toEqual({ seekFrom: 0 });
   });
 
-  it('shows the entry id and name, and the description without markup', async () => {
+  it('shows the entry id and name, and the description as plain text', async () => {
     const { container } = await render({ ...BASE_PROPS, entryName: 'Intro', entryDescription: '<b>Hello</b> world' });
     expect([container.querySelector('.player-title')?.textContent, container.querySelector('.player-desc')?.textContent]).toEqual([
       '1_abc123 — Intro',
-      'Hello world',
+      '<b>Hello</b> world',
     ]);
   });
 });

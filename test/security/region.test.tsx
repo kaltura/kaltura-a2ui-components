@@ -21,12 +21,12 @@ const US = {
   player: 'https://cdnapisec.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2',
   thumbnail: 'https://cfvod.kaltura.com/p/1/thumbnail/entry_id/0_abc/width/200/vid_sec/5',
   captions: {
-    page: 'https://www.kaltura.com/apps/captionstudio/latest/embed.php',
+    page: 'https://www.kaltura.com/apps/captionstudio/v1.3.10/embed.php',
     cdnurl: 'https://cdnapisec.kaltura.com',
     serviceurl: 'https://www.kaltura.com',
   },
   analytics: 'https://kmc.kaltura.com/apps/kmc-analytics/latest/index.html',
-  recorder: 'https://www.kaltura.com/apps/expressrecorder/latest/express-recorder.js',
+  recorder: 'https://www.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js',
 };
 
 let captions: ReturnType<typeof captionsRemote>;
