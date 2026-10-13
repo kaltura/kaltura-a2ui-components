@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>a2ui e2e harness</title>
+<main id="host"></main>
+<script>
+  window.__pwned = [];
+  window.__errors = [];
+  window.addEventListener('error', (e) => window.__errors.push(e.message));
+  window.addEventListener('unhandledrejection', (e) => window.__errors.push(String(e.reason)));
+  window.__mount = (tag, config) => {
+    const el = document.createElement(tag);
+    el.config = config;
+    document.getElementById('host').appendChild(el);
+    return el;
+  };
+</script>
+<script src="/dist/kaltura-wc.js"></script>

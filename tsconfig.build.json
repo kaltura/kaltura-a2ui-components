@@ -10,6 +10,6 @@
     "allowImportingTsExtensions": false,
     "types": ["node"]
   },
-  "include": ["src/adapters/react", "src/core", "src/schemas", "src/catalog", "src/css.d.ts"],
-  "exclude": ["src/adapters/webcomponent", "test"]
+  "include": ["src/adapters/react", "src/adapters/webcomponent", "src/core", "src/schemas", "src/catalog", "src/css.d.ts"],
+  "exclude": ["test"]
 }

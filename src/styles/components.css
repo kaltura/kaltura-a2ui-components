@@ -8,9 +8,11 @@
  * These rules use CSS custom properties from the Kaltura Design System
  * (--ds-*, --surface-*, --page-text-*, --border-*, --input-border, --accent).
  * A host that already defines those tokens gets full theme integration; a host
- * that does not still renders correctly via the fallbacks below. The fallbacks
- * mirror the design-system defaults so the package is usable standalone — they
- * never override a token the host has set.
+ * that does not still renders correctly via the fallbacks below. On a light
+ * page the fallbacks add no surface and text inherits from the host, so any
+ * page stays readable. Under data-theme="dark" they are the dark design-system
+ * values. They never override a token the host has set. Rules read internal --kaltura-* names
+ * that wrap the host tokens: a custom property must not reference itself.
  *
  * The React ESM build emits this as a sibling CSS asset (host bundler handles
  * it / the adapter imports it). The web-component IIFE build folds it into the
@@ -25,34 +27,82 @@
   .kaltura-captions-editor-container,
   .kaltura-recorder-container,
   .kaltura-avatar-container,
-  .kaltura-genie-container,
-  .kaltura-content-lab-container,
-  .kaltura-agents-container,
-  .kaltura-vod-avatar-container,
+  .kaltura-kaltura-genie-container,
+  .kaltura-kaltura-content-lab-container,
+  .kaltura-kaltura-agents-container,
+  .kaltura-kaltura-vod-avatar-container,
   .kaltura-chart-container
 ) {
-  --ds-roundness-1: var(--ds-roundness-1, 4px);
-  --ds-roundness-2: var(--ds-roundness-2, 8px);
-  --ds-roundness-3: var(--ds-roundness-3, 12px);
-  --ds-primary: var(--ds-primary, #006efa);
-  --ds-font-family: var(--ds-font-family, 'Lato', system-ui, sans-serif);
-  --surface-deep: var(--surface-deep, #000);
-  --surface-card: var(--surface-card, #1a1a1a);
-  --surface-elevated: var(--surface-elevated, #242424);
-  --border-color: var(--border-color, rgba(255, 255, 255, 0.12));
-  --border-subtle: var(--border-subtle, rgba(255, 255, 255, 0.08));
-  --page-text: var(--page-text, #f0f0f0);
-  --page-text-secondary: var(--page-text-secondary, #c0c0c0);
-  --page-text-muted: var(--page-text-muted, #909090);
+  --kaltura-roundness-1: var(--ds-roundness-1, 4px);
+  --kaltura-roundness-2: var(--ds-roundness-2, 8px);
+  --kaltura-roundness-3: var(--ds-roundness-3, 12px);
+  --kaltura-primary: var(--ds-primary, #006efa);
+  --kaltura-font-family: var(--ds-font-family, 'Lato', system-ui, sans-serif);
+  --kaltura-surface-deep: var(--surface-deep, transparent);
+  --kaltura-surface-card: var(--surface-card, transparent);
+  --kaltura-surface-elevated: var(--surface-elevated, transparent);
+  --kaltura-border-color: var(--border-color, rgba(128, 128, 128, 0.35));
+  --kaltura-border-subtle: var(--border-subtle, rgba(128, 128, 128, 0.2));
+  --kaltura-page-text: var(--page-text, currentColor);
+  --kaltura-page-text-secondary: var(--page-text-secondary, currentColor);
+  --kaltura-page-text-muted: var(--page-text-muted, currentColor);
+}
+
+/* The design-system dark look, for hosts that mark the page dark but define no tokens. */
+[data-theme='dark'] :where(
+  .kaltura-player-container,
+  .flashcard-carousel,
+  .kaltura-media-manager-container,
+  .kaltura-analytics-container,
+  .kaltura-captions-editor-container,
+  .kaltura-recorder-container,
+  .kaltura-avatar-container,
+  .kaltura-kaltura-genie-container,
+  .kaltura-kaltura-content-lab-container,
+  .kaltura-kaltura-agents-container,
+  .kaltura-kaltura-vod-avatar-container,
+  .kaltura-chart-container
+) {
+  --kaltura-surface-deep: var(--surface-deep, #000);
+  --kaltura-surface-card: var(--surface-card, #1a1a1a);
+  --kaltura-surface-elevated: var(--surface-elevated, #242424);
+  --kaltura-border-color: var(--border-color, rgba(255, 255, 255, 0.12));
+  --kaltura-border-subtle: var(--border-subtle, rgba(255, 255, 255, 0.08));
+  --kaltura-page-text: var(--page-text, #f0f0f0);
+  --kaltura-page-text-secondary: var(--page-text-secondary, #c0c0c0);
+  --kaltura-page-text-muted: var(--page-text-muted, #909090);
+}
+
+/* ─── Plain-text error (load failures, invalid props, bad clips) ─── */
+/* Own light surface with literal colours (7a1710 on fdecea is about 9:1), so it
+   stays readable on any host background even when the --ds-* tokens are missing.
+   Hosts that set data-theme="dark" on the root get the dark pair (about 12:1). */
+.kaltura-load-error {
+  padding: 12px 16px;
+  margin: 8px 0;
+  border: 1px solid #d93025;
+  border-radius: 8px;
+  background: #fdecea;
+  color: #7a1710;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+[data-theme='dark'] .kaltura-load-error {
+  border-color: #ff8a80;
+  background: #3b1512;
+  color: #ffd9d4;
 }
 
 /* ─── Kaltura Player ─── */
 .kaltura-player-container {
   margin: 12px 0;
-  border-radius: var(--ds-roundness-2);
+  border-radius: var(--kaltura-roundness-2);
   overflow: hidden;
-  background: var(--surface-deep);
-  border: 1px solid var(--border-color);
+  background: var(--kaltura-surface-deep);
+  border: 1px solid var(--kaltura-border-color);
 }
 
 .kaltura-player-container iframe {
@@ -66,9 +116,9 @@
 .kaltura-player-label {
   padding: 10px 14px;
   font-size: 0.75rem;
-  color: var(--page-text-muted);
-  background: var(--surface-card);
-  border-top: 1px solid var(--border-subtle);
+  color: var(--kaltura-page-text-muted);
+  background: var(--kaltura-surface-card);
+  border-top: 1px solid var(--kaltura-border-subtle);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -76,13 +126,13 @@
 
 .kaltura-player-label .player-title {
   font-weight: 700;
-  color: var(--page-text);
+  color: var(--kaltura-page-text);
   font-size: 0.82rem;
 }
 
 .kaltura-player-label .player-desc {
   font-size: 0.75rem;
-  color: var(--page-text-secondary);
+  color: var(--kaltura-page-text-secondary);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -91,12 +141,17 @@
 }
 
 /* ─── KalturaFlashcards Carousel ─── */
+/* The slide sizes assume border-box, also on a host page with no reset. */
+:where(.flashcard-carousel, .flashcard-carousel *, .flashcard-carousel ::before, .flashcard-carousel ::after) {
+  box-sizing: border-box;
+}
+
 .flashcard-carousel {
   position: relative;
   width: 100%;
   max-width: 960px;
   overflow: hidden;
-  border-radius: var(--ds-roundness-2);
+  border-radius: var(--kaltura-roundness-2);
   margin: 12px 0;
   outline: none;
   display: flex;
@@ -104,7 +159,7 @@
 }
 
 .flashcard-carousel:focus-visible {
-  box-shadow: 0 0 0 2px #FFF, 0 0 0 3px var(--ds-primary);
+  box-shadow: 0 0 0 2px #FFF, 0 0 0 3px var(--kaltura-primary);
 }
 
 .flashcard-track {
@@ -119,7 +174,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  border-radius: var(--ds-roundness-2);
+  border-radius: var(--kaltura-roundness-2);
   padding: 2.5rem;
   display: flex;
   flex-direction: column;
@@ -148,11 +203,11 @@
   font-size: 0.75rem;
   letter-spacing: 0.6px;
   color: rgba(255, 255, 255, 0.8);
-  font-family: var(--ds-font-family);
+  font-family: var(--kaltura-font-family);
 }
 
 .flashcard-title {
-  font-family: var(--ds-font-family);
+  font-family: var(--kaltura-font-family);
   font-weight: 700;
   font-size: 2rem;
   color: #FFFFFF;
@@ -165,7 +220,7 @@
 }
 
 .flashcard-content {
-  font-family: var(--ds-font-family);
+  font-family: var(--kaltura-font-family);
   font-size: 1.125rem;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.92);
@@ -177,7 +232,7 @@
 .flashcard-content p { margin-bottom: 8px; }
 .flashcard-content p:last-child { margin-bottom: 0; }
 .flashcard-content strong { font-weight: 700; }
-.flashcard-content a { color: var(--ds-primary); }
+.flashcard-content a { color: var(--kaltura-primary); }
 
 .flashcard-clips {
   flex-shrink: 0;
@@ -188,7 +243,7 @@
   width: 100%;
   aspect-ratio: 16/9;
   border: 0;
-  border-radius: var(--ds-roundness-1);
+  border-radius: var(--kaltura-roundness-1);
   display: block;
   max-height: 280px;
 }
@@ -211,7 +266,7 @@
   width: 72px;
   height: 44px;
   border: 2px solid transparent;
-  border-radius: var(--ds-roundness-1);
+  border-radius: var(--kaltura-roundness-1);
   padding: 0;
   background: rgba(255, 255, 255, 0.1);
   cursor: pointer;
@@ -249,7 +304,7 @@
   left: 0;
   width: 100%;
   height: 3px;
-  background: var(--ds-primary, #006EFA);
+  background: var(--kaltura-primary);
   border-radius: 0 0 2px 2px;
 }
 
@@ -259,9 +314,9 @@
   padding: 8px 20px;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: var(--ds-roundness-1);
+  border-radius: var(--kaltura-roundness-1);
   color: #FFFFFF;
-  font-family: var(--ds-font-family);
+  font-family: var(--kaltura-font-family);
   font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
@@ -298,7 +353,7 @@
   border: none;
   color: #FFFFFF;
   cursor: pointer;
-  border-radius: var(--ds-roundness-1);
+  border-radius: var(--kaltura-roundness-1);
   transition: background 200ms ease-in-out;
 }
 
@@ -317,7 +372,7 @@
 }
 
 .flashcard-counter {
-  font-family: var(--ds-font-family);
+  font-family: var(--kaltura-font-family);
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.8);
   min-width: 40px;
@@ -327,7 +382,7 @@
 /* ─── KalturaMediaManager ─── */
 .kaltura-media-manager-container {
   margin: 10px -18px -14px;
-  border-radius: 0 0 var(--ds-roundness-3) var(--ds-roundness-3);
+  border-radius: 0 0 var(--kaltura-roundness-3) var(--kaltura-roundness-3);
   overflow: auto;
   width: calc(100% + 36px);
 }
@@ -337,49 +392,49 @@
   height: 540px;
   display: block;
   overflow: auto;
-  border-radius: 0 0 var(--ds-roundness-3) var(--ds-roundness-3);
+  border-radius: 0 0 var(--kaltura-roundness-3) var(--kaltura-roundness-3);
 }
 
 [data-theme="dark"] .kaltura-media-manager-widget div:not(:has(> img)):not(:has(> video)):not(:has(> canvas)),
 [data-theme="dark"] .kaltura-media-manager-widget header,
 [data-theme="dark"] .kaltura-media-manager-widget nav,
 [data-theme="dark"] .kaltura-media-manager-widget section {
-  background-color: var(--surface-card) !important;
-  color: var(--page-text-secondary) !important;
+  background-color: var(--kaltura-surface-card) !important;
+  color: var(--kaltura-page-text-secondary) !important;
 }
 [data-theme="dark"] .kaltura-media-manager-widget td:first-child div {
   background-color: transparent !important;
 }
 [data-theme="dark"] .kaltura-media-manager-widget .MuiPaper-root,
 [data-theme="dark"] .kaltura-media-manager-widget .MuiTableContainer-root {
-  background-color: var(--surface-card) !important;
+  background-color: var(--kaltura-surface-card) !important;
 }
 [data-theme="dark"] .kaltura-media-manager-widget .MuiButtonBase-root {
-  background-color: var(--surface-elevated) !important;
-  color: var(--page-text) !important;
+  background-color: var(--kaltura-surface-elevated) !important;
+  color: var(--kaltura-page-text) !important;
 }
 [data-theme="dark"] .kaltura-media-manager-widget .MuiInputBase-root,
 [data-theme="dark"] .kaltura-media-manager-widget .MuiSelect-select,
 [data-theme="dark"] .kaltura-media-manager-widget input,
 [data-theme="dark"] .kaltura-media-manager-widget select {
-  background-color: var(--surface-elevated) !important;
-  color: var(--page-text) !important;
+  background-color: var(--kaltura-surface-elevated) !important;
+  color: var(--kaltura-page-text) !important;
   border-color: var(--input-border) !important;
 }
 [data-theme="dark"] .kaltura-media-manager-widget .MuiOutlinedInput-notchedOutline {
   border-color: var(--input-border) !important;
 }
 [data-theme="dark"] .kaltura-media-manager-widget .MuiTableCell-root {
-  color: var(--page-text-secondary) !important;
-  border-color: var(--border-color) !important;
+  color: var(--kaltura-page-text-secondary) !important;
+  border-color: var(--kaltura-border-color) !important;
 }
 [data-theme="dark"] .kaltura-media-manager-widget .MuiTableCell-head {
   background-color: var(--surface-paper) !important;
-  color: var(--page-text-muted) !important;
+  color: var(--kaltura-page-text-muted) !important;
 }
 [data-theme="dark"] .kaltura-media-manager-widget .MuiSvgIcon-root,
 [data-theme="dark"] .kaltura-media-manager-widget svg {
-  color: var(--page-text-muted) !important;
+  color: var(--kaltura-page-text-muted) !important;
 }
 [data-theme="dark"] .kaltura-media-manager-widget a {
   color: #58a6ff !important;
@@ -391,9 +446,9 @@
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  background: var(--surface-elevated);
-  border-top: 1px solid var(--border-color);
-  border-radius: 0 0 var(--ds-roundness-3) var(--ds-roundness-3);
+  background: var(--kaltura-surface-elevated);
+  border-top: 1px solid var(--kaltura-border-color);
+  border-radius: 0 0 var(--kaltura-roundness-3) var(--kaltura-roundness-3);
 }
 .mm-selected-items {
   display: flex;
@@ -407,9 +462,9 @@
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  background: var(--ds-primary);
+  background: var(--kaltura-primary);
   color: #fff;
-  border-radius: var(--ds-roundness-2);
+  border-radius: var(--kaltura-roundness-2);
   font-size: 0.8rem;
   font-weight: 500;
   max-width: 180px;
@@ -429,10 +484,10 @@
 .mm-chip-remove:hover { color: #fff; }
 .mm-confirm-btn {
   padding: 8px 16px;
-  background: var(--ds-primary);
+  background: var(--kaltura-primary);
   color: #fff;
   border: none;
-  border-radius: var(--ds-roundness-2);
+  border-radius: var(--kaltura-roundness-2);
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
@@ -468,10 +523,10 @@
 /* ─── KalturaAnalytics ─── */
 .kaltura-analytics-container {
   margin: 12px 0;
-  border-radius: var(--ds-roundness-2);
+  border-radius: var(--kaltura-roundness-2);
   overflow: hidden;
-  border: 1px solid var(--border-color);
-  background: var(--surface-deep);
+  border: 1px solid var(--kaltura-border-color);
+  background: var(--kaltura-surface-deep);
 }
 
 .kaltura-analytics-container iframe {
@@ -485,10 +540,10 @@
 /* ─── KalturaCaptionsEditor ─── */
 .kaltura-captions-editor-container {
   margin: 12px 0;
-  border-radius: var(--ds-roundness-2);
+  border-radius: var(--kaltura-roundness-2);
   overflow: hidden;
-  border: 1px solid var(--border-color);
-  background: var(--surface-deep);
+  border: 1px solid var(--kaltura-border-color);
+  background: var(--kaltura-surface-deep);
 }
 
 .kaltura-captions-editor-container iframe {
@@ -501,10 +556,10 @@
 /* ─── KalturaRecorder ─── */
 .kaltura-recorder-container {
   margin: 12px 0;
-  border-radius: var(--ds-roundness-2);
+  border-radius: var(--kaltura-roundness-2);
   overflow: hidden;
-  border: 1px solid var(--border-color);
-  background: var(--surface-deep);
+  border: 1px solid var(--kaltura-border-color);
+  background: var(--kaltura-surface-deep);
 }
 
 .kaltura-recorder-container iframe {
@@ -518,27 +573,25 @@
 /* ─── KalturaAvatar ─── */
 .kaltura-avatar-container {
   margin: 12px 0;
-  border-radius: var(--ds-roundness-2);
+  border-radius: var(--kaltura-roundness-2);
   overflow: hidden;
-  border: 1px solid var(--border-color);
-  background: var(--surface-deep);
+  border: 1px solid var(--kaltura-border-color);
+  background: var(--kaltura-surface-deep);
   min-height: 400px;
 }
 
 /* ─── Unisphere Widgets (Genie, ContentLab, AgentsWidget, VodAvatar) ─── */
+/* The class is kaltura-<runtimeName>-container and runtimeName starts with kaltura-.
+   The fallbacks keep the box right if a container ever misses the token block. */
 .kaltura-kaltura-genie-container,
-.kaltura-genie-container,
 .kaltura-kaltura-content-lab-container,
-.kaltura-content-lab-container,
 .kaltura-kaltura-agents-container,
-.kaltura-agents-container,
-.kaltura-kaltura-vod-avatar-container,
-.kaltura-vod-avatar-container {
+.kaltura-kaltura-vod-avatar-container {
   margin: 12px 0;
-  border-radius: var(--ds-roundness-2);
+  border-radius: var(--kaltura-roundness-2, 8px);
   overflow: hidden;
-  border: 1px solid var(--border-color);
-  background: var(--surface-deep);
+  border: 1px solid var(--kaltura-border-color, rgba(128, 128, 128, 0.35));
+  background: var(--kaltura-surface-deep, transparent);
   min-height: 500px;
 }
 
@@ -552,14 +605,14 @@
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: var(--page-text);
+  color: var(--kaltura-page-text);
   margin: 0 0 12px 0;
   padding: 0 4px;
 }
 
 .kaltura-chart-body {
   width: 100%;
-  border-radius: var(--ds-roundness-2);
+  border-radius: var(--kaltura-roundness-2);
 }
 
 .kaltura-chart-body svg {
@@ -589,9 +642,9 @@
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: var(--page-text-secondary);
+  color: var(--kaltura-page-text-secondary);
   padding: 4px 8px;
-  border-radius: var(--ds-roundness-1);
+  border-radius: var(--kaltura-roundness-1);
   border: none;
   background: none;
   cursor: pointer;
@@ -601,7 +654,7 @@
 
 .chart-legend-item:hover,
 .chart-legend-item--active {
-  background: var(--surface-elevated);
+  background: var(--kaltura-surface-elevated);
 }
 
 .chart-legend-swatch {
@@ -621,7 +674,7 @@
 .chart-legend-value {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  color: var(--page-text);
+  color: var(--kaltura-page-text);
   font-size: 11px;
 }
 
@@ -631,11 +684,11 @@
   pointer-events: none;
   padding: 8px 12px;
   font-size: 12px;
-  font-family: var(--ds-font-family);
-  background: var(--surface-card);
-  color: var(--page-text);
-  border: 1px solid var(--border-color);
-  border-radius: var(--ds-roundness-2);
+  font-family: var(--ds-font-family, 'Lato', system-ui, sans-serif);
+  background: var(--surface-card, Canvas);
+  color: var(--page-text, CanvasText);
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+  border-radius: var(--ds-roundness-2, 8px);
   white-space: nowrap;
   z-index: 100;
   transform: translate(-50%, -100%);
@@ -648,7 +701,7 @@
 .chart-tooltip strong { font-weight: 700; font-size: 12px; }
 
 .chart-tooltip-content {
-  font-family: var(--ds-font-family);
+  font-family: var(--ds-font-family, 'Lato', system-ui, sans-serif);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -676,22 +729,29 @@
 
 .chart-tooltip-row .chart-tooltip-label {
   flex: 1;
-  color: var(--page-text-secondary);
+  opacity: 0.8;
 }
 
 .chart-tooltip-row .chart-tooltip-value {
   font-weight: 600;
-  color: var(--page-text);
   font-variant-numeric: tabular-nums;
 }
 
+/* The visx tooltip renders in a portal on <body>, outside the --kaltura-* tokens,
+   so it reads the host tokens directly. Canvas and CanvasText give an opaque pair
+   on any page; color-scheme makes that pair dark under data-theme="dark". */
 .visx-tooltip {
-  font-family: var(--ds-font-family) !important;
+  font-family: var(--ds-font-family, 'Lato', system-ui, sans-serif) !important;
   font-size: 12px !important;
-  border-radius: var(--ds-roundness-2) !important;
-  border: 1px solid var(--border-color) !important;
-  background: var(--surface-card) !important;
+  border-radius: var(--ds-roundness-2, 8px) !important;
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.35)) !important;
+  background: var(--surface-card, Canvas) !important;
+  color: var(--page-text, CanvasText) !important;
   backdrop-filter: blur(8px);
+}
+
+[data-theme='dark'] :is(.visx-tooltip, .chart-tooltip) {
+  color-scheme: dark;
 }
 
 /* ─── GeoMap ─── */
@@ -709,7 +769,7 @@
 .geo-map-legend-label {
   font-size: 11px;
   font-variant-numeric: tabular-nums;
-  color: var(--page-text-muted);
+  color: var(--kaltura-page-text-muted);
   min-width: 28px;
 }
 
@@ -722,15 +782,15 @@
   justify-content: center;
   gap: 10px;
   min-height: 120px;
-  color: var(--page-text-muted);
+  color: var(--kaltura-page-text-muted);
   font-size: 13px;
 }
 
 .chart-loading-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid var(--border-color);
-  border-top-color: var(--ds-primary);
+  border: 2px solid var(--kaltura-border-color);
+  border-top-color: var(--kaltura-primary);
   border-radius: 50%;
   animation: chart-spin 0.8s linear infinite;
 }
@@ -740,8 +800,8 @@
 /* ─── Source Data Table ─── */
 .chart-source-data {
   margin-top: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--ds-roundness-2);
+  border: 1px solid var(--kaltura-border-color);
+  border-radius: var(--kaltura-roundness-2);
   overflow: hidden;
 }
 
@@ -752,9 +812,9 @@
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--page-text-muted);
+  color: var(--kaltura-page-text-muted);
   cursor: pointer;
-  background: var(--surface-elevated);
+  background: var(--kaltura-surface-elevated);
   user-select: none;
   list-style: none;
 }
@@ -773,10 +833,10 @@
 }
 
 .chart-source-data[open] summary::after { transform: rotate(180deg); }
-.chart-source-data[open] summary { border-bottom: 1px solid var(--border-color); }
+.chart-source-data[open] summary { border-bottom: 1px solid var(--kaltura-border-color); }
 
 .chart-source-data-icon { flex-shrink: 0; opacity: 0.6; }
-.chart-source-data-count { font-weight: 400; opacity: 0.7; font-size: 11px; }
+.chart-source-data-count { font-weight: 400; font-size: 11px; }
 
 .chart-source-data-scroll { max-height: 240px; overflow: auto; }
 
@@ -792,7 +852,7 @@
   padding: 6px 10px;
   text-align: left;
   white-space: nowrap;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--kaltura-border-subtle);
 }
 
 .chart-source-data th {
@@ -800,22 +860,22 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--page-text-muted);
-  background: var(--surface-elevated);
+  color: var(--kaltura-page-text-muted);
+  background: var(--kaltura-surface-elevated);
   position: sticky;
   top: 0;
   z-index: 1;
 }
 
-.chart-source-data td { color: var(--page-text); }
+.chart-source-data td { color: var(--kaltura-page-text); }
 .chart-source-data td.numeric { text-align: right; }
-.chart-source-data tr:nth-child(even) td { background: var(--surface-elevated); }
-.chart-source-data tr:hover td { background: var(--surface-card); }
+.chart-source-data tr:nth-child(even) td { background: var(--kaltura-surface-elevated); }
+.chart-source-data tr:hover td { background: var(--kaltura-surface-card); }
 
 .chart-source-data-truncated td {
   text-align: center;
   font-style: italic;
-  color: var(--page-text-muted);
+  color: var(--kaltura-page-text-muted);
   padding: 8px;
 }
 
@@ -830,17 +890,17 @@
   align-items: center;
   gap: 5px;
   padding: 4px 10px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--kaltura-border-color);
   border-radius: 4px;
   background: transparent;
-  color: var(--page-text-muted);
+  color: var(--kaltura-page-text-muted);
   font-size: 11px;
   cursor: pointer;
 }
 
 .chart-source-data-download:hover {
-  color: var(--ds-primary);
-  border-color: var(--ds-primary);
+  color: var(--kaltura-primary);
+  border-color: var(--kaltura-primary);
 }
 
 /* ─── Responsive ─── */

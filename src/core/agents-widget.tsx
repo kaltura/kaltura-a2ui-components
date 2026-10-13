@@ -1,4 +1,7 @@
 import { UnisphereWidgetCore } from './unisphere-widget';
+import { KalturaAgentsWidgetApi } from '../schemas/agents-widget';
+import { withValidatedProps } from './validate-props';
+import { withKs } from './ks';
 
 export interface AgentsWidgetCoreProps {
   partnerId: number;
@@ -7,7 +10,7 @@ export interface AgentsWidgetCoreProps {
   agentId?: string;
 }
 
-export function AgentsWidgetCore(props: AgentsWidgetCoreProps) {
+function AgentsWidgetView(props: AgentsWidgetCoreProps) {
   return (
     <UnisphereWidgetCore
       partnerId={props.partnerId}
@@ -19,6 +22,9 @@ export function AgentsWidgetCore(props: AgentsWidgetCoreProps) {
         ...(props.agentId ? { agentId: props.agentId } : {}),
       }}
       label="Kaltura AI Agents"
+      widget="agents-widget"
     />
   );
 }
+
+export const AgentsWidgetCore = withKs('agents-widget', withValidatedProps(KalturaAgentsWidgetApi.schema.required({ ks: true }), 'Kaltura AI Agents', AgentsWidgetView, 'agents-widget'));

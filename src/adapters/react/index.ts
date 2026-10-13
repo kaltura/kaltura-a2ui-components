@@ -1,8 +1,8 @@
-// React adapter entry — the ONLY A2UI integration path for this package.
+// React adapter entry: the ONLY A2UI integration path for this package.
 //
-// Host apps register the exported catalog via
-//   new MessageProcessor([kalturaReactCatalog, basicCatalog])
-// — NOT as a prop on A2uiSurface (verified against installed SDK source).
+// Host apps register ONLY the Kaltura catalog, which already holds the guarded
+// basic components, on a MessageProcessor, not as a prop on A2uiSurface:
+//   new MessageProcessor([kalturaReactCatalog])
 
 import '../../styles/components.css';
 import { Catalog } from '@a2ui/web_core/v0_9';
@@ -19,9 +19,16 @@ import { contentLabReactImpl } from './content-lab';
 import { agentsWidgetReactImpl } from './agents-widget';
 import { vodAvatarReactImpl } from './vod-avatar';
 import { chartReactImpl } from './chart';
-import { kalturaClientFunctions } from '../../catalog/client-functions';
+import { kalturaClientFunctions, SafeOpenUrlImplementation } from '../../catalog/client-functions';
+import { guardBasic } from './basic-media';
 
 export const KALTURA_CATALOG_ID = 'https://kaltura.github.io/a2ui/v1/catalog.json';
+
+// basicCatalog is the host's own copy (a peer), and 0.1.x told hosts to
+// register it next to ours. Guard it in place, so an agent that picks it by
+// id gets the same checks.
+const guardedBasics = [...basicCatalog.components.values()].map(guardBasic);
+if (basicCatalog.components instanceof Map) for (const impl of guardedBasics) basicCatalog.components.set(impl.name, impl);
 
 export const kalturaComponentImpls: ReactComponentImplementation[] = [
   kalturaPlayerReactImpl,
@@ -41,28 +48,34 @@ export const kalturaComponentImpls: ReactComponentImplementation[] = [
 /**
  * Builds the merged Kaltura catalog: the basic catalog's components and
  * functions plus the Kaltura Experience Components and client functions.
- * Pass an explicit `id` to override the catalog id (defaults to the canonical
- * Kaltura catalog id).
+ * The basic Image, Video and AudioPlayer load only Kaltura or
+ * `setExtraMediaOrigins` URLs, and basic Text markdown shows only Kaltura
+ * images. Pass an explicit `id` to override the catalog id (defaults to the
+ * canonical Kaltura catalog id). To keep the basic catalog id for older
+ * agents, register `buildKalturaCatalog(basicCatalog.id)` in place of
+ * `basicCatalog`.
  */
 export function buildKalturaCatalog(
   id: string = KALTURA_CATALOG_ID,
 ): Catalog<ReactComponentImplementation> {
   return new Catalog<ReactComponentImplementation>(
     id,
-    [...basicCatalog.components.values(), ...kalturaComponentImpls],
-    [...basicCatalog.functions.values(), ...kalturaClientFunctions],
+    [...guardedBasics, ...kalturaComponentImpls],
+    // Later entries win, so the safe openUrl replaces the basic one.
+    [...basicCatalog.functions.values(), ...kalturaClientFunctions, SafeOpenUrlImplementation],
   );
 }
 
 /**
- * Ready-to-register Kaltura catalog. Host clients pass this to a
- * MessageProcessor: `new MessageProcessor([kalturaReactCatalog, basicCatalog])`.
+ * Ready-to-register Kaltura catalog. Register it alone:
+ * `new MessageProcessor([kalturaReactCatalog])`. It already holds the guarded
+ * basic components, so do not register `basicCatalog` next to it.
  */
 export const kalturaReactCatalog: Catalog<ReactComponentImplementation> = buildKalturaCatalog();
 
 /**
  * Fetches a catalog descriptor from `url` and builds a Kaltura catalog keyed by
- * the fetched descriptor's `id` (falling back to the canonical id). The fetched
+ * the fetched descriptor's `catalogId` (then `$id`, then the canonical id). The fetched
  * JSON is used only for its id and to validate availability — the component
  * implementations are always the locally-bundled ones, since A2UI clients never
  * load component code at runtime.
@@ -76,8 +89,8 @@ export async function loadKalturaCatalog(
       `Failed to load catalog from ${url}: ${response.status} ${response.statusText}`,
     );
   }
-  const descriptor = (await response.json()) as { id?: string };
-  return buildKalturaCatalog(descriptor.id ?? KALTURA_CATALOG_ID);
+  const descriptor = (await response.json()) as { catalogId?: string; $id?: string };
+  return buildKalturaCatalog(descriptor.catalogId ?? descriptor.$id ?? KALTURA_CATALOG_ID);
 }
 
 export { kalturaClientFunctions };
@@ -111,8 +124,22 @@ export {
   type MediaManagerCoreProps,
 } from '../../core/media-manager';
 export { UnisphereWidgetCore, type UnisphereWidgetCoreProps } from '../../core/unisphere-widget';
+// Host option only. Never call this from agent output.
+export { setExtraAllowedOrigins, getExtraAllowedOrigins } from '../../core/unisphere-loader';
+export { setKsProvider, type KsProvider, type KsWidget } from '../../core/ks';
+// Host options. Never call these from agent output. See docs/host-api.md.
+export { setExtraMediaOrigins } from '../../core/media-url';
+export { setRegion, type KalturaRegion } from '../../core/region';
+export {
+  setErrorHandler,
+  setEventHandler,
+  type KalturaError,
+  type KalturaErrorCode,
+  type KalturaEvent,
+  type KalturaWidget,
+} from '../../core/host-hooks';
 export { AnalyticsCore, buildAnalyticsUrl, type AnalyticsCoreProps } from '../../core/analytics';
-export { CaptionsEditorCore, type CaptionsEditorCoreProps } from '../../core/captions-editor';
+export { CaptionsEditorCore, buildCaptionsEditorUrl, type CaptionsEditorCoreProps } from '../../core/captions-editor';
 export { RecorderCore, type RecorderCoreProps } from '../../core/recorder';
 export { AvatarCore, type AvatarCoreProps } from '../../core/avatar';
 export { GenieCore, type GenieCoreProps } from '../../core/genie';

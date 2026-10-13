@@ -1,0 +1,288 @@
+// Covers: QA-07 (Media Manager lifecycle) and SEC-18 (selection event scope).
+// Turns green: plan items 2.2 and 2.3.
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { act, createElement } from 'react';
+import { createRoot } from 'react-dom/client';
+import { MessageProcessor } from '@a2ui/web_core/v0_9';
+import { A2uiSurface } from '@a2ui/react/v0_9';
+import { URL_A, URL_B, loaderUrl, gate, render, fakeWorkspaceModule, errorSpy, tick, type MountedVisual } from './harness';
+
+const base = { partnerId: 1, ks: 'ks-1', serverUrl: URL_A };
+let log: string[];
+let configs: Record<string, unknown>[];
+let visuals: MountedVisual[];
+
+beforeEach(() => {
+  vi.resetModules();
+  log = [];
+  configs = [];
+  visuals = [];
+});
+afterEach(() => {
+  document.body.innerHTML = '';
+  vi.restoreAllMocks();
+});
+
+async function manager(mock: Record<string, unknown>) {
+  vi.doMock(loaderUrl(URL_A), () => mock);
+  vi.doMock(loaderUrl(URL_B), () => mock);
+  return (await import('../../src/core/media-manager')).MediaManagerCore;
+}
+
+/** Calls the remote select button of the n-th mounted visual, as Unisphere would. */
+function selectRow(n: number, row: { id?: string; name?: string }) {
+  const buttons = (visuals[n].settings.rowActions as { buttons: { onClick(r: unknown): void }[] }).buttons;
+  act(() => buttons[0].onClick(row));
+}
+
+describe('QA-07: Media Manager lifecycle', () => {
+  it('QA-07: a new ks re-inits and kills the old workspace', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const view = await render(Mm, base);
+    await view.rerender({ ...base, ks: 'ks-2' });
+    expect(log).toEqual(['create 1', 'unmount visual-1', 'kill 1', 'create 2']);
+  });
+
+  it('QA-07: the new ks reaches the workspace config', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const view = await render(Mm, base);
+    await view.rerender({ ...base, ks: 'ks-2' });
+    expect(JSON.stringify(configs[1])).toContain('ks-2');
+  });
+
+  it('QA-07: a new serverUrl re-inits', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const view = await render(Mm, base);
+    await view.rerender({ ...base, serverUrl: URL_B });
+    expect(log.filter(l => l.startsWith('create'))).toEqual(['create 1', 'create 2']);
+  });
+
+  it('QA-07: a new contextId re-inits', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const view = await render(Mm, base);
+    await view.rerender({ ...base, contextId: '42' });
+    expect(visuals[1].settings.context).toEqual({ type: 'category', initialCategoryId: '42' });
+  });
+
+  it('QA-07: a rerender with equal props does not re-init', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const view = await render(Mm, base);
+    await view.rerender({ ...base });
+    expect(log).toEqual(['create 1']);
+  });
+
+  it('QA-07: unmount after load kills the workspace', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const view = await render(Mm, base);
+    await view.unmount();
+    expect(log).toEqual(['create 1', 'unmount visual-1', 'kill 1']);
+  });
+
+  it('QA-07: unmount while createWorkspace runs kills the workspace', async () => {
+    const slow = gate();
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals, waitCreate: slow.wait }));
+    const view = await render(Mm, base);
+    await view.unmount();
+    slow.open();
+    await tick();
+    expect(log).toEqual(['create 1', 'kill 1']);
+  });
+
+  it('QA-07: unmount while the runtime loads kills the workspace', async () => {
+    const slow = gate();
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals, waitRuntime: slow.wait }));
+    const view = await render(Mm, base);
+    await view.unmount();
+    slow.open();
+    await tick();
+    expect(log).toEqual(['create 1', 'kill 1']);
+  });
+
+  it('QA-07: unmount while the visual mounts kills the workspace', async () => {
+    const slow = gate();
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals, waitMount: slow.wait }));
+    const view = await render(Mm, base);
+    await view.unmount();
+    slow.open();
+    await tick();
+    expect(log).toEqual(['create 1', 'kill 1']);
+  });
+
+  it('QA-07: a missing createWorkspace export shows the generic alert', async () => {
+    const Mm = await manager({ createWorkspace: undefined });
+    const view = await render(Mm, base);
+    expect(view.container.querySelector('[role="alert"]')?.textContent).toBe(
+      'Failed to load Media Manager: Unisphere createWorkspace is missing',
+    );
+  });
+
+  it('QA-07: no React error when a row is selected after unmount', async () => {
+    const spy = errorSpy();
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const view = await render(Mm, { ...base, multiSelect: true });
+    await view.unmount();
+    selectRow(0, { id: '0_abc', name: 'x' });
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('QA-07: a row selected in the replaced workspace does not dispatch', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const view = await render(Mm, base);
+    await view.rerender({ ...base, ks: 'ks-2' });
+    const seen: Event[] = [];
+    document.addEventListener('kaltura-entry-selected', e => seen.push(e));
+    selectRow(0, { id: '0_old' });
+    selectRow(1, { id: '0_new' });
+    expect(seen.map(e => (e as CustomEvent).detail.entryId)).toEqual(['0_new']);
+  });
+
+  it('QA-07: a row selected in the replaced workspace is not added to the multi-select bar', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const view = await render(Mm, { ...base, multiSelect: true });
+    await view.rerender({ ...base, multiSelect: true, ks: 'ks-2' });
+    selectRow(0, { id: '0_old', name: 'Old' });
+    expect(view.container.querySelectorAll('.mm-selected-chip')).toHaveLength(0);
+  });
+
+  it('QA-07: the config has no hard-coded appVersion', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    await render(Mm, base);
+    expect((configs[0] as { config: object }).config).not.toHaveProperty('appVersion');
+  });
+});
+
+describe('SEC-18: kaltura-entry-selected is scoped to the host element', () => {
+  const listen = (target: EventTarget) => {
+    const seen: CustomEvent[] = [];
+    target.addEventListener('kaltura-entry-selected', e => seen.push(e as CustomEvent));
+    return seen;
+  };
+
+  it('SEC-18: the event fires on the host element with an instanceId', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const view = await render(Mm, base);
+    const seen = listen(view.container.firstElementChild!);
+    selectRow(0, { id: '0_abc', name: 'Intro' });
+    expect(seen[0].detail).toEqual({ entryId: '0_abc', name: 'Intro', instanceId: expect.stringMatching(/^unisphere-mm-/) });
+  });
+
+  it('SEC-18: the event bubbles and is composed', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const view = await render(Mm, base);
+    const seen = listen(view.container.firstElementChild!);
+    selectRow(0, { id: '0_abc' });
+    expect([seen[0].bubbles, seen[0].composed]).toEqual([true, true]);
+  });
+
+  it('SEC-18: by default a document listener still gets one event (legacy)', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    await render(Mm, base);
+    const seen = listen(document);
+    selectRow(0, { id: '0_abc' });
+    expect(seen).toHaveLength(1);
+  });
+
+  it('SEC-18: legacyDocumentEvents false keeps the event off the document', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    await render(Mm, { ...base, legacyDocumentEvents: false });
+    const seen = listen(document);
+    selectRow(0, { id: '0_abc' });
+    expect(seen).toHaveLength(0);
+  });
+
+  it('SEC-18: legacyDocumentEvents false still fires on the host element', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const view = await render(Mm, { ...base, legacyDocumentEvents: false });
+    const seen = listen(view.container.firstElementChild!);
+    selectRow(0, { id: '0_abc' });
+    expect(seen).toHaveLength(1);
+  });
+
+  it('SEC-18: legacyDocumentEvents false still reaches a listener on the host and one inside it', async () => {
+    await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    await import('../../src/adapters/webcomponent/media-manager').then(m => m.defineMediaManagerWebComponent());
+    const el = document.createElement('kaltura-media-manager') as HTMLElement & { config: object };
+    el.config = { ...base, legacyDocumentEvents: false };
+    await act(async () => { document.body.appendChild(el); });
+    await tick();
+    const [onHost, inside, onDocument] = [listen(el), listen(el.firstElementChild!), listen(document)];
+    selectRow(0, { id: '0_abc' });
+    expect([onHost.length, inside.length, onDocument.length]).toEqual([1, 1, 0]);
+  });
+
+  it('SEC-18: a host listener does not see the event of another instance', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const one = await render(Mm, { ...base, legacyDocumentEvents: false });
+    await render(Mm, { ...base, legacyDocumentEvents: false });
+    const seen = listen(one.container.firstElementChild!);
+    selectRow(1, { id: '0_abc' });
+    expect(seen).toHaveLength(0);
+  });
+
+  it('SEC-18: two instances report different instanceIds', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    await render(Mm, base);
+    await render(Mm, base);
+    const seen = listen(document);
+    selectRow(0, { id: '0_abc' });
+    selectRow(1, { id: '0_abc' });
+    expect(seen[0].detail.instanceId).not.toBe(seen[1].detail.instanceId);
+  });
+
+  it('SEC-18: the multi-select confirm event has the instanceId and entries', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    const view = await render(Mm, { ...base, multiSelect: true });
+    const seen = listen(view.container.firstElementChild!);
+    selectRow(0, { id: '0_a', name: 'A' });
+    selectRow(0, { id: '0_b', name: 'B' });
+    act(() => view.container.querySelector<HTMLButtonElement>('.mm-confirm-btn')!.click());
+    expect(seen[0].detail).toMatchObject({ entryId: '0_a,0_b', instanceId: expect.stringMatching(/^unisphere-mm-/) });
+  });
+
+  it('SEC-18: the web component fires the event on the custom element', async () => {
+    await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    await import('../../src/adapters/webcomponent/media-manager').then(m => m.defineMediaManagerWebComponent());
+    const el = document.createElement('kaltura-media-manager') as HTMLElement & { config: object };
+    el.config = base;
+    await act(async () => { document.body.appendChild(el); });
+    await tick();
+    const seen = listen(el);
+    selectRow(0, { id: '0_abc' });
+    expect(seen[0].target).toBe(el);
+  });
+});
+
+describe('SEC-18: an agent cannot set legacyDocumentEvents', () => {
+  const listen = (target: EventTarget) => {
+    const seen: CustomEvent[] = [];
+    target.addEventListener('kaltura-entry-selected', e => seen.push(e as CustomEvent));
+    return seen;
+  };
+
+  /** Mounts the component through a real A2UI message, as an agent would. */
+  async function agentSurface(extra: Record<string, unknown>) {
+    vi.doMock(loaderUrl(URL_A), () => fakeWorkspaceModule({ log, configs, visuals }));
+    const { kalturaReactCatalog, KALTURA_CATALOG_ID } = await import('../../src/adapters/react/index');
+    const processor = new MessageProcessor([kalturaReactCatalog]);
+    processor.processMessages([
+      { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
+      {
+        version: 'v0.9',
+        updateComponents: {
+          surfaceId: 's',
+          components: [{ id: 'root', component: 'KalturaMediaManager', ...base, ...extra }],
+        },
+      },
+    ] as never);
+    const host = document.body.appendChild(document.createElement('div'));
+    await act(async () => createRoot(host).render(createElement(A2uiSurface, { surface: processor.model.getSurface('s')! })));
+    await tick();
+  }
+
+  it('SEC-18: legacyDocumentEvents false from an agent still bubbles to document', async () => {
+    await agentSurface({ legacyDocumentEvents: false });
+    const seen = listen(document);
+    selectRow(0, { id: '0_abc' });
+    expect(seen).toHaveLength(1);
+  });
+});

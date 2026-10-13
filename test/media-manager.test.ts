@@ -3,16 +3,16 @@ import { deriveLoaderUrl, buildWorkspaceConfig } from '../src/core/media-manager
 
 describe('deriveLoaderUrl', () => {
   it('replaces /v1 suffix (no trailing slash)', () => {
-    expect(deriveLoaderUrl('https://x/v1')).toBe('https://x/v1/loader/index.esm.js');
+    expect(deriveLoaderUrl('https://unisphere.nvp1.ovp.kaltura.com/v1')).toBe('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js');
   });
 
   it('replaces /v1/ suffix (trailing slash)', () => {
-    expect(deriveLoaderUrl('https://x/v1/')).toBe('https://x/v1/loader/index.esm.js');
+    expect(deriveLoaderUrl('https://unisphere.nvp1.ovp.kaltura.com/v1/')).toBe('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js');
   });
 
-  it('works with a full Kaltura CDN base URL', () => {
-    expect(deriveLoaderUrl('https://cdnapisec.kaltura.com/v1')).toBe(
-      'https://cdnapisec.kaltura.com/v1/loader/index.esm.js',
+  it('works with another allowed region', () => {
+    expect(deriveLoaderUrl('https://unisphere.irp2.ovp.kaltura.com/v1')).toBe(
+      'https://unisphere.irp2.ovp.kaltura.com/v1/loader/index.esm.js',
     );
   });
 });

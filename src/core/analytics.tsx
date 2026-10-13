@@ -1,4 +1,9 @@
 import type { FC } from 'react';
+import { isEntryId, isPositiveInt } from './ids';
+import { KalturaAnalyticsApi } from '../schemas/analytics';
+import { LoadError, withValidatedProps } from './validate-props';
+import { withKs } from './ks';
+import { kalturaHosts } from './region';
 
 export interface AnalyticsCoreProps {
   partnerId: number;
@@ -10,8 +15,10 @@ export interface AnalyticsCoreProps {
 }
 
 export function buildAnalyticsUrl(p: AnalyticsCoreProps): string {
+  if (!isPositiveInt(p.partnerId)) throw new Error('Invalid partnerId');
+  if (p.entryId && !isEntryId(p.entryId)) throw new Error('Invalid entryId');
   let src =
-    `https://kmc.kaltura.com/index.php/kmcng/analytics` +
+    `${kalturaHosts().kmc}/index.php/kmcng/analytics` +
     `?ks=${encodeURIComponent(p.ks)}&partnerId=${p.partnerId}`;
   if (p.entryId) src += `&entryId=${encodeURIComponent(p.entryId)}`;
   if (p.reportType) src += `&reportType=${encodeURIComponent(p.reportType)}`;
@@ -20,8 +27,13 @@ export function buildAnalyticsUrl(p: AnalyticsCoreProps): string {
   return src;
 }
 
-export const AnalyticsCore: FC<AnalyticsCoreProps> = (props) => {
-  const src = buildAnalyticsUrl(props);
+const AnalyticsView: FC<AnalyticsCoreProps> = (props) => {
+  let src: string;
+  try {
+    src = buildAnalyticsUrl(props);
+  } catch (e) {
+    return <LoadError widget="analytics">{`Failed to load analytics: ${(e as Error).message}`}</LoadError>;
+  }
   return (
     <div className="kaltura-analytics-container" style={{ width: '100%', aspectRatio: '16/9' }}>
       <iframe
@@ -34,3 +46,8 @@ export const AnalyticsCore: FC<AnalyticsCoreProps> = (props) => {
     </div>
   );
 };
+
+export const AnalyticsCore = withKs(
+  'analytics',
+  withValidatedProps(KalturaAnalyticsApi.schema.required({ ks: true }), 'analytics', AnalyticsView, 'analytics'),
+);
