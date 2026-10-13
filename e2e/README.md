@@ -26,7 +26,7 @@ The `ok` loader records what the widget passed in: `harness.loaderConfigs()` (fr
 | `css-tokens.spec.ts` | Design tokens resolve with and without host variables (QA-02, SEC-25) |
 | `iframe-permissions.spec.ts` | `allow` and `sandbox` of the remaining iframes, no capture permission, no iframe for the player, clips and recorder |
 | `avatar.spec.ts` | Avatar on the embeds API: provider KS only, no script tag, teardown order, disconnect event (SEC-08, QA-04) |
-| `csp.spec.ts` | The recommended CSP from docs/host-integration.md, including the avatar (SEC-08) and the recorder script (REC-01) |
+| `csp.spec.ts` | The recommended CSP from docs/host-integration.md, including the Player stub, the avatar (SEC-08), the recorder script (REC-01) and the captions editor page. A `data:` media element and a `blob:` worker pass, a media URL and a worker script from elsewhere are blocked. The region table in that file matches `src/core/region.ts` |
 | `analytics.spec.ts` | Analytics `postMessage` handshake against a stub KMC page: `init` content, `navigate`, `updateFilters`, `updateLayout` clamp, wrong origin and wrong source rejected (ANA-01) |
 
 Add a case: import `test` from `./fixtures/harness`, call `h.open()` and `h.mount(tag, config)`, then assert on `h.pwned()` and the logs.

@@ -55,7 +55,7 @@ The `kmcng/analytics` URL did not appear in the guide.
 
 | | Our code (`src/core/recorder.tsx`) | Kaltura guide |
 |---|---|---|
-| Integration | Sandboxed iframe: `https://www.kaltura.com/index.php/extwidget/preview/partner_id/…/uiconf_id/…/entry_id//embed/iframe?ks=…&showRecordButton=true` | Script in the host page: `https://www.kaltura.com/apps/expressrecorder/latest/express-recorder.js` |
+| Integration | Sandboxed iframe: `https://www.kaltura.com/index.php/extwidget/preview/partner_id/…/uiconf_id/…/entry_id//embed/iframe?ks=…&showRecordButton=true` | Script in the host page: `https://www.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js` |
 | Setup | Iframe URL | `Kaltura.ExpressRecorder.create('container', { ks, serviceUrl, partnerId, uiConfId, app, playerUrl, conversionProfileId, entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime, showUploadUI })` |
 | KS | Any | Must have the `editadmintags:*` privilege |
 | Events | None | `recordingStarted`, `recordingEnded`, `recordingCancelled`, `mediaUploadStarted`, `mediaUploadProgress`, `mediaUploadEnded`, `mediaUploadCancelled`, `error` (`code`, `message`) |
@@ -67,19 +67,23 @@ The `extwidget/preview` iframe does not appear in the Express Recorder guide.
 
 `KalturaRecorder` uses the Express Recorder script. The `extwidget/preview` iframe is gone.
 
-- The script loads only from the recorder host of the region (`https://www.kaltura.com` in the US, the regional API host elsewhere) at `/apps/expressrecorder/latest/express-recorder.js`. All recorders on a page share one load. A failed load is retried on the next mount.
+- The script loads only from the recorder host of the region (`https://www.kaltura.com` in the US, the recorder host from `src/core/region.ts` elsewhere) at `/apps/expressrecorder/v2.2.10/express-recorder.js`. All recorders on a page share one load. A failed load is retried on the next mount.
 - The KS comes from the host KS provider first, with the `ks` prop as fallback, as on the player (`src/core/ks.ts`). `create` gets `ks`, `serviceUrl`, `playerUrl`, `partnerId`, `uiConfId` and `app: 'a2ui'`. The script shows "Missing props: app" without `app`.
 - `uiconfId` is now required. `conversionProfileId` is not offered. `showUploadUI` and the recorder methods are not exposed.
 - `mediaUploadEnded` becomes the host event `recorder-upload-ended`. An `error` event becomes a generic `setErrorHandler` code with the fixed text `Recorder error`. Remote error text is dropped, because it can hold the KS or markup.
 - `destroy` runs on unmount and on every prop change.
 
-#### SRI is not possible today
+#### Pinned path, no SRI yet
 
-Version 2.2.10 was audited on 2026-10-13, sha384 `VkTBbp92aE8w5t8L3oNuCWPla+b1pnhgEHE3qBg+6VgCuGOou14E4Dwp/ZPcDWYS`. The CDN has no versioned path, only `latest`, so that hash would break on the next Kaltura release. The response also has no `Access-Control-Allow-Origin`, so `integrity` with `crossorigin="anonymous"` fails to load. The loader (`src/core/recorder-script.ts`) sets both when a hash is configured, and shows a plain-text error on an integrity failure. `RECORDER_SCRIPT` has no hash until Kaltura publishes a versioned, CORS-enabled path. The script loads the player script from `cdnapisec` by itself, so that file has no SRI either.
+The Express Recorder has versioned paths (`v2.2.4` to `v2.2.10` returned 200 on 2026-10-13). `latest` is byte-identical to `v2.2.10`, sha384 `VkTBbp92aE8w5t8L3oNuCWPla+b1pnhgEHE3qBg+6VgCuGOou14E4Dwp/ZPcDWYS`. The loader (`src/core/recorder-script.ts`) uses `/apps/expressrecorder/v2.2.10/`, so a Kaltura release cannot change the code under you. Bumps go through a release.
+
+SRI is the open part. The response has no `Access-Control-Allow-Origin`, so `integrity` with `crossorigin="anonymous"` fails to load (W3C SRI needs CORS for cross-origin scripts). The loader sets both when a hash is configured, and shows a plain-text error on an integrity failure. `RECORDER_SCRIPT` has no hash until Kaltura sends CORS on `/apps/expressrecorder/`. Then the known hash can go in.
+
+The script loads the player script from `cdnapisec` by itself, with no integrity. Pins and SRI cover the first hop only. SRI is out of scope for the rest while all remote code comes from Kaltura.
 
 ### Consequences
 
-- The script runs in the host page's origin with the KS. The iframe kept it in a sandbox. The move trades isolation for events and the documented API. The host CSP must allow `www.kaltura.com` and `cdnapisec.kaltura.com` in `script-src` ([host-integration.md](../host-integration.md#content-security-policy)).
+- The script runs in the host page's origin with the KS. The iframe kept it in a sandbox. The move trades isolation for events and the documented API. The host CSP must allow `https://www.kaltura.com/apps/` and `https://cdnapisec.kaltura.com/p/` in `script-src` ([host-integration.md](../host-integration.md#content-security-policy)).
 - `editadmintags:*` is in the KS guidance in docs/security/ks.md.
 - The size budget has no margin left (ESM is at its limit).
 

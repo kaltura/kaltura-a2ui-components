@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { CSSProperties, FC } from 'react';
 import { isEntryId, isPositiveInt } from './ids';
 import { KalturaPlayerApi } from '../schemas/player';
@@ -119,15 +119,15 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
   return <div ref={containerRef} className={props.className} style={props.style} role="region" aria-label={props.title} />;
 }
 
+// Both labels are React text children, so React escapes them. The cap bounds the work on huge input.
+const MAX_LABEL_LENGTH = 1000;
+
 const PlayerView: FC<PlayerCoreProps> = (props) => {
   const title = props.entryName
-    ? `${props.entryId} — ${props.entryName}`
+    ? `${props.entryId} — ${props.entryName.slice(0, MAX_LABEL_LENGTH)}`
     : props.entryId;
 
-  const description = useMemo(() => {
-    if (!props.entryDescription) return '';
-    return props.entryDescription.replace(/<[^>]*>/g, '').trim();
-  }, [props.entryDescription]);
+  const description = props.entryDescription?.slice(0, MAX_LABEL_LENGTH).trim() ?? '';
 
   return (
     <div className="kaltura-player-container">

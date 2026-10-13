@@ -31,7 +31,7 @@ async function manager(mock: Record<string, unknown>) {
 
 /** Calls the remote select button of the n-th mounted visual, as Unisphere would. */
 function selectRow(n: number, row: { id?: string; name?: string }) {
-  const buttons = (visuals[n].settings.rowActions as { buttons: { onClick(r: unknown): void }[] }).buttons;
+  const buttons = ((visuals[n].settings.context as { rowActions: unknown }).rowActions as { buttons: { onClick(r: unknown): void }[] }).buttons;
   act(() => buttons[0].onClick(row));
 }
 
@@ -61,7 +61,7 @@ describe('QA-07: Media Manager lifecycle', () => {
     const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
     const view = await render(Mm, base);
     await view.rerender({ ...base, contextId: '42' });
-    expect(visuals[1].settings.context).toEqual({ type: 'category', initialCategoryId: '42' });
+    expect(visuals[1].settings.context).toMatchObject({ type: 'category', initialCategoryId: '42' });
   });
 
   it('QA-07: a rerender with equal props does not re-init', async () => {
@@ -144,10 +144,52 @@ describe('QA-07: Media Manager lifecycle', () => {
     expect(view.container.querySelectorAll('.mm-selected-chip')).toHaveLength(0);
   });
 
-  it('QA-07: the config has no hard-coded appVersion', async () => {
+  it('F1: the workspace config has appVersion, a region env and the session', async () => {
     const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
     await render(Mm, base);
-    expect((configs[0] as { config: object }).config).not.toHaveProperty('appVersion');
+    expect((configs[0] as { config: object }).config).toMatchObject({
+      appVersion: expect.any(String),
+      env: 'nvp1',
+      session: { ks: 'ks-1', partnerId: 1 },
+    });
+  });
+
+  it('F1: env follows the region of serverUrl', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    await render(Mm, { ...base, serverUrl: URL_B });
+    expect((configs[0] as { config: { env: string } }).config.env).toBe('irp2');
+  });
+
+  it('F1: the runtime gets only the settings it accepts', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    await render(Mm, base);
+    const experiences = (configs[0] as { config: { experiences: Record<string, Record<string, { settings: object }>> } }).config.experiences;
+    expect(experiences['media-manager']['kaltura-media-manager'].settings).toEqual({ ks: 'ks-1', partnerId: 1 });
+  });
+
+  it('APPSEC-08: a failed load logs a fixed string with no error or KS', async () => {
+    const spy = errorSpy();
+    const Mm = await manager({ createWorkspace: async () => { throw new Error('boom ks-1'); } });
+    await render(Mm, base);
+    expect(spy.mock.calls).toEqual([['[MediaManager] Load failed']]);
+  });
+
+  it.each(['', 'a b', 'x'.repeat(65), 7, null, undefined])('APPSEC-09: row id %j is ignored', async id => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    await render(Mm, base);
+    const seen: Event[] = [];
+    document.addEventListener('kaltura-entry-selected', e => seen.push(e));
+    selectRow(0, { id } as never);
+    expect(seen).toHaveLength(0);
+  });
+
+  it('APPSEC-09: a long row name is capped at 500 characters', async () => {
+    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
+    await render(Mm, base);
+    const seen: CustomEvent[] = [];
+    document.addEventListener('kaltura-entry-selected', e => seen.push(e as CustomEvent));
+    selectRow(0, { id: '0_abc', name: 'n'.repeat(100_000) });
+    expect(seen[0].detail.name).toHaveLength(500);
   });
 });
 

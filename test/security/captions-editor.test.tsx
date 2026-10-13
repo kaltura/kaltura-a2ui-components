@@ -2,10 +2,10 @@
 // values stay inside one attribute) for the Captions editor (docs/adr/0008). The editor page is a
 // fake from test/helpers/captions-remote.ts. The page is fetched, turned into a blob URL and loaded
 // in a sandboxed iframe that reads its settings from `data-*` attributes.
-import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { createElement, act } from 'react';
 import { mount } from '../helpers/render';
-import { captionsRemote, EDITOR_URL } from '../helpers/captions-remote';
+import { captionsRemote, EDITOR_URL, EDITOR_INIT, EDITOR_INTEGRITY } from '../helpers/captions-remote';
 import { CaptionsEditorCore } from '../../src/core/captions-editor';
 import { setKsProvider } from '../../src/core/ks';
 import { setErrorHandler, type KalturaError } from '../../src/core/host-hooks';
@@ -36,7 +36,7 @@ describe('SEC-10: the editor page request', () => {
   it('SEC-10: the page comes from the fixed service host URL, without cookies, referrer or query string', async () => {
     await mount(CaptionsEditorCore, VALID);
     await remote.ready();
-    expect(remote.fetches).toEqual([{ url: EDITOR_URL, init: { credentials: 'omit', referrerPolicy: 'no-referrer', redirect: 'error' } }]);
+    expect(remote.fetches).toEqual([{ url: EDITOR_URL, init: EDITOR_INIT }]);
   });
 
   it('SEC-10: props cannot change the page URL', async () => {
@@ -81,10 +81,14 @@ describe('SEC-10: the editor iframe', () => {
     expect([frame(container).getAttribute('data-ks'), container.querySelectorAll('*').length, container.querySelectorAll('img').length]).toEqual([hostile, 2, 0]);
   });
 
-  it('SEC-10: the iframe has the fixed title and the playback permissions only', async () => {
+  it('SEC-10: the iframe has the fixed title and the playback permissions only, for named origins and no wildcard', async () => {
     const { container } = await mount(CaptionsEditorCore, VALID);
     await remote.ready();
-    expect([frame(container).title, frame(container).allow]).toEqual(['Kaltura Captions Editor', 'autoplay *; fullscreen *; encrypted-media *']);
+    const origins = `'self' https://cdnapisec.kaltura.com`;
+    expect([frame(container).title, frame(container).allow]).toEqual([
+      'Kaltura Captions Editor',
+      `autoplay ${origins}; fullscreen ${origins}; encrypted-media ${origins}`,
+    ]);
   });
 });
 
@@ -116,6 +120,92 @@ describe('SEC-10: lifecycle', () => {
       'Failed to load captions editor: Invalid partnerId',
       remote.blobs,
     ]);
+  });
+});
+
+describe('SEC-10: the pinned page', () => {
+  it('SEC-10: the page request carries the sha384 hash of the pinned page and the page path names the pinned version', async () => {
+    await mount(CaptionsEditorCore, VALID);
+    await remote.ready();
+    expect([remote.fetches[0].init?.integrity, EDITOR_URL]).toEqual([EDITOR_INTEGRITY, expect.stringContaining('/captionstudio/v1.3.10/')]);
+  });
+
+  it('SEC-10: the blob page has a hash and crossorigin on main.js and main.css, and keeps the existing hash on bootstrap', async () => {
+    await mount(CaptionsEditorCore, VALID);
+    await remote.ready();
+    const doc = new DOMParser().parseFromString(await remote.pageText(0), 'text/html');
+    const pinned = [...doc.querySelectorAll('script, link[rel~="stylesheet"]')].map(el => [
+      el.getAttribute('src') ?? el.getAttribute('href'),
+      el.getAttribute('integrity')?.slice(0, 7),
+      el.getAttribute('crossorigin'),
+    ]);
+    expect(pinned).toEqual([
+      ['bootstrap.min.css', 'sha384-', 'anonymous'],
+      ['./static/css/main.74b8a353.css', 'sha384-', 'anonymous'],
+      ['./static/js/main.6315bf26.js', 'sha384-', 'anonymous'],
+    ]);
+  });
+
+  it('SEC-10: the hashes on main.js and main.css are the pinned ones', async () => {
+    await mount(CaptionsEditorCore, VALID);
+    await remote.ready();
+    const doc = new DOMParser().parseFromString(await remote.pageText(0), 'text/html');
+    expect([doc.querySelector('script')?.getAttribute('integrity'), doc.querySelector('link[href*="main."]')?.getAttribute('integrity')]).toEqual([
+      'sha384-iYhkCPdMwqiJ1wjyPCV5MqsbuVv3oGWa++mhGj30xoyxj1cCaAWEQXB9nuy+dBU0',
+      'sha384-2kxBNi7/SGtDcBTjMkIn4DH7vjmBIfgHZ2WWhIto/1JNh+d+34SV0fScG987xwlZ',
+    ]);
+  });
+
+  it('SEC-10: a page that does not match its hash shows the fixed text, builds no blob and sends no KS', async () => {
+    remote.fetch = 'tampered';
+    const { container } = await mount(CaptionsEditorCore, VALID);
+    await vi.waitFor(() => expect(errors).toHaveLength(1));
+    expect([container.textContent, container.querySelectorAll('iframe').length, remote.blobs, JSON.stringify([remote.fetches, errors]).includes(HOST_KS)]).toEqual([
+      'Failed to load captions editor: Captions editor could not start',
+      0,
+      [],
+      false,
+    ]);
+  });
+
+  it('SEC-10: a page with a script that has no pinned hash shows the fixed text and builds no blob', async () => {
+    remote.fetch = 'unpinned-script';
+    const { container } = await mount(CaptionsEditorCore, VALID);
+    await vi.waitFor(() => expect(errors).toHaveLength(1));
+    expect([container.textContent, container.querySelectorAll('iframe').length, remote.blobs]).toEqual([
+      'Failed to load captions editor: Captions editor could not start',
+      0,
+      [],
+    ]);
+  });
+});
+
+describe('SEC-10: the page request limits', () => {
+  it('SEC-10: a page over 1 MiB shows the fixed text and builds no blob', async () => {
+    remote.fetch = 'oversize';
+    const { container } = await mount(CaptionsEditorCore, VALID);
+    await vi.waitFor(() => expect(errors).toHaveLength(1));
+    expect([container.textContent, remote.blobs]).toEqual(['Failed to load captions editor: Captions editor could not start', []]);
+  });
+
+  it('SEC-10: a request that takes more than 15 s is aborted and shows the fixed text', async () => {
+    const timers = vi.spyOn(globalThis, 'setTimeout');
+    remote.fetch = 'hold';
+    const { container } = await mount(CaptionsEditorCore, VALID);
+    const limit = timers.mock.calls.find(([, delay]) => delay === 15_000)?.[0] as () => void;
+    await act(async () => limit());
+    expect([(remote.fetches[0].init?.signal as AbortSignal).aborted, container.textContent, remote.blobs]).toEqual([
+      true,
+      'Failed to load captions editor: Captions editor could not start',
+      [],
+    ]);
+  });
+
+  it('SEC-10: unmount aborts the page request', async () => {
+    remote.fetch = 'hold';
+    const { root } = await mount(CaptionsEditorCore, VALID);
+    await act(async () => root.unmount());
+    expect((remote.fetches[0].init?.signal as AbortSignal).aborted).toBe(true);
   });
 });
 

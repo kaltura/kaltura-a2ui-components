@@ -14,4 +14,4 @@ The release after 0.2.0 needs `@a2ui/react` and `@a2ui/web_core` 0.13. The scrip
 | 6 | Agents that call `add`, `equals` and other math or compare functions | Register your own functions | The v0.9 basic catalog dropped them |
 | 7 | Everyone with a `dompurify` override | Keep it | `@a2ui/markdown-it` 0.2.1 still pins 3.4.11 |
 
-The guarded basic Image, Video, AudioPlayer and Text render as `kaltura-a2ui-image`, `kaltura-a2ui-video`, `kaltura-a2ui-audioplayer` and `kaltura-a2ui-basic-text`. Their checks are the same as in 0.2.0. Upstream details: the `@a2ui/react` and `@a2ui/web_core` CHANGELOGs for 0.12.0 and 0.13.0.
+The guarded basic Image, Video, AudioPlayer and Text render as `kaltura-a2ui-image`, `kaltura-a2ui-video`, `kaltura-a2ui-audioplayer` and `kaltura-a2ui-basic-text`. Their checks are the same as in 0.2.0: `url` must be `https` on Kaltura or an origin from `setExtraMediaOrigins`, and a URL with a KS is refused ([host-api.md](host-api.md#basic-media-urls)). The Kaltura catalog also replaces `openUrl`: it opens only absolute `https:` URLs. Upstream details: the `@a2ui/react` and `@a2ui/web_core` CHANGELOGs for 0.12.0 and 0.13.0.

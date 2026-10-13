@@ -37,7 +37,9 @@ gh attestation verify kaltura-wc.js --repo kaltura/kaltura-a2ui-components \
   --source-ref refs/heads/main --deny-self-hosted-runners
 ```
 
-`kaltura-react.mjs`, `kaltura_catalog.json` and `dist.tar.gz` are attested too. Releases from 0.3.0 also attest `html-element-stub.mjs`, which `kaltura-react.mjs` imports ([ADR 0007](adr/0007-ssr-html-element-stub.md)). The attestation names the `main` commit the release was built from. The tag points to a release commit on top of it, which adds only `dist/` and the stamped catalog.
+`kaltura-react.mjs`, `kaltura_catalog.json`, `dist.tar.gz`, `THIRD_PARTY_NOTICES.txt`, `sbom.cdx.json`, `hashes.json` and `SHA256SUMS` are attested too (the last four from the release after 0.3.0). Releases from 0.3.0 also attest `html-element-stub.mjs`, which `kaltura-react.mjs` imports ([ADR 0007](adr/0007-ssr-html-element-stub.md)). The attestation names the `main` commit the release was built from. The tag points to a release commit on top of it, which adds only `dist/` and the stamped catalog.
+
+**SLSA level: Build L2.** `release.yml` runs on GitHub-hosted runners and signs provenance with `actions/attest-build-provenance`. The provenance is signed by the platform, not by our build steps, and names the workflow, the `main` commit and the run. It is not Build L3: the workflow is not a reusable workflow with an isolated build, and one account can still approve its own release until the owner steps in [release.md](release.md) are done.
 
 ## 3. Release assets
 
@@ -45,6 +47,8 @@ gh attestation verify kaltura-wc.js --repo kaltura/kaltura-a2ui-components \
 gh release download v0.3.0 --repo kaltura/kaltura-a2ui-components --dir v0.3.0
 cd v0.3.0 && sha256sum --check SHA256SUMS    # macOS: shasum -a 256 --check SHA256SUMS
 ```
+
+`THIRD_PARTY_NOTICES.txt` has the licence of every package inlined in the bundles. The same file is in `dist/` and `dist.tar.gz`.
 
 `sbom.cdx.json` is a CycloneDX SBOM of every locked package, dev ones too, because the bundles inline some dev dependencies.
 

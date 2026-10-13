@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FC, type KeyboardEvent } from 'react';
 import { isEntryId, isPositiveInt } from './ids';
 import { renderSafeMarkdown } from './safe-markdown';
-import { toKalturaCdnUrl } from './media-url';
+import { isAllowedMediaUrl } from './media-url';
 import { KalturaFlashcardsApi } from '../schemas/flashcards';
 import { LoadError, withValidatedProps } from './validate-props';
 import { kalturaHosts } from './region';
@@ -45,12 +45,13 @@ export interface FlashcardsCoreProps {
 
 /**
  * CDN thumbnail URL for a clip — seeks to startTime+1s for a meaningful frame.
- * Uses the clip's own thumbnail field only when it is an https Kaltura CDN URL
- * (see toKalturaCdnUrl). Otherwise builds the CDN URL, or returns an empty string.
+ * Uses the clip's own thumbnail field only when isAllowedMediaUrl accepts it (an https
+ * Kaltura CDN URL or a host-added media origin, with no api_v3 path or KS). Otherwise builds the CDN URL, or returns an
+ * empty string.
  */
 export function buildThumbnailUrl(clip: Clip, partnerId?: number): string {
-  const own = toKalturaCdnUrl(clip.thumbnail);
-  if (own) return own;
+  const own = clip.thumbnail;
+  if (own && isAllowedMediaUrl(own)) return new URL(own).href;
   if (!isPositiveInt(partnerId) || !isEntryId(clip.entryId)) return '';
   const sec = Math.round(clip.startTime) + 1;
   return `${kalturaHosts().vod}/p/${encodeURIComponent(partnerId)}/thumbnail/entry_id/${encodeURIComponent(clip.entryId)}/width/200/vid_sec/${sec}`;
@@ -195,6 +196,7 @@ function ClipGallery({
                     src={thumbUrl}
                     alt={clip.title ?? `Clip ${ci + 1}`}
                     className="clip-thumb-img"
+                    referrerPolicy="no-referrer"
                   />
                 ) : (
                   <span className="clip-thumb-fallback" />

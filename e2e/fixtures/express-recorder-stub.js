@@ -1,4 +1,4 @@
-// Stand-in for https://www.kaltura.com/apps/expressrecorder/latest/express-recorder.js.
+// Stand-in for https://www.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js.
 // Served by Harness.open() for that path. Same shape as the real script:
 // `Kaltura.ExpressRecorder.create(containerId, options)`.
 (function () {

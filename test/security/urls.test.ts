@@ -7,7 +7,7 @@ import { PlayerCore } from '../../src/core/player';
 import { setKsProvider } from '../../src/core/ks';
 import { mount } from '../helpers/render';
 import { playerRemote, scriptUrl } from '../helpers/player-remote';
-import { captionsRemote, EDITOR_URL } from '../helpers/captions-remote';
+import { captionsRemote, EDITOR_URL, EDITOR_INIT } from '../helpers/captions-remote';
 
 let player: ReturnType<typeof playerRemote>;
 let captions: ReturnType<typeof captionsRemote>;
@@ -64,7 +64,7 @@ describe('SEC-07: captions editor request and data attributes', () => {
 
   it('SEC-07: the page is fetched from the fixed URL, with no query string and no credentials', async () => {
     await mountEditor({ ...base, uiconfId: 55 });
-    expect(captions.fetches).toEqual([{ url: EDITOR_URL, init: { credentials: 'omit', referrerPolicy: 'no-referrer', redirect: 'error' } }]);
+    expect(captions.fetches).toEqual([{ url: EDITOR_URL, init: EDITOR_INIT }]);
   });
 
   it('SEC-07: the iframe src is the blob URL, with no KS in it', async () => {

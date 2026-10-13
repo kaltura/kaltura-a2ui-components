@@ -72,7 +72,7 @@ describe('CONF-15: Unisphere widget and runtime names against the guide', () => 
 describe('CONF-15: the Recorder', () => {
   it('CONF-15: it loads the express-recorder.js script from the host page like the guide, and no divergence is listed', () => {
     const text = source('src/core/recorder-script.ts');
-    expect([text.includes('/apps/expressrecorder/latest/express-recorder.js'), source('src/core/recorder.tsx').includes('extwidget'), 'KalturaRecorder:integration' in KNOWN_DIVERGENCES]).toEqual([true, false, false]);
+    expect([text.includes('/apps/expressrecorder/v2.2.10/express-recorder.js'), source('src/core/recorder.tsx').includes('extwidget'), 'KalturaRecorder:integration' in KNOWN_DIVERGENCES]).toEqual([true, false, false]);
   });
 });
 
@@ -85,7 +85,7 @@ describe('CONF-15: the Player and the Captions editor', () => {
 
   it('CONF-15: the Captions editor reads data attributes from a blob page and keeps the KS out of URLs, and the divergence from the guide iframe is listed', () => {
     const text = source('src/core/captions-editor.tsx');
-    expect([text.includes('/apps/captionstudio/latest/embed.php'), text.includes('data-${name}'), /[?&]ks=/.test(text), 'KalturaCaptionsEditor:integration' in KNOWN_DIVERGENCES]).toEqual([true, true, false, true]);
+    expect([text.includes('/apps/captionstudio/v1.3.10/embed.php'), text.includes('data-${name}'), /[?&]ks=/.test(text), 'KalturaCaptionsEditor:integration' in KNOWN_DIVERGENCES]).toEqual([true, true, false, true]);
   });
 });
 

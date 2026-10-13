@@ -1,6 +1,6 @@
 # 0008. In-page Player and Captions editor
 
-Status: accepted and implemented (2026-10-13). Supersedes the "KS in iframe URLs accepted" part of [ADR 0002](0002-ks-handling.md). Not verified yet: the full Captions editor UI with a real caption asset, regional accounts, and the Player script under a strict host CSP.
+Status: accepted and implemented (2026-10-13). Supersedes the "KS in iframe URLs accepted" part of [ADR 0002](0002-ks-handling.md). Not verified yet: the full Captions editor UI with a real caption asset, and regional accounts.
 
 Covers SEC-10 (internal-review) and SEC-14. Code: `src/core/player-script.ts`, `src/core/player.tsx` (`PlayerEmbed`), `src/core/captions-editor.tsx`.
 
@@ -12,7 +12,7 @@ Covers SEC-10 (internal-review) and SEC-14. Code: `src/core/player-script.ts`, `
 
 ## Decision
 
-Keep the KS out of every URL. Run the embeds in the page and pass the KS in JavaScript.
+Keep the KS out of script and iframe URLs. Run the embeds in the page and pass the KS in JavaScript.
 
 ### Player and Flashcards clips
 
@@ -30,17 +30,18 @@ The KS comes from `setKsProvider` first. The `ks` prop is the fallback. Flashcar
 
 The editor has no script loader. Its README (`kaltura/closed-captions-studio`) says it reads `data-*` attributes from `window.frameElement` when its URL has no parameters. That works only in a same-origin iframe.
 
-1. The component fetches `<serviceUrl>/apps/captionstudio/latest/embed.php` (no credentials, no referrer).
-2. It puts the HTML in a blob URL and loads that in an iframe.
+1. The component fetches `<serviceUrl>/apps/captionstudio/v1.3.10/embed.php` (no credentials, no referrer, pinned `integrity`).
+2. It adds `integrity` and `crossorigin` to `main.js` and `main.css`, puts the HTML in a blob URL and loads that in an iframe. A mismatch on the page shows a plain error and the KS is never sent. A mismatch on `main.js` or `main.css` is blocked by the browser, so the frame stays blank, and only code with the pinned hash can read the KS.
 3. It sets `data-pid`, `data-ks`, `data-entryid`, `data-cdnurl`, `data-serviceurl` and `data-uiconfid` on the iframe element.
 
-Checked live on `nvp1`: the editor loaded and signed in (it reached "Current video does not have captions", because the account has no captions), and no request URL held the KS. The CORS header of `embed.php` was open on `www.kaltura.com`, `api.eu`, `api.de`, `api.ca`, `api.ap`, `api.cap2.ovp` and `api.syp2.ovp`.
+Checked live on `nvp1`: the editor loaded and signed in (it reached "Current video does not have captions", because the account has no captions), and no script or iframe URL held the KS. A later audit found that the editor's own player requests `cdnapisec.../playManifest/.../ks/<KS>/a.mp4` (1 of 29 requests). See Consequences. The CORS header of `embed.php` was open on `www.kaltura.com`, `api.eu`, `api.de`, `api.ca`, `api.ap`, `api.cap2.ovp` and `api.syp2.ovp`.
 
 ## Consequences
 
 **Gained**
 
-- The KS is in no URL for any widget. SEC-10 is resolved: Analytics, Recorder, Flashcards, Player and Captions editor.
+- The KS is in no script or iframe URL for any widget: Analytics, Recorder, Flashcards, Player and Captions editor.
+- One exception remains. The Captions editor has its own player, and it requests a `playManifest` URL with the KS in the path. Neither we nor the host can change that. A CSP report for a blocked URL can hold the full KS (`blockedURI`, `document-uri`, console text): the host must redact it ([host-integration.md](../host-integration.md#rollout)). Open request to the Caption Studio owners: send the KS by header for `playManifest`.
 
 **Cost: third-party code runs in the page origin**
 
@@ -53,16 +54,19 @@ Checked live on `nvp1`: the editor loaded and signed in (it reached "Current vid
 - There is no player iframe left to sandbox. The player sandbox option and the three URL builders for the Player, the clips and the Captions editor are removed (breaking, 0.4.0). The list is in [migration-0.4.md](../migration-0.4.md#player-flashcards-and-captions-editor).
 - A host that needs isolation must do it itself: embed the component in a page on a separate origin, or use a CSP.
 
-**No SRI**
+**Versions and SRI**
 
-- The player bundle is built per uiconf. It has CORS `*`, a 10 minute cache and no versioned path, so its hash changes on each rebuild. The Captions editor page is `latest` and fetched at run time. Kaltura offers no pinned build for either.
+- The player version is chosen by the customer admin per player instance (uiConf) in KMC. The uiConf is the pin. The bundle is built per uiConf, with CORS `*` and a 10 minute cache, and we set no hash for it.
+- The Captions editor is pinned to `/apps/captionstudio/v1.3.10/`. Its page is fetched with `integrity` (the page differs per host, because it writes the host into its `<base>` tag), and `main.js` and `main.css` get `integrity` before the blob page is built.
+- Pins and hashes cover the first hop only. The editor's `main.js` loads the player bundle with no integrity. Do not set `Integrity-Policy: blocked-destinations=(script)`: it would block that load.
+- SRI for the rest is out of scope while all remote code comes from Kaltura.
 
 **CSP**
 
-- Player and clips: allow the region `cdn` host in `script-src`, and the Kaltura hosts the player calls in `connect-src` and `media-src`. They no longer need `frame-src`.
+- Player and clips: allow the region `cdn` host (path `/p/`) in `script-src`, `worker-src blob:` (the analytics timer worker), and the Kaltura hosts the player calls in `connect-src` and `media-src`, with `data:` in `media-src` (the autoplay probe). They no longer need `frame-src`.
 - Captions editor: `frame-src blob:` and `connect-src <serviceUrl>`. The blob frame inherits the host policy, so `style-src`, `font-src`, `script-src` and `base-uri` also need the `serviceUrl` host (the page has a `<base>` tag: with `base-uri 'none'` it stays blank). Checked on the real page on `nvp1` with the policy in `docs/host-integration.md`: no violation.
 - Permissions Policy: the blob frame is same-origin, so the host page decides camera, microphone and display capture for it. Send `camera=(), microphone=(), display-capture=()` to deny them.
-- Not verified: the real Player script under a strict CSP. Watch the console for `Content Security Policy` messages.
+- The real Player script was checked under the policy in `docs/host-integration.md` in Chromium on `nvp1`. Watch the console for `Content Security Policy` messages in other browsers and regions.
 
 **Page globals and reloads**
 

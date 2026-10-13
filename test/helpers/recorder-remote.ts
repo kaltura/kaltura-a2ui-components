@@ -3,7 +3,7 @@
 // Used by test/security/recorder*.test.tsx and the tests that mount a recorder.
 import { vi } from 'vitest';
 
-export const SCRIPT_URL = 'https://www.kaltura.com/apps/expressrecorder/latest/express-recorder.js';
+export const SCRIPT_URL = 'https://www.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js';
 
 export interface RecorderRemote {
   /** Calls in order: create, destroy. */

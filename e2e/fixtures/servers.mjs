@@ -36,7 +36,7 @@ export const createWorkspace = async () => { throw new Error('stub'); };`,
 };
 export const createWorkspace = async (cfg) => {
   (window.__workspaceCfgs = window.__workspaceCfgs || []).push(cfg);
-  return { getRuntimeAsync: async () => ({ mountVisual: async () => 'v1', unmountVisual() {} }) };
+  return { getRuntimeAsync: async () => ({ mountVisual: async () => ({ id: 'v1' }), unmountVisual() {} }) };
 };
 export const embeds = {
   workspace: async (cfg) => {

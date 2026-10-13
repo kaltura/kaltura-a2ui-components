@@ -20,7 +20,7 @@ export interface PlayerApi {
 }
 
 /**
- * The bundle is built per uiconf and has no versioned path, so it has no SRI
+ * The bundle is built per uiconf and its version is set by the customer admin in KMC, so it has no SRI
  * (docs/adr/0008). It runs in the page origin and can read the KS.
  */
 export const playerScriptUrl = (partnerId: number, uiconfId: number): string =>

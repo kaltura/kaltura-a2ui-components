@@ -39,10 +39,11 @@
   "types": "./dist/types/adapters/react/index.d.ts",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "npm run build:react && npm run build:wc && npm run build:types",
+    "build": "npm run build:react && npm run build:wc && npm run build:types && npm run build:notices",
     "build:react": "BUILD_TARGET=react vite build",
     "build:wc": "BUILD_TARGET=webcomponent vite build",
     "build:types": "tsc -p tsconfig.build.json && node scripts/finalize-types.mjs",
+    "build:notices": "node scripts/gen-notices.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint . && node scripts/check-lint-rules.mjs",

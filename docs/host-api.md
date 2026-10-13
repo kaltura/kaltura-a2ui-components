@@ -37,19 +37,19 @@ setExtraMediaOrigins(['https://media.example.com']);
 
 ## Player and Captions editor
 
-The Player, the Flashcards clips and the Captions editor run in your page. The KS never goes into a URL ([ADR 0008](adr/0008-in-page-player-and-captions-editor.md)). There is no iframe left to sandbox, so the player sandbox option of 0.3 is removed in 0.4.0 ([migration-0.4.md](migration-0.4.md#player-flashcards-and-captions-editor)).
+The Player, the Flashcards clips and the Captions editor run in your page. The KS goes in JavaScript, not in the URL of any script or iframe ([ADR 0008](adr/0008-in-page-player-and-captions-editor.md)). There is no iframe left to sandbox, so the player sandbox option of 0.3 is removed in 0.4.0 ([migration-0.4.md](migration-0.4.md#player-flashcards-and-captions-editor)).
 
 | Widget | How it loads | Where the KS goes |
 |---|---|---|
 | Player, flashcard clips | The `embedPlaykitJs` script of the `uiconfId` from the `cdn` host (table below), then `KalturaPlayer.setup` | The player config, with `useHeaderForKs: true`. Not in any URL |
-| Captions editor | `<serviceUrl>/apps/captionstudio/latest/embed.php` is fetched into a blob URL iframe | `data-*` attributes on that iframe |
+| Captions editor | `<serviceUrl>/apps/captionstudio/v1.3.10/embed.php` is fetched (with `integrity`) into a blob URL iframe | `data-*` attributes on that iframe. The editor's own player requests a `playManifest` URL with the KS in its path ([CSP reports](host-integration.md#rollout)) |
 
 - The script and the editor page run in your page origin and can read the KS and your page. The captions iframe `sandbox` has `allow-same-origin` and `allow-scripts`, so it is not a security boundary. If you need isolation, embed the component in a page on a separate origin, or use a CSP.
-- No SRI. The player bundle is built per uiconf and has no versioned path. The editor page is `latest`.
+- Versions: the player version is the one the customer admin picks for the uiConf in KMC, so the uiConf is the pin. The editor is pinned to `v1.3.10` and checked with `integrity` (page, `main.js`, `main.css`). The player bundle that the editor loads has no integrity: pins cover the first hop only. See [Remote code from Kaltura](host-integration.md#remote-code-from-kaltura).
 - The player adds `KalturaPlayer`, `__kalturaplayerdata` and `regeneratorRuntime` to `window`. Each bundle replaces `KalturaPlayer`, so two uiconfs on one page make the loader load the bundle again when it switches.
 - The uiconf sets the plugins. The `plugins=` URL parameter is gone. `autoplay` and `muted` reach the player only when the prop is set, so the uiconf defaults apply otherwise.
 - The player also reads `kalturaSeekFrom`, `kalturaClipTo` and `kalturaStartTime` from the query string of your page. Those parameters can change which part of a clip plays.
-- CSP: [host-integration.md](host-integration.md#content-security-policy). The Captions editor needs `frame-src blob:` and `connect-src <serviceUrl>`.
+- CSP: [host-integration.md](host-integration.md#content-security-policy). The Player needs `media-src data:` and `worker-src blob:`. The Captions editor needs `frame-src blob:` and `connect-src <serviceUrl>`.
 
 ## Regions
 
@@ -65,7 +65,7 @@ Codes: `nvp1` (default, US), `irp2`, `frp2`, `cap2`, `syp2`. Any other code thro
 | vod | `https://cfvod.kaltura.com` | `https://cfvod.irp2.ovp.kaltura.com` | `https://cfvod.frp2.ovp.kaltura.com` | `https://cfvod.cap2.ovp.kaltura.com` | `https://cfvod.syp2.ovp.kaltura.com` | Flashcards thumbnails |
 | cdn | `https://cdnapisec.kaltura.com` | `https://api.eu.kaltura.com` | `https://api.de.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | Player script, flashcard clips, captions editor `cdnurl` |
 | kmc | `https://kmc.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` | `https://kmc.de.kaltura.com` | `https://kmc.ca.kaltura.com` | `https://kmc.ap.kaltura.com` | Analytics (`/apps/kmc-analytics/latest/index.html`, and the `postMessage` origin) |
-| recorder | `https://www.kaltura.com` | same as cdn | same as cdn | same as cdn | same as cdn | Express Recorder script (`/apps/expressrecorder/latest/express-recorder.js`) |
+| recorder | `https://www.kaltura.com` | same as cdn | same as cdn | same as cdn | same as cdn | Express Recorder script (`/apps/expressrecorder/v2.2.10/express-recorder.js`) |
 
 The guide lists no regional CDN host, so the player script loads from the regional API host shown in the cdn row. The recorder script loads from the recorder host of the row above. It gets the regional API host as `serviceUrl` and the cdn host as `playerUrl`.
 
@@ -119,3 +119,25 @@ setEventHandler(event => {
 | `avatar-disconnected` | `avatar` | `{ reason, instanceId }`. `reason` is a name such as `ConversationEnded`, or `UnknownReason`. `instanceId` is the avatar container id |
 
 The DOM event still fires. `name` comes from the media library or the agent: treat it as untrusted text. A handler that throws is ignored.
+
+## Client functions
+
+The Kaltura catalog replaces the basic `openUrl`. It opens only absolute `https:` URLs. Anything else (a relative URL, `javascript:`, `http:`) is blocked with a console warning. The agent and the error handler get no signal. `copyToClipboard` copies the agent's text without a preview, so treat it as agent output.
+
+## Capability negotiation
+
+An agent that offers catalog choices needs to know which catalogs your client renders. Ask the `MessageProcessor` and send the result in the `a2uiClientCapabilities` field of your request to the agent (A2UI v0.9 [client capabilities](https://a2ui.org/specification/v0_9/client_capabilities.json)):
+
+```ts
+const processor = new MessageProcessor([kalturaReactCatalog]);
+
+const request = {
+  message: userText,
+  // { 'v0.9': { supportedCatalogIds: [KALTURA_CATALOG_ID] } }
+  a2uiClientCapabilities: processor.getRendererCapabilities({ versions: ['v0.9'] }),
+};
+```
+
+- `supportedCatalogIds` lists the id of every catalog you registered. The agent must use one of them in `createSurface`.
+- Add `includeInlineCatalogs: true` to send the full catalog definitions. Only do that for an agent that declares `acceptsInlineCatalogs: true`.
+- `getRendererCapabilities` comes from `@a2ui/web_core` (it replaces `getClientCapabilities`). The transport that carries the field depends on your agent protocol.
