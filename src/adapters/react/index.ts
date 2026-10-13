@@ -133,6 +133,8 @@ export { setRegion, type KalturaRegion } from '../../core/region';
 export {
   setErrorHandler,
   setEventHandler,
+  setPlayerSandbox,
+  PLAYER_SANDBOX_PRESET,
   type KalturaError,
   type KalturaErrorCode,
   type KalturaEvent,

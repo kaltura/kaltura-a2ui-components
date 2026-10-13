@@ -5,6 +5,7 @@ import { toKalturaCdnUrl } from './media-url';
 import { KalturaFlashcardsApi } from '../schemas/flashcards';
 import { LoadError, withValidatedProps } from './validate-props';
 import { kalturaHosts } from './region';
+import { PlayerFrame } from './player';
 
 const GRADIENTS = [
   'radial-gradient(315% 315% at 50% 214%, rgba(0,110,250,0) 0%, rgba(0,110,250,0.5) 100%), #000',
@@ -162,13 +163,7 @@ function ClipPlayer({
   if (!url) return null;
 
   return (
-    <iframe
-      src={url}
-      className="flashcard-clip-player"
-      allow="autoplay *; fullscreen *; encrypted-media *"
-      allowFullScreen
-      title={clip.title ?? 'Video clip'}
-    />
+    <PlayerFrame src={url} className="flashcard-clip-player" title={clip.title ?? 'Video clip'} />
   );
 }
 
