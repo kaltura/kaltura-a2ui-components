@@ -4,9 +4,12 @@
 // basic components, on a MessageProcessor, not as a prop on A2uiSurface:
 //   new MessageProcessor([kalturaReactCatalog])
 
+// Must stay the first import, so it runs before @a2ui/react loads (a2ui#3158).
+import { removeHtmlElementStub } from './html-element-stub';
 import '../../styles/components.css';
 import { Catalog } from '@a2ui/web_core/v0_9';
-import { basicCatalog, type ReactComponentImplementation } from '@a2ui/react/v0_9';
+import { basicCatalog } from '@a2ui/web_core/v0_9/basic_catalog';
+import type { ReactCatalogComponent, ReactComponentImplementation } from '@a2ui/react/v0_9';
 import { kalturaPlayerReactImpl } from './player';
 import { flashcardsReactImpl } from './flashcards';
 import { mediaManagerReactImpl } from './media-manager';
@@ -21,6 +24,9 @@ import { vodAvatarReactImpl } from './vod-avatar';
 import { chartReactImpl } from './chart';
 import { kalturaClientFunctions, SafeOpenUrlImplementation } from '../../catalog/client-functions';
 import { guardBasic } from './basic-media';
+
+// Every import above has run, so @a2ui/react has loaded.
+removeHtmlElementStub();
 
 export const KALTURA_CATALOG_ID = 'https://kaltura.github.io/a2ui/v1/catalog.json';
 
@@ -57,9 +63,10 @@ export const kalturaComponentImpls: ReactComponentImplementation[] = [
  */
 export function buildKalturaCatalog(
   id: string = KALTURA_CATALOG_ID,
-): Catalog<ReactComponentImplementation> {
-  return new Catalog<ReactComponentImplementation>(
+): Catalog<ReactCatalogComponent> {
+  return new Catalog<ReactCatalogComponent>(
     id,
+    'v0.9',
     [...guardedBasics, ...kalturaComponentImpls],
     // Later entries win, so the safe openUrl replaces the basic one.
     [...basicCatalog.functions.values(), ...kalturaClientFunctions, SafeOpenUrlImplementation],
@@ -71,7 +78,7 @@ export function buildKalturaCatalog(
  * `new MessageProcessor([kalturaReactCatalog])`. It already holds the guarded
  * basic components, so do not register `basicCatalog` next to it.
  */
-export const kalturaReactCatalog: Catalog<ReactComponentImplementation> = buildKalturaCatalog();
+export const kalturaReactCatalog: Catalog<ReactCatalogComponent> = buildKalturaCatalog();
 
 /**
  * Fetches a catalog descriptor from `url` and builds a Kaltura catalog keyed by
@@ -82,7 +89,7 @@ export const kalturaReactCatalog: Catalog<ReactComponentImplementation> = buildK
  */
 export async function loadKalturaCatalog(
   url: string,
-): Promise<Catalog<ReactComponentImplementation>> {
+): Promise<Catalog<ReactCatalogComponent>> {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(

@@ -49,6 +49,7 @@ const local = () => ({ base: stamp.cdnBase(TAG, origin), catalogBase: stamp.cdnB
 const publish = (wc: string, bundle: string, tag = TAG) => {
   files.set(cdnPath('dist/kaltura-wc.js', tag), wc);
   files.set(cdnPath('dist/kaltura-react.mjs', tag), bundle);
+  files.set(cdnPath('dist/html-element-stub.mjs', tag), 'export function t() {}');
   files.set(cdnPath('src/catalog/kaltura_catalog.json', tag), stamp.stampCatalog(readCatalogSource(), { tag, wcSri: stamp.sri(wc), reactSri: stamp.sri(bundle) }));
   return hashing.buildHashes({ version: tag.slice(1), read: path => Buffer.from(files.get(cdnPath(path, tag)) ?? '') });
 };
@@ -95,6 +96,17 @@ describe('QA-09: verifyCdn compares the served bytes with the build', () => {
   it('SEC-19: the React bundle is checked too, not only the web component', async () => {
     files.set(cdnPath('dist/kaltura-react.mjs'), 'export const x = 2;');
     expect(await verify.verifyCdn({ ...local(), expected: expected.cdn, retry })).toEqual(expect.arrayContaining([expect.stringContaining('dist/kaltura-react.mjs: served')]));
+  });
+
+  it('SEC-19: the SSR stub that the React bundle imports is checked too', async () => {
+    files.set(cdnPath('dist/html-element-stub.mjs'), 'globalThis.x = 1;');
+    expect(await verify.verifyCdn({ ...local(), expected: expected.cdn, retry })).toEqual([expect.stringContaining('dist/html-element-stub.mjs: served')]);
+  });
+
+  it('QA-09: hashes from a build without the stub (up to v0.2.0) check only the files that build hashed', async () => {
+    const old = Object.fromEntries(Object.entries(expected.cdn).filter(([path]) => path !== 'dist/html-element-stub.mjs'));
+    files.delete(cdnPath('dist/html-element-stub.mjs'));
+    expect(await verify.verifyCdn({ ...local(), expected: old, retry })).toEqual([]);
   });
 
   it('QA-09: a catalog that differs from the build is reported', async () => {
@@ -202,7 +214,7 @@ describe('QA-09: verify-cdn CLI', () => {
 
   it('QA-09: exits 0 when everything matches', async () => {
     const result = await run('--tag', TAG, '--hashes', hashFile());
-    expect([result.status, result.stdout]).toEqual([0, expect.stringContaining('OK 3 files on jsDelivr match the build')]);
+    expect([result.status, result.stdout]).toEqual([0, expect.stringContaining('OK the files on jsDelivr match the build')]);
   });
 
   it('QA-09: exits 1 and names the file when a byte changed', async () => {

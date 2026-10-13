@@ -58,9 +58,9 @@ npm i github:kaltura/kaltura-a2ui-components#v0.2.0 @a2ui/react @a2ui/web_core z
 
 npm installs it as `@kaltura/a2ui-react`, so imports use that name. Your `package.json` gets `"@kaltura/a2ui-react": "github:kaltura/kaltura-a2ui-components#v0.2.0"`. The tag holds the built `dist/`, so nothing builds on install.
 
-The package needs these peers: `@a2ui/react ^0.11.1`, `@a2ui/web_core ^0.11.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`. Entries: `@kaltura/a2ui-react` (React), `@kaltura/a2ui-react/webcomponent` (script bundle) and `@kaltura/a2ui-react/catalog` (the catalog JSON).
+The package needs these peers: `@a2ui/react ^0.13.0`, `@a2ui/web_core ^0.13.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`. Entries: `@kaltura/a2ui-react` (React), `@kaltura/a2ui-react/webcomponent` (script bundle) and `@kaltura/a2ui-react/catalog` (the catalog JSON). In Node (SSR, tests), import `@kaltura/a2ui-react` before `@a2ui/react`: see [docs/host-integration.md](docs/host-integration.md#server-imports-ssr).
 
-`@a2ui/react` 0.11.1 brings in `dompurify` 3.4.11, which has published advisories. Override it in your `package.json` (pnpm: `pnpm.overrides`, Yarn: `resolutions`). Details: [docs/host-integration.md](docs/host-integration.md#dompurify-override).
+`@a2ui/react` 0.13 brings in `dompurify` 3.4.11 through `@a2ui/markdown-it`, which has published advisories. Override it in your `package.json` (pnpm: `pnpm.overrides`, Yarn: `resolutions`). Details: [docs/host-integration.md](docs/host-integration.md#dompurify-override).
 
 ```json
 { "overrides": { "dompurify": "^3.4.17" } }
@@ -100,11 +100,11 @@ Tags up to `v0.1.4` serve the old bundles, without the 0.2.0 fixes or host funct
 
 <!-- check-examples: expect h4.kaltura-chart-title; text:Cell -->
 ```tsx
+import { KALTURA_CATALOG_ID, kalturaReactCatalog, setKsProvider } from '@kaltura/a2ui-react'; // before @a2ui/react
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { A2uiSurface } from '@a2ui/react/v0_9';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { KALTURA_CATALOG_ID, kalturaReactCatalog, setKsProvider } from '@kaltura/a2ui-react';
 
 // The host mints the Kaltura Session. Agent messages never carry it.
 setKsProvider(() => undefined); // replace with your KS call

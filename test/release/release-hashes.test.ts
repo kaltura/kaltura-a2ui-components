@@ -14,8 +14,8 @@ const { hashes, stamp } = await loadScripts();
 describe('SEC-19: buildHashes', () => {
   const built = hashes.buildHashes({ version: '0.2.0', read: path => Buffer.from(`bytes of ${path}`) });
 
-  it('SEC-19: covers both bundles and the catalog', () => {
-    expect(Object.keys(built.cdn)).toEqual(['dist/kaltura-wc.js', 'dist/kaltura-react.mjs', 'src/catalog/kaltura_catalog.json']);
+  it('SEC-19: covers both bundles, the SSR stub and the catalog', () => {
+    expect(Object.keys(built.cdn)).toEqual(['dist/kaltura-wc.js', 'dist/kaltura-react.mjs', 'dist/html-element-stub.mjs', 'src/catalog/kaltura_catalog.json']);
   });
 
   it('SEC-19: uses sha384 SRI for CDN files', () => {

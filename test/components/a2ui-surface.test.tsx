@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vite
 import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { A2uiSurface } from '@a2ui/react/v0_9';
+import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
 import { CASES, installRemote, remote, resetFakes, settle, expectInert, type Case } from './cases';
 
 vi.setConfig({ testTimeout: 30000, hookTimeout: 60000 });
@@ -35,7 +35,7 @@ afterEach(() => {
 });
 
 async function surface(c: Case, props: Record<string, unknown>) {
-  const processor = new MessageProcessor([kalturaReactCatalog]);
+  const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatalog]);
   // The A2UI schema check may refuse a bad shape before anything mounts.
   try {
     processor.processMessages([

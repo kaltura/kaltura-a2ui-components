@@ -35,7 +35,7 @@ gh attestation verify kaltura-wc.js --repo kaltura/kaltura-a2ui-components \
   --source-ref refs/heads/main --deny-self-hosted-runners
 ```
 
-`kaltura-react.mjs`, `kaltura_catalog.json` and `dist.tar.gz` are attested too. The attestation names the `main` commit the release was built from. The tag points to a release commit on top of it, which adds only `dist/` and the stamped catalog.
+`kaltura-react.mjs`, `kaltura_catalog.json` and `dist.tar.gz` are attested too. Releases after 0.2.0 also attest `html-element-stub.mjs`, which `kaltura-react.mjs` imports ([ADR 0007](adr/0007-ssr-html-element-stub.md)). The attestation names the `main` commit the release was built from. The tag points to a release commit on top of it, which adds only `dist/` and the stamped catalog.
 
 ## 3. Release assets
 

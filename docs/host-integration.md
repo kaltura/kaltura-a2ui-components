@@ -20,11 +20,24 @@ All seven functions come from `@kaltura/a2ui-react`. The script-tag bundle has t
 const processor = new MessageProcessor([kalturaReactCatalog]);
 ```
 
-`kalturaReactCatalog` already holds the basic components. Do not register `basicCatalog` next to it. The agent picks a catalog by id in `createSurface`. Importing the package guards the shared `basicCatalog` in place, so an agent that picks it still gets the [media URL check](#media-urls) and the markdown filter. A catalog you build yourself from the raw basic components, or from a second copy of `@a2ui/react`, is not guarded. To keep the basic catalog id for older agents, register `buildKalturaCatalog(basicCatalog.id)` in its place.
+`kalturaReactCatalog` already holds the basic components. Do not register `basicCatalog` next to it. The agent picks a catalog by id in `createSurface`. Importing the package guards the shared `basicCatalog` in place, so an agent that picks it still gets the [media URL check](#media-urls) and the markdown filter. A catalog you build yourself from the raw basic components, or from a second copy of `@a2ui/web_core`, is not guarded. To keep the basic catalog id for older agents, register `buildKalturaCatalog(basicCatalog.id)` in its place. Since 0.13, `basicCatalog` comes from `@a2ui/web_core/v0_9/basic_catalog`, not `@a2ui/react`.
+
+## Server imports (SSR)
+
+`@a2ui/react` 0.13.0 throws `HTMLElement is not defined` when Node imports it ([a2ui#3158](https://github.com/a2ui-project/a2ui/issues/3158)). The package works around it ([ADR 0007](adr/0007-ssr-html-element-stub.md)). In Node, import `@kaltura/a2ui-react` before anything that imports `@a2ui/react`:
+
+```ts
+import { kalturaReactCatalog } from '@kaltura/a2ui-react'; // first
+import { A2uiSurface } from '@a2ui/react/v0_9';
+```
+
+This makes the import work. It does not make surfaces render on the server: `A2uiSurface` renders in the browser only. Browsers and jsdom need no import order.
+
+If you load `kaltura-react.mjs` from jsDelivr with an import map and `integrity`, add the Release's hash for `dist/html-element-stub.mjs` too. The bundle imports it.
 
 ## DOMPurify override
 
-`@a2ui/react` 0.11.1 depends on `@a2ui/markdown-it` 0.1.2, which pins `dompurify` 3.4.11. That version has published advisories, all fixed by 3.4.16. Your install gets it through `@a2ui/react`, with or without this package. Our ESM bundle carries its own patched copy, but your app uses yours, for example in the markdown renderer you pass to `MarkdownContext`. Override it in `package.json`, to the range this repo uses:
+`@a2ui/react` 0.13 depends on `@a2ui/markdown-it` 0.2.1, which pins `dompurify` 3.4.11. That version has published advisories, all fixed by 3.4.16. Your install gets it through `@a2ui/react`, with or without this package. Our ESM bundle carries its own patched copy, but your app uses yours, for example in the markdown renderer you pass to `MarkdownContext`. Override it in `package.json`, to the range this repo uses:
 
 ```json
 { "overrides": { "dompurify": "^3.4.17" } }
