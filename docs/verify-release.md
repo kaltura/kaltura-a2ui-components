@@ -24,6 +24,8 @@ curl -sL https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist
 
 It must equal the `dist/kaltura-wc.js` value in the Release's `hashes.json`, after `sha384-`.
 
+The same holds for `kaltura-react.mjs`. It imports `html-element-stub.mjs`, so pin that file too. From the release after 0.3.0, the catalog `x-kaltura-adapters.react` has `integrity` for the bundle and `stubIntegrity` for the stub, next to `cdn` and `stubCdn`. Each equals the `hashes.json` value of its file. Catalogs of 0.3.0 and older have no stub keys: take the stub hash from `hashes.json`.
+
 ## 2. Build provenance
 
 Needs the GitHub CLI, logged in (`gh auth login`).

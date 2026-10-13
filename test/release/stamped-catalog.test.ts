@@ -19,6 +19,7 @@ function workspace() {
   const dir = mkdtempSync(join(tmpdir(), 'stamped-'));
   writeFileSync(join(dir, 'kaltura-wc.js'), 'wc bytes');
   writeFileSync(join(dir, 'kaltura-react.mjs'), 'react bytes');
+  writeFileSync(join(dir, 'html-element-stub.mjs'), 'stub bytes');
   copyFileSync(SOURCE_PATH, join(dir, 'catalog.json'));
   return { dir, catalog: join(dir, 'catalog.json') };
 }
@@ -32,6 +33,7 @@ describe('QA-09: real stamp script on the real catalog', () => {
     tag: TAG,
     wcSri: stamp.sri('wc bytes'),
     reactSri: stamp.sri('react bytes'),
+    stubSri: stamp.sri('stub bytes'),
   };
 
   it('QA-09: the stamp script succeeds', () => {
@@ -46,14 +48,20 @@ describe('QA-09: real stamp script on the real catalog', () => {
     expect(verifyStamp.checkStamped(stamped, expected)).toEqual([]);
   });
 
-  it('SEC-19: both bundles carry the SRI of the built files', () => {
-    const { react, webcomponent } = JSON.parse(stamped)['x-kaltura-adapters'] as Record<string, { integrity: string }>;
-    expect([react?.integrity, webcomponent?.integrity]).toEqual([expected.reactSri, expected.wcSri]);
+  it('SEC-19: both bundles and the stub carry the SRI of the built files', () => {
+    const { react, webcomponent } = JSON.parse(stamped)['x-kaltura-adapters'] as Record<string, Record<string, string>>;
+    expect([react?.integrity, webcomponent?.integrity, react?.stubIntegrity]).toEqual([expected.reactSri, expected.wcSri, expected.stubSri]);
   });
 
   it('QA-09: the release check CLI exits 0 on the stamped file', () => {
     const result = cli('scripts/release-verify-stamp.mjs', dir, catalog);
     expect([result.status, result.stdout]).toEqual([0, expect.stringContaining('is stamped for v0.2.0')]);
+  });
+
+  it('SEC-19: the release check CLI exits 1 when the stub changed after stamping', () => {
+    writeFileSync(join(dir, 'html-element-stub.mjs'), 'other stub');
+    const result = cli('scripts/release-verify-stamp.mjs', dir, catalog);
+    expect([result.status, result.stderr]).toEqual([1, expect.stringContaining('FAIL react.stubIntegrity')]);
   });
 
   it('QA-09: the release check CLI exits 1 when the bundle changed after stamping', () => {
@@ -64,7 +72,7 @@ describe('QA-09: real stamp script on the real catalog', () => {
 });
 
 describe('QA-09: the release check is not blind', () => {
-  const expected = { tag: TAG, wcSri: 'sha384-wc', reactSri: 'sha384-react' };
+  const expected = { tag: TAG, wcSri: 'sha384-wc', reactSri: 'sha384-react', stubSri: 'sha384-stub' };
 
   it('QA-09: the unstamped source fails it', () => {
     expect(verifyStamp.checkStamped(SOURCE, expected).length).toBeGreaterThan(0);
@@ -73,6 +81,11 @@ describe('QA-09: the release check is not blind', () => {
   it('QA-09: a placeholder in a description is caught', () => {
     const stamped = stamp.stampCatalog(SOURCE, expected).replace('"description": "Where', '"description": "__RELEASE_TAG__ Where');
     expect(verifyStamp.checkStamped(stamped, expected)).toEqual([expect.stringContaining('__RELEASE_TAG__')]);
+  });
+
+  it('SEC-19: a wrong stub URL or stub integrity is caught', () => {
+    const stamped = stamp.stampCatalog(SOURCE, expected).replace('dist/html-element-stub.mjs', 'dist/other.mjs').replace('"sha384-stub"', '"sha384-evil"');
+    expect(verifyStamp.checkStamped(stamped, expected)).toEqual([expect.stringContaining('react.stubCdn is'), expect.stringContaining('react.stubIntegrity is sha384-evil')]);
   });
 
   it('QA-09: an install line for another tag is caught', () => {

@@ -27,10 +27,10 @@ export interface ReleaseScripts {
     GH_REPO: string;
     sri(bytes: Uint8Array | string, algorithm?: string): string;
     cdnBase(tag: string, origin?: string): string;
-    stampCatalog(text: string, options: { tag: string; base?: string; wcSri: string; reactSri: string }): string;
+    stampCatalog(text: string, options: { tag: string; base?: string; wcSri: string; reactSri: string; stubSri: string }): string;
   };
   verifyStamp: {
-    checkStamped(text: string, options: { tag: string; base?: string; wcSri: string; reactSri: string }): string[];
+    checkStamped(text: string, options: { tag: string; base?: string; wcSri: string; reactSri: string; stubSri: string }): string[];
   };
   hashes: {
     CDN_FILES: string[];

@@ -9,8 +9,8 @@ import { parseArgs } from 'node:util';
 import { parseTag } from './release-check.mjs';
 import { GH_REPO, cdnBase, sri } from './stamp-catalog.mjs';
 
-/** Returns the problems of a stamped catalog text. `reactSri` and `wcSri` are the expected hashes. */
-export function checkStamped(text, { tag, base = cdnBase(tag), wcSri, reactSri }) {
+/** Returns the problems of a stamped catalog text. `wcSri`, `reactSri` and `stubSri` are the expected hashes. */
+export function checkStamped(text, { tag, base = cdnBase(tag), wcSri, reactSri, stubSri }) {
   const problems = [];
   const placeholders = [...new Set(text.match(/__[A-Z][A-Z0-9_]*__/g) ?? [])];
   if (placeholders.length > 0) problems.push(`placeholder left in the catalog: ${placeholders.join(', ')}`);
@@ -18,6 +18,8 @@ export function checkStamped(text, { tag, base = cdnBase(tag), wcSri, reactSri }
   const expected = [
     ['react.cdn', react.cdn, `${base}dist/kaltura-react.mjs`],
     ['react.integrity', react.integrity, reactSri],
+    ['react.stubCdn', react.stubCdn, `${base}dist/html-element-stub.mjs`],
+    ['react.stubIntegrity', react.stubIntegrity, stubSri],
     ['react.install', react.install, `npm i github:${GH_REPO}#${tag}`],
     ['webcomponent.cdn', webcomponent.cdn, `${base}dist/kaltura-wc.js`],
     ['webcomponent.integrity', webcomponent.integrity, wcSri],
@@ -41,6 +43,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
       tag,
       wcSri: sri(readFileSync(join(values.dist, 'kaltura-wc.js'))),
       reactSri: sri(readFileSync(join(values.dist, 'kaltura-react.mjs'))),
+      stubSri: sri(readFileSync(join(values.dist, 'html-element-stub.mjs'))),
     });
     if (problems.length > 0) {
       for (const problem of problems) console.error(`FAIL ${problem}`);
