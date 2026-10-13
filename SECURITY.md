@@ -45,6 +45,7 @@ The host controls are in [docs/host-integration.md](docs/host-integration.md):
 - `setKsProvider`: a server-minted, least-privilege KS per widget ([docs/ks-privileges.md](docs/ks-privileges.md), [docs/security/ks.md](docs/security/ks.md)).
 - `setExtraAllowedOrigins`: Unisphere origins beyond the five Kaltura regions. Each one runs code with your page origin.
 - `setExtraMediaOrigins`: hosts for the basic Image, Video and AudioPlayer.
+- `setAllowedPartners` and `setAllowedUiconfs`: the account and player ids the agent may pick. Owning a uiconf means running code in your page origin with your KS, so set both to your own ids. They default to open ([docs/host-api.md](docs/host-api.md#allowed-partners-and-uiconfs)).
 - Register the Kaltura catalog alone. Importing the package guards the shared `basicCatalog` in place, so an agent that picks it by id gets the same checks. A catalog you build yourself from the raw basic components, or from a second copy of `@a2ui/web_core`, is not guarded.
 
 What the package does on its own:

@@ -7,6 +7,7 @@ import { withKs } from './ks';
 import { KalturaFailure, reportError } from './host-hooks';
 import { renderLoadError } from './render-load-error';
 import { loadPlayerScript, type PlayerHandle } from './player-script';
+import { refusedIdProp } from './allowed-ids';
 
 export interface PlayerCoreProps {
   partnerId: number;
@@ -50,10 +51,11 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
   const { partnerId, uiconfId, entryId, ks, autoplay, muted, seekFrom, clipTo, widget } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const invalid = invalidProp(props);
+  const refused = invalid ? undefined : refusedIdProp(props);
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || invalid) return;
+    if (!container || invalid || refused) return;
 
     let cancelled = false;
     let player: PlayerHandle | undefined;
@@ -113,9 +115,10 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
       destroy();
       container.replaceChildren();
     };
-  }, [partnerId, uiconfId, entryId, ks, autoplay, muted, seekFrom, clipTo, widget, invalid]);
+  }, [partnerId, uiconfId, entryId, ks, autoplay, muted, seekFrom, clipTo, widget, invalid, refused]);
 
   if (invalid) return <LoadError widget={widget}>{`Failed to load player: Invalid ${invalid}`}</LoadError>;
+  if (refused) return <LoadError widget={widget} code="origin-not-allowed">{`Failed to load player: ${refused} is not allowed`}</LoadError>;
   return <div ref={containerRef} className={props.className} style={props.style} role="region" aria-label={props.title} />;
 }
 
