@@ -107,9 +107,9 @@ describe('SEC-09: release.yml jobs', () => {
     expect(['.webcomponent.integrity == $h[0].cdn["dist/kaltura-wc.js"]', '.react.integrity == $h[0].cdn["dist/kaltura-react.mjs"]', '.react.stubIntegrity == $h[0].cdn["dist/html-element-stub.mjs"]'].filter(text => !job.includes(text))).toEqual([]);
   });
 
-  it('SEC-09: the tag is pushed with the release App token when one is set, and the App key is read only there', () => {
+  it('SEC-09: the tag is pushed over SSH with the release deploy key, which is read only in that step', () => {
     const job = releaseJobs['release'] ?? '';
-    expect([job.includes('GH_TOKEN: ${{ steps.app.outputs.token || github.token }}'), job.includes('permission-contents: write'), release.match(/RELEASE_APP_PRIVATE_KEY/g)?.length]).toEqual([true, true, 1]);
+    expect([job.includes('StrictHostKeyChecking=yes'), job.includes('git push "$origin" "refs/tags/$TAG"'), release.match(/RELEASE_TAG_KEY/g)?.length]).toEqual([true, true, 1]);
   });
 
   it('SEC-09: there is no npm publish, no npm token and no registry', () => {
@@ -123,7 +123,7 @@ describe('SEC-09: release.yml jobs', () => {
 
 describe('QA-09: tags never move and dist/ is never committed to main', () => {
   it('QA-09: the only push is the tag', () => {
-    expect([...release.matchAll(/git push[^\n]*/g)].map(match => match[0])).toEqual(['git push origin "refs/tags/$TAG"']);
+    expect([...release.matchAll(/git push[^\n]*/g)].map(match => match[0])).toEqual(['git push "$origin" "refs/tags/$TAG"']);
   });
 
   it('QA-09: release.yml has no force flag and never names main in a git write', () => {
