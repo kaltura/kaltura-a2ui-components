@@ -10,6 +10,7 @@ Short records of decisions that affect security or the public contract. One file
 | [0004](0004-npm-first-distribution.md) | Distribution: jsDelivr from git tags, no npm | accepted |
 | [0005](0005-analytics-and-recorder-integration.md) | Analytics and recorder integration | proposed |
 | [0006](0006-catalog-generation.md) | Catalog generation | accepted |
+| [0007](0007-ssr-html-element-stub.md) | HTMLElement stub for Node imports (a2ui#3158) | accepted |
 
 ## Template
 

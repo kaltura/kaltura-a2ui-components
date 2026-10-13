@@ -4,7 +4,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { A2uiSurface } from '@a2ui/react/v0_9';
+import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
 import { mount } from '../helpers/render';
 import { setKsProvider, type KsWidget } from '../../src/core/ks';
 import { kalturaReactCatalog, KALTURA_CATALOG_ID } from '../../src/adapters/react/index';
@@ -101,7 +101,7 @@ describe('SEC-05: setKsProvider supplies the KS', () => {
 
   it('SEC-05: the real A2UI pipeline renders a component the agent sent without ks', async () => {
     setKsProvider(() => HOST_KS);
-    const processor = new MessageProcessor([kalturaReactCatalog]);
+    const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatalog]);
     processor.processMessages([
       { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
       { version: 'v0.9', updateComponents: { surfaceId: 's', components: [{ id: 'root', component: 'KalturaAnalytics', partnerId: 1 }] } },

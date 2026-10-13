@@ -50,7 +50,7 @@ if (sources.iife !== undefined) {
 // @a2ui/markdown-it pins dompurify 3.4.11 (advisories up to 3.4.15), so
 // externalising it would hand hosts the vulnerable copy (SEC-23).
 const peerLibraries = /node_modules\/(@a2ui\/(react|web_core)|zod)\//;
-const peerSpecifiers = ['@a2ui/react/v0_9', '@a2ui/web_core/v0_9', 'zod'];
+const peerSpecifiers = ['@a2ui/react/v0_9', '@a2ui/web_core/v0_9', '@a2ui/web_core/v0_9/basic_catalog', 'zod'];
 const maps = {};
 for (const [kind, file] of Object.entries(bundles)) {
   const path = join(dist, `${file}.map`);
@@ -78,6 +78,20 @@ if (sources.esm !== undefined) {
     if (!new RegExp(`from\\s*["']${specifier}["']`).test(sources.esm)) {
       fail('ESM-PEERS', `dist/${bundles.esm} does not import "${specifier}" from the host.`);
     }
+  }
+}
+// a2ui#3158 (ADR 0007): @a2ui/react 0.13 needs HTMLElement when it loads. The
+// stub file must be the ESM's first import, so it runs before every peer, and
+// it must load Lit (through the basic catalog) before it defines the stub.
+if (sources.esm !== undefined) {
+  const imports = (source) => [...source.matchAll(/^import\b[^"']*["']([^"']+)["']/gm)].map((m) => m[1]);
+  const stubPath = join(dist, 'html-element-stub.mjs');
+  const stubImports = existsSync(stubPath) ? imports(readFileSync(stubPath, 'utf8')) : [];
+  if (imports(sources.esm)[0] !== './html-element-stub.mjs') {
+    fail('ESM-SSR-STUB', `dist/${bundles.esm} does not import ./html-element-stub.mjs first. @a2ui/react would load in Node without it.`);
+  }
+  if (stubImports.join() !== '@a2ui/web_core/v0_9/basic_catalog') {
+    fail('ESM-SSR-STUB', `dist/html-element-stub.mjs must import only @a2ui/web_core/v0_9/basic_catalog, found [${stubImports.join(', ')}].`);
   }
 }
 if (maps.iife !== undefined) {

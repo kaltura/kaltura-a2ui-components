@@ -67,6 +67,10 @@ export default defineConfig({
           output: {
             // Shipped maps keep the mappings but not the source text.
             sourcemapExcludeSources: true,
+            // a2ui#3158 (ADR 0007): inlined code runs after the external
+            // imports, so the stub gets its own file to run before @a2ui/react.
+            codeSplitting: { groups: [{ name: 'html-element-stub', test: /html-element-stub\.ts$/ }] },
+            chunkFileNames: '[name].mjs',
             globals: {
               react: 'React',
               'react-dom': 'ReactDOM',

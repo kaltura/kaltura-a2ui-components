@@ -7,7 +7,7 @@ import {
   kalturaComponentImpls,
   kalturaClientFunctions,
 } from '../src/adapters/react/index';
-import { basicCatalog } from '@a2ui/react/v0_9';
+import { basicCatalog } from '@a2ui/web_core/v0_9/basic_catalog';
 
 const ALL_COMPONENTS = [
   'KalturaPlayer',

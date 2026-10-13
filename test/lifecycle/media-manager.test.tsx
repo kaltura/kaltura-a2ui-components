@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { A2uiSurface } from '@a2ui/react/v0_9';
+import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
 import { URL_A, URL_B, loaderUrl, gate, render, fakeWorkspaceModule, errorSpy, tick, type MountedVisual } from './harness';
 
 const base = { partnerId: 1, ks: 'ks-1', serverUrl: URL_A };
@@ -263,7 +263,7 @@ describe('SEC-18: an agent cannot set legacyDocumentEvents', () => {
   async function agentSurface(extra: Record<string, unknown>) {
     vi.doMock(loaderUrl(URL_A), () => fakeWorkspaceModule({ log, configs, visuals }));
     const { kalturaReactCatalog, KALTURA_CATALOG_ID } = await import('../../src/adapters/react/index');
-    const processor = new MessageProcessor([kalturaReactCatalog]);
+    const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatalog]);
     processor.processMessages([
       { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
       {
