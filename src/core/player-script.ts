@@ -10,9 +10,11 @@ export interface PlayerSetupConfig {
 
 export interface PlayerHandle {
   destroy?: () => void;
-  loadMedia?: (info: { entryId: string }, options?: { seekFrom?: number; clipTo?: number }) => Promise<unknown>;
+  loadMedia?: (info: { entryId: string }, options?: { startTime?: number }) => Promise<unknown>;
   addEventListener?: (type: string, listener: (event: unknown) => void) => void;
-  Event?: { ERROR?: string };
+  pause?: () => void;
+  currentTime?: number;
+  Event?: { ERROR?: string; TIME_UPDATE?: string };
 }
 
 export interface PlayerApi {
