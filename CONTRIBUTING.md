@@ -58,9 +58,9 @@ Copy this into your PR (the PR template has it). Agent output is untrusted input
 
 - [ ] Every new prop has a zod rule, and a hostile value shows a plain-text error.
 - [ ] No `innerHTML`, `dangerouslySetInnerHTML`, `srcdoc`, `eval`, `new Function` or `document.write`. Markdown goes through `src/core/safe-markdown.ts`.
-- [ ] Remote code loads only through `src/core/unisphere-loader.ts`, behind the allowlist.
+- [ ] Remote code loads only through a fixed loader (`src/core/unisphere-loader.ts` behind the allowlist, `src/core/recorder-script.ts`, `src/core/player-script.ts`) or the captions editor fetch, from a Kaltura host.
 - [ ] Every URL built from props encodes its values and starts from a fixed Kaltura host.
-- [ ] The KS never appears in props, the data model, logs, error text or `setErrorHandler` messages.
+- [ ] The KS never appears in props, the data model, logs, error text, `setErrorHandler` messages or a URL.
 - [ ] Error text is fixed. It holds no prop value and no remote error text.
 - [ ] A new host option is a function the host calls. It is never a prop an agent can set.
 - [ ] A new iframe has the smallest `allow` list it needs.

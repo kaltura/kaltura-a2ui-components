@@ -4,6 +4,8 @@
 import { vi, expect } from 'vitest';
 import { act, type ComponentType } from 'react';
 import { setKsProvider } from '../../src/core/ks';
+import { playerRemote, type PlayerRemote } from '../helpers/player-remote';
+import { captionsRemote, type CaptionsRemote } from '../helpers/captions-remote';
 
 export const URL_A = 'https://unisphere.nvp1.ovp.kaltura.com/v1';
 export const LOADER_URL = 'https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js';
@@ -61,7 +63,18 @@ export function installRemote(): void {
   }));
 }
 
+/**
+ * The fake Kaltura Player bundle and the fake captions editor page. Replaced by `resetFakes`.
+ * The player script is added once per module cache, so check `created` and not the script tags.
+ */
+export const fakes = {} as { player: PlayerRemote & { restore: () => void }; captions: CaptionsRemote };
+
 export function resetFakes(): void {
+  // Restore first: a second spy on `document.head.append` would call itself.
+  fakes.player?.restore();
+  fakes.captions?.restore();
+  fakes.player = playerRemote();
+  fakes.captions = captionsRemote();
   remote.log = [];
   remote.failWith = null;
   // The avatar and analytics take their KS from the provider only. The others fall back to their ks prop.
@@ -80,13 +93,10 @@ export async function settle(): Promise<void> {
 export function expectInert(el: Element): void {
   expect(el.querySelector('script,[onerror],[onload],[onclick],img[src="x"]')).toBeNull();
   expect((window as { __pwned?: unknown }).__pwned).toBeUndefined();
-  // Hostile text never reaches an iframe URL raw. Every iframe is sandboxed except
-  // the player and clip ones (a sandbox breaks downloads and Cast/Presentation).
+  // Hostile text never reaches an iframe URL raw, and every iframe is sandboxed.
+  // The player and the flashcards clips have no iframe: their script builds its UI in our container.
   const frames = [...el.querySelectorAll('iframe')];
-  const unsandboxed = (f: Element) => f.matches('.flashcard-clip-player') || !!f.closest('.kaltura-player-container');
-  expect(frames.map(f => [/[<"\s]/.test(f.getAttribute('src') ?? ''), f.hasAttribute('sandbox') !== unsandboxed(f)])).toEqual(
-    frames.map(() => [false, true]),
-  );
+  expect(frames.map(f => [/[<"\s]/.test(f.getAttribute('src') ?? ''), f.hasAttribute('sandbox')])).toEqual(frames.map(() => [false, true]));
 }
 
 const ok = { partnerId: 1, ks: 'ks-1', serverUrl: URL_A };
@@ -157,7 +167,9 @@ export const CASES: Case[] = [
     valid: { partnerId: 1, uiconfId: 2, entryId: '0_abc' },
     invalid: { partnerId: 1, uiconfId: 2, entryId: PAYLOAD },
     hostile: { partnerId: 1, uiconfId: 2, entryId: '0_abc', entryName: PAYLOAD, entryDescription: PAYLOAD },
-    happy: el => expect(iframeSrc(el)).toContain('/partner_id/1/uiconf_id/2'),
+    happy: el => expect([el.querySelectorAll('[role="region"] .fake-player-ui').length, el.querySelectorAll('iframe').length]).toEqual([1, 0]),
+    effect: () => expect(fakes.player.log).toEqual(['setup', 'loadMedia']),
+    afterUnmount: () => expect(fakes.player.log).toEqual(['setup', 'loadMedia', 'destroy']),
   },
   {
     name: 'flashcards',
@@ -188,7 +200,9 @@ export const CASES: Case[] = [
     valid: { partnerId: 1, ks: 'ks-1', entryId: '0_abc' },
     invalid: { partnerId: 1, ks: 'ks-1', entryId: PAYLOAD },
     hostile: { partnerId: 1, ks: PAYLOAD, entryId: '0_abc' },
-    happy: el => expect(iframeSrc(el)).toContain('entryid=0_abc'),
+    happy: el => expect(el.querySelector('iframe')?.getAttribute('data-entryid')).toBe('0_abc'),
+    effect: () => expect(fakes.captions.blobs).toHaveLength(1),
+    afterUnmount: () => expect(fakes.captions.revoked).toEqual(fakes.captions.blobs),
   },
   {
     name: 'recorder',

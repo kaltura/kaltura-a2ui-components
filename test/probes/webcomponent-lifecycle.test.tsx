@@ -2,6 +2,7 @@
 // Turns green: plan item 2.1 (defineKalturaElement helper).
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act } from 'react';
+import { playerRemote } from '../helpers/player-remote';
 
 type KalturaElement = HTMLElement & { config: Record<string, unknown> };
 
@@ -14,13 +15,16 @@ afterEach(() => {
 
 describe('QA-01: web component lifecycle', () => {
   it('QA-01: config set after the element is connected still renders', async () => {
+    const player = playerRemote();
     await import('../../src/adapters/webcomponent/index');
     const el = create('kaltura-player');
     document.body.appendChild(el);
     await settle();
     el.config = { partnerId: 123, uiconfId: 456, entryId: '1_abc' };
     await settle();
-    expect(el.querySelector('iframe')?.getAttribute('src') ?? '').toContain('partner_id/123');
+    await player.ready();
+    player.restore();
+    expect(player.created.map(created => created.config.provider.partnerId)).toEqual([123]);
   });
 
   it('QA-01: removing the element unmounts its React root', async () => {

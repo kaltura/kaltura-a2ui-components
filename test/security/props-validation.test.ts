@@ -6,6 +6,8 @@ import { createRoot } from 'react-dom/client';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
 import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
 import { mount } from '../helpers/render';
+import { playerRemote } from '../helpers/player-remote';
+import { captionsRemote } from '../helpers/captions-remote';
 import { checkProps } from '../../src/core/validate-props';
 import { setKsProvider } from '../../src/core/ks';
 import { kalturaReactCatalog, KALTURA_CATALOG_ID } from '../../src/adapters/react/index';
@@ -50,8 +52,16 @@ vi.mock('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js', () => (
 };
 
 // The avatar and analytics take their KS from the provider only. The others fall back to their ks prop.
-beforeEach(() => setKsProvider(widget => (widget === 'avatar' || widget === 'analytics' ? 'dummy-ks' : undefined)));
+let player: ReturnType<typeof playerRemote>;
+let captions: ReturnType<typeof captionsRemote>;
+beforeEach(() => {
+  setKsProvider(widget => (widget === 'avatar' || widget === 'analytics' ? 'dummy-ks' : undefined));
+  player = playerRemote();
+  captions = captionsRemote();
+});
 afterEach(() => {
+  player.restore();
+  captions.restore();
   setKsProvider(undefined);
   document.body.innerHTML = '';
   calls.loader = 0;
@@ -360,11 +370,12 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
   const bound = { ks: { path: '/session/ks' } };
 
   it('SEC-03: a KS bound from the host session renders the player', async () => {
-    const container = await renderSurface(
+    await renderSurface(
       { component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: '0_abc', ...bound },
       session,
     );
-    expect(container.querySelector('iframe')!.getAttribute('src')).toContain('ks=ks-from-host');
+    await player.ready();
+    expect(player.created[0].config.provider.ks).toBe('ks-from-host');
   });
 
   it('SEC-03: an unset optional binding does not fail the component', async () => {
@@ -390,6 +401,8 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
         { version: 'v0.9', updateDataModel: { surfaceId: 's', path: '/session', value: { ks: 'late-ks' } } },
       ] as never);
     });
+    await captions.ready();
+    await act(async () => {});
     expect([container.querySelectorAll('iframe').length, container.querySelectorAll('[role="alert"]').length]).toEqual([1, 0]);
   });
 

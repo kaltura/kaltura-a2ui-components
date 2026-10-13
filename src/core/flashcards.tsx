@@ -5,7 +5,7 @@ import { toKalturaCdnUrl } from './media-url';
 import { KalturaFlashcardsApi } from '../schemas/flashcards';
 import { LoadError, withValidatedProps } from './validate-props';
 import { kalturaHosts } from './region';
-import { PlayerFrame } from './player';
+import { PlayerEmbed } from './player';
 import { withKs } from './ks';
 
 const GRADIENTS = [
@@ -41,28 +41,6 @@ export interface FlashcardsCoreProps {
   partnerId?: number;
   uiconfId?: number;
   ks?: string;
-}
-
-/**
- * Pure helper: builds the clip iframe embed URL.
- * Returns an empty string when partnerId, uiconfId or entryId is missing or invalid.
- */
-export function buildClipUrl(
-  clip: Clip,
-  partnerId?: number,
-  uiconfId?: number,
-  ks?: string,
-): string {
-  if (!isPositiveInt(partnerId) || !isPositiveInt(uiconfId) || !isEntryId(clip.entryId)) return '';
-  const base = `${kalturaHosts().cdn}/p/${encodeURIComponent(partnerId)}/embedPlaykitJs/partner_id/${encodeURIComponent(partnerId)}/uiconf_id/${encodeURIComponent(uiconfId)}`;
-  const params = new URLSearchParams({
-    iframeembed: 'true',
-    entry_id: clip.entryId,
-    kalturaSeekFrom: String(Math.round(clip.startTime)),
-    kalturaClipTo: String(Math.round(clip.endTime)),
-  });
-  if (ks) params.set('ks', ks);
-  return `${base}?${params}`;
 }
 
 /**
@@ -150,21 +128,27 @@ function ClipPlayer({
   ks?: string;
   active: boolean;
 }) {
-  const url = useMemo(
-    () => buildClipUrl(clip, partnerId, uiconfId, ks),
-    [clip, partnerId, uiconfId, ks],
-  );
-
   if (!active) return null;
   const invalid =
     !isEntryId(clip.entryId) ||
     (partnerId !== undefined && !isPositiveInt(partnerId)) ||
     (uiconfId !== undefined && !isPositiveInt(uiconfId));
   if (invalid) return <LoadError widget="flashcards">This clip cannot be shown.</LoadError>;
-  if (!url) return null;
+  // Without partnerId and uiconfId there is nothing to play.
+  if (partnerId === undefined || uiconfId === undefined) return null;
 
   return (
-    <PlayerFrame src={url} className="flashcard-clip-player" title={clip.title ?? 'Video clip'} />
+    <PlayerEmbed
+      partnerId={partnerId}
+      uiconfId={uiconfId}
+      entryId={clip.entryId}
+      ks={ks}
+      seekFrom={clip.startTime}
+      clipTo={clip.endTime}
+      title={clip.title ?? 'Video clip'}
+      widget="flashcards"
+      className="flashcard-clip-player"
+    />
   );
 }
 

@@ -1,23 +1,19 @@
-// Covers: CONF-15 (plan item 3.3c): our URL builders and Unisphere names against
+// Covers: CONF-15 (plan item 3.3c): our Analytics URL, the Player and Captions editor
+// integration, and the Unisphere names against
 // the Kaltura guides. The guide facts are in fixtures/kaltura-docs.ts, with the
 // guide URLs. Every difference must be listed in KNOWN_DIVERGENCES, and an entry
 // must go when the code starts to match the guide. No case is skipped.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildPlayerUrl } from '../../src/core/player';
-import { buildCaptionsEditorUrl } from '../../src/core/captions-editor';
 import { buildAnalyticsUrl } from '../../src/core/analytics';
 import { deriveLoaderUrl } from '../../src/core/unisphere-loader';
-import { URL_ROWS, WIDGET_ROWS, KNOWN_DIVERGENCES, KS_PRIVILEGES, GUIDE_LOADER_URL, SAMPLE } from './fixtures/kaltura-docs';
+import { URL_ROWS, WIDGET_ROWS, KNOWN_DIVERGENCES, KS_PRIVILEGES, GUIDE_LOADER_URL } from './fixtures/kaltura-docs';
 
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
-const { partnerId, uiconfId, entryId, ks } = SAMPLE;
 
-// Every optional input set, so the URL shows every parameter the code can send.
+// The Player and the Captions editor build no URL any more (ADR 0008). Analytics is the only URL row.
 const BUILT: Record<string, string> = {
-  KalturaPlayer: buildPlayerUrl({ partnerId, uiconfId, entryId, ks, autoplay: true, muted: true, startTime: 1, clipTo: 2 }),
-  KalturaCaptionsEditor: buildCaptionsEditorUrl({ partnerId, ks, entryId, uiconfId }),
   KalturaAnalytics: buildAnalyticsUrl(),
 };
 const names = (url: string) => [...new URL(url).searchParams.keys()];
@@ -77,6 +73,19 @@ describe('CONF-15: the Recorder', () => {
   it('CONF-15: it loads the express-recorder.js script from the host page like the guide, and no divergence is listed', () => {
     const text = source('src/core/recorder-script.ts');
     expect([text.includes('/apps/expressrecorder/latest/express-recorder.js'), source('src/core/recorder.tsx').includes('extwidget'), 'KalturaRecorder:integration' in KNOWN_DIVERGENCES]).toEqual([true, false, false]);
+  });
+});
+
+describe('CONF-15: the Player and the Captions editor', () => {
+  it('CONF-15: the Player loads the embedPlaykitJs script and keeps the KS out of URLs, and the divergence from the guide iframe is listed', () => {
+    const script = source('src/core/player-script.ts');
+    const player = source('src/core/player.tsx');
+    expect([script.includes('/embedPlaykitJs/partner_id/'), player.includes('useHeaderForKs: true'), /iframeembed|[?&]ks=/.test(script + player), 'KalturaPlayer:integration' in KNOWN_DIVERGENCES]).toEqual([true, true, false, true]);
+  });
+
+  it('CONF-15: the Captions editor reads data attributes from a blob page and keeps the KS out of URLs, and the divergence from the guide iframe is listed', () => {
+    const text = source('src/core/captions-editor.tsx');
+    expect([text.includes('/apps/captionstudio/latest/embed.php'), text.includes('data-${name}'), /[?&]ks=/.test(text), 'KalturaCaptionsEditor:integration' in KNOWN_DIVERGENCES]).toEqual([true, true, false, true]);
   });
 });
 

@@ -1,13 +1,14 @@
 // Covers: SEC-04 / QA-12 (raw content rendered before sanitising, on reject,
-// no .catch), SEC-11 (path injection in URL builders), SEC-12 (clip.thumbnail
-// loaded as any URL).
+// no .catch), SEC-11 (bad ids never reach the clip player or the thumbnail URL),
+// SEC-12 (clip.thumbnail loaded as any URL).
 // Turns green: plan item 1.3 (flashcards). The control test is green today.
 // Technique: vi.mock('@a2ui/markdown-it') with a deferred promise, so we can
 // inspect the DOM at the "first render" moment.
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { act } from 'react';
 import { createElement } from 'react';
 import { mount, findUnsafe } from '../helpers/render';
+import { playerRemote, scriptUrl } from '../helpers/player-remote';
 
 const md = vi.hoisted(() => ({
   resolve: (_v: string) => {},
@@ -19,10 +20,26 @@ vi.mock('@a2ui/markdown-it', async importOriginal => {
   return { ...real, renderMarkdown: (s: string) => (md.impl ? md.impl(s) : real.renderMarkdown(s)) };
 });
 
+let player: ReturnType<typeof playerRemote>;
+
+beforeEach(() => {
+  player = playerRemote();
+});
+
 afterEach(() => {
+  player.restore();
   document.body.innerHTML = '';
   md.impl = null;
 });
+
+// Opens the first clip of a one-card deck. A clip that fails the checks never reaches the player bundle.
+async function openClip(props: Record<string, unknown>, clip: Record<string, unknown> = { entryId: '1_abc', startTime: 0, endTime: 1 }) {
+  const { FlashcardsCore } = await import('../../src/core/flashcards');
+  const { container } = await mount(FlashcardsCore, { title: 'Deck', cards: [{ title: 'C1', content: 'x', clips: [clip] }], ...props });
+  await act(async () => container.querySelector<HTMLButtonElement>('.flashcard-action-btn')?.click());
+  return container;
+}
+const clipAlert = (container: Element) => container.querySelector('[role="alert"]')?.textContent;
 
 // scope to card content so the component's own nav <svg>s are not flagged
 const contentOf = (c: Element) => {
@@ -89,7 +106,7 @@ describe('SEC-04: FlashcardsCore: control (real renderMarkdown, after it resolve
   });
 });
 
-describe('SEC-11 / SEC-12: flashcards URL builders with untrusted input', () => {
+describe('SEC-11 / SEC-12: flashcards with untrusted input', () => {
   it('SEC-12: buildThumbnailUrl rejects non-https clip.thumbnail (javascript:/data:)', async () => {
     const { buildThumbnailUrl } = await import('../../src/core/flashcards');
     for (const t of ['javascript:window.__pwned=1', 'data:text/html,<script>1</script>', 'http://evil.example/x.gif']) {
@@ -101,11 +118,12 @@ describe('SEC-11 / SEC-12: flashcards URL builders with untrusted input', () => 
     const u = buildThumbnailUrl({ entryId: '../../../evil', startTime: 0, endTime: 1 }, 1);
     expect(u).not.toContain('../');
   });
-  it('SEC-11: buildClipUrl rejects non-numeric partnerId/uiconfId (WC path has no schema validation)', async () => {
-    const { buildClipUrl } = await import('../../src/core/flashcards');
-    const clip = { entryId: '0_a', startTime: 0, endTime: 1 };
-    expect(buildClipUrl(clip, '1/../../x' as unknown as number, 2)).toBe('');
-    expect(buildClipUrl(clip, 1, '2/../../x' as unknown as number)).toBe('');
+  it.each([
+    ['partnerId', { partnerId: '1/../../x', uiconfId: 2 }],
+    ['uiconfId', { partnerId: 1, uiconfId: '2/../../x' }],
+  ])('SEC-11: a clip with a non-numeric %s loads no script (WC path has no schema validation)', async (_name, ids) => {
+    const container = await openClip(ids);
+    expect([clipAlert(container), player.urls, player.created.length]).toEqual(['This clip cannot be shown.', [], 0]);
   });
 });
 
@@ -133,15 +151,15 @@ describe('SEC-04: FlashcardsCore: empty or failed render', () => {
   });
 });
 
-describe('SEC-11: flashcards URL builders: valid and invalid ids', () => {
+describe('SEC-11: flashcards clips and thumbnails: valid and invalid ids', () => {
   const clip = { entryId: '1_abc', startTime: 0, endTime: 1 };
-  it.each(['a/b', '../x', '1_a?x=1', '1_a#', '', 'a b', '1_a\n'])('SEC-11: buildClipUrl rejects entryId %j', async id => {
-    const { buildClipUrl } = await import('../../src/core/flashcards');
-    expect(buildClipUrl({ ...clip, entryId: id }, 1, 2)).toBe('');
+  it.each(['a/b', '../x', '1_a?x=1', '1_a#', '', 'a b', '1_a\n'])('SEC-11: a clip with entryId %j loads no script', async id => {
+    const container = await openClip({ partnerId: 1, uiconfId: 2 }, { ...clip, entryId: id });
+    expect([clipAlert(container), player.urls, player.created.length]).toEqual(['This clip cannot be shown.', [], 0]);
   });
-  it.each([0, -1, 1.5, NaN, Infinity])('SEC-11: buildClipUrl rejects partnerId %s', async n => {
-    const { buildClipUrl } = await import('../../src/core/flashcards');
-    expect(buildClipUrl(clip, n, 2)).toBe('');
+  it.each([0, -1, 1.5, NaN, Infinity])('SEC-11: a clip with partnerId %s loads no script', async n => {
+    const container = await openClip({ partnerId: n, uiconfId: 2 });
+    expect([clipAlert(container), player.urls, player.created.length]).toEqual(['This clip cannot be shown.', [], 0]);
   });
   it('SEC-11: buildThumbnailUrl rejects a bad partnerId and a bad entryId', async () => {
     const { buildThumbnailUrl } = await import('../../src/core/flashcards');
@@ -150,21 +168,14 @@ describe('SEC-11: flashcards URL builders: valid and invalid ids', () => {
       buildThumbnailUrl({ ...clip, entryId: 'a/b' }, 1),
     ]).toEqual(['', '']);
   });
-  it('SEC-11: valid ids still build a clip URL', async () => {
-    const { buildClipUrl } = await import('../../src/core/flashcards');
-    expect(buildClipUrl(clip, 1, 2)).toContain('/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2?');
+  it('SEC-11: valid ids still load the bundle of that partner and uiconf', async () => {
+    await openClip({ partnerId: 1, uiconfId: 2 });
+    await player.ready();
+    expect(player.urls).toEqual([scriptUrl(1, 2)]);
   });
   it('SEC-11: card with an invalid partnerId shows a plain error and no iframe', async () => {
-    const { FlashcardsCore } = await import('../../src/core/flashcards');
-    const { container } = await mount(FlashcardsCore, {
-      title: 'Deck',
-      cards: [{ title: 'C1', content: 'x', clips: [{ entryId: '1_abc', startTime: 0, endTime: 1 }] }],
-      partnerId: '1/../x',
-      uiconfId: 2,
-    });
-    const start = container.querySelector<HTMLButtonElement>('.flashcard-action-btn');
-    await act(async () => start?.click());
-    expect([container.querySelectorAll('iframe').length, container.querySelector('[role="alert"]')?.textContent]).toEqual([0, 'This clip cannot be shown.']);
+    const container = await openClip({ partnerId: '1/../x', uiconfId: 2 });
+    expect([container.querySelectorAll('iframe').length, clipAlert(container)]).toEqual([0, 'This clip cannot be shown.']);
   });
 });
 
@@ -299,7 +310,8 @@ describe('SEC-11: one bad clip does not fail the deck', () => {
   it('SEC-11: the good clip next to it still plays', async () => {
     const container = await openCard(deck);
     await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="good"]')!.click());
-    expect([container.querySelectorAll('iframe').length, container.querySelectorAll('[role="alert"]').length]).toEqual([1, 0]);
+    await player.ready();
+    expect([player.created.map(created => created.loads.map(load => load.info)), container.querySelectorAll('[role="alert"]').length]).toEqual([[[{ entryId: '1_good' }]], 0]);
   });
 
   it.each([7, null, '', 'a b', 'x'.repeat(65)])('SEC-11: clip entryId %j fails that clip only', async entryId => {

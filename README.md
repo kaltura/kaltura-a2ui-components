@@ -81,11 +81,11 @@ Tags up to `v0.1.4` serve the old bundles, without the 0.2.0 fixes or host funct
 
 | Component type | Custom element | Embed technology |
 |---|---|---|
-| `KalturaPlayer` | `<kaltura-player>` | iframe (Player v7) |
-| `KalturaFlashcards` | `<kaltura-flashcards>` | React carousel with Player iframes for clips |
+| `KalturaPlayer` | `<kaltura-player>` | Kaltura Player script (`embedPlaykitJs`), in your page |
+| `KalturaFlashcards` | `<kaltura-flashcards>` | React carousel, clips use the Kaltura Player script |
 | `KalturaMediaManager` | `<kaltura-media-manager>` | Unisphere ES module |
 | `KalturaAnalytics` | `<kaltura-analytics>` | iframe, `postMessage` handshake |
-| `KalturaCaptionsEditor` | `<kaltura-captions-editor>` | iframe |
+| `KalturaCaptionsEditor` | `<kaltura-captions-editor>` | Same-origin blob iframe, KS in `data-*` attributes |
 | `KalturaRecorder` | `<kaltura-recorder>` | Express Recorder script (`apps/expressrecorder`) |
 | `KalturaAvatar` | `<kaltura-avatar>` | Unisphere embeds API (`genieAvatar`) |
 | `KalturaGenie` | `<kaltura-genie-widget>` | Unisphere ES module |
@@ -138,7 +138,7 @@ A full page: [examples/react](examples/react).
 
 ### Plain HTML
 
-<!-- check-examples: expect kaltura-chart h4.kaltura-chart-title; kaltura-player iframe -->
+<!-- check-examples: expect kaltura-chart h4.kaltura-chart-title; kaltura-player [role="region"] -->
 ```html
 <script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
 
@@ -170,16 +170,16 @@ A full page with a KS provider and an error handler: [examples/plain-html](examp
 |---|---|
 | Supply the Kaltura Session (KS) | `setKsProvider`. [docs/host-integration.md](docs/host-integration.md), [docs/ks-privileges.md](docs/ks-privileges.md), [docs/security/ks.md](docs/security/ks.md) |
 | Private cloud or on-prem Unisphere | `setExtraAllowedOrigins`. [docs/host-integration.md](docs/host-integration.md) |
-| Region, media URL allowlist, error and event hooks, player sandbox | [docs/host-api.md](docs/host-api.md) |
+| Region, media URL allowlist, error and event hooks | [docs/host-api.md](docs/host-api.md) |
 | Trust model and CSP | [SECURITY.md](SECURITY.md) |
 | Upgrade from 0.1.x | [docs/migration-0.2.md](docs/migration-0.2.md) |
 | Upgrade from 0.2.x (avatar props) | [docs/migration-0.3.md](docs/migration-0.3.md) |
-| Upgrade from 0.3.x (analytics) | [docs/migration-0.4.md](docs/migration-0.4.md) |
+| Upgrade from 0.3.x (analytics, recorder, player, captions editor) | [docs/migration-0.4.md](docs/migration-0.4.md) |
 
 ## Security behaviour
 
 - **Agent output is untrusted.** The host owns `ks`, the allowed origins and the media URL list. Agent messages cannot change them. See [SECURITY.md](SECURITY.md).
-- **KS.** `setKsProvider(widget => ks)` is the way to supply it. The provider gets the widget name, so it can mint a least-privilege KS per widget. Keep the KS out of the A2UI data model.
+- **KS.** `setKsProvider(widget => ks)` is the way to supply it. The provider gets the widget name, so it can mint a least-privilege KS per widget. Keep the KS out of the A2UI data model. The KS is in no URL. The Player, Recorder and Captions editor run Kaltura code in your page origin, which can read it ([ADR 0008](docs/adr/0008-in-page-player-and-captions-editor.md)).
 - **Private clouds.** `setExtraAllowedOrigins(['https://unisphere.example.com'])` before the first load. Only `https:` origins are accepted.
 - **`openUrl`.** Only absolute `https:` URLs open. Everything else is blocked with a console warning.
 - **Validation.** Web component config goes through the same schema as the A2UI path. Invalid values (bad ids, ks, urls, enums) show a plain-text alert. Numeric-string ids such as `partnerId: "123"` are rejected: pass a number.
