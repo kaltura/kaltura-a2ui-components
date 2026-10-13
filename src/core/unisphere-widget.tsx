@@ -15,6 +15,8 @@ export interface UnisphereWidgetCoreProps {
   /** A visual type the runtime declares. The loader rejects any other. */
   visualType: string;
   visualSettings?: Record<string, unknown>;
+  /** More runtimes of the same widget. Each mounts one visual on the page body, so use them for modals only. */
+  extraRuntimes?: { runtimeName: string; settings: Record<string, unknown>; visualType: string }[];
   /** Runs once the workspace has loaded, with the runtime. A throw shows the load error. `isCancelled` turns true on unmount. */
   onRuntime?: (runtime: unknown, isCancelled: () => boolean) => void | Promise<void>;
   label: string;
@@ -39,7 +41,7 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
   const onRuntimeRef = useRef(props.onRuntime);
   onRuntimeRef.current = props.onRuntime;
   // Settings objects are rebuilt on every render. Compare them by value.
-  const settingsKey = JSON.stringify([props.runtimeSettings, props.visualSettings]);
+  const settingsKey = JSON.stringify([props.runtimeSettings, props.visualSettings, props.extraRuntimes]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -53,9 +55,10 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
 
     const theme =
       (document.documentElement.getAttribute('data-theme') as 'dark' | 'light') || 'dark';
-    const [runtimeSettings, visualSettings] = JSON.parse(settingsKey) as [
+    const [runtimeSettings, visualSettings, extraRuntimes] = JSON.parse(settingsKey) as [
       Record<string, unknown> | undefined,
       Record<string, unknown> | undefined,
+      UnisphereWidgetCoreProps['extraRuntimes'] | null,
     ];
 
     loadUnisphereModule<{ loader?: (cfg: unknown) => Promise<unknown> }>(serverUrl)
@@ -83,6 +86,12 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
                 },
               ],
             },
+            ...(extraRuntimes ?? []).map(extra => ({
+              widgetName,
+              runtimeName: extra.runtimeName,
+              settings: extra.settings,
+              visuals: [{ type: extra.visualType, target: { target: 'body' }, settings: {} }],
+            })),
           ],
         });
       })

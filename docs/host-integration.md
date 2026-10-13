@@ -83,7 +83,7 @@ The Unisphere runtimes reject settings they do not declare and skip themselves w
 | Widget | Needs | Notes |
 |---|---|---|
 | Genie | `uiconfId` | Player uiConf for answers with video |
-| Content Lab | `uiconfId`, `entryId` | Opens the drawer on that entry. Stays empty until the account has given AI consent |
+| Content Lab | `uiconfId`, `entryId` | Opens the drawer on that entry. The menu lists the features the account has in Reach. It also loads the `ai-consent` runtime. An account without AI consent sees the consent dialog when it picks an AI feature. Only an account admin can accept it: other users see "contact your account admin" |
 | Agents | none | `agentId` is accepted but ignored. Opens its drawer on load. The agents backend answers only origins Kaltura allows: a localhost page gets a CORS error |
 | VOD Avatar | none | `entryId` and `avatarStyle` are accepted but the studio runtime has no setting for them |
 
