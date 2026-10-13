@@ -88,7 +88,7 @@ Checked live on `nvp1`: the editor loaded and signed in (it reached "Current vid
 |---|---|
 | Keep the iframes with the KS in the URL | It leaves SEC-10 open. The KS reaches history, logs and `Referer` |
 | A `postMessage` bridge page on a separate origin that we host | The package is a static bundle. We would have to host and secure that origin, and every host would depend on it |
-| Ask Kaltura for a KS channel in the embeds (like Analytics `init`) | Still the right long-term fix, because it would restore isolation. It is a request to Kaltura, not something we can ship. If Kaltura adds it, this ADR can be superseded |
+| Ask Kaltura for a KS channel in the embeds (like Analytics `init`) | Not needed. Kaltura designed the Player and the captions editor to run in the host page, and the account owner controls the Player version per uiConf in KMC |
 
 ## Sources
 
