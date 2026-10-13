@@ -67,8 +67,8 @@ The `extwidget/preview` iframe does not appear in the Express Recorder guide.
 
 `KalturaRecorder` uses the Express Recorder script. The `extwidget/preview` iframe is gone.
 
-- The script loads only from `https://www.kaltura.com/apps/expressrecorder/latest/express-recorder.js`. All recorders on a page share one load. A failed load is retried on the next mount.
-- The KS comes from the host KS provider only (`src/core/ks.ts`). `create` gets `ks`, `serviceUrl`, `playerUrl`, `partnerId`, `uiConfId` and `app: 'a2ui'`. The script shows "Missing props: app" without `app`.
+- The script loads only from the recorder host of the region (`https://www.kaltura.com` in the US, the regional API host elsewhere) at `/apps/expressrecorder/latest/express-recorder.js`. All recorders on a page share one load. A failed load is retried on the next mount.
+- The KS comes from the host KS provider first, with the `ks` prop as fallback, as on the player (`src/core/ks.ts`). `create` gets `ks`, `serviceUrl`, `playerUrl`, `partnerId`, `uiConfId` and `app: 'a2ui'`. The script shows "Missing props: app" without `app`.
 - `uiconfId` is now required. `conversionProfileId` is not offered. `showUploadUI` and the recorder methods are not exposed.
 - `mediaUploadEnded` becomes the host event `recorder-upload-ended`. An `error` event becomes a generic `setErrorHandler` code with the fixed text `Recorder error`. Remote error text is dropped, because it can hold the KS or markup.
 - `destroy` runs on unmount and on every prop change.

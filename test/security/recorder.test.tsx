@@ -303,9 +303,9 @@ describe('REC-01: recorder events reach the host', () => {
   });
 });
 
-describe('REC-01: recorder errors map to fixed codes', () => {
+describe('REC-01: every recorder error is reported as render-failed', () => {
   it.each([
-    ['PERMISSION_DENIED', 'invalid-ks', 'Recorder error'],
+    ['PERMISSION_DENIED', 'render-failed', 'Recorder error'],
     ['NO_MEDIA_DEVICES', 'render-failed', 'Recorder error'],
     ['BROWSER_NOT_SUPPORTED', 'render-failed', 'Recorder error'],
     [undefined, 'render-failed', 'Recorder error'],
