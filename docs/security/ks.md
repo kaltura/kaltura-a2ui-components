@@ -11,7 +11,7 @@ The host owns the KS. The agent never sees it, writes it or asks for it.
 | 3 | A component that needs a KS calls the provider once, when it mounts, with its widget name. |
 | 4 | The component checks the value with the ks rule: a non-empty string with no control characters. |
 
-- **Order.** A non-empty provider result wins. If the provider returns `undefined` or `''`, or no provider is set, the component uses its `ks` prop. The prop exists only for older hosts. Analytics and Avatar have no `ks` prop: the provider is the only source.
+- **Order.** A non-empty provider result wins. If the provider returns `undefined` or `''`, or no provider is set, the component uses its `ks` prop. The prop is a supported fallback. Every call to Kaltura needs a KS, and a KS only works for its own account, so an agent cannot act on an account whose KS it does not hold. Analytics and Avatar have no `ks` prop: the provider is the only source.
 - **Async.** The component renders nothing until the provider's promise settles.
 - **Errors.** An invalid value, a throw or a rejected promise shows `Failed to load <widget>: Invalid ks`. The value and the error are never shown or logged.
 - **Components.** Player, Flashcards, Media Manager, Analytics, Captions Editor, Recorder, Genie, Content Lab, Agents Widget, VOD Avatar and Avatar use the provider.
