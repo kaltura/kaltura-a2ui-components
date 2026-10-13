@@ -263,7 +263,7 @@
   },
   {
     "component": "KalturaAvatar",
-    "description": "Avatar SDK container.",
+    "description": "Avatar on the default server.",
     "messages": [
       {
         "version": "v0.9",
@@ -280,8 +280,8 @@
             {
               "id": "root",
               "component": "KalturaAvatar",
-              "avatarId": "avatar-1",
-              "language": "en"
+              "partnerId": 1,
+              "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
             }
           ]
         }

@@ -9,9 +9,10 @@ What the page or app that embeds the components must set up. Agents never call t
 | Another Kaltura region | `setRegion` | [Region](#region) |
 | Images, video or audio from your own host | `setExtraMediaOrigins` (React only) | [Media URLs](#media-urls) |
 | Logs and selection events | `setErrorHandler`, `setEventHandler` | [Errors and events](#errors-and-events) |
+| A `sandbox` on player iframes (opt-in) | `setPlayerSandbox` | [host-api.md](host-api.md#player-sandbox) |
 | A CSP | See below | [CSP](#content-security-policy) |
 
-All six functions come from `@kaltura/a2ui-react`. The script-tag bundle has the same functions, except `setExtraMediaOrigins`, on `window.KalturaA2UIWebComponents`. Signatures and codes: [host-api.md](host-api.md).
+All seven functions come from `@kaltura/a2ui-react`. The script-tag bundle has the same functions, except `setExtraMediaOrigins`, on `window.KalturaA2UIWebComponents`. Signatures and codes: [host-api.md](host-api.md).
 
 ## Register the Kaltura catalog alone
 
@@ -19,11 +20,24 @@ All six functions come from `@kaltura/a2ui-react`. The script-tag bundle has the
 const processor = new MessageProcessor([kalturaReactCatalog]);
 ```
 
-`kalturaReactCatalog` already holds the basic components. Do not register `basicCatalog` next to it. The agent picks a catalog by id in `createSurface`. Importing the package guards the shared `basicCatalog` in place, so an agent that picks it still gets the [media URL check](#media-urls) and the markdown filter. A catalog you build yourself from the raw basic components, or from a second copy of `@a2ui/react`, is not guarded. To keep the basic catalog id for older agents, register `buildKalturaCatalog(basicCatalog.id)` in its place.
+`kalturaReactCatalog` already holds the basic components. Do not register `basicCatalog` next to it. The agent picks a catalog by id in `createSurface`. Importing the package guards the shared `basicCatalog` in place, so an agent that picks it still gets the [media URL check](#media-urls) and the markdown filter. A catalog you build yourself from the raw basic components, or from a second copy of `@a2ui/web_core`, is not guarded. To keep the basic catalog id for older agents, register `buildKalturaCatalog(basicCatalog.id)` in its place. Since 0.13, `basicCatalog` comes from `@a2ui/web_core/v0_9/basic_catalog`, not `@a2ui/react`.
+
+## Server imports (SSR)
+
+`@a2ui/react` 0.13.0 throws `HTMLElement is not defined` when Node imports it ([a2ui#3158](https://github.com/a2ui-project/a2ui/issues/3158)). The package works around it ([ADR 0007](adr/0007-ssr-html-element-stub.md)). In Node, import `@kaltura/a2ui-react` before anything that imports `@a2ui/react`:
+
+```ts
+import { kalturaReactCatalog } from '@kaltura/a2ui-react'; // first
+import { A2uiSurface } from '@a2ui/react/v0_9';
+```
+
+This makes the import work. It does not make surfaces render on the server: `A2uiSurface` renders in the browser only. Browsers and jsdom need no import order.
+
+If you load `kaltura-react.mjs` from jsDelivr with an import map and `integrity`, add the Release's hash for `dist/html-element-stub.mjs` too. The bundle imports it.
 
 ## DOMPurify override
 
-`@a2ui/react` 0.11.1 depends on `@a2ui/markdown-it` 0.1.2, which pins `dompurify` 3.4.11. That version has published advisories, all fixed by 3.4.16. Your install gets it through `@a2ui/react`, with or without this package. Our ESM bundle carries its own patched copy, but your app uses yours, for example in the markdown renderer you pass to `MarkdownContext`. Override it in `package.json`, to the range this repo uses:
+`@a2ui/react` 0.13 depends on `@a2ui/markdown-it` 0.2.1, which pins `dompurify` 3.4.11. That version has published advisories, all fixed by 3.4.16. Your install gets it through `@a2ui/react`, with or without this package. Our ESM bundle carries its own patched copy, but your app uses yours, for example in the markdown renderer you pass to `MarkdownContext`. Override it in `package.json`, to the range this repo uses:
 
 ```json
 { "overrides": { "dompurify": "^3.4.17" } }
@@ -55,7 +69,7 @@ setKsProvider(widget => (widget === 'analytics' ? session.adminKs : session.user
 
 ## Unisphere origins
 
-Unisphere widgets (Media Manager, Genie, Content Lab, Agents, VOD Avatar) import code from `serverUrl`. Only the five Kaltura regions load: `https://unisphere.{nvp1,irp2,frp2,cap2,syp2}.ovp.kaltura.com`. A private cloud or on-prem host needs your approval:
+Unisphere widgets (Media Manager, Genie, Content Lab, Agents, VOD Avatar, Avatar) import code from `serverUrl`. Only the five Kaltura regions load: `https://unisphere.{nvp1,irp2,frp2,cap2,syp2}.ovp.kaltura.com`. A private cloud or on-prem host needs your approval:
 
 ```ts
 setExtraAllowedOrigins(['https://unisphere.example.com']);
@@ -103,7 +117,7 @@ A starting policy. Replace `'self'` and the Unisphere regions to fit your page.
 <!-- csp -->
 ```text
 default-src 'self';
-script-src 'self' https://unisphere.nvp1.ovp.kaltura.com https://unisphere.irp2.ovp.kaltura.com https://unisphere.frp2.ovp.kaltura.com https://unisphere.cap2.ovp.kaltura.com https://unisphere.syp2.ovp.kaltura.com https://static.avatar.us.kaltura.ai;
+script-src 'self' https://unisphere.nvp1.ovp.kaltura.com https://unisphere.irp2.ovp.kaltura.com https://unisphere.frp2.ovp.kaltura.com https://unisphere.cap2.ovp.kaltura.com https://unisphere.syp2.ovp.kaltura.com;
 style-src 'self' 'unsafe-inline';
 img-src 'self' data: https://*.kaltura.com;
 media-src 'self' https://*.kaltura.com;
@@ -115,13 +129,13 @@ base-uri 'none';
 
 | Directive | Why |
 |---|---|
-| `script-src` | Your own script, the Unisphere loaders (only the regions you use) and the avatar SDK (drop it if you do not use the avatar). If you load the bundle from the CDN, add `https://cdn.jsdelivr.net` and use SRI |
+| `script-src` | Your own script and the Unisphere loaders (only the regions you use). The avatar loads through the Unisphere loader too. If you load the bundle from the CDN, add `https://cdn.jsdelivr.net` and use SRI |
 | `style-src ... 'unsafe-inline'` | The bundle injects its CSS in a `<style>` tag and the charts set `style` attributes |
 | `img-src`, `media-src` | Flashcard thumbnails, markdown images and the basic media components. Add your `setExtraMediaOrigins` hosts |
 | `frame-src` | Player and flashcard clips (`cdnapisec`), captions editor and recorder (`www`), Analytics (`kmc`). In a region, the player, clips, captions editor and recorder use its API host (for example `https://api.eu.kaltura.com`) and Analytics uses its KMC host. All hosts are in [Regions](host-api.md#regions). Add the hosts of the widgets you use. A private cloud needs its own hosts |
-| `connect-src` | The geo map fetches `world-atlas` from jsDelivr. Unisphere widgets call Kaltura APIs |
+| `connect-src` | The geo map fetches `world-atlas` from jsDelivr. Unisphere widgets call Kaltura APIs. The avatar also calls `https://api.avatar.<region>.kaltura.ai`, which this policy does not list |
 | `object-src`, `base-uri` | Not needed by any component |
 
-What is tested: the Chart, Flashcards and Player run under this exact policy with no violation, and a script from a host that is not listed is blocked (`e2e/csp.spec.ts`). What is not tested: Unisphere widgets, the avatar and the other iframes. Watch the browser console for `Content Security Policy` messages the first time you enable one of them, and add the Kaltura host it names. Private cloud and on-prem Unisphere hosts also need entries in `script-src`, `connect-src` and `frame-src`.
+What is tested: the Chart, Flashcards, Player and the avatar loader (stubbed) run under this exact policy with no violation, and a script from a host that is not listed is blocked (`e2e/csp.spec.ts`). What is not tested: other Unisphere widgets, the other iframes and a live avatar session. Its API, WebSocket and WebRTC hosts are not verified. Watch the browser console for `Content Security Policy` messages the first time you enable one of them, and add the Kaltura host it names. Private cloud and on-prem Unisphere hosts also need entries in `script-src`, `connect-src` and `frame-src`.
 
 CSP does not replace the host controls above. Agent output stays untrusted: [SECURITY.md](../SECURITY.md).

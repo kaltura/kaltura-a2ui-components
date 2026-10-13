@@ -61,7 +61,7 @@ Ask the Express Recorder team which integration is intended for an embedded comp
 
 If the script is the answer:
 
-- Load a pinned version with an SRI hash. `latest` without a hash is the same gap as SEC-08.
+- Load a pinned version with an SRI hash. `latest` without a hash is the gap SEC-08 found in the old avatar SDK.
 - Map `mediaUploadEnded` and `error` to `setEventHandler` and `setErrorHandler`.
 - Call `destroy` on unmount.
 

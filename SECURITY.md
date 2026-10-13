@@ -44,7 +44,7 @@ The host controls are in [docs/host-integration.md](docs/host-integration.md):
 - `setKsProvider`: a server-minted, least-privilege KS per widget ([docs/ks-privileges.md](docs/ks-privileges.md), [docs/security/ks.md](docs/security/ks.md)).
 - `setExtraAllowedOrigins`: Unisphere origins beyond the five Kaltura regions. Each one runs code with your page origin.
 - `setExtraMediaOrigins`: hosts for the basic Image, Video and AudioPlayer.
-- Register the Kaltura catalog alone. Importing the package guards the shared `basicCatalog` in place, so an agent that picks it by id gets the same checks. A catalog you build yourself from the raw basic components, or from a second copy of `@a2ui/react`, is not guarded.
+- Register the Kaltura catalog alone. Importing the package guards the shared `basicCatalog` in place, so an agent that picks it by id gets the same checks. A catalog you build yourself from the raw basic components, or from a second copy of `@a2ui/web_core`, is not guarded.
 
 What the package does on its own:
 
@@ -59,7 +59,7 @@ Which finding each control answers, and which test proves it: [docs/security/int
 
 ## Content Security Policy
 
-[docs/host-integration.md](docs/host-integration.md#content-security-policy) has a starting policy. `e2e/csp.spec.ts` runs the Chart, Flashcards and Player under that exact text and checks that a script from an unlisted host is blocked. Widgets that load Kaltura-hosted code need more hosts. Add the ones the browser reports.
+[docs/host-integration.md](docs/host-integration.md#content-security-policy) has a starting policy. `e2e/csp.spec.ts` runs the Chart, Flashcards, Player and the avatar loader (stubbed) under that exact text and checks that a script from an unlisted host is blocked. Widgets that load Kaltura-hosted code need more hosts. Add the ones the browser reports.
 
 A CSP is a second layer. It does not make agent output trusted.
 
@@ -69,5 +69,5 @@ Releases come only from [`release.yml`](.github/workflows/release.yml) on `main`
 
 Verify a release before you use it ([docs/verify-release.md](docs/verify-release.md)):
 
-- Pin the full tag (`@v0.2.0`) in the jsDelivr URL and set the `integrity` value from the Release notes, with `crossorigin="anonymous"`.
+- Pin the full tag (`@v0.3.0`) in the jsDelivr URL and set the `integrity` value from the Release notes, with `crossorigin="anonymous"`.
 - Check a downloaded file with `gh attestation verify <file> --repo kaltura/kaltura-a2ui-components`.

@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { act } from 'react';
 import { buildKalturaCatalog, kalturaReactCatalog } from '../../src/adapters/react';
+import { renderSurface } from './surface-helper';
 
 type Invoke = (name: string, args: unknown, ctx: never) => unknown;
 const callOpenUrl = (catalog = kalturaReactCatalog, url: unknown = '') =>
@@ -68,5 +70,19 @@ describe('SEC-02: openUrl in the merged Kaltura catalog', () => {
   it('SEC-02: does not echo the blocked URL in the warning', () => {
     callOpenUrl(kalturaReactCatalog, 'javascript:alert(1)');
     expect(String(warn.mock.calls[0][0])).not.toContain('alert');
+  });
+
+  // Since 0.13, a Button runs a functionCall action in the browser, not as an event for the host.
+  it.each([
+    ['javascript:alert(1)', []],
+    ['https://example.com/', [['https://example.com/', '_blank', 'noopener,noreferrer']]],
+  ])('SEC-02: a basic Button openUrl action with %s goes through the safe openUrl', async (url, calls) => {
+    const view = await renderSurface(kalturaReactCatalog, [
+      { id: 'root', component: 'Button', child: 'label', action: { functionCall: { call: 'openUrl', args: { url } } } },
+      { id: 'label', component: 'Text', text: 'Open' },
+    ]);
+    await act(async () => view.host.querySelector('button')?.click());
+    act(() => view.root.unmount());
+    expect(open.mock.calls).toEqual(calls);
   });
 });

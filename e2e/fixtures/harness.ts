@@ -11,6 +11,7 @@ interface KsWindow {
   __ksCalls?: { count: number; widgets: string[] };
   __loaderCfgs?: unknown[];
   __workspaceCfgs?: unknown[];
+  __embedsCfgs?: unknown[];
 }
 
 const KALTURA_HOST = /^https?:\/\/[^/]*\.kaltura\.com\//;
@@ -101,6 +102,11 @@ export class Harness {
 
   workspaceConfigs(): Promise<unknown[]> {
     return this.page.evaluate(() => (window as unknown as KsWindow).__workspaceCfgs ?? []);
+  }
+
+  /** Configs given to `embeds.workspace` (the avatar). */
+  embedsConfigs(): Promise<unknown[]> {
+    return this.page.evaluate(() => (window as unknown as KsWindow).__embedsCfgs ?? []);
   }
 
   /** Text of the mounted components. Attributes such as iframe `src` are not text. */

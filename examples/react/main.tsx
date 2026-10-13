@@ -1,10 +1,11 @@
 // A2UI messages in, Kaltura components out. Needs a build: npm run build.
-// In your own app, import from '@kaltura/a2ui-react' (npm i github:kaltura/kaltura-a2ui-components#v0.2.0).
+// In your own app, import from '@kaltura/a2ui-react' (npm i github:kaltura/kaltura-a2ui-components#v0.3.0).
+// Before @a2ui/react, so the same code also imports in Node (docs/host-integration.md#server-imports-ssr).
+import { KALTURA_CATALOG_ID, kalturaReactCatalog, setErrorHandler, setKsProvider } from '@kaltura/a2ui-react';
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { A2uiSurface } from '@a2ui/react/v0_9';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { KALTURA_CATALOG_ID, kalturaReactCatalog, setErrorHandler, setKsProvider } from '@kaltura/a2ui-react';
 
 // The host mints the Kaltura Session. Messages from the agent never carry it.
 setKsProvider(() => undefined);

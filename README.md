@@ -2,17 +2,17 @@
 
 Kaltura's [A2UI](https://a2ui.org) Experience Components. All 12 components ship as one versioned catalog, so any A2UI client that registers a catalog can render them without re-implementing them.
 
-Version **0.2.0** (see [CHANGELOG.md](CHANGELOG.md)). Served by jsDelivr from the git tag. There is no npm package: a package on npm with this name is not ours.
+Version **0.3.0** (see [CHANGELOG.md](CHANGELOG.md)). Served by jsDelivr from the git tag. There is no npm package: a package on npm with this name is not ours.
 
 ## Quick start
 
-Pick one. All three pin the tag `v0.2.0`.
+Pick one. All three pin the tag `v0.3.0`.
 
 **1. Script tag (plain HTML).** Defines all 12 custom elements.
 
 <!-- check-examples: expect kaltura-chart h4.kaltura-chart-title -->
 ```html
-<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
 
 <kaltura-chart id="chart"></kaltura-chart>
 
@@ -21,18 +21,18 @@ Pick one. All three pin the tag `v0.2.0`.
 </script>
 ```
 
-For production, copy the same tag with its `integrity` value from the [v0.2.0 Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases/tag/v0.2.0).
+For production, copy the same tag with its `integrity` value from the [v0.3.0 Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases/tag/v0.3.0).
 
 **2. ESM (React, A2UI clients).** Install from the git tag with the peers, then register the catalog as in [A2UI client (React)](#a2ui-client-react).
 
 ```bash
-npm i github:kaltura/kaltura-a2ui-components#v0.2.0 @a2ui/react @a2ui/web_core zod react react-dom
+npm i github:kaltura/kaltura-a2ui-components#v0.3.0 @a2ui/react @a2ui/web_core zod react react-dom
 ```
 
 **3. Catalog JSON.** For A2UI tooling that reads a catalog by URL:
 
 ```
-https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/src/catalog/kaltura_catalog.json
+https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/src/catalog/kaltura_catalog.json
 ```
 
 Check a release before you use it: [docs/verify-release.md](docs/verify-release.md).
@@ -53,14 +53,14 @@ Clients that cannot register a catalog (Gemini Enterprise, generic text clients)
 ### Git tag (React, A2UI clients)
 
 ```bash
-npm i github:kaltura/kaltura-a2ui-components#v0.2.0 @a2ui/react @a2ui/web_core zod react react-dom
+npm i github:kaltura/kaltura-a2ui-components#v0.3.0 @a2ui/react @a2ui/web_core zod react react-dom
 ```
 
-npm installs it as `@kaltura/a2ui-react`, so imports use that name. Your `package.json` gets `"@kaltura/a2ui-react": "github:kaltura/kaltura-a2ui-components#v0.2.0"`. The tag holds the built `dist/`, so nothing builds on install.
+npm installs it as `@kaltura/a2ui-react`, so imports use that name. Your `package.json` gets `"@kaltura/a2ui-react": "github:kaltura/kaltura-a2ui-components#v0.3.0"`. The tag holds the built `dist/`, so nothing builds on install.
 
-The package needs these peers: `@a2ui/react ^0.11.1`, `@a2ui/web_core ^0.11.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`. Entries: `@kaltura/a2ui-react` (React), `@kaltura/a2ui-react/webcomponent` (script bundle) and `@kaltura/a2ui-react/catalog` (the catalog JSON).
+The package needs these peers: `@a2ui/react ^0.13.0`, `@a2ui/web_core ^0.13.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`. Entries: `@kaltura/a2ui-react` (React), `@kaltura/a2ui-react/webcomponent` (script bundle) and `@kaltura/a2ui-react/catalog` (the catalog JSON). In Node (SSR, tests), import `@kaltura/a2ui-react` before `@a2ui/react`: see [docs/host-integration.md](docs/host-integration.md#server-imports-ssr).
 
-`@a2ui/react` 0.11.1 brings in `dompurify` 3.4.11, which has published advisories. Override it in your `package.json` (pnpm: `pnpm.overrides`, Yarn: `resolutions`). Details: [docs/host-integration.md](docs/host-integration.md#dompurify-override).
+`@a2ui/react` 0.13 brings in `dompurify` 3.4.11 through `@a2ui/markdown-it`, which has published advisories. Override it in your `package.json` (pnpm: `pnpm.overrides`, Yarn: `resolutions`). Details: [docs/host-integration.md](docs/host-integration.md#dompurify-override).
 
 ```json
 { "overrides": { "dompurify": "^3.4.17" } }
@@ -69,8 +69,8 @@ The package needs these peers: `@a2ui/react ^0.11.1`, `@a2ui/web_core ^0.11.0`, 
 ### CDN (plain HTML)
 
 ```
-https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js
-https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-react.mjs
+https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js
+https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-react.mjs
 ```
 
 Pin the full tag. jsDelivr also resolves `@0.2` and `@latest`, but those change under you and break SRI. Each GitHub Release lists the SRI string (`sha384-…`) of every file in its notes and in `hashes.json`. Add it as `integrity` with `crossorigin="anonymous"`.
@@ -87,7 +87,7 @@ Tags up to `v0.1.4` serve the old bundles, without the 0.2.0 fixes or host funct
 | `KalturaAnalytics` | `<kaltura-analytics>` | iframe |
 | `KalturaCaptionsEditor` | `<kaltura-captions-editor>` | iframe |
 | `KalturaRecorder` | `<kaltura-recorder>` | sandboxed iframe (`extwidget/preview`) |
-| `KalturaAvatar` | `<kaltura-avatar>` | Kaltura avatar web SDK, loaded as a script |
+| `KalturaAvatar` | `<kaltura-avatar>` | Unisphere embeds API (`genieAvatar`) |
 | `KalturaGenie` | `<kaltura-genie-widget>` | Unisphere ES module |
 | `KalturaContentLab` | `<kaltura-content-lab>` | Unisphere ES module |
 | `KalturaAgentsWidget` | `<kaltura-agents-widget>` | Unisphere ES module |
@@ -100,11 +100,11 @@ Tags up to `v0.1.4` serve the old bundles, without the 0.2.0 fixes or host funct
 
 <!-- check-examples: expect h4.kaltura-chart-title; text:Cell -->
 ```tsx
+import { KALTURA_CATALOG_ID, kalturaReactCatalog, setKsProvider } from '@kaltura/a2ui-react'; // before @a2ui/react
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { A2uiSurface } from '@a2ui/react/v0_9';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { KALTURA_CATALOG_ID, kalturaReactCatalog, setKsProvider } from '@kaltura/a2ui-react';
 
 // The host mints the Kaltura Session. Agent messages never carry it.
 setKsProvider(() => undefined); // replace with your KS call
@@ -140,7 +140,7 @@ A full page: [examples/react](examples/react).
 
 <!-- check-examples: expect kaltura-chart h4.kaltura-chart-title; kaltura-player iframe -->
 ```html
-<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
 
 <kaltura-chart id="chart"></kaltura-chart>
 <kaltura-player id="player"></kaltura-player>
@@ -170,9 +170,10 @@ A full page with a KS provider and an error handler: [examples/plain-html](examp
 |---|---|
 | Supply the Kaltura Session (KS) | `setKsProvider`. [docs/host-integration.md](docs/host-integration.md), [docs/ks-privileges.md](docs/ks-privileges.md), [docs/security/ks.md](docs/security/ks.md) |
 | Private cloud or on-prem Unisphere | `setExtraAllowedOrigins`. [docs/host-integration.md](docs/host-integration.md) |
-| Region, media URL allowlist, error and event hooks | [docs/host-api.md](docs/host-api.md) |
+| Region, media URL allowlist, error and event hooks, player sandbox | [docs/host-api.md](docs/host-api.md) |
 | Trust model and CSP | [SECURITY.md](SECURITY.md) |
 | Upgrade from 0.1.x | [docs/migration-0.2.md](docs/migration-0.2.md) |
+| Upgrade from 0.2.x (avatar props) | [docs/migration-0.3.md](docs/migration-0.3.md) |
 
 ## Security behaviour
 

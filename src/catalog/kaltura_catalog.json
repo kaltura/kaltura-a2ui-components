@@ -342,7 +342,7 @@
     },
     "KalturaAvatar": {
       "type": "object",
-      "description": "Kaltura AI Avatar — interactive conversational avatar widget powered by Kaltura's avatar platform.",
+      "description": "Kaltura Avatar: a live conversational AI agent with a video avatar, voice and captions, loaded through the Unisphere embeds API. The host's Kaltura Session picks the agent, so there is no agent or avatar ID prop. The browser asks the user for the microphone when a session starts.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -350,28 +350,35 @@
           "type": "object",
           "properties": {
             "component": { "const": "KalturaAvatar" },
-            "avatarId": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Avatar identifier from the Kaltura Avatar platform."
+            "partnerId": {
+              "type": "integer",
+              "description": "Kaltura account/partner ID."
             },
-            "projectId": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Optional avatar project ID."
+            "serverUrl": {
+              "type": "string",
+              "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused.",
+              "maxLength": 2048
             },
-            "language": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Avatar language code (e.g. 'en', 'he'). Default: 'en'."
+            "autoConnect": {
+              "type": "boolean",
+              "description": "Start the session as soon as the avatar loads. Default: false, the user clicks to start."
             },
-            "autoStart": {
-              "$ref": "#/$defs/DynamicBoolean",
-              "description": "Auto-start the avatar conversation. Default: false."
+            "openingPhrase": {
+              "type": "string",
+              "description": "What the agent says first. Plain text. Default: the agent's own greeting.",
+              "maxLength": 500
             },
-            "allowInterrupt": {
-              "$ref": "#/$defs/DynamicBoolean",
-              "description": "Allow user to interrupt the avatar mid-speech. Default: true."
+            "captions": {
+              "type": "boolean",
+              "description": "Show captions of what the agent says. Default: the agent's setting."
+            },
+            "theme": {
+              "type": "string",
+              "enum": ["light", "dark", "studio"],
+              "description": "Colour theme. Default: 'light' when the page has data-theme=\"light\", otherwise 'dark'."
             }
           },
-          "required": ["component", "avatarId"]
+          "required": ["component", "partnerId", "serverUrl"]
         }
       ],
       "unevaluatedProperties": false

@@ -1,6 +1,6 @@
 # Verify a release
 
-Every release since 0.2.0 has three proofs. Examples use `v0.2.0`. All commands only read.
+Every release since 0.2.0 has three proofs. Examples use `v0.3.0`. All commands only read.
 
 | Proof | Answers | Where |
 |---|---|---|
@@ -10,16 +10,16 @@ Every release since 0.2.0 has three proofs. Examples use `v0.2.0`. All commands 
 
 ## 1. SRI in the page
 
-Copy the script tag from the [Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases/tag/v0.2.0). It pins the full tag and carries `integrity`:
+Copy the script tag from the [Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases/tag/v0.3.0). It pins the full tag and carries `integrity`:
 
 ```
-<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js" integrity="sha384-…" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js" integrity="sha384-…" crossorigin="anonymous"></script>
 ```
 
 The browser refuses the file if one byte differs. To check the hash by hand:
 
 ```bash
-curl -sL https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js | openssl dgst -sha384 -binary | base64
+curl -sL https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js | openssl dgst -sha384 -binary | base64
 ```
 
 It must equal the `dist/kaltura-wc.js` value in the Release's `hashes.json`, after `sha384-`.
@@ -29,19 +29,19 @@ It must equal the `dist/kaltura-wc.js` value in the Release's `hashes.json`, aft
 Needs the GitHub CLI, logged in (`gh auth login`).
 
 ```bash
-curl -sLO https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js
+curl -sLO https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js
 gh attestation verify kaltura-wc.js --repo kaltura/kaltura-a2ui-components \
   --signer-workflow kaltura/kaltura-a2ui-components/.github/workflows/release.yml \
   --source-ref refs/heads/main --deny-self-hosted-runners
 ```
 
-`kaltura-react.mjs`, `kaltura_catalog.json` and `dist.tar.gz` are attested too. The attestation names the `main` commit the release was built from. The tag points to a release commit on top of it, which adds only `dist/` and the stamped catalog.
+`kaltura-react.mjs`, `kaltura_catalog.json` and `dist.tar.gz` are attested too. Releases from 0.3.0 also attest `html-element-stub.mjs`, which `kaltura-react.mjs` imports ([ADR 0007](adr/0007-ssr-html-element-stub.md)). The attestation names the `main` commit the release was built from. The tag points to a release commit on top of it, which adds only `dist/` and the stamped catalog.
 
 ## 3. Release assets
 
 ```bash
-gh release download v0.2.0 --repo kaltura/kaltura-a2ui-components --dir v0.2.0
-cd v0.2.0 && sha256sum --check SHA256SUMS    # macOS: shasum -a 256 --check SHA256SUMS
+gh release download v0.3.0 --repo kaltura/kaltura-a2ui-components --dir v0.3.0
+cd v0.3.0 && sha256sum --check SHA256SUMS    # macOS: shasum -a 256 --check SHA256SUMS
 ```
 
 `sbom.cdx.json` is a CycloneDX SBOM of every locked package, dev ones too, because the bundles inline some dev dependencies.

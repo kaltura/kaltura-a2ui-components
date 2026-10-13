@@ -37,8 +37,6 @@ export const INTENTIONAL_DIFFERENCES = [
 export const KEPT_FROM_CATALOG = {
   'KalturaPlayer.partnerId': 'Catalog allows a plain integer only. zod also allows a data binding. Decision pending.',
   'KalturaPlayer.uiconfId': 'Catalog allows a plain integer only. zod also allows a data binding. Decision pending.',
-  'KalturaAvatar.autoStart': 'Catalog allows a data binding. zod accepts a plain boolean only. Decision pending.',
-  'KalturaAvatar.allowInterrupt': 'Catalog allows a data binding. zod accepts a plain boolean only. Decision pending.',
 };
 
 // Dynamic values accept a literal, a data binding or a function call.
@@ -89,9 +87,12 @@ export function nodeFor(zodType, previous, named = false) {
     node = { $ref: `#/$defs/${kind}` };
   } else {
     switch (type._def.typeName) {
-      case 'ZodString':
+      case 'ZodString': {
         node = { type: 'string' };
+        const max = type._def.checks.find(check => check.kind === 'max');
+        if (max) node.maxLength = max.value;
         break;
+      }
       case 'ZodBoolean':
         node = { type: 'boolean' };
         break;
