@@ -201,21 +201,11 @@ jobs:
             dist/html-element-stub.mjs
             src/catalog/kaltura_catalog.json
             ${{ runner.temp }}/release/assets/dist.tar.gz
-      # The tag ruleset lets only repository admins, maintainers and this App create tags (docs/release.md).
-      # The job token is not one of them. Unset variable: fall back to the job token.
-      - name: Token for the tag push
-        id: app
-        if: ${{ vars.RELEASE_APP_CLIENT_ID != '' }}
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-          permission-contents: write
       # Same inputs give the same commit, so a re-run finds its own tag and skips the push.
       # Pushes the tag only, never main and never forced.
       - name: Release commit and tag
         env:
-          GH_TOKEN: ${{ steps.app.outputs.token || github.token }}
+          TAG_KEY: ${{ secrets.RELEASE_TAG_KEY }}
           TAG: ${{ needs.verify-inputs.outputs.tag }}
           SHA: ${{ needs.verify-inputs.outputs.sha }}
         run: |
@@ -232,14 +222,18 @@ jobs:
             -m "dist/ and the stamped catalog are only in this commit. It is on no branch."
           git tag "$TAG"
           commit="$(git rev-parse HEAD)"
-          basic="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
-          echo "::add-mask::${basic}"
-          export GIT_CONFIG_COUNT=1
-          export GIT_CONFIG_KEY_0='http.https://github.com/.extraheader'
-          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${basic}"
-          remote="$(git ls-remote origin "refs/tags/${TAG}" | cut -f1)"
+          # The tag ruleset lets only admins, maintainers and this deploy key create tags (docs/release.md).
+          # The job token cannot. The key is a write deploy key, used for this push only.
+          key="${RUNNER_TEMP}/tag-key"
+          umask 077
+          printf '%s\n' "$TAG_KEY" > "$key"
+          printf '%s\n' 'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl' > "${RUNNER_TEMP}/known_hosts"
+          export GIT_SSH_COMMAND="ssh -i ${key} -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${RUNNER_TEMP}/known_hosts"
+          trap 'rm -f "$key"' EXIT
+          origin="git@github.com:${GITHUB_REPOSITORY}.git"
+          remote="$(git ls-remote "$origin" "refs/tags/${TAG}" | cut -f1)"
           if [ -z "$remote" ]; then
-            git push origin "refs/tags/$TAG"
+            git push "$origin" "refs/tags/$TAG"
           elif [ "$remote" = "$commit" ]; then
             echo "Tag ${TAG} already points to ${commit} (re-run). Not pushing."
           else
