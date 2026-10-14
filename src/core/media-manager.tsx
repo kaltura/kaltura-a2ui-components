@@ -211,7 +211,6 @@ function MediaManagerView(props: MediaManagerCoreProps) {
       visualId = visual.id;
     })().catch(err => {
       if (cancelled) return;
-      console.error('[MediaManager] Load failed');
       renderLoadError(container, 'Media Manager', err, 'media-manager', reporter);
     });
 

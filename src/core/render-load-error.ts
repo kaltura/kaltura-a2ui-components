@@ -2,16 +2,18 @@ import { KalturaFailure, reportError, type KalturaReporter, type KalturaWidget }
 
 /**
  * Shows a load failure as plain text. Never builds markup from the message.
- * The error handler gets the message of a `KalturaFailure` only, never remote
- * error text. `reporter` is the component's `ReporterContext`.
+ * The page and the error handler get the message of a `KalturaFailure` only.
+ * Any other error is remote: the page shows `Failed to load <label>` and the
+ * real error goes to `console.error`. `reporter` is the component's `ReporterContext`.
  */
 export function renderLoadError(container: HTMLElement, label: string, error: unknown, widget: KalturaWidget, reporter?: KalturaReporter): void {
-  const message = error instanceof Error ? error.message : String(error);
   const box = document.createElement('div');
   box.className = 'kaltura-load-error';
   box.setAttribute('role', 'alert');
-  box.textContent = `Failed to load ${label}: ${message}`;
+  const failure = error instanceof KalturaFailure ? error : undefined;
+  box.textContent = `Failed to load ${label}${failure ? `: ${failure.message}` : ''}`;
   container.replaceChildren(box);
-  if (error instanceof KalturaFailure) reportError(error.code, widget, box.textContent, reporter, error.invalidProps);
-  else reportError('load-failed', widget, `Failed to load ${label}`, reporter);
+  if (failure) return reportError(failure.code, widget, box.textContent, reporter, failure.invalidProps);
+  console.error(box.textContent, error);
+  reportError('load-failed', widget, box.textContent, reporter);
 }
