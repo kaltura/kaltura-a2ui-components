@@ -12,6 +12,6 @@ export function renderLoadError(container: HTMLElement, label: string, error: un
   box.setAttribute('role', 'alert');
   box.textContent = `Failed to load ${label}: ${message}`;
   container.replaceChildren(box);
-  if (error instanceof KalturaFailure) reportError(error.code, widget, box.textContent, reporter);
+  if (error instanceof KalturaFailure) reportError(error.code, widget, box.textContent, reporter, error.invalidProps);
   else reportError('load-failed', widget, `Failed to load ${label}`, reporter);
 }

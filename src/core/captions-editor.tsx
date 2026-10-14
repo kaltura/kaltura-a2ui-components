@@ -1,8 +1,7 @@
 import { useContext, useEffect, useRef } from 'react';
 import type { FC } from 'react';
-import { isEntryId, isPositiveInt } from './ids';
 import { KalturaCaptionsEditorApi } from '../schemas/captions-editor';
-import { LoadError, withValidatedProps } from './validate-props';
+import { withValidatedProps } from './validate-props';
 import { withKs, withKsProp } from './ks';
 import { kalturaHosts } from './region';
 import { KalturaFailure, ReporterContext } from './host-hooks';
@@ -68,10 +67,6 @@ export interface CaptionsEditorCoreProps {
   uiconfId?: number;
 }
 
-/** The first prop that cannot be used, or `undefined`. */
-const invalidProp = (p: CaptionsEditorCoreProps): string | undefined =>
-  !isPositiveInt(p.partnerId) ? 'partnerId' : !isEntryId(p.entryId) ? 'entryId' : p.uiconfId != null && !isPositiveInt(p.uiconfId) ? 'uiconfId' : undefined;
-
 /**
  * The editor reads its settings from `data-*` attributes on its own iframe
  * when the URL has none (closed-captions-studio README). That needs the
@@ -82,12 +77,11 @@ const invalidProp = (p: CaptionsEditorCoreProps): string | undefined =>
 const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
   const { partnerId, ks, entryId, uiconfId } = props;
   const containerRef = useRef<HTMLDivElement>(null);
-  const invalid = invalidProp(props);
   const reporter = useContext(ReporterContext);
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || invalid) return;
+    if (!container) return;
 
     let cancelled = false;
     let blobUrl: string | undefined;
@@ -144,9 +138,8 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
       container.replaceChildren();
       if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
-  }, [partnerId, ks, entryId, uiconfId, invalid, reporter]);
+  }, [partnerId, ks, entryId, uiconfId, reporter]);
 
-  if (invalid) return <LoadError widget="captions-editor">{`Failed to load captions editor: Invalid ${invalid}`}</LoadError>;
   return <div ref={containerRef} className="kaltura-captions-editor-container" style={{ width: '100%', minHeight: '600px' }} />;
 };
 

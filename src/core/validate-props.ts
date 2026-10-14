@@ -91,6 +91,11 @@ export function checkProps(
   return { invalid: [...bad].slice(0, 5), pending };
 }
 
+/** The schema keys that start the `invalid` paths: `cards.0.title` gives `cards`. */
+export const topLevelProps = (schema: z.ZodObject<z.ZodRawShape>, invalid: string[]): string[] => [
+  ...new Set(invalid.map(path => path.split('.')[0]).filter(key => key in schema.shape)),
+];
+
 /**
  * True where props never change after the first render, as in the web
  * component adapters. There a missing required prop shows the error, because
@@ -103,13 +108,15 @@ export const StrictPendingContext = createContext(false);
  * styles/components.css. Reports the error to the host handler. `children`
  * is the message: fixed text and prop names only, never a prop value.
  */
-export const LoadError: FC<{ widget: KalturaWidget; code?: KalturaErrorCode; children: string }> = ({
+export const LoadError: FC<{ widget: KalturaWidget; code?: KalturaErrorCode; children: string; invalidProps?: string[] }> = ({
   widget,
   code = 'invalid-props',
   children,
+  invalidProps,
 }) => {
   const reporter = useContext(ReporterContext);
-  useEffect(() => reportError(code, widget, children, reporter), [code, widget, children, reporter]);
+  // The text is the key: `invalidProps` is rebuilt on every render.
+  useEffect(() => reportError(code, widget, children, reporter, invalidProps), [code, widget, children, reporter]); // eslint-disable-line react-hooks/exhaustive-deps
   return createElement('div', { className: 'kaltura-load-error', role: 'alert' }, children);
 };
 
@@ -133,6 +140,7 @@ export function withValidatedProps<P extends object>(
       return createElement(LoadError, {
         widget,
         code: invalidCode(invalid),
+        invalidProps: topLevelProps(schema, invalid),
         children: `Failed to load ${label}: Invalid ${invalid.join(', ')}`,
       });
     }
