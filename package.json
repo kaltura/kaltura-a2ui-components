@@ -38,7 +38,7 @@
   "module": "./dist/kaltura-react.mjs",
   "types": "./dist/types/adapters/react/index.d.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p examples",
     "build": "npm run build:react && npm run build:wc && npm run build:types && npm run build:notices",
     "build:react": "BUILD_TARGET=react vite build",
     "build:wc": "BUILD_TARGET=webcomponent vite build",
@@ -54,6 +54,9 @@
     "check:package": "publint && attw --pack . --profile esm-only",
     "check:consumer": "node scripts/check-consumer.mjs",
     "check:examples": "node scripts/check-examples.mjs",
+    "example:html": "npm run build && vite --config examples/plain-html/vite.config.ts --open /examples/plain-html/",
+    "example:react": "npm run build && vite --config examples/react/vite.config.ts --open",
+    "screenshot:examples": "node scripts/screenshot-examples.mjs",
     "gen:catalog": "node scripts/gen-catalog.mjs",
     "test:conformance": "vitest run test/conformance",
     "size": "size-limit",
