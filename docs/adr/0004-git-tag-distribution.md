@@ -1,8 +1,6 @@
 # 0004. Distribution: jsDelivr from git tags, no npm
 
-Status: accepted (2026-10-12). Revised by owner decision: jsDelivr-only, no npm. The npm-first plan of the first draft is dropped. Pipeline written and tested offline. Not yet run live (see Consequences).
-
-The file name keeps its old slug so links stay valid.
+Status: accepted, live since v0.2.0 (decided 2026-10-12). The owner chose jsDelivr only, no npm.
 
 Findings: SEC-09, QA-09, SEC-19. Code: `.github/workflows/release.yml`. Runbook: [release.md](../release.md). Consumer checks: [verify-release.md](../verify-release.md).
 
@@ -29,4 +27,3 @@ Findings: SEC-09, QA-09, SEC-19. Code: `.github/workflows/release.yml`. Runbook:
 - Release commits are on no branch. `git log main` does not show them. `git fetch --tags` brings them in, and GitHub keeps them because a tag points to them. The attestation names the `main` commit the release was built from.
 - jsDelivr serves only files in the tagged tree, with a per-package size limit. `dist/` is small enough today. A large new asset needs a check against that limit.
 - `npm i github:...#tag` installs the tagged tree, filtered by `files`. There is no `prepare` script, so nothing builds on the host.
-- No live release has run. The first real run tests the pipeline.

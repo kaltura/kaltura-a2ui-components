@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Kaltura A2UI components: plain HTML</title>
-    <!-- check-examples: expect kaltura-chart h4.kaltura-chart-title; kaltura-player [role="region"]; text:Cell -->
+    <!-- check-examples: expect kaltura-chart h4.kaltura-chart-title; kaltura-player [role="region"]; text:Cell; text:playerFeedback -->
   </head>
   <body>
     <h1>Kaltura A2UI components</h1>
@@ -18,42 +18,70 @@
     <h2>Player (needs a real partner, uiconf and entry)</h2>
     <kaltura-player id="player"></kaltura-player>
 
+    <h2>Agent log</h2>
+    <pre id="agent-log" style="white-space: pre-wrap; word-break: break-all"></pre>
+
     <!--
-      Served from the repo root, this loads the local build (npm run build).
-      On a real page, use the CDN file instead, with the integrity value from the Release:
-      https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js
+      Served from the repo root, this loads the local build: npm run example:html
+      On a real page, use the CDN file instead, with the tag and the integrity value from the latest Release:
+      https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@<tag>/dist/kaltura-wc.js
     -->
     <script src="../../dist/kaltura-wc.js"></script>
     <script>
-      // The IIFE defines all 12 custom elements and the global KalturaA2UIWebComponents.
-      const { setKsProvider, setErrorHandler } = KalturaA2UIWebComponents;
+      if (!window.KalturaA2UIWebComponents) {
+        document.body.insertAdjacentHTML(
+          'afterbegin',
+          '<p role="alert"><strong>dist/kaltura-wc.js is missing.</strong> Run <code>npm run example:html</code>.</p>',
+        );
+      } else {
+        // The IIFE defines all 12 custom elements and the global KalturaA2UIWebComponents.
+        const { setKsProvider, setErrorHandler, setAllowedPartners } = window.KalturaA2UIWebComponents;
 
-      // The host mints the Kaltura Session. The agent never sees it.
-      // Replace with a call to your backend. A user KS is enough for the Player.
-      setKsProvider(() => undefined);
+        // The host mints the Kaltura Session. The agent never sees it.
+        // Replace with a call to your backend. A user KS is enough for the Player.
+        setKsProvider(() => undefined);
 
-      // Report problems (invalid props, rejected URLs, load failures) to your own logging.
-      setErrorHandler((error) => console.warn('kaltura widget error:', error.code));
+        // List the partner ids you own. Components refuse any other id before they load code.
+        setAllowedPartners([1]);
 
-      document.getElementById('chart').config = {
-        chartType: 'bar',
-        title: 'Visits per day',
-        data: [
-          { day: 'Mon', visits: 12 },
-          { day: 'Tue', visits: 31 },
-          { day: 'Wed', visits: 24 },
-        ],
-        xKey: 'day',
-        yKeys: ['visits'],
-      };
+        // Report problems (invalid props, rejected URLs, load failures) to your own logging.
+        setErrorHandler((error) => console.warn('kaltura widget error:', error.code));
 
-      document.getElementById('cards').config = {
-        title: 'Cells',
-        cards: [{ title: 'Cell', content: 'The basic unit of life.' }],
-      };
+        // A stand-in for your agent. send() is what you would POST to it.
+        const agent = {
+          send: (message) => {
+            document.getElementById('agent-log').textContent += JSON.stringify(message) + '\n';
+          },
+        };
 
-      // Use real ids. Ids must be numbers, not numeric strings.
-      document.getElementById('player').config = { partnerId: 1, uiconfId: 2, entryId: '0_abc' };
+        // Components with an "action" send their errors and events here.
+        document.addEventListener('kaltura-action', (event) => agent.send(event.detail));
+
+        document.getElementById('chart').config = {
+          chartType: 'bar',
+          title: 'Visits per day',
+          data: [
+            { day: 'Mon', visits: 12 },
+            { day: 'Tue', visits: 31 },
+            { day: 'Wed', visits: 24 },
+          ],
+          xKey: 'day',
+          yKeys: ['visits'],
+        };
+
+        document.getElementById('cards').config = {
+          title: 'Cells',
+          cards: [{ title: 'Cell', content: 'The basic unit of life.' }],
+        };
+
+        // Use real ids. Ids must be numbers, not numeric strings.
+        document.getElementById('player').config = {
+          partnerId: 1,
+          uiconfId: 2,
+          entryId: '0_abc12345',
+          action: { event: { name: 'playerFeedback' } },
+        };
+      }
     </script>
   </body>
 </html>
