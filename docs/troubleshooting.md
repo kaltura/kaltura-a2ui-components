@@ -1,0 +1,17 @@
+# Troubleshooting
+
+Find the text you see. Error texts are exact. `<widget>` is the widget name, such as `player` or `recorder`. Your `setErrorHandler` function gets the same problem as a [code](host-api.md#errors).
+
+| If you see | Cause | Fix |
+|---|---|---|
+| `Failed to load <widget>: Invalid ks` | The KS is empty, has control characters, is not a string, or `setKsProvider` threw or rejected | Return the KS as a plain string. Log errors inside your provider: the widget never shows them ([KS](host-integration.md#kaltura-session-ks)) |
+| A widget shows nothing and no error | A required prop is missing. For most widgets that is the KS: your provider returned `undefined` | Return a KS from `setKsProvider`. Only Chart needs none. Player and Flashcards need one for protected entries |
+| `Failed to load <widget>: Invalid partnerId` (also `uiconfId`, `entryId`) | The value is not valid. A numeric string like `"123"`, `0` or a decimal is refused for `partnerId` | Send a positive integer. An `entryId` looks like `1_abc12345`. Tell the agent in the [prompt](agent-guide.md#3-one-config-for-the-prompt-and-the-limits) |
+| `Failed to load <widget>: partnerId is not allowed` (also `uiconfId`) | The id is not in your `setAllowedPartners` or `setAllowedUiconfs` list | Add the id, or fix the id the agent used ([allowed ids](host-api.md#allowed-partners-and-uiconfs)) |
+| `Failed to load player: Player script failed to load` | The browser could not fetch the player script of the `uiconfId`. Wrong ids, a CSP that blocks the host, an ad blocker, or the wrong region | Open the script in the Network tab. Check the ids in KMC. Allow the host in `script-src` ([CSP](host-integration.md#content-security-policy)). Call `setRegion` for a non-US account |
+| `serverUrl is not an allowed Unisphere origin` | `serverUrl` is not one of the Kaltura Unisphere hosts, or has a path other than `/v1`. The console shows its first 100 characters | Use the host of your region, such as `https://unisphere.nvp1.ovp.kaltura.com`. For a private cloud call `setExtraAllowedOrigins` ([Unisphere origins](host-integration.md#unisphere-origins)) |
+| `HTMLElement is not defined` | Node loaded `@a2ui/react` before this package | Import `@kaltura/a2ui-react` first ([SSR](host-integration.md#server-imports-ssr)). Surfaces still render in the browser only |
+| `ERR_PACKAGE_PATH_NOT_EXPORTED` | `require()` or a deep import such as `@kaltura/a2ui-react/dist/…`. The package is ESM only | Use `import` from `@kaltura/a2ui-react`, `@kaltura/a2ui-react/webcomponent` or `@kaltura/a2ui-react/catalog`. In CommonJS use `await import(…)` |
+| `Invalid element at key "title": expected a Zod schema` (the key differs) | zod 4 is installed. This package needs zod 3 | `npm i zod@3`. Then `npm ls zod` must show one 3.x version |
+| `npm audit` reports `dompurify` | `@a2ui/react` brings an old `dompurify` through `@a2ui/markdown-it` | Add the `overrides` entry from the [README](../README.md#quick-start). pnpm and Yarn: [DOMPurify override](host-integration.md#dompurify-override) |
+| A blank surface, and `processMessages` threw `A2uiValidationError: Validation failed for component 'KalturaPlayer' (root): partnerId: Expected number, received string` | A message does not match the catalog. The call throws, so the surface stays empty | Wrap `processMessages` in `try/catch`. Log the error and send it to the agent so it can resend a fixed message ([agent guide](agent-guide.md#4-send-errors-and-events-back)) |

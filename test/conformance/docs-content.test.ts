@@ -60,6 +60,12 @@ describe('QA-16: docs name real things', () => {
     expect([pins.length > 0, pins.filter(tag => tag !== `v${version}`)]).toEqual([true, []]);
   });
 
+  it('QA-16: docs/README.md links every doc page', () => {
+    const linked = new Set([...(text['docs/README.md'] ?? '').matchAll(/\]\(([^)\s#]+)/g)].map(match => join('docs', match[1] ?? '')));
+    const pages = [...DOCS.filter(path => /^docs\/(security\/)?[^/]+\.md$/.test(path) && path !== 'docs/README.md'), 'docs/adr/README.md'];
+    expect(pages.filter(path => !linked.has(path))).toEqual([]);
+  });
+
   it('QA-16: docs/host-api.md names every error code', () => {
     const type = read('src/core/host-hooks.ts').match(/type KalturaErrorCode =([^;]+);/)?.[1] ?? '';
     const codes = [...type.matchAll(/'([a-z-]+)'/g)].map(match => match[1] ?? '');
