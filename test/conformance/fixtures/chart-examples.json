@@ -1,0 +1,14 @@
+[
+  { "chartType": "line", "row": { "month": "Jan", "plays": 120, "views": 80 }, "xKey": "month", "yKeys": ["plays", "views"] },
+  { "chartType": "bar", "row": { "course": "Intro", "plays": 120 }, "xKey": "course", "yKeys": ["plays"] },
+  { "chartType": "area", "row": { "week": "W1", "plays": 120, "views": 80 }, "xKey": "week", "yKeys": ["plays", "views"] },
+  { "chartType": "scatter", "row": { "minutes": 12, "completion": 80 }, "xKey": "minutes", "yKeys": ["completion"] },
+  { "chartType": "pie", "row": { "name": "Mobile", "value": 60 }, "xKey": "name", "yKeys": ["value"] },
+  { "chartType": "geo", "row": { "country": "France", "plays": 40 }, "xKey": "country", "yKeys": ["plays"] },
+  { "chartType": "wordcloud", "row": { "text": "photosynthesis", "count": 12 }, "xKey": "text", "yKeys": ["count"] },
+  { "chartType": "treemap", "row": { "topic": "Biology", "minutes": 340 }, "xKey": "topic", "yKeys": ["minutes"] },
+  { "chartType": "heatmap", "row": { "day": "Mon", "hour": "9am", "plays": 5 }, "xKey": "day", "yKeys": ["plays", "hour"] },
+  { "chartType": "radar", "row": { "skill": "Speed", "team": 3, "goal": 5 }, "xKey": "skill", "yKeys": ["team", "goal"] },
+  { "chartType": "sankey", "row": { "from": "Home", "to": "Course", "visits": 30 }, "xKey": "from", "yKeys": ["to", "visits"] },
+  { "chartType": "funnel", "row": { "stage": "Viewed", "users": 1000 }, "xKey": "stage", "yKeys": ["users"] }
+]

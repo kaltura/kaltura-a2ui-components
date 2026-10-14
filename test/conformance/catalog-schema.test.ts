@@ -144,3 +144,28 @@ describe('CONF-05: every prop is documented', () => {
     expect(empty).toEqual([]);
   });
 });
+
+describe('CONF-19: descriptions are plain for the agent', () => {
+  const texts = (node: unknown): string[] => {
+    if (!node || typeof node !== 'object') return [];
+    return Object.entries(node).flatMap(([key, child]) => (key === 'description' && typeof child === 'string' ? [child] : texts(child)));
+  };
+
+  it('CONF-19: no description has an em dash', () => {
+    expect(texts(catalog).filter(text => text.includes('—'))).toEqual([]);
+  });
+
+  it.each(['KalturaPlayer', 'KalturaFlashcards', 'KalturaCaptionsEditor'])('CONF-19: %s does not mention an iframe', name => {
+    expect(texts(catalog.components[name]).filter(text => /iframe/i.test(text))).toEqual([]);
+  });
+
+  it('CONF-19: every integer ID says it is not a string or a binding', () => {
+    type Props = Record<string, { type?: string; description: string }>;
+    const ids = KALTURA.flatMap(name =>
+      Object.entries((catalog.components[name].allOf[2] as unknown as { properties: Props }).properties)
+        .filter(([prop, node]) => /Id$/.test(prop) && node.type === 'integer' && !node.description.includes('Integer, not a string, not a binding.'))
+        .map(([prop]) => `${name}.${prop}`),
+    );
+    expect(ids).toEqual([]);
+  });
+});

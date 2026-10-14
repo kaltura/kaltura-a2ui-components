@@ -5,7 +5,6 @@ export const KalturaCaptionsEditorApi = {
   name: 'KalturaCaptionsEditor',
   schema: z.object({
     partnerId: z.number().int().positive(),
-    ks: CommonSchemas.DynamicString.optional(),
     entryId: CommonSchemas.DynamicString,
     uiconfId: z.number().int().positive().optional(),
     action: CommonSchemas.Action.optional(),

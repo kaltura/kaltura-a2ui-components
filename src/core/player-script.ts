@@ -54,7 +54,7 @@ export function loadPlayerScript(partnerId: number, uiconfId: number): Promise<P
       if (api?.setup) resolve(api as PlayerApi);
       else fail('Player API is missing');
     };
-    tag.onerror = () => fail('Player script failed to load');
+    tag.onerror = () => fail('Player script failed to load. Check partnerId, uiconfId, region and CSP');
     document.head.append(tag);
   });
   current = { url, loading };

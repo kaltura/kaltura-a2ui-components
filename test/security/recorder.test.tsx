@@ -408,7 +408,7 @@ describe('REC-01: bad props show a plain-text error and load nothing', () => {
     expect([remote.tags().length, remote.created.length, box(container).querySelector('.kaltura-load-error')?.textContent]).toEqual([
       0,
       0,
-      expect.stringMatching(/^Failed to load recorder: Invalid \w+$/),
+      expect.stringMatching(/^Failed to load recorder: Invalid \w+(: call setKsProvider)?$/),
     ]);
   });
 

@@ -1,10 +1,11 @@
 // Covers: plain-text error states share one role, one class and one style (src/styles).
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { act } from 'react';
 import { mount } from '../helpers/render';
 import { renderLoadError } from '../../src/core/render-load-error';
+import { KalturaFailure } from '../../src/core/host-hooks';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -15,7 +16,7 @@ const css = readFileSync(resolve(process.cwd(), 'src/styles/components.css'), 'u
 describe('SEC-06: every plain-text error state is one alert with one class', () => {
   it('SEC-06: renderLoadError makes an alert with the shared class and no inline style', () => {
     const host = document.body.appendChild(document.createElement('div'));
-    renderLoadError(host, 'thing', new Error('boom'), 'avatar');
+    renderLoadError(host, 'thing', new KalturaFailure('load-failed', 'boom'), 'avatar');
     const box = host.firstElementChild!;
     expect([box.className, box.getAttribute('role'), box.hasAttribute('style'), box.textContent]).toEqual([
       'kaltura-load-error',
@@ -23,6 +24,14 @@ describe('SEC-06: every plain-text error state is one alert with one class', () 
       false,
       'Failed to load thing: boom',
     ]);
+  });
+
+  it('SEC-06: renderLoadError shows fixed text for any other error and logs the real one', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const host = document.body.appendChild(document.createElement('div'));
+    const error = new Error('remote text');
+    renderLoadError(host, 'thing', error, 'avatar');
+    expect([host.textContent, spy.mock.calls]).toEqual(['Failed to load thing', [['Failed to load thing', error]]]);
   });
 
   it('SEC-06: the validation wrapper makes an alert with the shared class and no inline style', async () => {
