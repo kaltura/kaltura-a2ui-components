@@ -169,11 +169,12 @@ describe('QA-07: Media Manager lifecycle', () => {
     expect(experiences['media-manager']['kaltura-media-manager'].settings).toEqual({ ks: 'ks-1', partnerId: 1 });
   });
 
-  it('APPSEC-08: a failed load logs a fixed string with no error or KS', async () => {
+  it('APPSEC-08: a failed load shows fixed text and logs the real error to the console', async () => {
     const spy = errorSpy();
-    const Mm = await manager({ createWorkspace: async () => { throw new Error('boom ks-1'); } });
-    await render(Mm, base);
-    expect(spy.mock.calls).toEqual([['[MediaManager] Load failed']]);
+    const error = new Error('boom');
+    const Mm = await manager({ createWorkspace: async () => { throw error; } });
+    const view = await render(Mm, base);
+    expect([view.container.textContent, spy.mock.calls]).toEqual(['Failed to load Media Manager', [['Failed to load Media Manager', error]]]);
   });
 
   it.each(['', 'a b', 'x'.repeat(65), 7, null, undefined])('APPSEC-09: row id %j is ignored', async id => {
