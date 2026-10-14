@@ -2,14 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://kaltura.github.io/a2ui/v2/catalog.json",
   "title": "Kaltura Experience Components Catalog",
-  "description": "A2UI catalog for Kaltura Experience Components — Player v7, Flashcards, Media Manager, and more. Freestanding schema with all types inlined. Lists the A2UI basic components and functions (copied from the A2UI basic catalog), the Kaltura components and the Kaltura function copyToClipboard. A surface uses one catalog, so register only this one.",
+  "description": "A2UI catalog for Kaltura Experience Components: Player v7, Flashcards, Media Manager, and more. Freestanding schema with all types inlined. Lists the A2UI basic components and functions (copied from the A2UI basic catalog), the Kaltura components and the Kaltura function copyToClipboard. A surface uses one catalog, so register only this one.",
   "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json",
   "x-kaltura-adapters": {
     "description": "Where tier-1 A2UI clients can load the renderers backing this catalog's components. Served by jsDelivr from the git tags of github.com/kaltura/kaltura-a2ui-components. Not on npm. In source, the tag and the SRI hashes are placeholders. The release workflow fills them in and commits the result only in the release commit the tag points to.",
     "package": "@kaltura/a2ui-react",
     "repository": "https://github.com/kaltura/kaltura-a2ui-components",
     "react": {
-      "description": "ESM bundle. React is an external peer — the host provides it. Register kalturaReactCatalog alone (see buildKalturaCatalog). It already holds the basic components. The module imports a second file, the SSR stub at stubCdn. Pin it with stubIntegrity too.",
+      "description": "ESM bundle. React is an external peer. The host provides it. Register kalturaReactCatalog alone (see buildKalturaCatalog). It already holds the basic components. The module imports a second file, the SSR stub at stubCdn. Pin it with stubIntegrity too.",
       "format": "esm",
       "install": "npm i github:kaltura/kaltura-a2ui-components#__RELEASE_TAG__",
       "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@__RELEASE_TAG__/dist/kaltura-react.mjs",
@@ -961,7 +961,7 @@
     },
     "KalturaPlayer": {
       "type": "object",
-      "description": "Kaltura Player v7 — full-featured video player with DRM, multi-audio, 30+ plugins, captions, analytics tracking, ad insertion, and cue points. Renders as an iframe.",
+      "description": "Plays one entry with the player (uiConf) the host allows.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -971,15 +971,15 @@
             "component": { "const": "KalturaPlayer" },
             "partnerId": {
               "type": "integer",
-              "description": "Kaltura account/partner ID."
+              "description": "Kaltura partner (account) ID. Integer, not a string, not a binding."
             },
             "uiconfId": {
               "type": "integer",
-              "description": "Player configuration ID (from KMC Studio or uiConf.list)."
+              "description": "Player (uiConf) ID. Integer, not a string, not a binding."
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Media entry ID to play."
+              "description": "Entry ID to play, a string like '0_abc123'."
             },
             "autoplay": {
               "$ref": "#/$defs/DynamicBoolean",
@@ -1012,7 +1012,7 @@
               "$ref": "#/$defs/DynamicString",
               "description": "Optional entry description shown under the player. HTML tags are stripped."
             },
-            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." }
           },
           "required": ["component", "partnerId", "uiconfId", "entryId"]
         }
@@ -1021,7 +1021,7 @@
     },
     "KalturaFlashcards": {
       "type": "object",
-      "description": "Kaltura Flashcards — structured content cards with optional video clips for each card. Ideal for study material, topic summaries, and bite-sized learning derived from video content.",
+      "description": "A deck of study cards. Each card can have video clips. The cards are literal: to change them, send the component again.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -1031,11 +1031,11 @@
             "component": { "const": "KalturaFlashcards" },
             "partnerId": {
               "type": "integer",
-              "description": "Kaltura account/partner ID. Needed to play the clips."
+              "description": "Kaltura partner (account) ID. Needed to play the clips. Integer, not a string, not a binding."
             },
             "uiconfId": {
               "type": "integer",
-              "description": "Player configuration ID used to play the clips."
+              "description": "Player (uiConf) ID used to play the clips. Integer, not a string, not a binding."
             },
             "title": {
               "$ref": "#/$defs/DynamicString",
@@ -1047,7 +1047,7 @@
             },
             "cards": {
               "type": "array",
-              "description": "Ordered list of flashcard items.",
+              "description": "Ordered list of cards. Literal only, no data binding: to change the cards, send the component again.",
               "items": {
                 "type": "object",
                 "properties": {
@@ -1096,7 +1096,7 @@
                 "additionalProperties": false
               }
             },
-            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." }
           },
           "required": ["component", "title", "cards"]
         }
@@ -1105,7 +1105,7 @@
     },
     "KalturaMediaManager": {
       "type": "object",
-      "description": "Kaltura Media Manager — browsable content library for selecting, previewing, and managing media entries. Supports category-scoped views, selection mode for embedding, and full management mode for content operations.",
+      "description": "Library browser for the account's media. In 'select' mode the user picks entries and the action gets their IDs. 'manage' mode is the full content manager.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -1115,7 +1115,7 @@
             "component": { "const": "KalturaMediaManager" },
             "partnerId": {
               "type": "integer",
-              "description": "Kaltura account/partner ID."
+              "description": "Kaltura partner (account) ID. Integer, not a string, not a binding."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
@@ -1141,7 +1141,7 @@
               "$ref": "#/$defs/DynamicString",
               "description": "ID of the content scope (e.g. category ID to browse)."
             },
-            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." }
           },
           "required": ["component", "partnerId"]
         }
@@ -1150,7 +1150,7 @@
     },
     "KalturaAnalytics": {
       "type": "object",
-      "description": "Kaltura Analytics Dashboard: the embedded Kaltura analytics app. The host supplies the Kaltura Session, so there is no ks prop. Shows one view, for a media entry or a report type, over a date range.",
+      "description": "Kaltura Analytics: shows one view of the analytics app, for a media entry or a report type, over a date range. The host supplies the Kaltura Session, so there is no ks prop.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -1160,7 +1160,7 @@
             "component": { "const": "KalturaAnalytics" },
             "partnerId": {
               "type": "integer",
-              "description": "Kaltura account/partner ID."
+              "description": "Kaltura partner (account) ID. Integer, not a string, not a binding."
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
@@ -1178,7 +1178,7 @@
               "$ref": "#/$defs/DynamicString",
               "description": "End of the date range, as YYYY-MM-DD. Needs fromDate."
             },
-            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." }
           },
           "required": ["component", "partnerId"]
         }
@@ -1187,7 +1187,7 @@
     },
     "KalturaCaptionsEditor": {
       "type": "object",
-      "description": "Kaltura Caption Studio — full-featured in-browser captions editor for a specific media entry.",
+      "description": "Kaltura Captions editor: edits the captions of one media entry.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -1197,7 +1197,7 @@
             "component": { "const": "KalturaCaptionsEditor" },
             "partnerId": {
               "type": "integer",
-              "description": "Kaltura account/partner ID."
+              "description": "Kaltura partner (account) ID. Integer, not a string, not a binding."
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
@@ -1205,9 +1205,9 @@
             },
             "uiconfId": {
               "type": "integer",
-              "description": "Optional uiConf ID for the captions editor player."
+              "description": "Optional. uiConf ID of the editor's own player. Integer, not a string, not a binding."
             },
-            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." }
           },
           "required": ["component", "partnerId", "entryId"]
         }
@@ -1216,7 +1216,7 @@
     },
     "KalturaRecorder": {
       "type": "object",
-      "description": "Kaltura Express Recorder — in-browser webcam/screen recording widget that uploads directly to the Kaltura account.",
+      "description": "Kaltura Recorder: records webcam, audio or screen in the browser and uploads the recording to the account as a new entry.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -1226,11 +1226,11 @@
             "component": { "const": "KalturaRecorder" },
             "partnerId": {
               "type": "integer",
-              "description": "Kaltura account/partner ID."
+              "description": "Kaltura partner (account) ID. Integer, not a string, not a binding."
             },
             "uiconfId": {
               "type": "integer",
-              "description": "Player uiConf ID. The recorder uses it to load the player for the recorded entry."
+              "description": "Player (uiConf) ID. The recorder uses it to load the player for the recorded entry. Integer, not a string, not a binding."
             },
             "entryName": {
               "type": "string",
@@ -1253,7 +1253,7 @@
               "type": "integer",
               "description": "Longest recording in seconds. At most 86400."
             },
-            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." }
           },
           "required": ["component", "partnerId", "uiconfId"]
         }
@@ -1272,7 +1272,7 @@
             "component": { "const": "KalturaAvatar" },
             "partnerId": {
               "type": "integer",
-              "description": "Kaltura account/partner ID."
+              "description": "Kaltura partner (account) ID. Integer, not a string, not a binding."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
@@ -1296,7 +1296,7 @@
               "enum": ["light", "dark", "studio"],
               "description": "Colour theme. Default: 'light' when the page has data-theme=\"light\", otherwise 'dark'."
             },
-            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." }
           },
           "required": ["component", "partnerId"]
         }
@@ -1305,7 +1305,7 @@
     },
     "KalturaGenie": {
       "type": "object",
-      "description": "Kaltura Genie — AI-powered content discovery and Q&A widget backed by Unisphere.",
+      "description": "Kaltura Genie: AI search and Q&A over the account's video content.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -1315,7 +1315,7 @@
             "component": { "const": "KalturaGenie" },
             "partnerId": {
               "type": "integer",
-              "description": "Kaltura account/partner ID."
+              "description": "Kaltura partner (account) ID. Integer, not a string, not a binding."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
@@ -1331,9 +1331,9 @@
             },
             "uiconfId": {
               "type": "integer",
-              "description": "Player UI configuration ID (uiConf). Genie needs it to start."
+              "description": "Player (uiConf) ID. Genie needs it to start. Integer, not a string, not a binding."
             },
-            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." }
           },
           "required": ["component", "partnerId", "uiconfId"]
         }
@@ -1342,7 +1342,7 @@
     },
     "KalturaContentLab": {
       "type": "object",
-      "description": "Kaltura Content Lab — AI-powered content creation and enrichment studio for media entries.",
+      "description": "Kaltura Content Lab: AI studio that creates and enriches content for one media entry.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -1352,7 +1352,7 @@
             "component": { "const": "KalturaContentLab" },
             "partnerId": {
               "type": "integer",
-              "description": "Kaltura account/partner ID."
+              "description": "Kaltura partner (account) ID. Integer, not a string, not a binding."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
@@ -1364,9 +1364,9 @@
             },
             "uiconfId": {
               "type": "integer",
-              "description": "Player UI configuration ID (uiConf) for the video preview."
+              "description": "Player (uiConf) ID for the video preview. Integer, not a string, not a binding."
             },
-            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." }
           },
           "required": ["component", "partnerId", "uiconfId", "entryId"]
         }
@@ -1375,7 +1375,7 @@
     },
     "KalturaAgentsWidget": {
       "type": "object",
-      "description": "Kaltura AI Agents Widget — embedded Kaltura AI agents interface via Unisphere.",
+      "description": "Kaltura AI Agents: the account's AI agents interface.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -1385,13 +1385,13 @@
             "component": { "const": "KalturaAgentsWidget" },
             "partnerId": {
               "type": "integer",
-              "description": "Kaltura account/partner ID."
+              "description": "Kaltura partner (account) ID. Integer, not a string, not a binding."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
               "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
-            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." }
           },
           "required": ["component", "partnerId"]
         }
@@ -1400,7 +1400,7 @@
     },
     "KalturaVodAvatar": {
       "type": "object",
-      "description": "Kaltura VOD Avatar — the avatar video studio, powered by Unisphere.",
+      "description": "Kaltura VOD Avatar: the avatar video studio.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -1410,13 +1410,13 @@
             "component": { "const": "KalturaVodAvatar" },
             "partnerId": {
               "type": "integer",
-              "description": "Kaltura account/partner ID."
+              "description": "Kaltura partner (account) ID. Integer, not a string, not a binding."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
               "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
-            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." }
           },
           "required": ["component", "partnerId"]
         }
@@ -1425,7 +1425,7 @@
     },
     "KalturaChart": {
       "type": "object",
-      "description": "Kaltura Chart — data visualization component supporting 12 chart types: line, bar, area, pie, scatter, geo, wordcloud, treemap, heatmap, radar, sankey, funnel.",
+      "description": "Kaltura Chart: 12 chart types (line, bar, area, pie, scatter, geo, wordcloud, treemap, heatmap, radar, sankey, funnel). The data is literal: to update the chart, send the component again.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -1436,12 +1436,12 @@
             "chartType": {
               "type": "string",
               "enum": ["line", "bar", "area", "pie", "scatter", "geo", "wordcloud", "treemap", "heatmap", "radar", "sankey", "funnel"],
-              "description": "Chart visualization type."
+              "description": "Chart type. It sets how rows are read. line, bar, area, scatter, radar: xKey is the category, yKeys are the numeric series. pie, treemap, funnel, wordcloud, geo: yKeys[0] is the value, and rows with a value of 0 or less are dropped (wordcloud draws the top 80). geo: xKey is a country name or an ISO alpha-2 code. sankey: one row per link, xKey is the source and yKeys is [target, value]. heatmap: one row per cell, xKey is the column and yKeys is [value, row]."
             },
             "data": {
               "type": "array",
               "items": { "type": "object" },
-              "description": "Array of data record objects. Keys used as x/y axes."
+              "description": "Rows to draw, as objects. Literal only, no data binding: to update the chart, send the component again. At most 500 rows are drawn. Row shape depends on chartType."
             },
             "sourceData": {
               "type": "array",
@@ -1454,12 +1454,12 @@
             },
             "xKey": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Data key for the x-axis / category dimension. Auto-detected if omitted."
+              "description": "Key of the x-axis or category value in each row. Default: 'name' (pie), 'text' (wordcloud), 'country' (geo), 'source' (sankey), else the first key with a non-number value."
             },
             "yKeys": {
               "type": "array",
               "items": { "type": "string" },
-              "description": "Data keys for the y-axis / value dimensions. Auto-detected if omitted."
+              "description": "Keys of the value series. Default: every key except xKey. For pie, treemap, funnel, wordcloud, geo, sankey and heatmap the order matters. See chartType."
             },
             "yLabels": {
               "type": "array",
@@ -1507,7 +1507,7 @@
                 "additionalProperties": false
               }
             },
-            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
+            "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." }
           },
           "required": ["component", "chartType", "data"]
         }
