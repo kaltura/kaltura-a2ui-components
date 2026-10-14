@@ -15,5 +15,6 @@ export const KalturaPlayerApi = {
     aspectRatio: CommonSchemas.DynamicString.optional(),
     entryName: CommonSchemas.DynamicString.optional(),
     entryDescription: CommonSchemas.DynamicString.optional(),
+    action: CommonSchemas.Action.optional(),
   }),
 };

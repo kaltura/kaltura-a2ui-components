@@ -44,6 +44,7 @@
       "setExtraMediaOrigins",
       "setKsProvider",
       "setRegion",
+      "toClientError",
       "vodAvatarReactImpl"
     ],
     "types": [
@@ -60,6 +61,7 @@
       "FlashCard",
       "FlashcardsCoreProps",
       "GenieCoreProps",
+      "KalturaActionContext",
       "KalturaError",
       "KalturaErrorCode",
       "KalturaEvent",
@@ -109,10 +111,12 @@
       "setEventHandler",
       "setExtraAllowedOrigins",
       "setKsProvider",
-      "setRegion"
+      "setRegion",
+      "toClientError"
     ],
     "types": [
       "AllowedIds",
+      "KalturaActionContext",
       "KalturaError",
       "KalturaErrorCode",
       "KalturaEvent",

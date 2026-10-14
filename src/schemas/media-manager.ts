@@ -11,5 +11,6 @@ export const KalturaMediaManagerApi = {
     mode: z.enum(['select', 'manage']).optional(),
     multiSelect: z.boolean().optional(),
     contextId: CommonSchemas.DynamicString.optional(),
+    action: CommonSchemas.Action.optional(),
   }),
 };

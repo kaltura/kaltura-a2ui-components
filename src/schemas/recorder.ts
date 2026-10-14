@@ -15,5 +15,6 @@ export const KalturaRecorderApi = {
     allowScreenShare: z.boolean().optional(),
     // Seconds. The recording stops by itself at this limit.
     maxRecordingTime: z.number().int().positive().max(86400).optional(),
+    action: CommonSchemas.Action.optional(),
   }),
 };

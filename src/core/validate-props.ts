@@ -3,7 +3,7 @@ import type { ComponentType, FC } from 'react';
 import { z } from 'zod';
 import { CommonSchemas } from '@a2ui/web_core/v0_9';
 import { isEntryId, isPositiveInt } from './ids';
-import { invalidCode, reportError, type KalturaErrorCode, type KalturaWidget } from './host-hooks';
+import { invalidCode, reportError, ReporterContext, type KalturaErrorCode, type KalturaWidget } from './host-hooks';
 import { refusedIdProp } from './allowed-ids';
 
 // Core components get resolved props, so the bindings and function calls that the
@@ -108,7 +108,8 @@ export const LoadError: FC<{ widget: KalturaWidget; code?: KalturaErrorCode; chi
   code = 'invalid-props',
   children,
 }) => {
-  useEffect(() => reportError(code, widget, children), [code, widget, children]);
+  const reporter = useContext(ReporterContext);
+  useEffect(() => reportError(code, widget, children, reporter), [code, widget, children, reporter]);
   return createElement('div', { className: 'kaltura-load-error', role: 'alert' }, children);
 };
 

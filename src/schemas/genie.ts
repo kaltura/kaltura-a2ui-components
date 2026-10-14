@@ -10,5 +10,6 @@ export const KalturaGenieApi = {
     uiconfId: z.number().int().positive(),
     categoryId: CommonSchemas.DynamicString.optional(),
     language: CommonSchemas.DynamicString.optional(),
+    action: CommonSchemas.Action.optional(),
   }),
 };

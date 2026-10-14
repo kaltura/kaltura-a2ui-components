@@ -9,5 +9,6 @@ export const KalturaVodAvatarApi = {
     serverUrl: CommonSchemas.DynamicString,
     entryId: CommonSchemas.DynamicString.optional(),
     avatarStyle: CommonSchemas.DynamicString.optional(),
+    action: CommonSchemas.Action.optional(),
   }),
 };

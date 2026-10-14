@@ -8,5 +8,6 @@ export const KalturaCaptionsEditorApi = {
     ks: CommonSchemas.DynamicString.optional(),
     entryId: CommonSchemas.DynamicString,
     uiconfId: z.number().int().positive().optional(),
+    action: CommonSchemas.Action.optional(),
   }),
 };

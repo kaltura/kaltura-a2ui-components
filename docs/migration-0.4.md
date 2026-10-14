@@ -10,6 +10,7 @@
 | `KalturaCaptionsEditor` | Runs the editor in a same-origin blob iframe. Breaking: public function removed | [Player, Flashcards and Captions editor](#player-flashcards-and-captions-editor) |
 | `KalturaGenie`, `KalturaContentLab`, `KalturaAgentsWidget`, `KalturaVodAvatar` | Send the config the live Unisphere runtimes take. Before, they rendered blank. Breaking: new required props on Genie and Content Lab | [Unisphere widgets](#unisphere-widgets) |
 | Catalog | New id `https://kaltura.github.io/a2ui/v2/catalog.json`. The JSON now lists the basic components and functions. Breaking: the old id is gone | [Catalog v2](#catalog-v2) |
+| All 12 Kaltura components | New optional `action` prop sends errors and events to the agent. Additive, nothing to change | [Agent feedback](#agent-feedback) |
 
 The full list is in [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
 
@@ -187,3 +188,13 @@ PLAYER_SANDBOX_PRESET
 - The full Captions editor UI with a real caption asset. The live check on `nvp1` reached the "Current video does not have captions" state.
 - Regional accounts for the Captions editor. CORS on `embed.php` was verified on `www.kaltura.com`, `api.eu`, `api.de`, `api.ca`, `api.ap`, `api.cap2.ovp` and `api.syp2.ovp`. The editor itself was loaded only on `nvp1`.
 - The effect of a strict host CSP on the player script.
+
+## Agent feedback
+
+Additive. Nothing breaks and nothing changes without the new prop.
+
+- Every Kaltura component takes an optional `action` prop, the same shape as the basic Button `action`. Its errors and events then reach the agent as A2UI actions with fixed fields only. Web component hosts set `config.action` and listen for the `kaltura-action` DOM event.
+- `KalturaError` and `KalturaEvent` get an optional `surfaceId`.
+- New export `toClientError(error)` builds an A2UI v0.9 client `error` message from a `KalturaError`.
+
+Details: [host-api.md](host-api.md#agent-feedback).

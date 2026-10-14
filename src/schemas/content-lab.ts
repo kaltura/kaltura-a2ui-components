@@ -9,5 +9,6 @@ export const KalturaContentLabApi = {
     serverUrl: CommonSchemas.DynamicString,
     uiconfId: z.number().int().positive(),
     entryId: CommonSchemas.DynamicString,
+    action: CommonSchemas.Action.optional(),
   }),
 };
