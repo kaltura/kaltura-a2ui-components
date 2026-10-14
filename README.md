@@ -7,7 +7,7 @@ The agent sends JSON, your page renders the real widget.
 
 [![ci](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/ci.yml/badge.svg)](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/ci.yml)
 [![e2e](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/e2e.yml/badge.svg)](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/e2e.yml)
-[![licence: AGPL-3.0-only](https://img.shields.io/badge/licence-AGPL--3.0--only-blue.svg)](LICENSE)
+[![licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-blue.svg)](LICENSE)
 
 ![A bar chart and flashcards rendered by the Kaltura custom elements](docs/img/examples.png)
 
@@ -118,7 +118,7 @@ if (surface) createRoot(document.getElementById('root')!).render(createElement(A
 
 Your server mints the KS ([docs/ks-privileges.md](docs/ks-privileges.md)). Chart needs no KS, and Flashcards need one only for protected clips.
 
-- The catalog id `https://kaltura.github.io/a2ui/v2/catalog.json` is a name. Nothing is served there. Fetch the file from [Catalog JSON](#catalog-json). The `v1` id was the 0.3.x catalog: [docs/migration-0.4.md](docs/migration-0.4.md#catalog-v2).
+- The catalog id `https://kaltura.github.io/a2ui/v2/catalog.json` is a name, and the file is also served there (copy of the release asset). Pin the one from [Catalog JSON](#catalog-json). The `v1` id was the 0.3.x catalog: [docs/migration-0.4.md](docs/migration-0.4.md#catalog-v2).
 - Send `processor.getRendererCapabilities({ versions: ['v0.9'] })` to your agent as `a2uiClientCapabilities`, so it picks a catalog you registered.
 - `buildKalturaCatalog(id?)` builds the same catalog under another id. `loadKalturaCatalog(url)` fetches a catalog JSON and keys it by its `catalogId`.
 
@@ -217,4 +217,4 @@ More: [docs/host-integration.md](docs/host-integration.md) and [docs/host-api.md
 
 ## License
 
-AGPL-3.0-only.
+Apache-2.0. See [LICENSE](LICENSE). Releases up to v0.4.0 are AGPL-3.0-only.
