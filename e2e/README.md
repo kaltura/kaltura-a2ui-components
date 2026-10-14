@@ -34,14 +34,13 @@ Title cases that wait for a fix `[pending SEC-xx]`. They are skipped unless `E2E
 
 ## Run against a published release
 
-Reads from jsDelivr, writes only to the directory you pass. Use it to check that the served bytes behave like the local build (E2E-01).
+Reads from jsDelivr, writes only to the directory you pass. Replace `vX.Y.Z` with a released tag. Use it to check that the served bytes behave like the local build (E2E-01).
 
 ```sh
-tag=v0.3.0; dir="$(mktemp -d)"
+tag=vX.Y.Z; dir="$(mktemp -d)"
 for f in kaltura-wc.js kaltura-react.mjs html-element-stub.mjs; do
   curl -fsSL "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@${tag}/dist/${f}" -o "${dir}/${f}"
 done
 E2E_DIST="$dir" E2E_PENDING=1 npx playwright test
 ```
 
-v0.3.0: all 456 cases pass in chromium, firefox and webkit.

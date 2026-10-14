@@ -2,7 +2,7 @@
 
 Status: accepted and implemented (2026-10-13). Supersedes the "KS in iframe URLs accepted" part of [ADR 0002](0002-ks-handling.md). Not verified yet: the full Captions editor UI with a real caption asset, and regional accounts.
 
-Covers SEC-10 (SECF-30841) and SEC-14. Code: `src/core/player-script.ts`, `src/core/player.tsx` (`PlayerEmbed`), `src/core/captions-editor.tsx`.
+Covers SEC-10 and SEC-14. Code: `src/core/player-script.ts`, `src/core/player.tsx` (`PlayerEmbed`), `src/core/captions-editor.tsx`.
 
 ## Context
 
@@ -26,7 +26,7 @@ Clips assume the entry has transcoded (HLS or DASH) flavors. On an entry with on
 
 `useHeaderForKs: true` is required. Checked live on `nvp1` with a real KS: with it, no request carried the KS in its URL. Without it, the `playManifest` requests carried the KS in the URL.
 
-The KS comes from `setKsProvider` first. The `ks` prop is the fallback. Flashcards ask the provider for `flashcards`. `autoplay` and `muted` go to `playback` only when the prop is set, so the uiconf defaults apply otherwise. The plugin set comes from the uiconf. The old `plugins=` URL parameter is gone.
+The KS comes from `setKsProvider` only. Flashcards ask the provider for `flashcards`. `autoplay` and `muted` go to `playback` only when the prop is set, so the uiconf defaults apply otherwise. The plugin set comes from the uiconf. The old `plugins=` URL parameter is gone.
 
 ### Captions editor
 

@@ -13,13 +13,13 @@ Findings: SEC-05 (design), SEC-10 (accepted at first, resolved by [ADR 0008](000
 ## Decision
 
 - The host supplies the KS with `setKsProvider(widget => ks)`. The provider gets the widget name, so it can return a different least-privilege KS per widget.
-- `ks` is optional in the schemas and the catalog. The prop stays for older hosts. A non-empty provider result wins over the prop.
+- The schemas and the catalog have no `ks` prop (removed in 0.4). The provider is the only source on the A2UI path, so an agent cannot set the KS.
 - The component never mints, stores, logs or renews a KS. A bad value or a failed provider shows `Invalid ks` and never the value.
 - The KS in iframe URLs (SEC-10) was accepted at first, because the guides use it. 0.4 removes it for every widget: Analytics sends it by `postMessage`, the Recorder, Player, Flashcards and Captions editor take it in JavaScript ([ADR 0005](0005-analytics-and-recorder-integration.md), [ADR 0008](0008-in-page-player-and-captions-editor.md)). Keep the expiry short, because that code runs in the page origin.
-- The basic `Image`, `Video` and `AudioPlayer` refuse a URL with `api_v3`, `partnerservices2` or a `ks` parameter or path segment (see `docs/host-api.md`). The check goes by name, so a KS under another name passes. It is a second layer: the control is that the KS never enters the data model.
+- The basic `Image`, `Video` and `AudioPlayer` refuse a URL with `api_v3`, `partnerservices2` or a `ks` parameter or path segment (see `docs/host-api.md`). The real control is that the KS never enters the data model.
 
 ## Consequences
 
 - The KS is out of LLM context as long as the host does not put it in the data model. Docs say so in a warning.
-- Hosts write one function and a server endpoint. Renewal is a remount.
-- Flashcards take the KS from the provider first, with the `ks` prop as fallback.
+- Hosts write one function and a server endpoint. Renewal is a remount. After expiry the Kaltura widget fails by itself, and this package shows no error for it.
+- A chat that outlasts the KS remounts the surface to renew it: [security/ks.md](../security/ks.md#when-the-ks-expires).

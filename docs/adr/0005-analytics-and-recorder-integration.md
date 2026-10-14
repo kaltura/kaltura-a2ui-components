@@ -2,7 +2,7 @@
 
 Status: ANA-01 and REC-01 accepted and implemented. REC-01 has no SRI yet (Kaltura CDN limit).
 
-Covers ANA-01 (plan item 3.1b) and REC-01 (plan item 3.1d). Sources were read on 2026-10-12.
+Covers ANA-01 and REC-01. Sources were read on 2026-10-12.
 
 ## ANA-01: Analytics embed
 
@@ -47,7 +47,7 @@ The `kmcng/analytics` URL did not appear in the guide.
 - The KS must belong to an admin user that has a role. Without a role the app fails with "Invalid object id [0]". The host KS provider owns this (docs/security/ks.md).
 - Breaking for hosts: the `ks` prop, `buildAnalyticsUrl(args)` and the old URL are gone. See docs/migration-0.4.md.
 - Gap: `setKsProvider` is read once at mount, so there is no trigger for a new KS yet. `updateConfig` is ready for a provider that can signal renewal. Until then a host renews by remounting the widget.
-- Regional KMC hosts come from `region.ts` (see REG-01 in docs/host-api.md).
+- Regional KMC hosts come from `region.ts` (see [Regions](../host-api.md#regions)).
 
 ## REC-01: Recorder
 
@@ -68,14 +68,14 @@ The `extwidget/preview` iframe does not appear in the Express Recorder guide.
 `KalturaRecorder` uses the Express Recorder script. The `extwidget/preview` iframe is gone.
 
 - The script loads only from the recorder host of the region (`https://www.kaltura.com` in the US, the recorder host from `src/core/region.ts` elsewhere) at `/apps/expressrecorder/v2.2.10/express-recorder.js`. All recorders on a page share one load. A failed load is retried on the next mount.
-- The KS comes from the host KS provider first, with the `ks` prop as fallback, as on the player (`src/core/ks.ts`). `create` gets `ks`, `serviceUrl`, `playerUrl`, `partnerId`, `uiConfId` and `app: 'a2ui'`. The script shows "Missing props: app" without `app`.
+- The KS comes from the host KS provider only, as on the player (`src/core/ks.ts`). `create` gets `ks`, `serviceUrl`, `playerUrl`, `partnerId`, `uiConfId` and `app: 'a2ui'`. The script shows "Missing props: app" without `app`.
 - `uiconfId` is now required. `conversionProfileId` is not offered. `showUploadUI` and the recorder methods are not exposed.
 - `mediaUploadEnded` becomes the host event `recorder-upload-ended`. An `error` event becomes a generic `setErrorHandler` code with the fixed text `Recorder error`. Remote error text is dropped, because it can hold the KS or markup.
 - `destroy` runs on unmount and on every prop change.
 
 #### Pinned path, no SRI yet
 
-The Express Recorder has versioned paths (`v2.2.4` to `v2.2.10` returned 200 on 2026-10-13). `latest` is byte-identical to `v2.2.10`, sha384 `VkTBbp92aE8w5t8L3oNuCWPla+b1pnhgEHE3qBg+6VgCuGOou14E4Dwp/ZPcDWYS`. The loader (`src/core/recorder-script.ts`) uses `/apps/expressrecorder/v2.2.10/`, so a Kaltura release cannot change the code under you. Bumps go through a release.
+The Express Recorder has versioned paths (`v2.2.4` to `v2.2.10` returned 200 on 2026-10-13). `latest` was byte-identical to `v2.2.10` then. The loader (`src/core/recorder-script.ts`) uses `/apps/expressrecorder/v2.2.10/`, so a Kaltura release cannot change the code under you. Bumps go through a release.
 
 SRI is the open part. The response has no `Access-Control-Allow-Origin`, so `integrity` with `crossorigin="anonymous"` fails to load (W3C SRI needs CORS for cross-origin scripts). The loader sets both when a hash is configured, and shows a plain-text error on an integrity failure. `RECORDER_SCRIPT` has no hash until Kaltura sends CORS on `/apps/expressrecorder/`. Then the known hash can go in.
 

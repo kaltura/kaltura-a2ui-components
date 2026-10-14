@@ -1,20 +1,20 @@
-// Covers: QA-18 (traceability doc). Every test path in docs/security/SECF-30837.md
+// Covers: QA-18 (traceability doc). Every test path in docs/security/test-map.md
 // exists, and every row that names tests is backed by a test that carries its ID.
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = process.cwd();
-const doc = readFileSync(resolve(root, 'docs/security/SECF-30837.md'), 'utf8');
+const doc = readFileSync(resolve(root, 'docs/security/test-map.md'), 'utf8');
 const STATUSES = ['fixed', 'partial', 'blocked', 'open', 'accepted'];
 
 const rows = doc
   .split('\n')
   .filter(line => /^\| (SEC|QA|E2E|UX|ANA|REG|REC)-\d+ \|/.test(line))
   .map(line => line.split('|').slice(1, -1).map(cell => cell.trim()))
-  // The "Noted, no change" table has 4 columns and no tests.
-  .filter(cells => cells.length === 7)
-  .map(([id, , , , test, ci, status]) => ({
+  // The "Noted, no change" table has 3 columns and no tests.
+  .filter(cells => cells.length === 5)
+  .map(([id, , test, ci, status]) => ({
     id,
     test,
     ci,
@@ -22,7 +22,7 @@ const rows = doc
     paths: [...test.matchAll(/\b(?:test|e2e|scripts)\/[\w./-]+\.(?:tsx?|mjs)/g)].map(m => m[0]),
   }));
 
-describe('QA-18: SECF-30837 traceability table', () => {
+describe('QA-18: test map table', () => {
   it('QA-18: the table has rows', () => {
     expect(rows.length).toBeGreaterThan(40);
   });
