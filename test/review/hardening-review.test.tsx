@@ -211,7 +211,7 @@ describe('SEC-03: undefined inside literal data and stale alerts', () => {
   it('SEC-03: the recorder clears its old error when ks becomes undefined', async () => {
     const { RecorderCore } = await import('../../src/core/recorder');
     const { container, root } = await mount(RecorderCore, { partnerId: 1, uiconfId: 2, ks: 'bad\u0000ks' });
-    expect(container.textContent).toBe('Failed to load recorder: Invalid ks');
+    expect(container.textContent).toBe('Failed to load recorder: Invalid ks: call setKsProvider');
     await act(async () => {
       root.render(createElement(RecorderCore, { partnerId: 1, uiconfId: 2 }));
     });

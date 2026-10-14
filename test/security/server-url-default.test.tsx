@@ -68,6 +68,6 @@ describe('serverUrl is optional on the Unisphere widgets', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     setKsProvider(() => 'host-ks');
     const { container } = await mount(component, { ...base, serverUrl: 'https://evil.example/v1' });
-    expect([container.textContent?.endsWith('serverUrl is not an allowed Unisphere origin'), seen.regions]).toEqual([true, []]);
+    expect([container.textContent?.endsWith('serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)'), seen.regions]).toEqual([true, []]);
   });
 });

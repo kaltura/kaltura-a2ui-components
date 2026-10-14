@@ -55,7 +55,7 @@ export function deriveLoaderUrl(serverUrl: string): string {
   if (!origin || !allowed || !exact) {
     // The value comes from agent output: keep it out of the UI and the thrown message.
     console.warn('serverUrl rejected:', String(serverUrl).slice(0, 100));
-    throw new KalturaFailure('origin-not-allowed', 'serverUrl is not an allowed Unisphere origin');
+    throw new KalturaFailure('origin-not-allowed', 'serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)');
   }
   return `${origin}/v1/loader/index.esm.js`;
 }
