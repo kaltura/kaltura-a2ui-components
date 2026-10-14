@@ -69,9 +69,12 @@ A CSP is a second layer. It does not make agent output trusted.
 
 ## Releases
 
-Releases come only from [`release.yml`](.github/workflows/release.yml) on `main`. jsDelivr serves each release from its git tag. There is no npm package: a package on npm with this name is not ours. Each GitHub Release has SRI hashes, `SHA256SUMS`, an SBOM and a GitHub build provenance attestation ([docs/release.md](docs/release.md), [ADR 0004](docs/adr/0004-git-tag-distribution.md)).
+Releases come only from [`release.yml`](.github/workflows/release.yml) on `main`. jsDelivr serves each release from its git tag. There is no npm package: a package on npm with this name is not ours. Each GitHub Release has SRI hashes, `SHA256SUMS`, an SBOM and a GitHub build provenance attestation ([ADR 0004](docs/adr/0004-git-tag-distribution.md)).
 
-Verify a release before you use it ([docs/verify-release.md](docs/verify-release.md)):
+Verify a release before you use it:
 
 - Pin the full tag (`@<tag>`) in the jsDelivr URL and set the `integrity` value from the Release notes, with `crossorigin="anonymous"`.
-- Check a downloaded file with `gh attestation verify <file> --repo kaltura/kaltura-a2ui-components`.
+- Check a downloaded file with `gh attestation verify <file> --repo kaltura/kaltura-a2ui-components --signer-workflow kaltura/kaltura-a2ui-components/.github/workflows/release.yml`.
+- Check the Release assets with `sha256sum --check SHA256SUMS` (macOS: `shasum -a 256 --check SHA256SUMS`).
+- `kaltura-react.mjs` imports `html-element-stub.mjs` ([ADR 0007](docs/adr/0007-ssr-html-element-stub.md)). Pin that file too. The catalog `x-kaltura-adapters.react` has `integrity` and `stubIntegrity` for both.
+- Releases up to `v0.1.4` are older builds without these proofs.

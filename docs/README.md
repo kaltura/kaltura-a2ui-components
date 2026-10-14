@@ -28,7 +28,5 @@ New here? Start with the [README](../README.md). Then pick a table.
 | File | For |
 |---|---|
 | [SECURITY.md](../SECURITY.md) | Security reviewers: trust model and how to report a vulnerability |
-| [verify-release.md](verify-release.md) | Anyone who checks that a release is the one we built |
-| [release.md](release.md) | Maintainers who cut a release |
 | [security/test-map.md](security/test-map.md) | Security reviewers: which test covers which hardening finding |
 | [adr/README.md](adr/README.md) | Anyone who asks why it works this way: decision records |
