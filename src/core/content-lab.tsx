@@ -1,15 +1,20 @@
 import { UnisphereWidgetCore } from './unisphere-widget';
 import { KalturaContentLabApi } from '../schemas/content-lab';
 import { withValidatedProps } from './validate-props';
-import { withKs } from './ks';
+import { withKs, withKsProp } from './ks';
 import { isEntryId } from './ids';
 import { kalturaHosts } from './region';
 
 export interface ContentLabCoreProps {
+  /** Kaltura partner (account) ID. */
   partnerId: number;
+  /** Kaltura Session. The host KS provider is used first. */
   ks: string;
-  serverUrl: string;
+  /** Unisphere URL. Defaults to the Unisphere host of the region. Only Kaltura hosts and `setExtraAllowedOrigins` are accepted. */
+  serverUrl?: string;
+  /** Player (uiConf) ID for the video preview. */
   uiconfId: number;
+  /** Entry that Content Lab opens. */
   entryId: string;
 }
 
@@ -75,4 +80,4 @@ function ContentLabView(props: ContentLabCoreProps) {
   );
 }
 
-export const ContentLabCore = withKs('content-lab', withValidatedProps(KalturaContentLabApi.schema.required({ ks: true }), 'Kaltura Content Lab', ContentLabView, 'content-lab'));
+export const ContentLabCore = withKs('content-lab', withValidatedProps(withKsProp(KalturaContentLabApi.schema), 'Kaltura Content Lab', ContentLabView, 'content-lab'));

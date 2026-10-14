@@ -45,7 +45,7 @@ test.describe('SEC-08: the avatar loads through the Unisphere loader', () => {
   test('SEC-08: with no provider a ks prop is ignored and nothing loads', async ({ harness: h }) => {
     await mountAvatar(h, { ks: 'agent-written-ks' }, null);
     await h.settle();
-    expect([await log(h), h.loaderRequests(), await h.hostText()]).toEqual([[], [], 'Failed to load Kaltura Avatar: Invalid ks']);
+    expect([await log(h), h.loaderRequests(), await h.hostText()]).toEqual([[], [], 'Failed to load Kaltura Avatar: Invalid ks: call setKsProvider']);
   });
 });
 

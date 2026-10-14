@@ -5,6 +5,9 @@
 //   UPDATE_API_SNAPSHOT=1 npx vitest run test/conformance/api-snapshot
 // The names come from the TypeScript compiler (values and types) and are checked
 // against the real module (values only).
+// "./webcomponent" is a script (the IIFE bundle), so its published types export nothing
+// (src/adapters/webcomponent/global.ts). The names it provides are the keys of
+// `window.KalturaA2UIWebComponents`, which are the exports of host.ts.
 import { describe, it, expect, vi } from 'vitest';
 import ts from 'typescript';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -22,10 +25,15 @@ interface Names {
 interface Snapshot {
   '.': Names;
   './webcomponent': Names;
+  'window.KalturaA2UIWebComponents': Names;
   './catalog': { topLevelKeys: string[]; components: string[]; functions: string[]; defs: string[] };
 }
 
-const ENTRIES = { '.': 'src/adapters/react/index.ts', './webcomponent': 'src/adapters/webcomponent/index.ts' } as const;
+const ENTRIES = {
+  '.': 'src/adapters/react/index.ts',
+  './webcomponent': 'src/adapters/webcomponent/global.ts',
+  'window.KalturaA2UIWebComponents': 'src/adapters/webcomponent/host.ts',
+} as const;
 
 function exportedNames(files: string[]): Record<string, Names> {
   const program = ts.createProgram(
@@ -65,6 +73,7 @@ const catalog = loadCatalog();
 const current: Snapshot = {
   '.': compiled[ENTRIES['.']],
   './webcomponent': compiled[ENTRIES['./webcomponent']],
+  'window.KalturaA2UIWebComponents': compiled[ENTRIES['window.KalturaA2UIWebComponents']],
   './catalog': { topLevelKeys: Object.keys(catalog), components: Object.keys(catalog.components), functions: Object.keys(catalog.functions), defs: Object.keys(catalog.$defs) },
 };
 
@@ -72,7 +81,7 @@ if (process.env.UPDATE_API_SNAPSHOT === '1') writeFileSync(SNAPSHOT, `${JSON.str
 const saved = existsSync(SNAPSHOT) ? readJson<Snapshot>('test/conformance/snapshots/public-api.json') : undefined;
 
 describe('CONF-16: public API snapshot', () => {
-  it.each(['.', './webcomponent'] as const)('CONF-16: entry "%s" exports the snapshot names (values and types)', entry => {
+  it.each(['.', './webcomponent', 'window.KalturaA2UIWebComponents'] as const)('CONF-16: entry "%s" exports the snapshot names (values and types)', entry => {
     expect(current[entry]).toEqual(saved?.[entry]);
   });
 
@@ -90,9 +99,9 @@ describe('CONF-16: public API snapshot', () => {
     expect(Object.keys(real).sort()).toEqual(current['.'].values);
   }, 240000);
 
-  it('CONF-16: the Web Component entry value names equal the keys of the real module', async () => {
+  it('CONF-16: the Web Component bundle global has the keys of the real entry module', async () => {
     const real = await import('../../src/adapters/webcomponent/index');
-    expect(Object.keys(real).sort()).toEqual(current['./webcomponent'].values);
+    expect(Object.keys(real).sort()).toEqual(current['window.KalturaA2UIWebComponents'].values);
   }, 240000);
 
   it('CONF-16: package.json maps exactly these entries', () => {

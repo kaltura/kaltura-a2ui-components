@@ -5,10 +5,9 @@ import { MediaManagerCore } from '../../core/media-manager';
 
 export const mediaManagerReactImpl = createComponentImplementation(
   KalturaMediaManagerApi,
-  // `legacyDocumentEvents` is a host option: an agent must not be able to set it.
   ({ props: { action, ...props }, context }) => (
     <AgentAction context={context} action={action}>
-      <MediaManagerCore {...props} legacyDocumentEvents />
+      <MediaManagerCore {...props} />
     </AgentAction>
   ),
 );

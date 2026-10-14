@@ -96,7 +96,7 @@ describe('REG-01: setRegion', () => {
   });
 
   it.each(['sgp2', 'us', '', 'nvp1 '])('REG-01: refuses the unknown code %j', code => {
-    expect(() => setRegion(code as KalturaRegion)).toThrow('Unknown Kaltura region');
+    expect(() => setRegion(code as KalturaRegion)).toThrow('Unknown Kaltura region. Use nvp1, irp2, frp2, cap2, syp2');
   });
 
   it('REG-01: an unknown code keeps the region', async () => {

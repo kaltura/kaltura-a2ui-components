@@ -57,20 +57,15 @@ test.describe('SEC-18: kaltura-entry-selected', () => {
     await mountManager(h);
     const [event] = await seen(h, 'host');
     expect(event).toMatchObject({
-      target: 'kaltura-media-manager',
+      target: 'div',
       bubbles: true,
       composed: true,
       detail: { entryId: '0_abc123', name: 'Intro', instanceId: expect.stringMatching(/^unisphere-mm-/) },
     });
   });
 
-  test('SEC-18: by default one event reaches document (legacy)', async ({ harness: h }) => {
+  test('SEC-18: the event stays off document', async ({ harness: h }) => {
     await mountManager(h);
-    expect(await seen(h, 'document')).toHaveLength(1);
-  });
-
-  test('SEC-18: legacyDocumentEvents false keeps the event off document', async ({ harness: h }) => {
-    await mountManager(h, { legacyDocumentEvents: false });
     expect([(await seen(h, 'host')).length, (await seen(h, 'document')).length]).toEqual([1, 0]);
   });
 });

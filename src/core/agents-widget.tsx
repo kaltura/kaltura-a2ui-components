@@ -1,14 +1,16 @@
 import { UnisphereWidgetCore } from './unisphere-widget';
 import { KalturaAgentsWidgetApi } from '../schemas/agents-widget';
 import { withValidatedProps } from './validate-props';
-import { withKs } from './ks';
+import { withKs, withKsProp } from './ks';
 import { currentRegion, kalturaHosts, regionOf } from './region';
 
 export interface AgentsWidgetCoreProps {
+  /** Kaltura partner (account) ID. */
   partnerId: number;
+  /** Kaltura Session. The host KS provider is used first. */
   ks: string;
-  serverUrl: string;
-  agentId?: string;
+  /** Unisphere URL. Defaults to the Unisphere host of the region. Only Kaltura hosts and `setExtraAllowedOrigins` are accepted. */
+  serverUrl?: string;
 }
 
 function AgentsWidgetView(props: AgentsWidgetCoreProps) {
@@ -23,7 +25,7 @@ function AgentsWidgetView(props: AgentsWidgetCoreProps) {
       runtimeSettings={{
         ks: props.ks,
         pid: String(props.partnerId),
-        agentsServiceURI: `https://agents-manager.${regionOf(props.serverUrl) ?? currentRegion()}.ovp.kaltura.com`,
+        agentsServiceURI: `https://agents-manager.${regionOf(props.serverUrl ?? '') ?? currentRegion()}.ovp.kaltura.com`,
         kalturaServerURI: kalturaHosts().serviceUrl,
         analyticsServerURI: 'analytics.kaltura.com',
         hostAppName: 1,
@@ -37,4 +39,4 @@ function AgentsWidgetView(props: AgentsWidgetCoreProps) {
   );
 }
 
-export const AgentsWidgetCore = withKs('agents-widget', withValidatedProps(KalturaAgentsWidgetApi.schema.required({ ks: true }), 'Kaltura AI Agents', AgentsWidgetView, 'agents-widget'));
+export const AgentsWidgetCore = withKs('agents-widget', withValidatedProps(withKsProp(KalturaAgentsWidgetApi.schema), 'Kaltura AI Agents', AgentsWidgetView, 'agents-widget'));
