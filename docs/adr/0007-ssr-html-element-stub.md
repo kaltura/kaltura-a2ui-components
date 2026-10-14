@@ -2,7 +2,7 @@
 
 Status: accepted (2026-10-12)
 
-Upstream: [a2ui-project/a2ui#3158](https://github.com/a2ui-project/a2ui/issues/3158), open, no fixed version yet. Code: `src/adapters/react/html-element-stub.ts`, `src/adapters/react/index.ts`, `vite.config.ts`. Tests: `test/conformance/ssr-import.test.ts` (CONF-17). Checks: `scripts/check-bundle.mjs` (rule ESM-SSR-STUB), `scripts/check-consumer.mjs`.
+Upstream: [a2ui-project/a2ui#3158](https://github.com/a2ui-project/a2ui/issues/3158), open, no fixed version yet. A fix with a test is proposed in [#3197](https://github.com/a2ui-project/a2ui/pull/3197). Code: `src/adapters/react/html-element-stub.ts`, `src/adapters/react/index.ts`, `vite.config.ts`. Tests: `test/conformance/ssr-import.test.ts` (CONF-17). Checks: `scripts/check-bundle.mjs` (rule ESM-SSR-STUB), `scripts/check-consumer.mjs`.
 
 ## Context
 
