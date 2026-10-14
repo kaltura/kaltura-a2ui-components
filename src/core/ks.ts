@@ -1,5 +1,6 @@
 import { createElement, useEffect, useState } from 'react';
 import type { ComponentType, FC } from 'react';
+import { z } from 'zod';
 
 /** The widgets that ask the provider for a KS. */
 export type KsWidget =
@@ -21,6 +22,15 @@ export type KsWidget =
  * there is none, so the component falls back to its `ks` prop.
  */
 export type KsProvider = (widget: KsWidget) => string | undefined | Promise<string | undefined>;
+
+/**
+ * The schemas agents see have no `ks`. The core components add it back:
+ * required where the widget cannot load without one. The A2UI adapter never
+ * passes it, so on that path the host provider is the only source.
+ */
+export function withKsProp<T extends z.ZodRawShape>(schema: z.ZodObject<T>, required = true) {
+  return schema.extend({ ks: required ? z.string() : z.string().optional() });
+}
 
 let ksProvider: KsProvider | undefined;
 

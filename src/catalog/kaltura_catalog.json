@@ -981,10 +981,6 @@
               "$ref": "#/$defs/DynamicString",
               "description": "Media entry ID to play."
             },
-            "ks": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Player guide lists, for example setrole:PLAYBACK_BASE_ROLE and sview:<entryId>."
-            },
             "autoplay": {
               "$ref": "#/$defs/DynamicBoolean",
               "description": "Auto-start playback. Requires muted=true per browser policy. Default: false.",
@@ -1041,10 +1037,6 @@
               "type": "integer",
               "description": "Player configuration ID used to play the clips."
             },
-            "ks": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Player guide lists, for example setrole:PLAYBACK_BASE_ROLE and sview:<entryId>."
-            },
             "title": {
               "$ref": "#/$defs/DynamicString",
               "description": "Title of the flashcard deck."
@@ -1089,10 +1081,7 @@
                           "type": "number",
                           "description": "Clip end time in seconds."
                         },
-                        "title": {
-                          "type": "string",
-                          "description": "Optional clip title."
-                        },
+                        "title": { "type": "string", "description": "Optional clip title." },
                         "thumbnail": {
                           "type": "string",
                           "description": "Optional thumbnail URL for the clip."
@@ -1127,10 +1116,6 @@
             "partnerId": {
               "type": "integer",
               "description": "Kaltura account/partner ID."
-            },
-            "ks": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Media Manager widget guide lists."
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
@@ -1214,10 +1199,6 @@
               "type": "integer",
               "description": "Kaltura account/partner ID."
             },
-            "ks": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Captions Studio guide lists, including caption edit permission."
-            },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
               "description": "Media entry ID whose captions to edit."
@@ -1246,10 +1227,6 @@
             "partnerId": {
               "type": "integer",
               "description": "Kaltura account/partner ID."
-            },
-            "ks": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Express Recorder guide lists, for example editadmintags:*."
             },
             "uiconfId": {
               "type": "integer",
@@ -1341,10 +1318,6 @@
               "type": "integer",
               "description": "Kaltura account/partner ID."
             },
-            "ks": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Genie widget guide lists, for example setrole:PLAYBACK_BASE_ROLE."
-            },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
               "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
@@ -1382,10 +1355,6 @@
               "type": "integer",
               "description": "Kaltura account/partner ID."
             },
-            "ks": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Content Lab widget guide lists."
-            },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
               "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
@@ -1419,17 +1388,9 @@
               "type": "integer",
               "description": "Kaltura account/partner ID."
             },
-            "ks": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the Agents widget guide lists."
-            },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
               "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
-            },
-            "agentId": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Ignored. The agents runtime has no setting for it."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
@@ -1452,21 +1413,9 @@
               "type": "integer",
               "description": "Kaltura account/partner ID."
             },
-            "ks": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Session (KS). The host supplies it. Agents must never set this prop or ask for a KS. For hosts: use a USER KS (type=0) with only the privileges the VOD Avatar widget guide lists."
-            },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
               "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
-            },
-            "entryId": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Ignored. The studio runtime has no setting for it."
-            },
-            "avatarStyle": {
-              "$ref": "#/$defs/DynamicString",
-              "description": "Ignored. The studio runtime has no setting for it."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
@@ -1541,9 +1490,19 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "x": { "type": ["string", "number"], "description": "x-axis value to annotate." },
-                  "label": { "type": "string", "description": "Annotation label text." },
-                  "color": { "type": "string", "maxLength": 64, "description": "Annotation color (hex or CSS). Default: accent color." }
+                  "x": {
+                    "type": ["string", "number"],
+                    "description": "x-axis value to annotate."
+                  },
+                  "label": {
+                    "type": "string",
+                    "description": "Annotation label text."
+                  },
+                  "color": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "description": "Annotation color (hex or CSS). Default: accent color."
+                  }
                 },
                 "required": ["x", "label"],
                 "additionalProperties": false

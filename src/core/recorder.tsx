@@ -3,7 +3,7 @@ import type { FC } from 'react';
 import { renderLoadError } from './render-load-error';
 import { KalturaRecorderApi } from '../schemas/recorder';
 import { checkProps, StrictPendingContext } from './validate-props';
-import { withKs } from './ks';
+import { withKs, withKsProp } from './ks';
 import { emitEvent, invalidCode, KalturaFailure, reportError, ReporterContext } from './host-hooks';
 import { kalturaHosts } from './region';
 import { isEntryId } from './ids';
@@ -21,7 +21,7 @@ export interface RecorderCoreProps {
   maxRecordingTime?: number;
 }
 
-const RUNTIME_SCHEMA = KalturaRecorderApi.schema.required({ ks: true });
+const RUNTIME_SCHEMA = withKsProp(KalturaRecorderApi.schema);
 
 const detailOf = (event: unknown): { entryId?: unknown } => (event as { detail?: object } | null)?.detail ?? {};
 

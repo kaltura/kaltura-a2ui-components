@@ -252,6 +252,41 @@ export async function loadApis() {
   }
 }
 
+const isScalar = value => value === null || typeof value !== 'object';
+// Arrays of names stay on one line up to this width. Objects need a shorter one, except `action`.
+const MAX_INLINE_ARRAY = 130;
+const MAX_INLINE_OBJECT = 60;
+
+/** One line for a short array or flat object of plain values, else undefined. */
+function flatten(value, key) {
+  const items = Array.isArray(value) ? value : Object.values(value);
+  const plain = item => isScalar(item) || (Array.isArray(item) && item.every(isScalar));
+  if (!(Array.isArray(value) ? items.every(isScalar) : items.every(plain))) return undefined;
+  const flat = Array.isArray(value)
+    ? `[${items.map(item => JSON.stringify(item)).join(', ')}]`
+    : `{ ${Object.entries(value).map(([key, item]) => `${JSON.stringify(key)}: ${isScalar(item) ? JSON.stringify(item) : `[${item.map(entry => JSON.stringify(entry)).join(', ')}]`}`).join(', ')} }`;
+  return flat.length <= (Array.isArray(value) ? MAX_INLINE_ARRAY : key === 'action' ? Infinity : MAX_INLINE_OBJECT) ? flat : undefined;
+}
+
+/**
+ * JSON with 2-space indent. In the Kaltura parts a short array or flat object
+ * of plain values stays on one line, so a one-prop change does not reflow its
+ * neighbours. The copied A2UI parts keep the upstream layout.
+ */
+export function formatCatalog(value, path = []) {
+  if (isScalar(value)) return JSON.stringify(value);
+  const [group, name] = path;
+  const upstream = (group === 'components' && name !== undefined && !name.startsWith('Kaltura')) || group === 'functions' || group === '$defs';
+  const flat = upstream ? undefined : flatten(value, path.at(-1));
+  if (flat) return flat;
+  const indent = '  '.repeat(path.length);
+  const inner = `${indent}  `;
+  if (Array.isArray(value)) return value.length ? `[\n${value.map(item => `${inner}${formatCatalog(item, [...path, ''])}`).join(',\n')}\n${indent}]` : '[]';
+  const entries = Object.entries(value);
+  if (!entries.length) return '{}';
+  return `{\n${entries.map(([key, item]) => `${inner}${JSON.stringify(key)}: ${formatCatalog(item, [...path, key])}`).join(',\n')}\n${indent}}`;
+}
+
 async function main() {
   const write = process.argv.includes('--write');
   const current = JSON.parse(readFileSync(CATALOG_PATH, 'utf8'));
@@ -265,7 +300,7 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  writeFileSync(CATALOG_PATH, `${JSON.stringify(next, null, 2)}\n`);
+  writeFileSync(CATALOG_PATH, `${formatCatalog(next)}\n`);
   console.log('Wrote src/catalog/kaltura_catalog.json. Fill in any empty description.');
 }
 

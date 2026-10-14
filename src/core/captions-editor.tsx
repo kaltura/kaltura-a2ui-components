@@ -3,7 +3,7 @@ import type { FC } from 'react';
 import { isEntryId, isPositiveInt } from './ids';
 import { KalturaCaptionsEditorApi } from '../schemas/captions-editor';
 import { LoadError, withValidatedProps } from './validate-props';
-import { withKs } from './ks';
+import { withKs, withKsProp } from './ks';
 import { kalturaHosts } from './region';
 import { KalturaFailure, ReporterContext } from './host-hooks';
 import { renderLoadError } from './render-load-error';
@@ -152,5 +152,5 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
 
 export const CaptionsEditorCore = withKs(
   'captions-editor',
-  withValidatedProps(KalturaCaptionsEditorApi.schema.required({ ks: true }), 'captions editor', CaptionsEditorView, 'captions-editor'),
+  withValidatedProps(withKsProp(KalturaCaptionsEditorApi.schema), 'captions editor', CaptionsEditorView, 'captions-editor'),
 );

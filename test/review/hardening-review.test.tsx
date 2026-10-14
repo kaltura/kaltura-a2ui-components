@@ -7,6 +7,7 @@ import { deriveLoaderUrl } from '../../src/core/unisphere-loader';
 import { sanitizeMarkdownHtml } from '../../src/core/safe-markdown';
 import { toKalturaCdnUrl } from '../../src/core/media-url';
 import { checkProps } from '../../src/core/validate-props';
+import { withKsProp } from '../../src/core/ks';
 import { PlayerCore } from '../../src/core/player';
 import { buildThumbnailUrl } from '../../src/core/flashcards';
 import { KalturaPlayerApi } from '../../src/schemas/player';
@@ -131,7 +132,7 @@ describe('SEC-03: invalidProps with hostile prop shapes', () => {
     { ...ok, entryId: { path: '/x' } },
     { ...ok, partnerId: '1' },
   ])('SEC-03: player rejects %j', props => {
-    expect(checkProps(KalturaPlayerApi.schema, props).invalid.length).toBeGreaterThan(0);
+    expect(checkProps(withKsProp(KalturaPlayerApi.schema, false), props).invalid.length).toBeGreaterThan(0);
   });
   it('SEC-03: an own __proto__ key does not supply a missing partnerId', () => {
     const props = JSON.parse('{"__proto__":{"partnerId":1},"uiconfId":2,"entryId":"0_abc"}');

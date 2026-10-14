@@ -5,10 +5,7 @@ export const KalturaVodAvatarApi = {
   name: 'KalturaVodAvatar',
   schema: z.object({
     partnerId: z.number().int().positive(),
-    ks: CommonSchemas.DynamicString.optional(),
     serverUrl: CommonSchemas.DynamicString,
-    entryId: CommonSchemas.DynamicString.optional(),
-    avatarStyle: CommonSchemas.DynamicString.optional(),
     action: CommonSchemas.Action.optional(),
   }),
 };
