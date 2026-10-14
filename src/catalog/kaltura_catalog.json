@@ -970,11 +970,11 @@
           "properties": {
             "component": { "const": "KalturaPlayer" },
             "partnerId": {
-              "$ref": "#/$defs/DynamicNumber",
+              "type": "integer",
               "description": "Kaltura account/partner ID."
             },
             "uiconfId": {
-              "$ref": "#/$defs/DynamicNumber",
+              "type": "integer",
               "description": "Player configuration ID (from KMC Studio or uiConf.list)."
             },
             "entryId": {
