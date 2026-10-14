@@ -1,6 +1,6 @@
 # Release
 
-Run [`release.yml`](../.github/workflows/release.yml) by hand from `main`. jsDelivr serves the release from its git tag. There is no npm package (`package.json` is `"private": true`). Decision: [ADR 0004](adr/0004-npm-first-distribution.md).
+Run [`release.yml`](../.github/workflows/release.yml) by hand from `main`. jsDelivr serves the release from its git tag. There is no npm package (`package.json` is `"private": true`). Decision: [ADR 0004](adr/0004-git-tag-distribution.md).
 
 ```
 inputs and main → ci + e2e → build and stamp → release commit, tag, GitHub Release → jsDelivr check
@@ -11,7 +11,7 @@ inputs and main → ci + e2e → build and stamp → release commit, tag, GitHub
 ```
 main:  ── A ── B            (B: version bump, merged by PR)
                 \
-                 R          (R: dist/ + stamped catalog)  ← tag v0.2.0
+                 R          (R: dist/ + stamped catalog)  ← tag vX.Y.Z
 ```
 
 | Job | Does | Token scope |
@@ -26,15 +26,33 @@ The release commit is the same on every attempt: same tree, author `github-actio
 
 ## Cut a release
 
-1. On a branch, bump the version: `npm version 0.3.0 --no-git-tag-version` (updates `package.json` and `package-lock.json`).
+1. On a branch, bump the version: `npm version X.Y.Z --no-git-tag-version` (updates `package.json` and `package-lock.json`).
 2. Check the PR titles since the last tag. GitHub turns them into the "What's changed" list, grouped by label (`.github/release.yml`). Label a breaking change `breaking` and link its migration doc in the PR.
-3. Change the `v0.2.0` pins in `README.md` and the docs to `v0.3.0`. The docs test checks the README.
+3. Change the old install tag to `vX.Y.Z` in every file that pins it. List them:
+
+   ```bash
+   grep -rnE 'v[0-9]+\.[0-9]+\.[0-9]+' README.md examples/
+   ```
+
+   | File | Holds |
+   |---|---|
+   | `README.md` | Install lines, jsDelivr URLs, the Release notes link. The docs test checks it |
+   | `examples/` | The script URL in `plain-html/index.html` and the install comment in `react/main.tsx` |
+
+   Do not touch the migration docs: they name the version they describe. `SECURITY.md` and `e2e/README.md` use a `<tag>` placeholder. `verify-release.md` uses an example tag on purpose.
 4. Merge the PR to `main`.
-5. **Dry run.** Actions, `release`, Run workflow. Use workflow from `main`, version `0.3.0`, keep `dry_run` on. It runs every check and the build, and uploads the `release` artifact. It writes nothing.
+5. **Dry run.** Actions, `release`, Run workflow. Use workflow from `main`, version `X.Y.Z`, keep `dry_run` on. It runs every check and the build, and uploads the `release` artifact. It writes nothing.
 6. **Real run.** Same, with `dry_run` off. Approve the `release` environment when GitHub asks.
 7. Check that `verify-cdn` is green and the Release has `dist.tar.gz`, `kaltura_catalog.json`, `hashes.json`, `SHA256SUMS`, `sbom.cdx.json` and `THIRD_PARTY_NOTICES.txt`.
+8. **Publish the catalog.** Publish the stamped `kaltura_catalog.json` Release asset at `https://kaltura.github.io/a2ui/v2/catalog.json` ([Catalog id URL](#catalog-id-url)). Then check that the served bytes equal the asset:
 
-A version with a suffix, such as `0.3.0-rc.1`, makes a prerelease Release that is never Latest.
+   ```bash
+   dir="$(mktemp -d)"
+   gh release download vX.Y.Z --repo kaltura/kaltura-a2ui-components --pattern kaltura_catalog.json --dir "$dir"
+   curl -fsSL https://kaltura.github.io/a2ui/v2/catalog.json | cmp - "$dir/kaltura_catalog.json" && echo same
+   ```
+
+A version with a suffix, such as `X.Y.Z-rc.1`, makes a prerelease Release that is never Latest.
 
 ### When a run fails
 
@@ -57,7 +75,7 @@ Tooling that opens the id as a URL needs a file there. Serve this, unchanged, at
 |---|---|
 | The stamped `kaltura_catalog.json` of the newest release | The Release asset `kaltura_catalog.json`, or the same bytes at `https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@<tag>/src/catalog/kaltura_catalog.json` |
 
-Do not copy the file from `main`: it has placeholders instead of the tag URL and SRI hashes. Update the served copy with each release that changes the catalog. The old `v1` URL keeps the 0.3.0 file and needs no change.
+Do not copy the file from `main`: it has placeholders instead of the tag URL and SRI hashes. Update the served copy with each release that changes the catalog.
 
 ## Third-party notices
 
@@ -65,7 +83,7 @@ Do not copy the file from `main`: it has placeholders instead of the tag URL and
 
 ## One-time admin setup
 
-Not code. The workflow cannot do these, and it does not check them. Do them before the first real run.
+Settings in this section are repository settings, not code. Set them before the first real run.
 
 1. **Environment.** Settings, Environments, New environment `release`. Under Deployment branches and tags, pick "Selected branches and tags" and add `main`. Do this first: GitHub creates an unprotected environment on first use.
 2. **Required reviewers.** In the same environment, tick Required reviewers, add the people or teams who approve releases (up to 6) and save. Tick "Prevent self-review" to need a second person.
@@ -73,7 +91,7 @@ Not code. The workflow cannot do these, and it does not check them. Do them befo
 4. **Branch ruleset on `main`.** Settings, Rules, Rulesets, New branch ruleset for the default branch. Require a pull request, require the [checks below](#required-checks), block force pushes and restrict deletions. `release.yml` trusts that everything on `main` was reviewed.
 5. **Release deploy key.** The job token cannot create tags under step 3. Add a write deploy key to the repository (Settings, Deploy keys, Allow write access) and add "Deploy keys" to the creation ruleset bypass list. Put its private key in the `release` environment secret `RELEASE_TAG_KEY`. The release job uses it for the tag push only, with the GitHub SSH host key pinned in the workflow. The secret is readable only by jobs that pass the environment gate (`main` and the reviewer). To rotate: add a new key, update the secret, delete the old key.
 
-6. **Immutable releases.** Settings, General, turn on Immutable releases. A Release published after that locks its assets and its tag: nobody can add, replace or delete an asset, and the tag cannot move or be deleted. GitHub also adds a release attestation. The workflow does not change this setting and does not check it. Turn it on before the first real run, because it only applies to Releases published afterwards.
+6. **Immutable releases.** Settings, General, turn on Immutable releases. A Release published after that locks its assets and its tag: nobody can add, replace or delete an asset, and the tag cannot move or be deleted. GitHub also adds a release attestation. Turn it on before the first real run, because it only applies to Releases published afterwards.
 
 GitHub has no per-role switch for creating Releases. A Release needs a tag, and only the roles above can create one, so only they can release a new version.
 
@@ -108,12 +126,12 @@ It does not mount a widget or use a partner.
 
 | Command | Use |
 |---|---|
-| `npm run release:check -- 1.2.3` | Checks the version. Prints `version=`, `tag=` and `prerelease=`. |
-| `npm run release:stamp -- --tag v1.2.3` | Stamps the tag and the SRI of both bundles and the stub from `dist/` into the catalog. |
-| `node scripts/release-verify-stamp.mjs --tag v1.2.3` | Checks the stamped catalog against `dist/`. Fails on any left-over placeholder. |
-| `npm run release:hashes -- --version 1.2.3 --out DIR` | `hashes.json` (from the working tree) and `SHA256SUMS` of every file in `DIR`. |
-| `npm run release:notes -- --version 1.2.3 --hashes DIR/hashes.json` | Prints the install lines and SRI table of the Release notes. GitHub adds the change list. |
-| `npm run release:verify -- --tag v1.2.3 --hashes DIR/hashes.json` | Compares jsDelivr with the hashes. Add `--cdn-origin http://127.0.0.1:PORT` for a local server with the `/gh/<repo>@<tag>/` layout. |
+| `npm run release:check -- X.Y.Z` | Checks the version. Prints `version=`, `tag=` and `prerelease=`. |
+| `npm run release:stamp -- --tag vX.Y.Z` | Stamps the tag and the SRI of both bundles and the stub from `dist/` into the catalog. |
+| `node scripts/release-verify-stamp.mjs --tag vX.Y.Z` | Checks the stamped catalog against `dist/`. Fails on any left-over placeholder. |
+| `npm run release:hashes -- --version X.Y.Z --out DIR` | `hashes.json` (from the working tree) and `SHA256SUMS` of every file in `DIR`. |
+| `npm run release:notes -- --version X.Y.Z --hashes DIR/hashes.json` | Prints the install lines and SRI table of the Release notes. GitHub adds the change list. |
+| `npm run release:verify -- --tag vX.Y.Z --hashes DIR/hashes.json` | Compares jsDelivr with the hashes. Add `--cdn-origin http://127.0.0.1:PORT` for a local server with the `/gh/<repo>@<tag>/` layout. |
 | `npm run release:verify -- --latest` | Nightly check. |
 | `npm run release:smoke` | Unisphere loader check. |
 

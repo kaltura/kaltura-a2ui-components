@@ -1,6 +1,6 @@
 # Verify a release
 
-Every release since 0.2.0 has three proofs. Examples use `v0.3.0`. All commands only read.
+Every release since 0.2.0 has three proofs. Examples use `v0.3.0`. Use the tag you install. All commands only read.
 
 | Proof | Answers | Where |
 |---|---|---|
@@ -24,7 +24,7 @@ curl -sL https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist
 
 It must equal the `dist/kaltura-wc.js` value in the Release's `hashes.json`, after `sha384-`.
 
-The same holds for `kaltura-react.mjs`. It imports `html-element-stub.mjs`, so pin that file too. From the release after 0.3.0, the catalog `x-kaltura-adapters.react` has `integrity` for the bundle and `stubIntegrity` for the stub, next to `cdn` and `stubCdn`. Each equals the `hashes.json` value of its file. Catalogs of 0.3.0 and older have no stub keys: take the stub hash from `hashes.json`.
+The same holds for `kaltura-react.mjs`. It imports `html-element-stub.mjs`, so pin that file too. From 0.4.0, the catalog `x-kaltura-adapters.react` has `integrity` for the bundle and `stubIntegrity` for the stub, next to `cdn` and `stubCdn`. Each equals the `hashes.json` value of its file. Catalogs of 0.3.0 and older have no stub keys: take the stub hash from `hashes.json`.
 
 ## 2. Build provenance
 
@@ -37,9 +37,9 @@ gh attestation verify kaltura-wc.js --repo kaltura/kaltura-a2ui-components \
   --source-ref refs/heads/main --deny-self-hosted-runners
 ```
 
-`kaltura-react.mjs`, `kaltura_catalog.json`, `dist.tar.gz`, `THIRD_PARTY_NOTICES.txt`, `sbom.cdx.json`, `hashes.json` and `SHA256SUMS` are attested too (the last four from the release after 0.3.0). Releases from 0.3.0 also attest `html-element-stub.mjs`, which `kaltura-react.mjs` imports ([ADR 0007](adr/0007-ssr-html-element-stub.md)). The attestation names the `main` commit the release was built from. The tag points to a release commit on top of it, which adds only `dist/` and the stamped catalog.
+`kaltura-react.mjs`, `kaltura_catalog.json`, `dist.tar.gz`, `THIRD_PARTY_NOTICES.txt`, `sbom.cdx.json`, `hashes.json` and `SHA256SUMS` are attested too (the last four from 0.4.0). Releases from 0.3.0 also attest `html-element-stub.mjs`, which `kaltura-react.mjs` imports ([ADR 0007](adr/0007-ssr-html-element-stub.md)). The attestation names the `main` commit the release was built from. The tag points to a release commit on top of it, which adds only `dist/` and the stamped catalog.
 
-**SLSA level: Build L2.** `release.yml` runs on GitHub-hosted runners and signs provenance with `actions/attest-build-provenance`. The provenance is signed by the platform, not by our build steps, and names the workflow, the `main` commit and the run. It is not Build L3: the workflow is not a reusable workflow with an isolated build, and one account can still approve its own release until the owner steps in [release.md](release.md) are done.
+**SLSA level: Build L2.** `release.yml` runs on GitHub-hosted runners and signs provenance with `actions/attest-build-provenance`. The provenance is signed by the platform, not by our build steps, and names the workflow, the `main` commit and the run. It is not Build L3: the workflow is not a reusable workflow with an isolated build.
 
 ## 3. Release assets
 
