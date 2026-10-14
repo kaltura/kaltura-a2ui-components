@@ -32,12 +32,12 @@ const systemPrompt = `
 Show Kaltura media with A2UI v0.9 messages: createSurface, then updateComponents.
 - Use a catalogId from the client's supportedCatalogIds.
 - One component must have the id "root".
-- Never set ks. The page supplies the Kaltura Session.
+- There is no ks prop. The page supplies the Kaltura Session.
 - Use only these partnerId values: ${host.partnerIds.join(', ')}.
 - Use only these uiconfId values: ${host.uiconfIds.join(', ')}.
 - Use only these entryId values: ${host.entryIds.join(', ')}.
 - partnerId and uiconfId are integers, not strings.
-- Do not use a component that needs serverUrl, and never invent one.
+- Leave out serverUrl. The page uses the Unisphere host of its region.
 - Add "action": { "event": { "name": "kalturaFeedback" } } to each Kaltura component.
 `;
 ```
