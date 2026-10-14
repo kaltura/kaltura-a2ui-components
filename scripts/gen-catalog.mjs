@@ -3,6 +3,9 @@
 //   node scripts/gen-catalog.mjs           check: exit 1 if the JSON is out of date
 //   node scripts/gen-catalog.mjs --write   rewrite the JSON (2-space indent)
 //
+// It also writes docs/components.md (one section per component) from the catalog,
+// test/conformance/fixtures/streams.json and chart-examples.json. --check covers it.
+//
 // What comes from where:
 //   zod     prop names and order, required list, types, enums, nesting
 //   JSON    descriptions and defaults (zod has neither, and zod .describe()
@@ -18,12 +21,14 @@
 //   $defs                      all of common_types.json, the basic theme, and the
 //                              basic CatalogComponentCommon as BasicComponentCommon
 //   anyComponent, anyFunction  built from the keys of components and functions
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CATALOG_PATH = join(root, 'src/catalog/kaltura_catalog.json');
+const DOC_PATH = join(root, 'docs/components.md');
+const FIXTURES = join(root, 'test/conformance/fixtures');
 const UPSTREAM_SCHEMAS = join(root, 'node_modules/@a2ui/web_core/src/v0_9/schemas');
 const COMMON_TYPES_ID = 'https://a2ui.org/specification/v0_9/common_types.json';
 
@@ -252,21 +257,168 @@ export async function loadApis() {
   }
 }
 
+// Components that load without a KS. The rest show "Invalid ks" without one (test/conformance/components-doc.test.tsx pins this).
+export const KS_NOT_REQUIRED = { KalturaPlayer: 'Only for protected entries', KalturaFlashcards: 'Only for protected entries', KalturaChart: 'No' };
+const TYPE_NAMES = { DynamicString: 'string', DynamicNumber: 'number', DynamicBoolean: 'boolean' };
+
+function typeOf(node) {
+  if (node.$ref) return TYPE_NAMES[node.$ref.split('/').pop()] ?? node.$ref.split('/').pop().toLowerCase();
+  if (node.enum) return node.enum.length > 4 ? node.type : node.enum.map(value => `"${value}"`).join(' / ');
+  if (Array.isArray(node.type)) return node.type.join(' or ');
+  return node.type === 'array' ? `${typeOf(node.items)}[]` : node.type;
+}
+
+const cell = text => String(text).replaceAll('|', '\\|');
+const code = value => `\`${cell(value)}\``;
+const jsonBlock = value => `\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\``;
+
+/** Replaces `{ path }` bindings with their value from the data model. */
+function resolveBindings(value, model) {
+  if (Array.isArray(value)) return value.map(item => resolveBindings(item, model));
+  if (!value || typeof value !== 'object') return value;
+  const keys = Object.keys(value);
+  if (keys.length === 1 && keys[0] === 'path') return value.path.split('/').filter(Boolean).reduce((at, key) => at?.[key], model);
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, resolveBindings(item, model)]));
+}
+
+/** The `config` of a web component that matches a stream: its first component, with bindings filled in. */
+export function configOf(stream) {
+  const model = stream.messages.find(message => message.updateDataModel)?.updateDataModel.value;
+  const { id: _id, component: _component, ...props } = stream.messages.find(message => message.updateComponents).updateComponents.components[0];
+  return resolveBindings(props, model);
+}
+
+/**
+ * The text of docs/components.md. `streams` is test/conformance/fixtures/streams.json
+ * (one valid message stream per component), `chartExamples` is chart-examples.json.
+ */
+export function renderComponentsDoc(catalog, streams, chartExamples) {
+  const names = Object.keys(catalog.components).filter(name => name.startsWith('Kaltura'));
+  const tags = catalog['x-kaltura-adapters'].webcomponent.customElements;
+  if (tags.length !== names.length) throw new Error('x-kaltura-adapters.webcomponent.customElements must list one tag per Kaltura component, in order.');
+  const needsKs = name => KS_NOT_REQUIRED[name] ?? 'Yes';
+
+  const sections = names.map((name, index) => {
+    const tag = tags[index];
+    const part = catalog.components[name].allOf.find(entry => entry.properties?.component);
+    const stream = streams.find(entry => entry.component === name);
+    if (!stream) throw new Error(`streams.json has no stream for ${name}.`);
+    const messages = stream.messages.filter(message => !message.createSurface);
+    const rows = Object.entries(part.properties)
+      .filter(([prop]) => prop !== 'component' && prop !== 'action')
+      .map(([prop, node]) => `| ${code(prop)} | ${cell(typeOf(node))} | ${part.required.includes(prop) ? 'yes' : ''} | ${'default' in node ? code(JSON.stringify(node.default)) : ''} | ${cell(node.description)} |`);
+    const lines = [
+      `## ${name}`,
+      '',
+      catalog.components[name].description,
+      '',
+      `Element: ${code(`<${tag}>`)}. Needs a KS: ${needsKs(name)}.`,
+      '',
+      '| Prop | Type | Required | Default | Description |',
+      '|---|---|---|---|---|',
+      ...rows,
+      '',
+    ];
+    if (name === 'KalturaChart') {
+      lines.push(
+        'One example row for each `chartType`:',
+        '',
+        '| `chartType` | Example row | `xKey` | `yKeys` |',
+        '|---|---|---|---|',
+        ...chartExamples.map(({ chartType, row, xKey, yKeys }) => `| ${code(chartType)} | ${code(JSON.stringify(row))} | ${code(xKey)} | ${code(JSON.stringify(yKeys))} |`),
+        '',
+      );
+    }
+    lines.push(
+      'A2UI messages, sent after `createSurface`:',
+      '',
+      jsonBlock(messages),
+      '',
+      'The same in a web component:',
+      '',
+      `\`\`\`html\n<${tag}></${tag}>\n<script>\n  document.querySelector('${tag}').config = ${JSON.stringify(configOf(stream), null, 2).replaceAll('\n', '\n  ')};\n</script>\n\`\`\``,
+      '',
+    );
+    return lines.join('\n');
+  });
+
+  return [
+    '# Components',
+    '',
+    '<!-- Generated by "npm run gen:catalog -- --write". Do not edit by hand. -->',
+    '',
+    'Each section has the props, an A2UI payload and the matching web component `config`.',
+    '',
+    '- In A2UI, a `string`, `number` or `boolean` prop can be a data binding like `{ "path": "/title" }`. A `config` takes plain values.',
+    '- Every component also takes an optional `action`. It tells the agent about errors and events ([host-api.md](host-api.md)).',
+    '- A2UI components have no `ks` prop. The host supplies the KS with `setKsProvider` ([host-integration.md](host-integration.md#kaltura-session-ks)).',
+    '',
+    '| Component | Element | Needs a KS |',
+    '|---|---|---|',
+    ...names.map((name, index) => `| [${name}](#${name.toLowerCase()}) | ${code(`<${tags[index]}>`)} | ${needsKs(name)} |`),
+    '',
+    ...sections,
+  ]
+    .join('\n')
+    .replace(/\n+$/, '\n');
+}
+
+const isScalar = value => value === null || typeof value !== 'object';
+// Arrays of names stay on one line up to this width. Objects need a shorter one, except `action`.
+const MAX_INLINE_ARRAY = 130;
+const MAX_INLINE_OBJECT = 60;
+
+/** One line for a short array or flat object of plain values, else undefined. */
+function flatten(value, key) {
+  const items = Array.isArray(value) ? value : Object.values(value);
+  const plain = item => isScalar(item) || (Array.isArray(item) && item.every(isScalar));
+  if (!(Array.isArray(value) ? items.every(isScalar) : items.every(plain))) return undefined;
+  const flat = Array.isArray(value)
+    ? `[${items.map(item => JSON.stringify(item)).join(', ')}]`
+    : `{ ${Object.entries(value).map(([key, item]) => `${JSON.stringify(key)}: ${isScalar(item) ? JSON.stringify(item) : `[${item.map(entry => JSON.stringify(entry)).join(', ')}]`}`).join(', ')} }`;
+  return flat.length <= (Array.isArray(value) ? MAX_INLINE_ARRAY : key === 'action' ? Infinity : MAX_INLINE_OBJECT) ? flat : undefined;
+}
+
+/**
+ * JSON with 2-space indent. In the Kaltura parts a short array or flat object
+ * of plain values stays on one line, so a one-prop change does not reflow its
+ * neighbours. The copied A2UI parts keep the upstream layout.
+ */
+export function formatCatalog(value, path = []) {
+  if (isScalar(value)) return JSON.stringify(value);
+  const [group, name] = path;
+  const upstream = (group === 'components' && name !== undefined && !name.startsWith('Kaltura')) || group === 'functions' || group === '$defs';
+  const flat = upstream ? undefined : flatten(value, path.at(-1));
+  if (flat) return flat;
+  const indent = '  '.repeat(path.length);
+  const inner = `${indent}  `;
+  if (Array.isArray(value)) return value.length ? `[\n${value.map(item => `${inner}${formatCatalog(item, [...path, ''])}`).join(',\n')}\n${indent}]` : '[]';
+  const entries = Object.entries(value);
+  if (!entries.length) return '{}';
+  return `{\n${entries.map(([key, item]) => `${inner}${JSON.stringify(key)}: ${formatCatalog(item, [...path, key])}`).join(',\n')}\n${indent}}`;
+}
+
 async function main() {
   const write = process.argv.includes('--write');
-  const current = JSON.parse(readFileSync(CATALOG_PATH, 'utf8'));
+  const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
+  const current = readJson(CATALOG_PATH);
   const next = generateCatalog(current, await loadApis());
-  if (JSON.stringify(next) === JSON.stringify(current)) {
-    console.log('Catalog is up to date.');
+  const doc = renderComponentsDoc(next, readJson(join(FIXTURES, 'streams.json')), readJson(join(FIXTURES, 'chart-examples.json')));
+  const stale = [];
+  if (JSON.stringify(next) !== JSON.stringify(current)) stale.push([CATALOG_PATH, `${formatCatalog(next)}\n`]);
+  if (!existsSync(DOC_PATH) || readFileSync(DOC_PATH, 'utf8') !== doc) stale.push([DOC_PATH, doc]);
+  if (!stale.length) {
+    console.log('Catalog and docs/components.md are up to date.');
     return;
   }
+  const names = stale.map(([path]) => path.replace(`${root}/`, '')).join(' and ');
   if (!write) {
-    console.error('src/catalog/kaltura_catalog.json is out of date. Run "npm run gen:catalog -- --write".');
+    console.error(`${names} out of date. Run "npm run gen:catalog -- --write".`);
     process.exitCode = 1;
     return;
   }
-  writeFileSync(CATALOG_PATH, `${JSON.stringify(next, null, 2)}\n`);
-  console.log('Wrote src/catalog/kaltura_catalog.json. Fill in any empty description.');
+  for (const [path, text] of stale) writeFileSync(path, text);
+  console.log(`Wrote ${names}. Fill in any empty description.`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {

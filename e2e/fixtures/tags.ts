@@ -11,7 +11,7 @@ export function wcTags(): string[] {
       constants.set(m[1], m[2]);
     }
   }
-  const index = readFileSync(join(dir, 'index.ts'), 'utf8');
+  const index = readFileSync(join(dir, 'host.ts'), 'utf8');
   const list = /KALTURA_WC_TAGS = \[([^\]]*)\]/.exec(index)?.[1] ?? '';
   return list.split(',').map((s) => s.trim()).filter(Boolean).map((name) => {
     const tag = constants.get(name);

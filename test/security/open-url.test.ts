@@ -86,3 +86,45 @@ describe('SEC-02: openUrl in the merged Kaltura catalog', () => {
     expect(open.mock.calls).toEqual(calls);
   });
 });
+
+describe('SEC-02: client functions need a user gesture', () => {
+  let open: ReturnType<typeof vi.fn>;
+  let writeText: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    open = vi.fn();
+    writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('open', open);
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  const renderText = async (call: string, args: Record<string, unknown>) => {
+    const view = await renderSurface(kalturaReactCatalog, [{ id: 'root', component: 'Text', text: { call, args, returnType: 'string' } }]);
+    act(() => view.root.unmount());
+  };
+
+  it('SEC-02: a Text that calls copyToClipboard does not touch the clipboard', async () => {
+    await renderText('copyToClipboard', { text: 'secret' });
+    expect(writeText).not.toHaveBeenCalled();
+  });
+
+  it('SEC-02: a Text that calls openUrl does not open a window', async () => {
+    await renderText('openUrl', { url: 'https://example.com/' });
+    expect(open).not.toHaveBeenCalled();
+  });
+
+  it('SEC-02: a Button copyToClipboard action still copies', async () => {
+    const view = await renderSurface(kalturaReactCatalog, [
+      { id: 'root', component: 'Button', child: 'label', action: { functionCall: { call: 'copyToClipboard', args: { text: 'hello' } } } },
+      { id: 'label', component: 'Text', text: 'Copy' },
+    ]);
+    await act(async () => view.host.querySelector('button')?.click());
+    act(() => view.root.unmount());
+    expect(writeText).toHaveBeenCalledWith('hello');
+  });
+});

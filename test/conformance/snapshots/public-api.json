@@ -62,6 +62,7 @@
       "FlashcardsCoreProps",
       "GenieCoreProps",
       "KalturaActionContext",
+      "KalturaClientError",
       "KalturaError",
       "KalturaErrorCode",
       "KalturaEvent",
@@ -77,6 +78,10 @@
     ]
   },
   "./webcomponent": {
+    "values": [],
+    "types": []
+  },
+  "window.KalturaA2UIWebComponents": {
     "values": [
       "AGENTS_WIDGET_TAG",
       "ANALYTICS_TAG",
@@ -117,6 +122,7 @@
     "types": [
       "AllowedIds",
       "KalturaActionContext",
+      "KalturaClientError",
       "KalturaError",
       "KalturaErrorCode",
       "KalturaEvent",

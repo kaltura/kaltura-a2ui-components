@@ -39,9 +39,9 @@ describe('kaltura_catalog.json', () => {
     expect([names.length, names.at(-1)]).toEqual([15, 'copyToClipboard']);
   });
 
-  it('F31: KalturaPlayer partnerId and uiconfId accept a data binding (DynamicNumber, as in zod)', () => {
-    const props = catalog.components.KalturaPlayer.allOf[2].properties as Record<string, { $ref?: string }>;
-    expect([props.partnerId.$ref, props.uiconfId.$ref]).toEqual(['#/$defs/DynamicNumber', '#/$defs/DynamicNumber']);
+  it('F31: KalturaPlayer partnerId and uiconfId are plain integers, like the other components', () => {
+    const props = catalog.components.KalturaPlayer.allOf[2].properties as Record<string, { type?: string }>;
+    expect([props.partnerId.type, props.uiconfId.type]).toEqual(['integer', 'integer']);
   });
 
   it('F31: dynamic values accept a function call', () => {
