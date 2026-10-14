@@ -28,5 +28,6 @@ export const KalturaChartApi = {
       label: z.string(),
       color: color.optional(),
     })).optional(),
+    action: CommonSchemas.Action.optional(),
   }),
 };

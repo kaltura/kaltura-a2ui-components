@@ -1,3 +1,4 @@
+import { createContext } from 'react';
 import type { KsWidget } from './ks';
 
 /** Why a widget did not render. See docs/host-api.md. */
@@ -20,10 +21,12 @@ export interface KalturaError {
   code: KalturaErrorCode;
   widget: KalturaWidget;
   message: string;
+  /** The A2UI surface of the component. Missing outside a surface, as in the web component bundle. */
+  surfaceId?: string;
 }
 
-/** A widget event. See docs/host-api.md. */
-export type KalturaEvent =
+/** A widget event. `surfaceId` is as in `KalturaError`. See docs/host-api.md. */
+export type KalturaEvent = { surfaceId?: string } & (
   | {
       type: 'entry-selected';
       widget: 'media-manager';
@@ -40,7 +43,28 @@ export type KalturaEvent =
       type: 'recorder-upload-ended';
       widget: 'recorder';
       detail: { entryId?: string; instanceId: string };
-    };
+    }
+);
+
+/**
+ * The Kaltura part of the context an `action` prop sends to the agent. Fixed
+ * names and checked ids only, never text from a remote service or the page.
+ */
+export interface KalturaActionContext {
+  widget: KalturaWidget;
+  event: 'error' | KalturaEvent['type'];
+  code?: KalturaErrorCode;
+  entryId?: string;
+  entryIds?: string[];
+}
+
+/** Set by the adapters for each component. `send` runs the component's `action` prop. */
+export interface KalturaReporter {
+  surfaceId?: string;
+  send?: (context: KalturaActionContext) => void;
+}
+
+export const ReporterContext = createContext<KalturaReporter>({});
 
 /** An error whose message is fixed text, safe to show and report. */
 export class KalturaFailure extends Error {
@@ -65,21 +89,40 @@ export function setEventHandler(handler: ((event: KalturaEvent) => void) | undef
   eventHandler = handler;
 }
 
-// A throwing host handler must not break rendering.
-export function reportError(code: KalturaErrorCode, widget: KalturaWidget, message: string): void {
+// A throwing host handler or action must not break rendering.
+function safely(fn: () => void): void {
   try {
-    errorHandler?.({ code, widget, message });
+    fn();
   } catch {
     // ignored
   }
 }
 
-export function emitEvent(event: KalturaEvent): void {
-  try {
-    eventHandler?.(event);
-  } catch {
-    // ignored
-  }
+export function reportError(code: KalturaErrorCode, widget: KalturaWidget, message: string, { surfaceId, send }: KalturaReporter = {}): void {
+  safely(() => errorHandler?.({ code, widget, message, ...(surfaceId ? { surfaceId } : {}) }));
+  safely(() => send?.({ widget, event: 'error', code }));
+}
+
+export function emitEvent(event: KalturaEvent, { surfaceId, send }: KalturaReporter = {}): void {
+  safely(() => eventHandler?.(surfaceId ? { ...event, surfaceId } : event));
+  // Ids only, in the `1_abc12345` form, so a remote id cannot carry a sentence.
+  // `name` and `reason` come from a remote service.
+  const isId = (id: unknown): id is string => typeof id === 'string' && /^\d_[a-z0-9]{1,16}$/.test(id);
+  safely(() => {
+    const { entryId, entries } = event.detail as { entryId?: unknown; entries?: Array<{ entryId: unknown }> };
+    // The Media Manager selects 5 entries at most.
+    const ids = entries ? { entryIds: entries.map(entry => entry.entryId).filter(isId).slice(0, 5) } : isId(entryId) ? { entryId } : {};
+    send?.({ widget: event.widget, event: event.type, ...ids });
+  });
+}
+
+/**
+ * An A2UI v0.9 client `error` message for the agent. It holds the code and
+ * the widget, never `message`. Pass `surfaceId` when the error has none.
+ */
+export function toClientError(error: KalturaError, surfaceId = error.surfaceId ?? '') {
+  const { code, widget } = error;
+  return { version: 'v0.9', error: { code, widget, surfaceId, message: `Kaltura ${widget} error: ${code}` } } as const;
 }
 
 /** `invalid-ks` when the KS is one of the bad props. */

@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import { loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
-import { KalturaFailure, type KalturaWidget } from './host-hooks';
+import { KalturaFailure, ReporterContext, type KalturaWidget } from './host-hooks';
 import { refusedIdProp } from './allowed-ids';
 
 export { deriveLoaderUrl } from './unisphere-loader';
@@ -39,6 +39,7 @@ function killWorkspace(workspace: unknown): void {
 export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label, widget = 'unisphere' } = props;
+  const reporter = useContext(ReporterContext);
   const onRuntimeRef = useRef(props.onRuntime);
   onRuntimeRef.current = props.onRuntime;
   // Settings objects are rebuilt on every render. Compare them by value.
@@ -52,7 +53,7 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
     container.replaceChildren();
     const refused = refusedIdProp({ partnerId });
     if (refused) {
-      renderLoadError(container, label, new KalturaFailure('origin-not-allowed', `${refused} is not allowed`), widget);
+      renderLoadError(container, label, new KalturaFailure('origin-not-allowed', `${refused} is not allowed`), widget, reporter);
       return;
     }
 
@@ -113,7 +114,7 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
       })
       .catch(err => {
         if (cancelled) return;
-        renderLoadError(container, label, err, widget);
+        renderLoadError(container, label, err, widget, reporter);
       });
 
     return () => {
@@ -121,7 +122,7 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
       killWorkspace(workspace);
       workspace = null;
     };
-  }, [partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label, widget, settingsKey]);
+  }, [partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label, widget, settingsKey, reporter]);
 
   return (
     <div

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CommonSchemas } from '@a2ui/web_core/v0_9';
 
 // No `ks` prop: the avatar takes its KS from the host provider only, because
 // the KS picks the agent. Plain values only, no data bindings.
@@ -11,5 +12,6 @@ export const KalturaAvatarApi = {
     openingPhrase: z.string().max(500).optional(),
     captions: z.boolean().optional(),
     theme: z.enum(['light', 'dark', 'studio']).optional(),
+    action: CommonSchemas.Action.optional(),
   }),
 };

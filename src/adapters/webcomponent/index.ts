@@ -89,9 +89,11 @@ export { setAllowedPartners, setAllowedUiconfs, type AllowedIds } from '../../co
 export {
   setErrorHandler,
   setEventHandler,
+  toClientError,
   type KalturaError,
   type KalturaErrorCode,
   type KalturaEvent,
+  type KalturaActionContext,
   type KalturaWidget,
 } from '../../core/host-hooks';
 

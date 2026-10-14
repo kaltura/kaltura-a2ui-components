@@ -1,7 +1,7 @@
 // Renders A2UI components through a real surface, with an optional data model.
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MessageProcessor, type Catalog } from '@a2ui/web_core/v0_9';
+import { MessageProcessor, type ActionListener, type Catalog } from '@a2ui/web_core/v0_9';
 import { A2uiSurface, MarkdownContext, type ReactCatalogComponent } from '@a2ui/react/v0_9';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -11,6 +11,8 @@ export interface SurfaceOptions {
   registered?: Catalog<ReactCatalogComponent>[];
   /** The renderer the host puts in MarkdownContext. */
   markdown?: (text: string) => Promise<string>;
+  /** Gets every action the surface sends to the agent. */
+  onAction?: ActionListener;
 }
 
 /** Renders a surface whose createSurface names `catalog.id`. */
@@ -18,9 +20,9 @@ export async function renderSurface(
   catalog: Catalog<ReactCatalogComponent>,
   components: Array<Record<string, unknown>>,
   dataModel?: Record<string, unknown>,
-  { registered = [catalog], markdown }: SurfaceOptions = {},
+  { registered = [catalog], markdown, onAction }: SurfaceOptions = {},
 ) {
-  const processor = new MessageProcessor<ReactCatalogComponent>(registered);
+  const processor = new MessageProcessor<ReactCatalogComponent>(registered, onAction);
   processor.processMessages([
     { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: catalog.id } },
     ...(dataModel ? [{ version: 'v0.9', updateDataModel: { surfaceId: 's', path: '/', value: dataModel } }] : []),

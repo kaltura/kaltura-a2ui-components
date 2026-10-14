@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { isEntryId, isPositiveInt } from './ids';
 import { KalturaCaptionsEditorApi } from '../schemas/captions-editor';
 import { LoadError, withValidatedProps } from './validate-props';
 import { withKs } from './ks';
 import { kalturaHosts } from './region';
-import { KalturaFailure } from './host-hooks';
+import { KalturaFailure, ReporterContext } from './host-hooks';
 import { renderLoadError } from './render-load-error';
 
 // Serves the editor page with a <base> tag and CORS open. Pinned to v1.3.10: `latest` is an alias
@@ -83,6 +83,7 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
   const { partnerId, ks, entryId, uiconfId } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const invalid = invalidProp(props);
+  const reporter = useContext(ReporterContext);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -132,7 +133,7 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
       })
       .catch(() => {
         if (cancelled) return;
-        renderLoadError(container, 'captions editor', new KalturaFailure('load-failed', 'Captions editor could not start'), 'captions-editor');
+        renderLoadError(container, 'captions editor', new KalturaFailure('load-failed', 'Captions editor could not start'), 'captions-editor', reporter);
       })
       .finally(() => clearTimeout(timer));
 
@@ -143,7 +144,7 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
       container.replaceChildren();
       if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
-  }, [partnerId, ks, entryId, uiconfId, invalid]);
+  }, [partnerId, ks, entryId, uiconfId, invalid, reporter]);
 
   if (invalid) return <LoadError widget="captions-editor">{`Failed to load captions editor: Invalid ${invalid}`}</LoadError>;
   return <div ref={containerRef} className="kaltura-captions-editor-container" style={{ width: '100%', minHeight: '600px' }} />;

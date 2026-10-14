@@ -1,6 +1,7 @@
 import { createElement, type ComponentType } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { StrictPendingContext } from '../../core/validate-props';
+import { ReporterContext, type KalturaReporter } from '../../core/host-hooks';
 
 /**
  * Defines a custom element that renders `Core` from its `config` property.
@@ -9,6 +10,8 @@ import { StrictPendingContext } from '../../core/validate-props';
  * until `config` is set. A `config` that is not a plain object (text, number,
  * array) counts as empty props, so the element shows its plain-text error.
  * The unmount waits one microtask, so moving the element keeps its widget.
+ * With `config.action` set to `{ event: { name } }`, each widget error and
+ * event fires a `kaltura-action` DOM event. See docs/host-api.md.
  * Idempotent.
  */
 export function defineKalturaElement<P extends object>(
@@ -24,6 +27,13 @@ export function defineKalturaElement<P extends object>(
       private current = initial;
       private root: Root | null = null;
       private queued = false;
+      // Fixed fields only. The page context in `config` is not sent back.
+      private reporter: KalturaReporter = {
+        send: context => {
+          const name = (this.current as { action?: { event?: { name?: unknown } } } | null)?.action?.event?.name;
+          if (typeof name === 'string') this.dispatchEvent(new CustomEvent('kaltura-action', { bubbles: true, composed: true, detail: { name, context } }));
+        },
+      };
 
       get config(): Partial<P> | null {
         return this.current;
@@ -62,8 +72,14 @@ export function defineKalturaElement<P extends object>(
           const config = this.current;
           const isObject = typeof config === 'object' && config !== null && !Array.isArray(config);
           const props = isObject ? config : initial === null && config == null ? null : {};
+          const { action: _action, ...rest } = (props ?? {}) as { action?: unknown };
           this.root?.render(
-            props && createElement(StrictPendingContext.Provider, { value: true }, createElement(Core, props as P)),
+            props &&
+              createElement(
+                ReporterContext.Provider,
+                { value: this.reporter },
+                createElement(StrictPendingContext.Provider, { value: true }, createElement(Core, rest as P)),
+              ),
           );
         });
       }

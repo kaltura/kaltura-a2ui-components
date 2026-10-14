@@ -27,5 +27,6 @@ export const KalturaFlashcardsApi = {
     partnerId: z.number().int().positive().optional(),
     uiconfId: z.number().int().positive().optional(),
     ks: CommonSchemas.DynamicString.optional(),
+    action: CommonSchemas.Action.optional(),
   }),
 };

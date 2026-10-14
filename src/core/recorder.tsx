@@ -4,7 +4,7 @@ import { renderLoadError } from './render-load-error';
 import { KalturaRecorderApi } from '../schemas/recorder';
 import { checkProps, StrictPendingContext } from './validate-props';
 import { withKs } from './ks';
-import { emitEvent, invalidCode, KalturaFailure, reportError } from './host-hooks';
+import { emitEvent, invalidCode, KalturaFailure, reportError, ReporterContext } from './host-hooks';
 import { kalturaHosts } from './region';
 import { isEntryId } from './ids';
 import { refusedIdProp } from './allowed-ids';
@@ -28,6 +28,7 @@ const detailOf = (event: unknown): { entryId?: unknown } => (event as { detail?:
 const RecorderView: FC<RecorderCoreProps> = (props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const strict = useContext(StrictPendingContext);
+  const reporter = useContext(ReporterContext);
   const { partnerId, ks, uiconfId, entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime } = props;
 
   useEffect(() => {
@@ -37,7 +38,7 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
     const optional = { entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime };
     const { invalid, pending } = checkProps(RUNTIME_SCHEMA, { partnerId, ks, uiconfId, ...optional }, strict);
     if (invalid.length) {
-      renderLoadError(container, 'recorder', new KalturaFailure(invalidCode(invalid), `Invalid ${invalid.join(', ')}`), 'recorder');
+      renderLoadError(container, 'recorder', new KalturaFailure(invalidCode(invalid), `Invalid ${invalid.join(', ')}`), 'recorder', reporter);
       return () => {
         container.replaceChildren();
       };
@@ -45,7 +46,7 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
     if (pending) return;
     const refused = refusedIdProp({ partnerId, uiconfId });
     if (refused) {
-      renderLoadError(container, 'recorder', new KalturaFailure('origin-not-allowed', `${refused} is not allowed`), 'recorder');
+      renderLoadError(container, 'recorder', new KalturaFailure('origin-not-allowed', `${refused} is not allowed`), 'recorder', reporter);
       return () => {
         container.replaceChildren();
       };
@@ -92,19 +93,19 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
             type: 'recorder-upload-ended',
             widget: 'recorder',
             detail: { ...(isEntryId(entryId) ? { entryId } : {}), instanceId: id },
-          });
+          }, reporter);
         });
         // Remote error text can hold the KS or markup. Never report it.
         instance.addEventListener('error', () => {
           if (cancelled) return;
-          reportError('render-failed', 'recorder', 'Recorder error');
+          reportError('render-failed', 'recorder', 'Recorder error', reporter);
         });
       })
       .catch(err => {
         if (cancelled) return;
         // The recorder may have started before the failure. Stop it before the error replaces its UI.
         destroy();
-        renderLoadError(container, 'recorder', err instanceof KalturaFailure ? err : new KalturaFailure('load-failed', 'Recorder could not start'), 'recorder');
+        renderLoadError(container, 'recorder', err instanceof KalturaFailure ? err : new KalturaFailure('load-failed', 'Recorder could not start'), 'recorder', reporter);
       });
 
     return () => {
@@ -112,7 +113,7 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
       destroy();
       container.replaceChildren();
     };
-  }, [partnerId, ks, uiconfId, entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime, strict]);
+  }, [partnerId, ks, uiconfId, entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime, strict, reporter]);
 
   return (
     <div
