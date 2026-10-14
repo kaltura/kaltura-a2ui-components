@@ -67,15 +67,13 @@ jsDelivr caches a file at a tag for a year and has no purge for that. A wrong re
 
 ## Catalog id URL
 
-The catalog id is `https://kaltura.github.io/a2ui/v2/catalog.json` (`KALTURA_CATALOG_ID`, and `$id` and `catalogId` in the JSON). A2UI treats it as a name, not as a link, so the React package and the A2UI clients never fetch it. Nothing in this repo or its workflows publishes to `kaltura.github.io`.
-
-Tooling that opens the id as a URL needs a file there. Serve this, unchanged, at that URL (done outside this repo, by whoever owns `kaltura.github.io`):
+The catalog id is `https://kaltura.github.io/a2ui/v2/catalog.json` (`KALTURA_CATALOG_ID`, and `$id` and `catalogId` in the JSON). A2UI treats it as a name, not as a link, so the React package and the A2UI clients never fetch it. The file is served from the [kaltura/a2ui](https://github.com/kaltura/a2ui) repo (GitHub Pages, `v2/catalog.json`). Nothing in this repo or its workflows publishes there, so update it by hand after each release that changes the catalog: open a PR in that repo that replaces `v2/catalog.json` with this, unchanged:
 
 | What | Where it comes from |
 |---|---|
 | The stamped `kaltura_catalog.json` of the newest release | The Release asset `kaltura_catalog.json`, or the same bytes at `https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@<tag>/src/catalog/kaltura_catalog.json` |
 
-Do not copy the file from `main`: it has placeholders instead of the tag URL and SRI hashes. Update the served copy with each release that changes the catalog.
+Do not copy the file from `main`: it has placeholders instead of the tag URL and SRI hashes. The Pages workflow in that repo checks that `catalogId` matches the URL.
 
 ## Third-party notices
 
