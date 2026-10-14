@@ -8,7 +8,7 @@ import { kalturaHosts } from './region';
 export interface ContentLabCoreProps {
   partnerId: number;
   ks: string;
-  serverUrl: string;
+  serverUrl?: string;
   uiconfId: number;
   entryId: string;
 }

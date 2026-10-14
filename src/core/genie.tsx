@@ -7,7 +7,7 @@ import { kalturaHosts } from './region';
 export interface GenieCoreProps {
   partnerId: number;
   ks: string;
-  serverUrl: string;
+  serverUrl?: string;
   uiconfId: number;
   categoryId?: string;
   language?: string;

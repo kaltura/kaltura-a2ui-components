@@ -7,7 +7,7 @@ import { kalturaHosts } from './region';
 export interface VodAvatarCoreProps {
   partnerId: number;
   ks: string;
-  serverUrl: string;
+  serverUrl?: string;
 }
 
 function VodAvatarView(props: VodAvatarCoreProps) {

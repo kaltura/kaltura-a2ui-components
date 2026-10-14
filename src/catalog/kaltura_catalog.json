@@ -1119,7 +1119,7 @@
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
+              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "theme": {
               "type": "string",
@@ -1143,7 +1143,7 @@
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
-          "required": ["component", "partnerId", "serverUrl"]
+          "required": ["component", "partnerId"]
         }
       ],
       "unevaluatedProperties": false
@@ -1275,9 +1275,8 @@
               "description": "Kaltura account/partner ID."
             },
             "serverUrl": {
-              "type": "string",
-              "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused.",
-              "maxLength": 2048
+              "$ref": "#/$defs/DynamicString",
+              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "autoConnect": {
               "type": "boolean",
@@ -1299,7 +1298,7 @@
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
-          "required": ["component", "partnerId", "serverUrl"]
+          "required": ["component", "partnerId"]
         }
       ],
       "unevaluatedProperties": false
@@ -1320,7 +1319,7 @@
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
+              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "categoryId": {
               "$ref": "#/$defs/DynamicString",
@@ -1336,7 +1335,7 @@
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
-          "required": ["component", "partnerId", "serverUrl", "uiconfId"]
+          "required": ["component", "partnerId", "uiconfId"]
         }
       ],
       "unevaluatedProperties": false
@@ -1357,7 +1356,7 @@
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
+              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
@@ -1369,7 +1368,7 @@
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
-          "required": ["component", "partnerId", "serverUrl", "uiconfId", "entryId"]
+          "required": ["component", "partnerId", "uiconfId", "entryId"]
         }
       ],
       "unevaluatedProperties": false
@@ -1390,11 +1389,11 @@
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
+              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
-          "required": ["component", "partnerId", "serverUrl"]
+          "required": ["component", "partnerId"]
         }
       ],
       "unevaluatedProperties": false
@@ -1415,11 +1414,11 @@
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura Unisphere hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
+              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events. An `event` action sends its own context plus fixed fields: component, componentId, surfaceId, widget, event ('error' or the widget's event name), code (on errors) and entryId or entryIds (checked ids). It never holds the KS or text from a remote service. A `functionCall` action runs on the client instead." }
           },
-          "required": ["component", "partnerId", "serverUrl"]
+          "required": ["component", "partnerId"]
         }
       ],
       "unevaluatedProperties": false

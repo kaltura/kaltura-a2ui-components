@@ -7,7 +7,7 @@ import { currentRegion, kalturaHosts, regionOf } from './region';
 export interface AgentsWidgetCoreProps {
   partnerId: number;
   ks: string;
-  serverUrl: string;
+  serverUrl?: string;
 }
 
 function AgentsWidgetView(props: AgentsWidgetCoreProps) {
@@ -22,7 +22,7 @@ function AgentsWidgetView(props: AgentsWidgetCoreProps) {
       runtimeSettings={{
         ks: props.ks,
         pid: String(props.partnerId),
-        agentsServiceURI: `https://agents-manager.${regionOf(props.serverUrl) ?? currentRegion()}.ovp.kaltura.com`,
+        agentsServiceURI: `https://agents-manager.${regionOf(props.serverUrl ?? '') ?? currentRegion()}.ovp.kaltura.com`,
         kalturaServerURI: kalturaHosts().serviceUrl,
         analyticsServerURI: 'analytics.kaltura.com',
         hostAppName: 1,

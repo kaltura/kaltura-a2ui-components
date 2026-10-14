@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef } from 'react';
-import { loadUnisphereModule } from './unisphere-loader';
+import { defaultServerUrl, loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
 import { KalturaFailure, ReporterContext, type KalturaWidget } from './host-hooks';
 import { refusedIdProp } from './allowed-ids';
@@ -9,7 +9,8 @@ export { deriveLoaderUrl } from './unisphere-loader';
 export interface UnisphereWidgetCoreProps {
   partnerId: number;
   ks: string;
-  serverUrl: string;
+  /** Unisphere host. Default: the host of the region set with `setRegion`. */
+  serverUrl?: string;
   widgetName: string;
   runtimeName: string;
   runtimeSettings?: Record<string, unknown>;
@@ -38,7 +39,8 @@ function killWorkspace(workspace: unknown): void {
 
 export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label, widget = 'unisphere' } = props;
+  const { partnerId, ks, widgetName, runtimeName, visualType, label, widget = 'unisphere' } = props;
+  const serverUrl = props.serverUrl ?? defaultServerUrl();
   const reporter = useContext(ReporterContext);
   const onRuntimeRef = useRef(props.onRuntime);
   onRuntimeRef.current = props.onRuntime;

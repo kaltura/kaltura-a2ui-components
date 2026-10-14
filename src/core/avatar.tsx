@@ -1,7 +1,7 @@
 import { createElement, useContext, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { z } from 'zod';
-import { loadUnisphereModule } from './unisphere-loader';
+import { defaultServerUrl, loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
 import { KalturaFailure, emitEvent, ReporterContext } from './host-hooks';
 import { regionOf } from './region';
@@ -11,7 +11,7 @@ import { withKs } from './ks';
 
 export interface AvatarCoreProps {
   partnerId: number;
-  serverUrl: string;
+  serverUrl?: string;
   autoConnect?: boolean;
   openingPhrase?: string;
   captions?: boolean;
@@ -40,7 +40,8 @@ const safeReason = (reason: unknown) => (typeof reason === 'string' && /^[A-Za-z
 
 const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { partnerId, ks, serverUrl, autoConnect, openingPhrase, captions, theme } = props;
+  const { partnerId, ks, autoConnect, openingPhrase, captions, theme } = props;
+  const serverUrl = props.serverUrl ?? defaultServerUrl();
   const reporter = useContext(ReporterContext);
 
   useEffect(() => {

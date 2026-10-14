@@ -201,7 +201,6 @@ const PENDING_CASES: Array<[string, Record<string, unknown>, string]> = [
   ['flashcards', { title: 'D' }, 'cards'],
   ['Media Manager', { partnerId: 1, serverUrl: SERVER_URL }, 'ks'],
   ['captions editor', base, 'entryId'],
-  ['Kaltura Avatar', { partnerId: 1 }, 'serverUrl'],
   ['Kaltura Genie', { ...unisphere, ks: undefined }, 'ks'],
   ['Kaltura Content Lab', unisphere, 'entryId'],
   ['analytics', {}, 'partnerId'],
