@@ -1,9 +1,8 @@
 import { useContext, useEffect, useRef } from 'react';
 import type { FC } from 'react';
-import { isEntryId, isPositiveInt } from './ids';
 import { KalturaCaptionsEditorApi } from '../schemas/captions-editor';
-import { LoadError, withValidatedProps } from './validate-props';
-import { withKs } from './ks';
+import { withValidatedProps } from './validate-props';
+import { withKs, withKsProp } from './ks';
 import { kalturaHosts } from './region';
 import { KalturaFailure, ReporterContext } from './host-hooks';
 import { renderLoadError } from './render-load-error';
@@ -62,15 +61,15 @@ function pinAssets(html: string): string {
 }
 
 export interface CaptionsEditorCoreProps {
+  /** Kaltura partner (account) ID. */
   partnerId: number;
+  /** Kaltura Session. The host KS provider is used first. */
   ks: string;
+  /** Entry whose captions to edit. */
   entryId: string;
+  /** uiConf ID of the editor's own player. */
   uiconfId?: number;
 }
-
-/** The first prop that cannot be used, or `undefined`. */
-const invalidProp = (p: CaptionsEditorCoreProps): string | undefined =>
-  !isPositiveInt(p.partnerId) ? 'partnerId' : !isEntryId(p.entryId) ? 'entryId' : p.uiconfId != null && !isPositiveInt(p.uiconfId) ? 'uiconfId' : undefined;
 
 /**
  * The editor reads its settings from `data-*` attributes on its own iframe
@@ -82,12 +81,11 @@ const invalidProp = (p: CaptionsEditorCoreProps): string | undefined =>
 const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
   const { partnerId, ks, entryId, uiconfId } = props;
   const containerRef = useRef<HTMLDivElement>(null);
-  const invalid = invalidProp(props);
   const reporter = useContext(ReporterContext);
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || invalid) return;
+    if (!container) return;
 
     let cancelled = false;
     let blobUrl: string | undefined;
@@ -144,13 +142,12 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
       container.replaceChildren();
       if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
-  }, [partnerId, ks, entryId, uiconfId, invalid, reporter]);
+  }, [partnerId, ks, entryId, uiconfId, reporter]);
 
-  if (invalid) return <LoadError widget="captions-editor">{`Failed to load captions editor: Invalid ${invalid}`}</LoadError>;
   return <div ref={containerRef} className="kaltura-captions-editor-container" style={{ width: '100%', minHeight: '600px' }} />;
 };
 
 export const CaptionsEditorCore = withKs(
   'captions-editor',
-  withValidatedProps(KalturaCaptionsEditorApi.schema.required({ ks: true }), 'captions editor', CaptionsEditorView, 'captions-editor'),
+  withValidatedProps(withKsProp(KalturaCaptionsEditorApi.schema), 'captions editor', CaptionsEditorView, 'captions-editor'),
 );

@@ -88,7 +88,7 @@ describe('SEC-01: a rejected serverUrl is not echoed', () => {
   };
 
   it('SEC-01: the thrown message is generic', () => {
-    expect(reject(hostile).message).toBe('serverUrl is not an allowed Unisphere origin');
+    expect(reject(hostile).message).toBe('serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)');
   });
 
   it('SEC-01: console.warn gets the value cut to 100 characters', () => {
@@ -99,7 +99,7 @@ describe('SEC-01: a rejected serverUrl is not echoed', () => {
 
   it('SEC-01: a non-string value is warned about and refused', () => {
     const { message, warn } = reject({ toString: () => 'x'.repeat(500) });
-    expect([message, warn.mock.calls.length]).toEqual(['serverUrl is not an allowed Unisphere origin', 1]);
+    expect([message, warn.mock.calls.length]).toEqual(['serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)', 1]);
   });
 
   it('SEC-01: an accepted serverUrl does not warn', () => {

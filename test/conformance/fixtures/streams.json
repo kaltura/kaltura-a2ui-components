@@ -369,8 +369,7 @@
               "id": "root",
               "component": "KalturaAgentsWidget",
               "partnerId": 1,
-              "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
-              "agentId": "agent-1"
+              "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
             }
           ]
         }
@@ -400,8 +399,7 @@
               "id": "root",
               "component": "KalturaVodAvatar",
               "partnerId": 1,
-              "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
-              "entryId": "0_abc"
+              "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
             }
           ]
         }

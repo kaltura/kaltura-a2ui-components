@@ -68,6 +68,7 @@ describe('F29: errors reach the agent as an action', () => {
           widget: 'player',
           event: 'error',
           code: 'invalid-props',
+          invalidProps: ['entryId'],
         },
       },
     ]);
@@ -77,7 +78,7 @@ describe('F29: errors reach the agent as an action', () => {
     const context = { code: 'fake', widget: 'fake', event: 'fake', component: 'fake', componentId: 'fake', surfaceId: 'fake', entryId: '0_fake' };
     await surface([{ ...PLAYER, action: { event: { name: 'kalturaFeedback', context } } }]);
     expect(actions.map(a => a.context)).toEqual([
-      { code: 'invalid-props', widget: 'player', event: 'error', component: 'KalturaPlayer', componentId: 'root', surfaceId: 's', entryId: '0_fake' },
+      { code: 'invalid-props', invalidProps: ['entryId'], widget: 'player', event: 'error', component: 'KalturaPlayer', componentId: 'root', surfaceId: 's', entryId: '0_fake' },
     ]);
   });
 
@@ -103,7 +104,7 @@ describe('F29: errors reach the agent as an action', () => {
 
   it('F29: the host error handler gets the surfaceId', async () => {
     await surface([PLAYER]);
-    expect(errors).toEqual([{ code: 'invalid-props', widget: 'player', message: 'Failed to load player: Invalid entryId', surfaceId: 's' }]);
+    expect(errors).toEqual([{ code: 'invalid-props', widget: 'player', message: 'Failed to load player: Invalid entryId', surfaceId: 's', invalidProps: ['entryId'] }]);
   });
 
   it('F29: a functionCall action runs on the client and sends nothing to the agent', async () => {
@@ -217,6 +218,12 @@ describe('F29: toClientError', () => {
     ]);
   });
 
+  it('F29: adds the invalid props to the message and nothing else', async () => {
+    const { toClientError } = await import('../../src/core/host-hooks');
+    const message = toClientError({ code: 'invalid-props', widget: 'chart', message: HOSTILE, invalidProps: ['chartType', 'data'] }, 's');
+    expect(message.error.message).toBe('Kaltura chart error: invalid-props (chartType, data)');
+  });
+
   it('F29: takes the surfaceId as an argument when the error has none', async () => {
     const { toClientError } = await import('../../src/core/host-hooks');
     expect(toClientError({ code: 'invalid-props', widget: 'player', message: '' }, 'main').error.surfaceId).toBe('main');
@@ -238,7 +245,7 @@ describe('F29: the web component fires kaltura-action', () => {
 
   it('F29: an error fires kaltura-action with fixed fields and drops the page context', async () => {
     expect(await player({ action: { event: { name: 'kalturaFeedback', context: { note: HOSTILE } } } })).toEqual([
-      { name: 'kalturaFeedback', context: { widget: 'player', event: 'error', code: 'invalid-props' } },
+      { name: 'kalturaFeedback', context: { widget: 'player', event: 'error', code: 'invalid-props', invalidProps: ['entryId'] } },
     ]);
   });
 

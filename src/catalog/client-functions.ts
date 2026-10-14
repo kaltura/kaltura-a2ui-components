@@ -19,6 +19,8 @@ export const CopyToClipboardImplementation: FunctionImplementation = createFunct
   {
     name: 'copyToClipboard',
     returnType: 'void' as const,
+    // Text and other passive props cannot run it. Only a gesture can.
+    requiresUserActivation: true,
     schema: z.object({
       text: z.string().describe('The text to copy to the clipboard'),
     }),
@@ -38,7 +40,7 @@ export const CopyToClipboardImplementation: FunctionImplementation = createFunct
  * Relative URLs are refused because the base page may not be https.
  */
 export const SafeOpenUrlImplementation: FunctionImplementation = createFunctionImplementation(
-  OpenUrlApi,
+  { ...OpenUrlApi, requiresUserActivation: true },
   (args) => {
     let url: URL | undefined;
     try {

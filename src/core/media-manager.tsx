@@ -1,30 +1,29 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import { loadUnisphereModule } from './unisphere-loader';
+import { defaultServerUrl, loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
 import { KalturaMediaManagerApi } from '../schemas/media-manager';
 import { withValidatedProps } from './validate-props';
-import { withKs } from './ks';
+import { withKs, withKsProp } from './ks';
 import { isEntryId } from './ids';
 import { emitEvent, KalturaFailure, ReporterContext, type KalturaEvent } from './host-hooks';
 
 export { deriveLoaderUrl } from './unisphere-loader';
 
 export interface MediaManagerCoreProps {
+  /** Kaltura partner (account) ID. */
   partnerId: number;
+  /** Kaltura Session. The host KS provider is used first. */
   ks: string;
-  serverUrl: string;
+  /** Unisphere URL. Defaults to the Unisphere host of the region. Only Kaltura hosts and `setExtraAllowedOrigins` are accepted. */
+  serverUrl?: string;
+  /** Default: the `data-theme` of the page, else `dark`. */
   theme?: 'dark' | 'light';
+  /** `select` picks entries (default). `manage` also edits them. */
   mode?: 'select' | 'manage';
+  /** Allow up to 5 entries. Default: false. */
   multiSelect?: boolean;
+  /** Content scope to browse, such as a category ID. */
   contextId?: string;
-  /**
-   * Host option, not part of the A2UI schema. The React adapter always sets
-   * it to `true`, so an agent cannot change it. Default `true`: the selection
-   * event fires on the host element and bubbles up to `document`, as before.
-   * `false` lets it bubble up to the host element only. The default flips in
-   * the next release.
-   */
-  legacyDocumentEvents?: boolean;
 }
 
 /** Longest entry name kept from the media library. */
@@ -82,7 +81,7 @@ export function buildWorkspaceConfig(props: {
       },
       ui: { theme: props.theme, language: 'en' },
     },
-    // Each instance gets its own named workspace — no shared singleton,
+    // Each instance gets its own named workspace, with no shared singleton and
     // no "workspace already reserved" collision across concurrent surfaces.
     workspaceName: props.instanceId,
   };
@@ -112,19 +111,18 @@ function MediaManagerView(props: MediaManagerCoreProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceIdRef = useRef('');
   const [selected, setSelected] = useState<SelectedEntry[]>([]);
-  const { partnerId, ks, serverUrl, mode, contextId } = props;
+  const { partnerId, ks, mode, contextId } = props;
+  const serverUrl = props.serverUrl ?? defaultServerUrl();
   const isMultiSelect = props.multiSelect === true;
-  const legacy = props.legacyDocumentEvents !== false;
   const themeProp = props.theme;
   const reporter = useContext(ReporterContext);
 
   /**
-   * `kaltura-entry-selected` fires on the host element (the web component tag,
-   * or the wrapper div in React) with the instance id. Legacy mode bubbles it
-   * to `document` as before. Otherwise it fires on the wrapper inside the host
-   * and bubbles up to the host element, and stops there. `name` is text from
-   * the media library or the agent: treat it as untrusted. The host event
-   * handler gets the same detail.
+   * `kaltura-entry-selected` fires on the wrapper inside the host element (the
+   * web component tag, or the parent in React) with the instance id. It bubbles
+   * up to the host element and stops there, so it never reaches `document`.
+   * `name` is text from the media library or the agent: treat it as untrusted.
+   * The host event handler gets the same detail.
    */
   const announce = (selection: Omit<Extract<KalturaEvent, { type: 'entry-selected' }>['detail'], 'instanceId'>) => {
     const wrapper = hostRef.current;
@@ -137,10 +135,6 @@ function MediaManagerView(props: MediaManagerCoreProps) {
       bubbles: true,
       composed: true,
     });
-    if (legacy) {
-      (host ?? wrapper).dispatchEvent(event);
-      return;
-    }
     const boundary = host ?? wrapper.parentElement ?? wrapper;
     const stop = (e: Event) => e.stopPropagation();
     boundary.addEventListener(event.type, stop);
@@ -224,7 +218,6 @@ function MediaManagerView(props: MediaManagerCoreProps) {
       visualId = visual.id;
     })().catch(err => {
       if (cancelled) return;
-      console.error('[MediaManager] Load failed');
       renderLoadError(container, 'Media Manager', err, 'media-manager', reporter);
     });
 
@@ -232,9 +225,9 @@ function MediaManagerView(props: MediaManagerCoreProps) {
       cancelled = true;
       dispose();
     };
-    // announce reads only refs, the stable legacy flag and the stable reporter.
+    // announce reads only refs and the stable reporter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partnerId, ks, serverUrl, themeProp, mode, contextId, isMultiSelect, legacy, reporter]);
+  }, [partnerId, ks, serverUrl, themeProp, mode, contextId, isMultiSelect, reporter]);
 
   const handleConfirmSelection = () => {
     if (selected.length === 0) return;
@@ -283,5 +276,5 @@ function MediaManagerView(props: MediaManagerCoreProps) {
 
 export const MediaManagerCore = withKs(
   'media-manager',
-  withValidatedProps(KalturaMediaManagerApi.schema.required({ ks: true }), 'Media Manager', MediaManagerView, 'media-manager'),
+  withValidatedProps(withKsProp(KalturaMediaManagerApi.schema), 'Media Manager', MediaManagerView, 'media-manager'),
 );
