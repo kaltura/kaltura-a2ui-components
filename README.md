@@ -1,117 +1,96 @@
 # @kaltura/a2ui-react
 
-Kaltura's [A2UI](https://a2ui.org) Experience Components. All 12 components ship as one versioned catalog, so any A2UI client that registers a catalog can render them without re-implementing them.
+Let your AI agent show a Kaltura video player, chart, recorder or flashcards in a chat UI.  
+The agent sends JSON, your page renders the real widget.
 
-Version **0.3.0** (see [Releases](https://github.com/kaltura/kaltura-a2ui-components/releases)). Served by jsDelivr from the git tag. There is no npm package: a package on npm with this name is not ours.
+[A2UI](https://a2ui.org) is the open protocol that lets an agent describe a UI as JSON. This package is the Kaltura catalog for it.
+
+[![ci](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/ci.yml/badge.svg)](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/ci.yml)
+[![e2e](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/e2e.yml/badge.svg)](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/e2e.yml)
+[![licence: AGPL-3.0-only](https://img.shields.io/badge/licence-AGPL--3.0--only-blue.svg)](LICENSE)
+
+![A bar chart and flashcards rendered by the Kaltura custom elements](docs/img/examples.png)
+
+## How it works
+
+```mermaid
+sequenceDiagram
+  participant Agent
+  participant Page as Your page (MessageProcessor + Kaltura catalog)
+  participant Widget as Kaltura widget
+  Agent->>Page: createSurface, updateComponents (JSON)
+  Page->>Widget: render the real widget
+  Widget-->>Page: error or event
+  Page-->>Agent: action or error message
+```
+
+An A2UI client renders only components it has registered ahead of time. There is no runtime code loading. So a Kaltura Player appears only in a client that has this catalog built in.
+
+### Words you will see
+
+| Word | Meaning |
+|---|---|
+| A2UI | The protocol: an agent sends UI as JSON messages |
+| Catalog | The list of components a client can render. This package is the Kaltura catalog |
+| Surface | One area of the page that the agent draws into. It has a `surfaceId` |
+| KS | Kaltura Session: the token that authorises Kaltura calls. Your server mints it |
+| uiConf | The ID of a player or recorder configuration. The customer admin sets it up in KMC |
+| Unisphere | The Kaltura framework that loads widgets such as Genie and Media Manager |
+| KMC | Kaltura Management Console: where you find your partner, uiConf and entry IDs |
 
 ## Quick start
 
-Pick one. All three pin the tag `v0.3.0`.
-
-**1. Script tag (plain HTML).** Defines all 12 custom elements.
-
-<!-- check-examples: expect kaltura-chart h4.kaltura-chart-title -->
-```html
-<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
-
-<kaltura-chart id="chart"></kaltura-chart>
-
-<script>
-  document.getElementById('chart').config = { chartType: 'bar', title: 'Visits', data: [{ day: 'Mon', visits: 12 }], xKey: 'day', yKeys: ['visits'] };
-</script>
-```
-
-For production, copy the same tag with its `integrity` value from the [v0.3.0 Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases/tag/v0.3.0).
-
-**2. ESM (React, A2UI clients).** Install from the git tag with the peers, then register the catalog as in [A2UI client (React)](#a2ui-client-react).
-
-```bash
-npm i github:kaltura/kaltura-a2ui-components#v0.3.0 @a2ui/react @a2ui/web_core zod react react-dom
-```
-
-**3. Catalog JSON.** For A2UI tooling that reads a catalog by URL:
-
-```
-https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/src/catalog/kaltura_catalog.json
-```
-
-Check a release before you use it: [docs/verify-release.md](docs/verify-release.md).
-
-## Why this exists
-
-An A2UI client renders only the components it has registered ahead of time. The protocol has no runtime code loading. A Kaltura Player or Media Manager therefore appears only in a client that has this catalog built in.
-
-| Consumer | Artifact | How |
+| Choose | If | Install |
 |---|---|---|
-| A2UI clients that register a catalog (chat UIs, partner apps) | `dist/kaltura-react.mjs` (ESM, peers external) | `import { kalturaReactCatalog } from '@kaltura/a2ui-react'` |
-| Plain HTML pages | `dist/kaltura-wc.js` (IIFE, self-contained) | `<script src=…>` and Kaltura custom elements |
+| [Script tag](#plain-html) | You have a plain HTML page and no A2UI client | None |
+| [React or A2UI client](#react-or-a2ui-client) | Your agent drives the page, for example a chat UI | `npm i` |
+| [Catalog JSON](#catalog-json) | Your tool reads a catalog by URL | None |
 
-Clients that cannot register a catalog (Gemini Enterprise, generic text clients) are handled by the agent's negotiation layer, not by this package.
+Steps: 1. Render the widgets (pick a row). 2. [Connect your agent](docs/agent-guide.md). 3. [Set the host rules](#for-the-host).
 
-## Install
+Some chat apps, such as Gemini Enterprise, cannot register a catalog, so they cannot show these widgets. Your agent should check which catalogs the client supports ([capability negotiation](docs/host-api.md#capability-negotiation)) and reply in plain text when it supports none of yours.
 
-### Git tag (React, A2UI clients)
+### Install
+
+For the React or A2UI path only. There is no npm package: a package on npm with this name is not ours. Install from the git tag. The tag holds the built `dist/`, so nothing builds on install.
 
 ```bash
-npm i github:kaltura/kaltura-a2ui-components#v0.3.0 @a2ui/react @a2ui/web_core zod react react-dom
+npm i github:kaltura/kaltura-a2ui-components#v0.3.0 @a2ui/react @a2ui/web_core zod@3 react react-dom
 ```
 
-npm installs it as `@kaltura/a2ui-react`, so imports use that name. Your `package.json` gets `"@kaltura/a2ui-react": "github:kaltura/kaltura-a2ui-components#v0.3.0"`. The tag holds the built `dist/`, so nothing builds on install.
-
-The package needs these peers: `@a2ui/react ^0.13.0`, `@a2ui/web_core ^0.13.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`. Entries: `@kaltura/a2ui-react` (React), `@kaltura/a2ui-react/webcomponent` (script bundle) and `@kaltura/a2ui-react/catalog` (the catalog JSON). In Node (SSR, tests), import `@kaltura/a2ui-react` before `@a2ui/react`: see [docs/host-integration.md](docs/host-integration.md#server-imports-ssr).
-
-`@a2ui/react` 0.13 brings in `dompurify` 3.4.11 through `@a2ui/markdown-it`, which has published advisories. Override it in your `package.json` (pnpm: `pnpm.overrides`, Yarn: `resolutions`). Details: [docs/host-integration.md](docs/host-integration.md#dompurify-override).
+zod 4 is not supported. Add this to your `package.json` too ([why](docs/host-integration.md#dompurify-override)):
 
 ```json
 { "overrides": { "dompurify": "^3.4.17" } }
 ```
 
-### CDN (plain HTML)
+Gotchas:
 
-```
-https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js
-https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-react.mjs
-```
+- **ESM only.** There is no `require`. Entries: `@kaltura/a2ui-react`, `@kaltura/a2ui-react/webcomponent` (script bundle) and `@kaltura/a2ui-react/catalog` (the catalog JSON).
+- **Server-side rendering.** In Node, import `@kaltura/a2ui-react` before `@a2ui/react` ([why](docs/host-integration.md#server-imports-ssr)).
+- **One pre-bundled file.** There is no tree-shaking: all 12 components load.
+- **Pin the full tag**, such as `v0.3.0`. `@latest` changes under you. Add the `integrity` value from the [Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases). Check a release: [docs/verify-release.md](docs/verify-release.md).
+- **Peers:** `@a2ui/react ^0.13.0`, `@a2ui/web_core ^0.13.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`.
 
-Pin the full tag. jsDelivr also resolves `@0.2` and `@latest`, but those change under you and break SRI. Each GitHub Release lists the SRI string (`sha384-…`) of every file in its notes and in `hashes.json`. Add it as `integrity` with `crossorigin="anonymous"`.
-
-Tags up to `v0.1.4` serve the old bundles, without the 0.2.0 fixes or host functions.
-
-## Components
-
-| Component type | Custom element | Embed technology |
-|---|---|---|
-| `KalturaPlayer` | `<kaltura-player>` | Kaltura Player script (`embedPlaykitJs`), in your page |
-| `KalturaFlashcards` | `<kaltura-flashcards>` | React carousel, clips use the Kaltura Player script |
-| `KalturaMediaManager` | `<kaltura-media-manager>` | Unisphere ES module |
-| `KalturaAnalytics` | `<kaltura-analytics>` | iframe, `postMessage` handshake |
-| `KalturaCaptionsEditor` | `<kaltura-captions-editor>` | Same-origin blob iframe, KS in `data-*` attributes |
-| `KalturaRecorder` | `<kaltura-recorder>` | Express Recorder script (`apps/expressrecorder`) |
-| `KalturaAvatar` | `<kaltura-avatar>` | Unisphere embeds API (`genieAvatar`) |
-| `KalturaGenie` | `<kaltura-genie-widget>` | Unisphere ES module |
-| `KalturaContentLab` | `<kaltura-content-lab>` | Unisphere ES module |
-| `KalturaAgentsWidget` | `<kaltura-agents-widget>` | Unisphere ES module |
-| `KalturaVodAvatar` | `<kaltura-vod-avatar-wc>` | Unisphere ES module |
-| `KalturaChart` | `<kaltura-chart>` | visx (React) |
-
-## Use it
-
-### A2UI client (React)
+### React or A2UI client
 
 <!-- check-examples: expect h4.kaltura-chart-title; text:Cell -->
 ```tsx
-import { KALTURA_CATALOG_ID, kalturaReactCatalog, setKsProvider } from '@kaltura/a2ui-react'; // before @a2ui/react
+import { KALTURA_CATALOG_ID, kalturaReactCatalog, setErrorHandler, setKsProvider } from '@kaltura/a2ui-react'; // before @a2ui/react
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { A2uiSurface } from '@a2ui/react/v0_9';
-import { MessageProcessor } from '@a2ui/web_core/v0_9';
+import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
+import { MessageProcessor, type A2uiMessage } from '@a2ui/web_core/v0_9';
 
-// The host mints the Kaltura Session. Agent messages never carry it.
-setKsProvider(() => undefined); // replace with your KS call
+// Your server mints the KS. Agent messages never carry it.
+setKsProvider(async (widget) => {
+  const res = await fetch(`https://your-server.example.com/kaltura-session?widget=${widget}`);
+  return res.ok ? res.text() : undefined;
+});
+setErrorHandler((error) => console.warn('kaltura widget error:', error.code));
 
-// kalturaReactCatalog already includes the basic catalog. Register it alone.
-const processor = new MessageProcessor([kalturaReactCatalog]);
-processor.processMessages([
+// Normally these messages arrive from your agent.
+const messages: A2uiMessage[] = [
   { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
   {
     version: 'v0.9',
@@ -124,32 +103,41 @@ processor.processMessages([
       ],
     },
   },
-] as never);
+];
 
+// The Kaltura catalog already holds the basic components. Register it alone.
+// The second argument gets the actions your components send back to the agent.
+// The type argument lets A2uiSurface take the surface without a cast.
+const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatalog], (action) => console.log('send to agent:', action.name));
+processor.processMessages(messages);
+
+// #root is <div id="root"></div> in your page.
 const surface = processor.model.getSurface('s');
 if (surface) createRoot(document.getElementById('root')!).render(createElement(A2uiSurface, { surface }));
 ```
 
-- The catalog id is `https://kaltura.github.io/a2ui/v2/catalog.json` (0.4.0 and later). The `v1` id was the 0.3.x catalog: see [docs/migration-0.4.md](docs/migration-0.4.md#catalog-v2).
-- `buildKalturaCatalog(id?)` builds the same catalog under another id.
-- `loadKalturaCatalog(url)` fetches a catalog descriptor and keys the catalog by its `catalogId`.
-- Send `processor.getRendererCapabilities({ versions: ['v0.9'] })` to your agent as `a2uiClientCapabilities`, so it picks a catalog you registered ([docs/host-api.md](docs/host-api.md#capability-negotiation)).
-- Register the Kaltura catalog alone. It already holds the basic components, with checks on media URLs and markdown images ([docs/host-api.md](docs/host-api.md)).
+Your server mints the KS ([docs/ks-privileges.md](docs/ks-privileges.md)). Chart needs no KS, and Flashcards need one only for protected clips.
 
-A full page: [examples/react](examples/react).
+- The catalog id `https://kaltura.github.io/a2ui/v2/catalog.json` is a name. Nothing is served there. Fetch the file from [Catalog JSON](#catalog-json). The `v1` id was the 0.3.x catalog: [docs/migration-0.4.md](docs/migration-0.4.md#catalog-v2).
+- Send `processor.getRendererCapabilities({ versions: ['v0.9'] })` to your agent as `a2uiClientCapabilities`, so it picks a catalog you registered.
+- `buildKalturaCatalog(id?)` builds the same catalog under another id. `loadKalturaCatalog(url)` fetches a catalog JSON and keys it by its `catalogId`.
+
+A full page: [examples/react](examples/react). Next, [connect your agent](docs/agent-guide.md).
 
 ### Plain HTML
 
-<!-- check-examples: expect kaltura-chart h4.kaltura-chart-title; kaltura-player [role="region"] -->
+Custom elements are for pages without an A2UI client. For agent-driven pages use the React catalog.
+
+<!-- check-examples: expect kaltura-chart h4.kaltura-chart-title; text:Cell -->
 ```html
 <script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
 
 <kaltura-chart id="chart"></kaltura-chart>
-<kaltura-player id="player"></kaltura-player>
+<kaltura-flashcards id="cards"></kaltura-flashcards>
 
 <script>
   // The script defines all 12 elements and the global KalturaA2UIWebComponents.
-  // Set `config` (an object) on each element. Ids are numbers, not strings.
+  // Set `config` (an object) on each element.
   document.getElementById('chart').config = {
     chartType: 'bar',
     title: 'Visits',
@@ -157,74 +145,75 @@ A full page: [examples/react](examples/react).
     xKey: 'day',
     yKeys: ['visits'],
   };
-  // Use your own partner, player and entry ids.
-  document.getElementById('player').config = { partnerId: 1, uiconfId: 2, entryId: '0_abc' };
+  document.getElementById('cards').config = { title: 'Cells', cards: [{ title: 'Cell', content: 'The basic unit of life.' }] };
 </script>
 ```
 
-Add the `integrity` value from the Release, see [CDN](#cdn-plain-html).
+#### Play a Kaltura video
 
-A full page with a KS provider and an error handler: [examples/plain-html](examples/plain-html). Both examples run against `dist/` with `npm run check:examples`.
+Replace the three `YOUR_` values. Ids are numbers, not strings. Public entries need no KS. For a protected entry, set a KS provider first ([docs/host-integration.md](docs/host-integration.md#kaltura-session-ks)). Find the ids in KMC: partner ID under Settings > Integration Settings, uiConf ID under Studio > Player, entry ID under Content > Entries.
+
+This block needs a real Kaltura account, so `check:examples` skips it.
+
+<!-- check-examples: skip -->
+```html
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
+
+<kaltura-player id="player"></kaltura-player>
+
+<script>
+  document.getElementById('player').config = { partnerId: YOUR_PARTNER_ID, uiconfId: YOUR_UICONF_ID, entryId: 'YOUR_ENTRY_ID' };
+</script>
+```
+
+See it run, from a clone of this repo: `npm run example:html` ([examples/README.md](examples/README.md)). A full page with a KS provider and an error handler: [examples/plain-html](examples/plain-html).
+
+### Catalog JSON
+
+For A2UI tooling that reads a catalog by URL:
+
+```
+https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.3.0/src/catalog/kaltura_catalog.json
+```
+
+## Components
+
+| Component | What it shows | Needs a KS? | Custom element |
+|---|---|---|---|
+| `KalturaPlayer` | A video player for one entry | Only for protected entries | `<kaltura-player>` |
+| `KalturaFlashcards` | Study cards, each with optional video clips | Only for protected clips | `<kaltura-flashcards>` |
+| `KalturaChart` | One of 12 chart types | No | `<kaltura-chart>` |
+| `KalturaRecorder` | Record webcam or screen and upload | Yes | `<kaltura-recorder>` |
+| `KalturaMediaManager` | A library to browse and pick entries | Yes | `<kaltura-media-manager>` |
+| `KalturaAnalytics` | The Kaltura analytics dashboard | Yes, an admin KS | `<kaltura-analytics>` |
+| `KalturaCaptionsEditor` | An editor for the captions of one entry | Yes | `<kaltura-captions-editor>` |
+| `KalturaAvatar` | A live AI avatar you talk to | Yes | `<kaltura-avatar>` |
+| `KalturaGenie` | AI search and Q&A over your content | Yes | `<kaltura-genie-widget>` |
+| `KalturaContentLab` | AI content creation for an entry | Yes | `<kaltura-content-lab>` |
+| `KalturaAgentsWidget` | Kaltura AI agents | Yes | `<kaltura-agents-widget>` |
+| `KalturaVodAvatar` | The avatar video studio | Yes | `<kaltura-vod-avatar-wc>` |
+
+Props and payloads for each: [docs/components.md](docs/components.md).
 
 ## For the host
 
+The host is the page that embeds the components. Agent output is untrusted: the host owns these settings and the agent cannot change them ([SECURITY.md](SECURITY.md#trust-model)).
+
+| Rule | What you do |
+|---|---|
+| Supply the KS yourself | Call `setKsProvider(widget => ks)`. It gets the widget name, so you can return a least-privilege KS per widget. [docs/security/ks.md](docs/security/ks.md) |
+| Limit the accounts | Call `setAllowedPartners` and `setAllowedUiconfs` with your own ids. Default: any id. [docs/host-api.md](docs/host-api.md#allowed-partners-and-uiconfs) |
+| Name your private cloud | Call `setExtraAllowedOrigins` for a private or on-prem Unisphere. [docs/host-integration.md](docs/host-integration.md#unisphere-origins) |
+| Watch errors and events | Call `setErrorHandler` and `setEventHandler`, or send them to the agent. [docs/host-api.md](docs/host-api.md#agent-feedback) |
+| Set a CSP | Allow only the Kaltura hosts you use. [docs/host-integration.md](docs/host-integration.md#content-security-policy) |
+
+More: [docs/host-integration.md](docs/host-integration.md) and [docs/host-api.md](docs/host-api.md). Something broken? [docs/troubleshooting.md](docs/troubleshooting.md).
+
 | Need | Start here |
 |---|---|
-| Supply the Kaltura Session (KS) | `setKsProvider`. [docs/host-integration.md](docs/host-integration.md), [docs/ks-privileges.md](docs/ks-privileges.md), [docs/security/ks.md](docs/security/ks.md) |
-| Private cloud or on-prem Unisphere | `setExtraAllowedOrigins`. [docs/host-integration.md](docs/host-integration.md) |
-| Region, allowed partner and uiconf ids, media URL allowlist, error and event hooks | [docs/host-api.md](docs/host-api.md) |
-| Send widget errors and events to the agent | [docs/host-api.md](docs/host-api.md#agent-feedback) |
-| Tell the agent which catalogs you render | [docs/host-api.md](docs/host-api.md#capability-negotiation) |
-| Trust model and CSP | [SECURITY.md](SECURITY.md), [docs/host-integration.md](docs/host-integration.md#content-security-policy) |
-| Upgrade from 0.1.x | [docs/migration-0.2.md](docs/migration-0.2.md) |
-| Upgrade from 0.2.x (avatar props) | [docs/migration-0.3.md](docs/migration-0.3.md) |
-| Upgrade from 0.3.x (analytics, recorder, player, captions editor) | [docs/migration-0.4.md](docs/migration-0.4.md) |
-
-## Security behaviour
-
-- **Agent output is untrusted.** The host owns `ks`, the allowed origins and the media URL list. Agent messages cannot change them. See [SECURITY.md](SECURITY.md).
-- **KS.** `setKsProvider(widget => ks)` is the way to supply it. The provider gets the widget name, so it can mint a least-privilege KS per widget. Keep the KS out of the A2UI data model. The KS is in no script or iframe URL (the Captions editor's own player does request a media URL with it, so redact CSP reports). The Player, Recorder and Captions editor run Kaltura code in your page origin, which can read it ([ADR 0008](docs/adr/0008-in-page-player-and-captions-editor.md)).
-- **Partner and uiconf ids.** The agent picks them, and a uiconf decides which player or recorder code runs in your page with your KS. Call `setAllowedPartners([...])` and `setAllowedUiconfs([...])` with your own ids (a list, a RegExp or `'*'`). Default: open. A refused id loads nothing and reports `origin-not-allowed`.
-- **Private clouds.** `setExtraAllowedOrigins(['https://unisphere.example.com'])` before the first load. Only `https:` origins are accepted.
-- **`openUrl`.** Only absolute `https:` URLs open. Everything else is blocked with a console warning.
-- **Validation.** Web component config goes through the same schema as the A2UI path. Invalid values (bad ids, ks, urls, enums) show a plain-text alert. Numeric-string ids such as `partnerId: "123"` are rejected: pass a number.
-- **Missing required props.** In React, a required top-level prop that is still `undefined` renders nothing until it arrives. A web component shows the alert and renders again when `el.config` is set.
-- **Rejected `serverUrl`.** It is never shown in the UI. `console.warn` prints at most 100 characters of it, for developers only.
-- **Error states.** Chart errors use `ChartErrorBoundary` with `role="alert"`. Plain-text load errors share the `kaltura-load-error` class. `setErrorHandler` reports each one with a stable code.
-- **Media Manager selection.** `kaltura-entry-selected` fires on the `<kaltura-media-manager>` element. `detail` is `{ entryId, name, instanceId }`, plus `entries` for multi-select. Compare `instanceId` when a page holds several. `name` is untrusted text: show it as text, never as HTML. For one more release the event also bubbles to `document` (`legacyDocumentEvents`, default `true`). Set it to `false` to stop that. Agents cannot set it.
-- **Web component lifecycle.** Each element mounts one React root when it connects and unmounts it when it is removed. Moving an element keeps the widget. Setting `el.config` at any time re-renders.
-
-## Layout
-
-```
-src/
-  schemas/      component API (name + Zod schema), no rendering
-  core/         render logic over fully resolved props, no A2UI types
-  adapters/
-    react/      one A2UI component implementation per core: the A2UI path
-    webcomponent/ custom elements over core: the plain-HTML path
-  catalog/
-    kaltura_catalog.json  catalog JSON (props generated from the Zod schemas, see below)
-    client-functions.ts   client-side functions (copyToClipboard, …)
-  styles/       component CSS (injected by the bundles)
-examples/       plain-html and react pages that run against dist/
-docs/           guides, security notes and decision records (docs/adr)
-```
-
-`dist/` is never committed to `main`. [`release.yml`](.github/workflows/release.yml) builds it and commits it only in the release commit that the `v*` tag points to ([docs/release.md](docs/release.md)).
-
-## Develop
-
-```bash
-npm ci
-npm run typecheck
-npm test
-npm run build              # dist/kaltura-react.mjs + dist/kaltura-wc.js
-npm run check:examples     # README and examples/ against dist/ (needs a build)
-npm run gen:catalog        # catalog JSON up to date with the Zod schemas?
-```
-
-More in [CONTRIBUTING.md](CONTRIBUTING.md).
+| Upgrading | [docs/README.md#upgrade](docs/README.md#upgrade) |
+| All docs | [docs/README.md](docs/README.md) |
+| Develop or contribute | [CONTRIBUTING.md](CONTRIBUTING.md) |
 
 ## License
 
