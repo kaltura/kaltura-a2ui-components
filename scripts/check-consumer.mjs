@@ -14,7 +14,10 @@
 // 4. QA-08: with the peers installed there is exactly one copy of each shared
 //    library, and the host's `Catalog` class is the one the ESM entry uses
 //    (an inlined second copy would break `instanceof`).
-// 5. QA-08: a host without the peers, or with a conflicting @a2ui/react, gets a
+// 5. A strict TypeScript consumer compiles against the shipped .d.ts files
+//    (strict, skipLibCheck false): host options, toClientError, a bad region
+//    code and PlayerCoreProps.
+// 6. QA-08: a host without the peers, or with a conflicting @a2ui/react, gets a
 //    clear npm message (`npm ls` "missing", or an ERESOLVE error that names
 //    the peer), and the ESM entry fails on import with the package name.
 import { execFileSync } from 'node:child_process';
@@ -83,7 +86,8 @@ try {
   };
 
   // The host installs the peers itself, as a real A2UI client does.
-  install(consumer, [tarball, ...peers]);
+  // @types/react is a dev dependency of ours. A TypeScript host has it too.
+  install(consumer, [tarball, ...peers, `@types/react@${pkg.devDependencies['@types/react']}`]);
 
   // QA-08: one copy of every shared library, so one context and one zod.
   const tree = run('npm', ['ls', '--all', '--parseable'], consumer).split('\n');
@@ -132,6 +136,38 @@ try {
     if (!dom.window.customElements.get(tag)) fail(`Web component entry did not register <${tag}>.`);
   }
   dom.window.close();
+
+  // The shipped types compile for a strict consumer, and a bad region is a type error.
+  writeFileSync(
+    join(consumer, 'consumer.ts'),
+    `import { setKsProvider, setErrorHandler, setRegion, toClientError, type PlayerCoreProps } from '@kaltura/a2ui-react';
+
+setKsProvider((widget) => (widget === 'player' ? 'ks' : undefined));
+setErrorHandler((error) => {
+  const message = toClientError(error);
+  const version: 'v0.9' = message.version;
+  const code: string = message.error.code;
+  console.log(version, code);
+});
+setRegion('irp2');
+// @ts-expect-error not a Kaltura region
+setRegion('mars');
+export const props: PlayerCoreProps = { partnerId: 1, uiconfId: 2, entryId: '0_abc12345' };
+`,
+  );
+  writeFileSync(
+    join(consumer, 'tsconfig.json'),
+    JSON.stringify({
+      compilerOptions: { noEmit: true, strict: true, skipLibCheck: false, target: 'es2023', lib: ['es2023', 'dom'], module: 'esnext', moduleResolution: 'bundler', types: [] },
+      files: ['consumer.ts'],
+    }),
+  );
+  const tsc = join(root, 'node_modules', 'typescript', 'bin', 'tsc');
+  try {
+    run(process.execPath, [tsc, '-p', '.'], consumer);
+  } catch (error) {
+    fail(`A strict TypeScript consumer failed to compile:\n${String(error.stdout ?? error).split('\n').slice(0, 12).join('\n')}`);
+  }
 
   // QA-08: a host that skipped the peers (npm >= 7 installs them unless told
   // not to) sees the gap in `npm ls`, and the import names the package.

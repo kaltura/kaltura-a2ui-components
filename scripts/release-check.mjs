@@ -1,8 +1,9 @@
 // Checks a release version before release.yml builds it.
 //   node scripts/release-check.mjs 0.2.0 >> "$GITHUB_OUTPUT"
 // Prints `version=`, `tag=` and `prerelease=` lines. Exits 1 with a message when the
-// version is not semver, is not the package.json version, or package.json is not private.
-import { readFileSync } from 'node:fs';
+// version is not semver, is not the package.json version, package.json is not private, or a
+// pinned install or CDN URL in the docs and examples names another version.
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -33,12 +34,38 @@ export function checkRelease(version, { pkg }) {
   return parsed;
 }
 
+// Files whose `kaltura-a2ui-components@v1.2.3` or `kaltura-a2ui-components#v1.2.3` pins must be the
+// release version. docs/migration-*.md and docs/verify-release.md name old versions on purpose.
+const PIN_FILES = ['README.md', 'SECURITY.md', 'e2e/README.md'];
+const PIN_DIRS = ['examples'];
+const PIN = /kaltura-a2ui-components[@#]v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)/g;
+
+/** Every file under `dir` (relative to `root`), skipping node_modules. */
+function filesUnder(root, dir) {
+  return readdirSync(join(root, dir), { withFileTypes: true }).flatMap(entry => {
+    const path = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) return entry.name === 'node_modules' ? [] : filesUnder(root, path);
+    return /\.(md|html|mjs|js|ts|tsx|json)$/.test(entry.name) ? [path] : [];
+  });
+}
+
+/** Returns one message per pin in README.md, SECURITY.md, e2e/README.md and examples/ that is not `version`. */
+export function stalePins(version, root) {
+  const files = [...PIN_FILES, ...PIN_DIRS.flatMap(dir => filesUnder(root, dir))];
+  return files.flatMap(file => {
+    const pinned = new Set([...readFileSync(join(root, file), 'utf8').matchAll(PIN)].map(match => match[1]));
+    return [...pinned].filter(pin => pin !== version).map(pin => `${file} pins v${pin}, not v${version}.`);
+  });
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   try {
     const root = join(dirname(fileURLToPath(import.meta.url)), '..');
     const { version, tag, prerelease } = checkRelease(process.argv[2] ?? '', {
       pkg: JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')),
     });
+    const stale = stalePins(version, root);
+    if (stale.length > 0) throw new Error(`Update the version pins before the release:\n- ${stale.join('\n- ')}`);
     console.log(`version=${version}\ntag=${tag}\nprerelease=${prerelease}`);
   } catch (error) {
     console.error(`release-check: ${error.message}`);
