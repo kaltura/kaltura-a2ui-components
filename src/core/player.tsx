@@ -3,7 +3,7 @@ import type { CSSProperties, FC } from 'react';
 import { isEntryId, isPositiveInt } from './ids';
 import { KalturaPlayerApi } from '../schemas/player';
 import { LoadError, withValidatedProps } from './validate-props';
-import { withKs } from './ks';
+import { withKs, withKsProp } from './ks';
 import { KalturaFailure, reportError, ReporterContext } from './host-hooks';
 import { renderLoadError } from './render-load-error';
 import { loadPlayerScript, type PlayerHandle } from './player-script';
@@ -157,4 +157,4 @@ const PlayerView: FC<PlayerCoreProps> = (props) => {
   );
 };
 
-export const PlayerCore = withKs('player', withValidatedProps(KalturaPlayerApi.schema, 'player', PlayerView, 'player'));
+export const PlayerCore = withKs('player', withValidatedProps(withKsProp(KalturaPlayerApi.schema, false), 'player', PlayerView, 'player'));

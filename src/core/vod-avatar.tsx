@@ -1,15 +1,13 @@
 import { UnisphereWidgetCore } from './unisphere-widget';
 import { KalturaVodAvatarApi } from '../schemas/vod-avatar';
 import { withValidatedProps } from './validate-props';
-import { withKs } from './ks';
+import { withKs, withKsProp } from './ks';
 import { kalturaHosts } from './region';
 
 export interface VodAvatarCoreProps {
   partnerId: number;
   ks: string;
   serverUrl: string;
-  entryId?: string;
-  avatarStyle?: string;
 }
 
 function VodAvatarView(props: VodAvatarCoreProps) {
@@ -33,4 +31,4 @@ function VodAvatarView(props: VodAvatarCoreProps) {
   );
 }
 
-export const VodAvatarCore = withKs('vod-avatar', withValidatedProps(KalturaVodAvatarApi.schema.required({ ks: true }), 'Kaltura VOD Avatar', VodAvatarView, 'vod-avatar'));
+export const VodAvatarCore = withKs('vod-avatar', withValidatedProps(withKsProp(KalturaVodAvatarApi.schema), 'Kaltura VOD Avatar', VodAvatarView, 'vod-avatar'));

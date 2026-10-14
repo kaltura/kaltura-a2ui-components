@@ -1,7 +1,7 @@
 import { UnisphereWidgetCore } from './unisphere-widget';
 import { KalturaGenieApi } from '../schemas/genie';
 import { withValidatedProps } from './validate-props';
-import { withKs } from './ks';
+import { withKs, withKsProp } from './ks';
 import { kalturaHosts } from './region';
 
 export interface GenieCoreProps {
@@ -37,4 +37,4 @@ function GenieView(props: GenieCoreProps) {
   );
 }
 
-export const GenieCore = withKs('genie', withValidatedProps(KalturaGenieApi.schema.required({ ks: true }), 'Kaltura Genie', GenieView, 'genie'));
+export const GenieCore = withKs('genie', withValidatedProps(withKsProp(KalturaGenieApi.schema), 'Kaltura Genie', GenieView, 'genie'));

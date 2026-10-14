@@ -7,7 +7,6 @@ export const KalturaPlayerApi = {
     partnerId: CommonSchemas.DynamicNumber,
     uiconfId: CommonSchemas.DynamicNumber,
     entryId: CommonSchemas.DynamicString,
-    ks: CommonSchemas.DynamicString.optional(),
     autoplay: CommonSchemas.DynamicBoolean.optional(),
     muted: CommonSchemas.DynamicBoolean.optional(),
     startTime: CommonSchemas.DynamicNumber.optional(),

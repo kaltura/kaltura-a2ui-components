@@ -3,7 +3,7 @@ import { loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
 import { KalturaMediaManagerApi } from '../schemas/media-manager';
 import { withValidatedProps } from './validate-props';
-import { withKs } from './ks';
+import { withKs, withKsProp } from './ks';
 import { isEntryId } from './ids';
 import { emitEvent, KalturaFailure, ReporterContext, type KalturaEvent } from './host-hooks';
 
@@ -283,5 +283,5 @@ function MediaManagerView(props: MediaManagerCoreProps) {
 
 export const MediaManagerCore = withKs(
   'media-manager',
-  withValidatedProps(KalturaMediaManagerApi.schema.required({ ks: true }), 'Media Manager', MediaManagerView, 'media-manager'),
+  withValidatedProps(withKsProp(KalturaMediaManagerApi.schema), 'Media Manager', MediaManagerView, 'media-manager'),
 );

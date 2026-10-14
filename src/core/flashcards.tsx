@@ -7,7 +7,7 @@ import { LoadError, withValidatedProps } from './validate-props';
 import { kalturaHosts } from './region';
 import { refusedIdProp } from './allowed-ids';
 import { PlayerEmbed } from './player';
-import { withKs } from './ks';
+import { withKs, withKsProp } from './ks';
 
 const GRADIENTS = [
   'radial-gradient(315% 315% at 50% 214%, rgba(0,110,250,0) 0%, rgba(0,110,250,0.5) 100%), #000',
@@ -348,5 +348,5 @@ const FlashcardsView: FC<FlashcardsCoreProps> = ({
 // Bad partnerId or uiconfId only disables the clips (SEC-11), so they are not checked here.
 export const FlashcardsCore = withKs(
   'flashcards',
-  withValidatedProps(KalturaFlashcardsApi.schema.omit({ partnerId: true, uiconfId: true }), 'flashcards', FlashcardsView, 'flashcards'),
+  withValidatedProps(withKsProp(KalturaFlashcardsApi.schema.omit({ partnerId: true, uiconfId: true }), false), 'flashcards', FlashcardsView, 'flashcards'),
 );

@@ -148,7 +148,6 @@ const BAD: Array<[string, Record<string, unknown>, string]> = [
   ['Kaltura Genie', { ...unisphere, ks: null }, 'ks'],
   ['Kaltura Genie', { ...unisphere, partnerId: 0 }, 'partnerId'],
   ['Kaltura Content Lab', { ...unisphere, entryId: '../x' }, 'entryId'],
-  ['Kaltura AI Agents', { ...unisphere, agentId: 5 }, 'agentId'],
   ['chart', { chartType: 'pie-of-doom', data: [{ a: 1 }] }, 'chartType'],
   ['chart', { chartType: 'bar', data: [null] }, 'data.0'],
   ['chart', { chartType: 'bar', data: 'rows' }, 'data'],
@@ -375,13 +374,13 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
   const renderSurface = async (component: Record<string, unknown>, data: Record<string, unknown>) =>
     (await startSurface(component, data)).container;
 
-  const session = { session: { ks: 'ks-from-host' } };
-  const bound = { ks: { path: '/session/ks' } };
+  // On the A2UI path the host provider is the only KS source.
+  beforeEach(() => setKsProvider(() => 'ks-from-host'));
 
-  it('SEC-03: a KS bound from the host session renders the player', async () => {
+  it('SEC-03: the provider KS reaches the player, and a bound ks from the agent is ignored', async () => {
     await renderSurface(
-      { component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: '0_abc', ...bound },
-      session,
+      { component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: '0_abc', ks: { path: '/session/ks' } },
+      { session: { ks: 'ks-from-agent' } },
     );
     await player.ready();
     expect(player.created[0].config.provider.ks).toBe('ks-from-host');
@@ -390,24 +389,24 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
   it('SEC-03: an unset optional binding does not fail the component', async () => {
     const container = await renderSurface(
       { component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: '0_abc', entryName: { path: '/missing' } },
-      session,
+      {},
     );
     expect(container.querySelector('.kaltura-load-error')).toBeNull();
   });
 
   it('SEC-03: a required binding with no data yields nothing, no error and no widget', async () => {
     const container = await renderSurface(
-      { component: 'KalturaCaptionsEditor', partnerId: 1, entryId: '0_abc', ...bound },
+      { component: 'KalturaCaptionsEditor', partnerId: 1, entryId: { path: '/entry' } },
       {},
     );
     expect([container.querySelectorAll('iframe, [role="alert"]').length, container.textContent]).toEqual([0, '']);
   });
 
   it('SEC-03: the widget appears when the bound data arrives later', async () => {
-    const { container, processor } = await startSurface({ component: 'KalturaCaptionsEditor', partnerId: 1, entryId: '0_abc', ...bound }, {});
+    const { container, processor } = await startSurface({ component: 'KalturaCaptionsEditor', partnerId: 1, entryId: { path: '/entry' } }, {});
     await act(async () => {
       processor.processMessages([
-        { version: 'v0.9', updateDataModel: { surfaceId: 's', path: '/session', value: { ks: 'late-ks' } } },
+        { version: 'v0.9', updateDataModel: { surfaceId: 's', path: '/entry', value: '0_abc' } },
       ] as never);
     });
     await captions.ready();
@@ -415,40 +414,34 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
     expect([container.querySelectorAll('iframe').length, container.querySelectorAll('[role="alert"]').length]).toEqual([1, 0]);
   });
 
-  it('SEC-03: a bound value that arrives invalid shows the error', async () => {
-    const { container } = await startSurface(
-      { component: 'KalturaCaptionsEditor', partnerId: 1, entryId: '0_abc', ks: { path: '/session/ks' } },
-      { session: { ks: 'a\nb' } },
-    );
+  it('SEC-03: a provider KS that is invalid shows the error', async () => {
+    setKsProvider(() => 'a\nb');
+    const { container } = await startSurface({ component: 'KalturaCaptionsEditor', partnerId: 1, entryId: '0_abc' }, {});
     expect(container.textContent).toBe('Failed to load captions editor: Invalid ks');
   });
 
   it('SEC-03: a hostile entryId arriving through the data model is refused', async () => {
     const container = await renderSurface(
-      { component: 'KalturaCaptionsEditor', partnerId: 1, ...bound, entryId: { path: '/entry' } },
-      { ...session, entry: '1_abc&serviceurl=https://evil.example' },
+      { component: 'KalturaCaptionsEditor', partnerId: 1, entryId: { path: '/entry' } },
+      { entry: '1_abc&serviceurl=https://evil.example' },
     );
     expect([container.querySelectorAll('iframe').length, container.textContent]).toEqual([0, 'Failed to load captions editor: Invalid entryId']);
   });
 
-  it('SEC-03: flashcards with a bound KS and nested bound text render', async () => {
+  it('SEC-03: flashcards with nested bound text render', async () => {
     const container = await renderSurface(
       {
         component: 'KalturaFlashcards',
         title: { path: '/title' },
         cards: [{ title: { path: '/title' }, content: 'x', clips: [{ entryId: '0_abc', startTime: 0, endTime: 1 }] }],
-        ...bound,
       },
-      { ...session, title: 'Deck' },
+      { title: 'Deck' },
     );
     expect([container.querySelector('.kaltura-load-error'), container.textContent]).toEqual([null, expect.stringContaining('Deck')]);
   });
 
-  it('SEC-03: a Genie widget with a bound KS reaches the loader', async () => {
-    await renderSurface(
-      { component: 'KalturaGenie', partnerId: 1, uiconfId: 2, serverUrl: SERVER_URL, ...bound },
-      session,
-    );
+  it('SEC-03: a Genie widget with a provider KS reaches the loader', async () => {
+    await renderSurface({ component: 'KalturaGenie', partnerId: 1, uiconfId: 2, serverUrl: SERVER_URL }, {});
     expect(calls.loader).toBe(1);
   });
 });
