@@ -5,6 +5,8 @@ const isCI = !!process.env.CI;
 
 export default defineConfig({
   testDir: 'e2e',
+  // Live tests need a real account. Run them with `npm run e2e:live`.
+  testIgnore: 'live/**',
   fullyParallel: true,
   retries: isCI ? 1 : 0,
   // Cases titled '[pending ...]' wait for their fix. Run them with E2E_PENDING=1.

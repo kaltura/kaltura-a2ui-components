@@ -29,6 +29,8 @@ The `ok` loader records what the widget passed in: `harness.loaderConfigs()` (fr
 | `csp.spec.ts` | The recommended CSP from docs/host-integration.md, including the Player stub, the avatar (SEC-08), the recorder script (REC-01) and the captions editor page. A `data:` media element and a `blob:` worker pass, a media URL and a worker script from elsewhere are blocked. The region table in that file matches `src/core/region.ts` |
 | `analytics.spec.ts` | Analytics `postMessage` handshake against a stub KMC page: `init` content, `navigate`, `updateFilters`, `updateLayout` clamp, wrong origin and wrong source rejected (ANA-01) |
 
+`e2e/live/player.live.spec.ts` is not part of `npm run e2e`. `npm run e2e:live` runs it against a real account (see CONTRIBUTING.md). Its config is `playwright.live.config.ts` and it records no trace, so the KS is never written to disk.
+
 Add a case: import `test` from `./fixtures/harness`, call `h.open()` and `h.mount(tag, config)`, then assert on `h.pwned()` and the logs.
 Title cases that wait for a fix `[pending SEC-xx]`. They are skipped unless `E2E_PENDING=1`. Remove the prefix in the fix commit. List them: `grep -rn "\[pending" e2e`.
 
