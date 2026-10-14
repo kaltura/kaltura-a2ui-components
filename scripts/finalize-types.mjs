@@ -4,6 +4,8 @@
 //    and is not shipped under dist/types, so consumers could not resolve it.
 // 2. Adds the file extension to relative specifiers. The sources use bundler
 //    style imports without extensions, which Node16 ESM resolution rejects.
+// 3. Replaces the declaration of the web component entry. That entry is an IIFE script with
+//    no ES exports, so it declares nothing but the globals in global.d.ts.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,3 +33,8 @@ for (const entry of readdirSync(types, { recursive: true })) {
     );
   if (result !== source) writeFileSync(path, result);
 }
+
+writeFileSync(
+  join(types, 'adapters/webcomponent/index.d.ts'),
+  `// dist/kaltura-wc.js is a script with no ES exports. Importing this entry adds the types of\n// window.KalturaA2UIWebComponents, the Kaltura elements and the kaltura-action event.\nimport './global.js';\nexport {};\n`,
+);
