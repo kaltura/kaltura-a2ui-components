@@ -1,7 +1,7 @@
 import { createElement, useContext, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { z } from 'zod';
-import { loadUnisphereModule } from './unisphere-loader';
+import { defaultServerUrl, loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
 import { KalturaFailure, emitEvent, ReporterContext } from './host-hooks';
 import { regionOf } from './region';
@@ -10,11 +10,17 @@ import { withValidatedProps } from './validate-props';
 import { withKs } from './ks';
 
 export interface AvatarCoreProps {
+  /** Kaltura partner (account) ID. */
   partnerId: number;
-  serverUrl: string;
+  /** Unisphere URL. Defaults to the Unisphere host of the region. Only Kaltura hosts and `setExtraAllowedOrigins` are accepted. */
+  serverUrl?: string;
+  /** Start the session on load. Default: false, the user clicks to start. */
   autoConnect?: boolean;
+  /** What the avatar says first. Plain text. */
   openingPhrase?: string;
+  /** Show captions of what the avatar says. */
   captions?: boolean;
+  /** Default: `light` when the page has `data-theme="light"`, else `dark`. */
   theme?: 'light' | 'dark' | 'studio';
 }
 
@@ -40,7 +46,8 @@ const safeReason = (reason: unknown) => (typeof reason === 'string' && /^[A-Za-z
 
 const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { partnerId, ks, serverUrl, autoConnect, openingPhrase, captions, theme } = props;
+  const { partnerId, ks, autoConnect, openingPhrase, captions, theme } = props;
+  const serverUrl = props.serverUrl ?? defaultServerUrl();
   const reporter = useContext(ReporterContext);
 
   useEffect(() => {

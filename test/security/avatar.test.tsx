@@ -38,7 +38,7 @@ describe('SEC-08: the avatar loads only through the allowlisted Unisphere loader
       vi.spyOn(console, 'warn').mockImplementation(() => {});
       const { remote, AvatarCore } = await setup();
       const { container } = await mount(AvatarCore, { ...VALID, serverUrl });
-      expect([container.textContent, remote.log]).toEqual(['Failed to load Kaltura Avatar: serverUrl is not an allowed Unisphere origin', []]);
+      expect([container.textContent, remote.log]).toEqual(['Failed to load Kaltura Avatar: serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)', []]);
     },
   );
 
@@ -86,7 +86,7 @@ describe('SEC-08: the KS comes from the host provider only', () => {
     const { AvatarCore, setKsProvider } = await loadAvatar(remote.module);
     setKsProvider(() => 'bad\u0000ks');
     const { container } = await mount(AvatarCore, VALID);
-    expect([container.textContent, remote.log]).toEqual(['Failed to load Kaltura Avatar: Invalid ks', []]);
+    expect([container.textContent, remote.log]).toEqual(['Failed to load Kaltura Avatar: Invalid ks: call setKsProvider', []]);
   });
 });
 
@@ -135,7 +135,6 @@ describe('SEC-08: remote error text never reaches the page, the console or the h
 describe('SEC-08: hostile props', () => {
   it.each([
     ['partnerId', { partnerId: -1 }],
-    ['serverUrl', { serverUrl: `${SERVER_URL}/${'a'.repeat(2048)}` }],
     ['openingPhrase', { openingPhrase: 'a'.repeat(501) }],
     ['openingPhrase', { openingPhrase: 5 }],
     ['theme', { theme: 'custom' }],

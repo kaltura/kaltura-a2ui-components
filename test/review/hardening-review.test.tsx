@@ -7,6 +7,7 @@ import { deriveLoaderUrl } from '../../src/core/unisphere-loader';
 import { sanitizeMarkdownHtml } from '../../src/core/safe-markdown';
 import { toKalturaCdnUrl } from '../../src/core/media-url';
 import { checkProps } from '../../src/core/validate-props';
+import { withKsProp } from '../../src/core/ks';
 import { PlayerCore } from '../../src/core/player';
 import { buildThumbnailUrl } from '../../src/core/flashcards';
 import { KalturaPlayerApi } from '../../src/schemas/player';
@@ -131,7 +132,7 @@ describe('SEC-03: invalidProps with hostile prop shapes', () => {
     { ...ok, entryId: { path: '/x' } },
     { ...ok, partnerId: '1' },
   ])('SEC-03: player rejects %j', props => {
-    expect(checkProps(KalturaPlayerApi.schema, props).invalid.length).toBeGreaterThan(0);
+    expect(checkProps(withKsProp(KalturaPlayerApi.schema, false), props).invalid.length).toBeGreaterThan(0);
   });
   it('SEC-03: an own __proto__ key does not supply a missing partnerId', () => {
     const props = JSON.parse('{"__proto__":{"partnerId":1},"uiconfId":2,"entryId":"0_abc"}');
@@ -210,7 +211,7 @@ describe('SEC-03: undefined inside literal data and stale alerts', () => {
   it('SEC-03: the recorder clears its old error when ks becomes undefined', async () => {
     const { RecorderCore } = await import('../../src/core/recorder');
     const { container, root } = await mount(RecorderCore, { partnerId: 1, uiconfId: 2, ks: 'bad\u0000ks' });
-    expect(container.textContent).toBe('Failed to load recorder: Invalid ks');
+    expect(container.textContent).toBe('Failed to load recorder: Invalid ks: call setKsProvider');
     await act(async () => {
       root.render(createElement(RecorderCore, { partnerId: 1, uiconfId: 2 }));
     });

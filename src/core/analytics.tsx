@@ -7,10 +7,15 @@ import { withKs } from './ks';
 import { kalturaHosts } from './region';
 
 export interface AnalyticsCoreProps {
+  /** Kaltura partner (account) ID. */
   partnerId: number;
+  /** Shows the analytics of this entry. Wins over `reportType`. */
   entryId?: string;
+  /** Dashboard view when there is no `entryId`. Default: `engagement`. */
   reportType?: string;
+  /** Start of the range, `YYYY-MM-DD`. Needs `toDate`. Default: the last 30 days. */
   fromDate?: string;
+  /** End of the range, `YYYY-MM-DD`. Needs `fromDate`. */
   toDate?: string;
 }
 
