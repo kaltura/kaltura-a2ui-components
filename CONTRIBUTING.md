@@ -82,4 +82,4 @@ Copy this into your PR (the PR template has it). Agent output is untrusted input
 
 ## Releases
 
-Maintainers only. [docs/release.md](docs/release.md).
+Maintainers only. Run the `Release` workflow (`.github/workflows/release.yml`) from `main` with `dry_run=true` first.
