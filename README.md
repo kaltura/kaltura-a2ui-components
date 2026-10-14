@@ -55,7 +55,7 @@ Some chat apps, such as Gemini Enterprise, cannot register a catalog, so they ca
 For the React or A2UI path only. There is no npm package: a package on npm with this name is not ours. Install from the git tag. The tag holds the built `dist/`, so nothing builds on install.
 
 ```bash
-npm i github:kaltura/kaltura-a2ui-components#v0.4.0 @a2ui/react @a2ui/web_core zod@3 react react-dom
+npm i github:kaltura/kaltura-a2ui-components#v0.4.1 @a2ui/react @a2ui/web_core zod@3 react react-dom
 ```
 
 zod 4 is not supported. Add this to your `package.json` too ([why](docs/host-integration.md#dompurify-override)):
@@ -69,7 +69,7 @@ Gotchas:
 - **ESM only.** There is no `require`. Entries: `@kaltura/a2ui-react`, `@kaltura/a2ui-react/webcomponent` (script bundle) and `@kaltura/a2ui-react/catalog` (the catalog JSON).
 - **Server-side rendering.** In Node, import `@kaltura/a2ui-react` before `@a2ui/react` ([why](docs/host-integration.md#server-imports-ssr)).
 - **One pre-bundled file.** There is no tree-shaking: all 12 components load.
-- **Pin the full tag**, such as `v0.4.0`. `@latest` changes under you. Add the `integrity` value from the [Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases). Check a release: [SECURITY.md](SECURITY.md#releases).
+- **Pin the full tag**, such as `v0.4.1`. `@latest` changes under you. Add the `integrity` value from the [Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases). Check a release: [SECURITY.md](SECURITY.md#releases).
 - **Peers:** `@a2ui/react ^0.13.0`, `@a2ui/web_core ^0.13.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`.
 
 ### React or A2UI client
@@ -130,7 +130,7 @@ Custom elements are for pages without an A2UI client. For agent-driven pages use
 
 <!-- check-examples: expect kaltura-chart h4.kaltura-chart-title; text:Cell -->
 ```html
-<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.4.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.4.1/dist/kaltura-wc.js" crossorigin="anonymous"></script>
 
 <kaltura-chart id="chart"></kaltura-chart>
 <kaltura-flashcards id="cards"></kaltura-flashcards>
@@ -157,7 +157,7 @@ This block needs a real Kaltura account, so `check:examples` skips it.
 
 <!-- check-examples: skip -->
 ```html
-<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.4.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.4.1/dist/kaltura-wc.js" crossorigin="anonymous"></script>
 
 <kaltura-player id="player"></kaltura-player>
 
@@ -173,7 +173,7 @@ See it run, from a clone of this repo: `npm run example:html` ([examples/README.
 For A2UI tooling that reads a catalog by URL:
 
 ```
-https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.4.0/src/catalog/kaltura_catalog.json
+https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.4.1/src/catalog/kaltura_catalog.json
 ```
 
 ## Components
