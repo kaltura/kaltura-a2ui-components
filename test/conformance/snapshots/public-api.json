@@ -62,6 +62,7 @@
       "FlashcardsCoreProps",
       "GenieCoreProps",
       "KalturaActionContext",
+      "KalturaClientError",
       "KalturaError",
       "KalturaErrorCode",
       "KalturaEvent",
@@ -121,6 +122,7 @@
     "types": [
       "AllowedIds",
       "KalturaActionContext",
+      "KalturaClientError",
       "KalturaError",
       "KalturaErrorCode",
       "KalturaEvent",

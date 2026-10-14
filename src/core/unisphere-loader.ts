@@ -25,6 +25,7 @@ export function parseOrigin(value: string): string {
 /**
  * Host-set only (never from agent props). Adds origins for private cloud or
  * on-prem Unisphere. Replaces the previous list. Throws on an invalid entry.
+ * @example setExtraAllowedOrigins(['https://unisphere.example.com']);
  */
 export function setExtraAllowedOrigins(origins: string[]): void {
   extraOrigins = origins.map(parseOrigin);

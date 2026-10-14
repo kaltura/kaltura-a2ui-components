@@ -38,7 +38,9 @@ let ksProvider: KsProvider | undefined;
  * Host option. Sets the function that supplies the KS to every component that
  * needs one, so the KS never passes through agent output or the A2UI data
  * model. Pass `undefined` to remove it. Components call it once when they
- * mount. Never call this from agent output.
+ * mount and never renew the KS: remount the widget to renew it. A rejected
+ * promise shows `invalid-ks`. Never call this from agent output.
+ * @example setKsProvider(widget => fetch(`/ks?widget=${widget}`).then(r => r.text()));
  */
 export function setKsProvider(provider: KsProvider | undefined): void {
   ksProvider = provider;

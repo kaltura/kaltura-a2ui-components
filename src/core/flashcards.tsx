@@ -36,16 +36,22 @@ export interface FlashcardWithCover extends FlashCard {
 }
 
 export interface FlashcardsCoreProps {
+  /** Title of the deck. */
   title: string;
+  /** Short description of the deck. */
   summary?: string;
+  /** The cards, in order. */
   cards: FlashCard[];
+  /** Kaltura partner (account) ID. Needed to play the clips. */
   partnerId?: number;
+  /** Player (uiConf) ID used to play the clips. */
   uiconfId?: number;
+  /** Only for protected entries. The host KS provider is used first. */
   ks?: string;
 }
 
 /**
- * CDN thumbnail URL for a clip — seeks to startTime+1s for a meaningful frame.
+ * CDN thumbnail URL for a clip. It seeks to startTime+1s for a meaningful frame.
  * Uses the clip's own thumbnail field only when isAllowedMediaUrl accepts it (an https
  * Kaltura CDN URL or a host-added media origin, with no api_v3 path or KS). Otherwise builds the CDN URL, or returns an
  * empty string. A `partnerId` that the host allowlist refuses also gives an empty string.

@@ -1,5 +1,5 @@
 /*
- * Kaltura A2UI Experience Components — component styles.
+ * Kaltura A2UI Experience Components: component styles.
  *
  * Extracted verbatim from the chat-UI's App.css so the components render
  * styled wherever the catalog is registered (upstream they lived in the host
@@ -504,7 +504,7 @@
   background: transparent !important;
 }
 /* Media rows are clickable (thumbnail or name picks/plays the entry). Signal it
-   without touching any cell background — the widget's cells are opaque MUI
+   without touching any cell background. The widget's cells are opaque MUI
    surfaces and the thumbnail is a background-image div, so painting the row
    background fights them and blanks the thumbnail. Instead the hover cue draws
    ON TOP / on text only: a left accent bar (inset box-shadow on the row) plus
