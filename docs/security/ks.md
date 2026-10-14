@@ -2,6 +2,12 @@
 
 The host owns the KS. The agent never sees it, writes it or asks for it.
 
+> [!IMPORTANT]
+> **Agent rules**
+> - Components have no `ks` prop. An agent cannot set the KS, and a `ks` in agent output is dropped.
+> - Do not put a KS in the data model, a URL or any text you give the agent.
+> - The only source is `setKsProvider`, which the host page calls. No agent message can call it.
+
 ## Model
 
 | Step | What happens |
@@ -11,12 +17,12 @@ The host owns the KS. The agent never sees it, writes it or asks for it.
 | 3 | A component that needs a KS calls the provider once, when it mounts, with its widget name. |
 | 4 | The component checks the value with the ks rule: a non-empty string with no control characters. |
 
-- **Order.** A non-empty provider result wins. If the provider returns `undefined` or `''`, or no provider is set, the component uses its `ks` prop. The prop is a supported fallback. Every call to Kaltura needs a KS, and a KS only works for its own account, so an agent cannot act on an account whose KS it does not hold. Analytics and Avatar have no `ks` prop: the provider is the only source.
+- **Order.** On the A2UI path the provider is the only source. If it returns `undefined` or `''`, or no provider is set, the component has no KS. Every call to Kaltura needs a KS, and a KS only works for its own account, so an agent cannot act on an account whose KS it does not hold.
 - **Async.** The component renders nothing until the provider's promise settles.
 - **Errors.** An invalid value, a throw or a rejected promise shows `Failed to load <widget>: Invalid ks`. The value and the error are never shown or logged.
 - **Components.** Player, Flashcards, Media Manager, Analytics, Captions Editor, Recorder, Genie, Content Lab, Agents Widget, VOD Avatar and Avatar use the provider.
 - **No KS.** The player loads without one (public entries). The other widgets in the list above render nothing until a KS arrives. A web component gets no later config, so there they show `Failed to load <widget>: Invalid ks` instead.
-- **Renewal.** Components do not renew a KS. To use a new KS, remount the component. Analytics can take a new KS in place (`updateConfig` message), but the provider is still read once at mount, so remount for now.
+- **Renewal.** Components do not renew a KS. See [When the KS expires](#when-the-ks-expires).
 
 ## Wire it
 
@@ -60,7 +66,7 @@ The provider gets the widget name (`KsWidget`), so each widget can get its own l
 |---|---|
 | `'analytics'` | ADMIN KS (type=2), short expiry |
 | `'player'`, `'flashcards'`, `'captions-editor'`, `'recorder'`, `'media-manager'`, `'genie'`, `'content-lab'`, `'agents-widget'`, `'vod-avatar'` | USER KS (type=0) with only the privileges that widget needs |
-| `'avatar'` | KS that selects the avatar agent, from the provider only (see [migration-0.3.md](../migration-0.3.md)) |
+| `'avatar'` | KS that selects the avatar agent (see [migration-0.3.md](../migration-0.3.md)) |
 
 ```ts
 setKsProvider(widget => (widget === 'analytics' ? session.adminKs : session.userKs));
@@ -68,7 +74,32 @@ setKsProvider(widget => (widget === 'analytics' ? session.adminKs : session.user
 
 `session` here is whatever your host already fetched from its server. The provider runs in the browser, so both KS values are minted on the server.
 
+## When the KS expires
+
+A component reads the provider once, at mount. It does not know when the KS expires and it does not renew it. After the expiry, Kaltura rejects the calls the widget makes with that KS. The widget shows its own Kaltura message, or plays no protected media. This package shows no error for it.
+
+A chat can outlast a short KS. To renew, mint a new KS before the old one expires and remount the surface. The provider then runs again and returns the new KS.
+
+```tsx
+import { useEffect, useState } from 'react';
+import { A2uiSurface } from '@a2ui/react/v0_9';
+
+function Surface({ surface, refreshKs }: { surface: Parameters<typeof A2uiSurface>[0]['surface']; refreshKs: () => Promise<void> }) {
+  const [epoch, setEpoch] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      await refreshKs(); // fetch a new KS from your server into what setKsProvider returns
+      setEpoch(n => n + 1); // a new key remounts the surface
+    }, 50 * 60 * 1000); // KS lives 1 hour
+    return () => clearInterval(timer);
+  }, [refreshKs]);
+  return <A2uiSurface key={epoch} surface={surface} />;
+}
+```
+
+The surface keeps its components and data model, because they live in the `MessageProcessor`. A remount restarts the widgets, so a playing video or a running recording stops. Remount between turns, not in the middle of a recording. A plain-HTML host removes the element and adds it again.
+
 ## Keep the KS out of the A2UI data model
 
 > [!WARNING]
-> Do not put the KS in the A2UI data model, and do not bind `ks` to a data model path. The agent can read the data model and can wire its values into other components, so a KS there is not protected. Use `setKsProvider`.
+> Do not put the KS in the A2UI data model. The agent can read the data model and can wire its values into other components, so a KS there is not protected. Use `setKsProvider`.

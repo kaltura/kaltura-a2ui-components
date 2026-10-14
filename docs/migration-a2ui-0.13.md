@@ -1,6 +1,6 @@
 # Move to the A2UI 0.13 peers
 
-The release after 0.2.0 needs `@a2ui/react` and `@a2ui/web_core` 0.13. The script-tag bundle (`kaltura-wc.js`) has no peers and needs no change.
+0.3.0 and later need `@a2ui/react` and `@a2ui/web_core` 0.13. The script-tag bundle (`kaltura-wc.js`) has no peers and needs no change.
 
 ## Checklist
 

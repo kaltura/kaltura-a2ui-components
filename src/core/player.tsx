@@ -3,23 +3,34 @@ import type { CSSProperties, FC } from 'react';
 import { isEntryId, isPositiveInt } from './ids';
 import { KalturaPlayerApi } from '../schemas/player';
 import { LoadError, withValidatedProps } from './validate-props';
-import { withKs } from './ks';
+import { withKs, withKsProp } from './ks';
 import { KalturaFailure, reportError, ReporterContext } from './host-hooks';
 import { renderLoadError } from './render-load-error';
 import { loadPlayerScript, type PlayerHandle } from './player-script';
 import { refusedIdProp } from './allowed-ids';
 
 export interface PlayerCoreProps {
+  /** Kaltura partner (account) ID. */
   partnerId: number;
+  /** Player (uiConf) ID. */
   uiconfId: number;
+  /** Entry to play, such as `0_abc123`. */
   entryId: string;
+  /** Only for protected entries. The host KS provider is used first. */
   ks?: string;
+  /** Start playback on load. Browsers need `muted` too. */
   autoplay?: boolean;
+  /** Start muted. */
   muted?: boolean;
+  /** Seek to this second on load. */
   startTime?: number;
+  /** Stop playback at this second. */
   clipTo?: number;
+  /** Container ratio such as `16/9` (default) or `4/3`. */
   aspectRatio?: string;
+  /** Title shown above the player. */
   entryName?: string;
+  /** Text shown under the player. HTML tags are stripped. */
   entryDescription?: string;
 }
 
@@ -157,4 +168,4 @@ const PlayerView: FC<PlayerCoreProps> = (props) => {
   );
 };
 
-export const PlayerCore = withKs('player', withValidatedProps(KalturaPlayerApi.schema, 'player', PlayerView, 'player'));
+export const PlayerCore = withKs('player', withValidatedProps(withKsProp(KalturaPlayerApi.schema, false), 'player', PlayerView, 'player'));

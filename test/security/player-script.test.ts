@@ -56,7 +56,7 @@ describe('SEC-10: player script loader', () => {
   });
 
   it.each([
-    ['error', 'Player script failed to load'],
+    ['error', 'Player script failed to load. Check partnerId, uiconfId, region and CSP'],
     ['no-api', 'Player API is missing'],
     ['no-setup', 'Player API is missing'],
   ] as const)('SEC-10: a script that ends as "%s" rejects with load-failed and fixed text, and leaves no tag', async (script, text) => {

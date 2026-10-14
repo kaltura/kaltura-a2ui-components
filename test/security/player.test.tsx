@@ -294,7 +294,7 @@ describe('SEC-10: player errors reach the host as fixed text', () => {
 
 describe('SEC-10: load failures show fixed text and a code', () => {
   it.each([
-    ['the script tag fails', { script: 'error' }, 'Player script failed to load', 'load-failed'],
+    ['the script tag fails', { script: 'error' }, 'Player script failed to load. Check partnerId, uiconfId, region and CSP', 'load-failed'],
     ['the script defines no player API', { script: 'no-api' }, 'Player API is missing', 'load-failed'],
     ['the script defines no setup', { script: 'no-setup' }, 'Player API is missing', 'load-failed'],
     ['setup returns no player', { setup: 'no-player' }, 'Player could not start', 'render-failed'],

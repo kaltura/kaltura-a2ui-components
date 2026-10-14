@@ -23,6 +23,7 @@ function parse(rule: AllowedIds | undefined): Entry[] | undefined {
  * starts with 1. An empty list allows none. Pass `undefined` to reset. Throws
  * on any other value and keeps the current rule. Call it before the widgets
  * mount. Never call this from agent output.
+ * @example setAllowedPartners([1234567, /^98\d{5}$/]);
  */
 export function setAllowedPartners(rule: AllowedIds | undefined): void {
   partners = parse(rule);
@@ -31,6 +32,7 @@ export function setAllowedPartners(rule: AllowedIds | undefined): void {
 /**
  * Host option. Same as `setAllowedPartners`, for `uiconfId`. A uiconf decides
  * which player or recorder code runs in your page, so list the ones you own.
+ * @example setAllowedUiconfs([12345678]);
  */
 export function setAllowedUiconfs(rule: AllowedIds | undefined): void {
   uiconfs = parse(rule);

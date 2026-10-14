@@ -65,11 +65,11 @@ describe.each(CASES)('QA-18: $name core', c => {
 });
 
 describe.each(CASES.filter(c => c.remoteFailure))('QA-18: $name remote failure', c => {
-  it(`QA-18: ${c.name} shows hostile remote error text as plain text`, async () => {
+  it(`QA-18: ${c.name} shows fixed text and logs the remote error`, async () => {
     remote.failWith = PAYLOAD;
     await mount(c, c.valid);
     const box = host.querySelector('[role="alert"]');
-    expect([box?.children.length, box?.textContent?.includes(PAYLOAD)]).toEqual([0, true]);
+    expect([box?.children.length, box?.textContent?.includes(PAYLOAD), errors.mock.calls.flat().map(String).join().includes(PAYLOAD)]).toEqual([0, false, true]);
     expectInert(host);
   });
 });
