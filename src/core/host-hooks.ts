@@ -23,6 +23,8 @@ export interface KalturaError {
   message: string;
   /** The A2UI surface of the component. Missing outside a surface, as in the web component bundle. */
   surfaceId?: string;
+  /** On `invalid-props` and `invalid-ks`: the top-level props that failed, as named in the schema. Never a value. */
+  invalidProps?: string[];
 }
 
 /** A widget event. `surfaceId` is as in `KalturaError`. See docs/host-api.md. */
@@ -54,6 +56,8 @@ export interface KalturaActionContext {
   widget: KalturaWidget;
   event: 'error' | KalturaEvent['type'];
   code?: KalturaErrorCode;
+  /** As in `KalturaError`. */
+  invalidProps?: string[];
   entryId?: string;
   entryIds?: string[];
 }
@@ -71,6 +75,7 @@ export class KalturaFailure extends Error {
   constructor(
     readonly code: KalturaErrorCode,
     message: string,
+    readonly invalidProps?: string[],
   ) {
     super(message);
   }
@@ -98,9 +103,10 @@ function safely(fn: () => void): void {
   }
 }
 
-export function reportError(code: KalturaErrorCode, widget: KalturaWidget, message: string, { surfaceId, send }: KalturaReporter = {}): void {
-  safely(() => errorHandler?.({ code, widget, message, ...(surfaceId ? { surfaceId } : {}) }));
-  safely(() => send?.({ widget, event: 'error', code }));
+export function reportError(code: KalturaErrorCode, widget: KalturaWidget, message: string, { surfaceId, send }: KalturaReporter = {}, invalidProps?: string[]): void {
+  const props = invalidProps?.length ? { invalidProps } : {};
+  safely(() => errorHandler?.({ code, widget, message, ...(surfaceId ? { surfaceId } : {}), ...props }));
+  safely(() => send?.({ widget, event: 'error', code, ...props }));
 }
 
 export function emitEvent(event: KalturaEvent, { surfaceId, send }: KalturaReporter = {}): void {
@@ -117,12 +123,14 @@ export function emitEvent(event: KalturaEvent, { surfaceId, send }: KalturaRepor
 }
 
 /**
- * An A2UI v0.9 client `error` message for the agent. It holds the code and
- * the widget, never `message`. Pass `surfaceId` when the error has none.
+ * An A2UI v0.9 client `error` message for the agent. Its message is the
+ * widget, the code and `invalidProps`, never `message`. Pass `surfaceId` when
+ * the error has none.
  */
 export function toClientError(error: KalturaError, surfaceId = error.surfaceId ?? '') {
-  const { code, widget } = error;
-  return { version: 'v0.9', error: { code, widget, surfaceId, message: `Kaltura ${widget} error: ${code}` } } as const;
+  const { code, widget, invalidProps } = error;
+  const props = invalidProps?.length ? ` (${invalidProps.join(', ')})` : '';
+  return { version: 'v0.9', error: { code, widget, surfaceId, message: `Kaltura ${widget} error: ${code}${props}` } } as const;
 }
 
 /** `invalid-ks` when the KS is one of the bad props. */
