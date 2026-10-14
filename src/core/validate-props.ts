@@ -91,6 +91,9 @@ export function checkProps(
   return { invalid: [...bad].slice(0, 5), pending };
 }
 
+/** The message of an invalid-props or invalid-ks error. A KS problem points to the fix. */
+export const invalidText = (invalid: string[]): string => `Invalid ${invalid.join(', ')}${invalid.includes('ks') ? ': call setKsProvider' : ''}`;
+
 /** The schema keys that start the `invalid` paths: `cards.0.title` gives `cards`. */
 export const topLevelProps = (schema: z.ZodObject<z.ZodRawShape>, invalid: string[]): string[] => [
   ...new Set(invalid.map(path => path.split('.')[0]).filter(key => key in schema.shape)),
@@ -141,7 +144,7 @@ export function withValidatedProps<P extends object>(
         widget,
         code: invalidCode(invalid),
         invalidProps: topLevelProps(schema, invalid),
-        children: `Failed to load ${label}: Invalid ${invalid.join(', ')}`,
+        children: `Failed to load ${label}: ${invalidText(invalid)}`,
       });
     }
     if (pending) return null;

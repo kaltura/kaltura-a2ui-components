@@ -96,7 +96,7 @@ describe('SEC-01: a rejected serverUrl is shown as a text error', () => {
     const [, Comp, props] = list.find(([n]) => n === 'GenieCore')!;
     const { container } = await mount(Comp, { ...props, serverUrl: 'https://evil.example/<img src=x onerror=window.__pwned=1>' });
     expect(findUnsafe(container)).toEqual([]);
-    expect(container.textContent).toContain('not an allowed Unisphere origin');
+    expect(container.textContent).toContain('not an allowed Unisphere origin (see setExtraAllowedOrigins)');
     expect(container.textContent).not.toContain('evil.example');
   });
 });

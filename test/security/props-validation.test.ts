@@ -166,7 +166,7 @@ describe('SEC-03: invalid props show a plain-text error and never the widget', (
       const { container } = await mount(await entry.load(), props as Record<string, unknown>);
       // Recorder keeps its error inside its own container, the others render the box alone.
       const box = container.querySelector('.kaltura-load-error');
-      expect(box?.textContent).toBe(`Failed to load ${label}: Invalid ${field}`);
+      expect(box?.textContent).toBe(`Failed to load ${label}: Invalid ${field}${field === 'ks' ? ': call setKsProvider' : ''}`);
       expect([container.querySelectorAll('iframe').length, calls.loader, calls.createWorkspace, calls.embeds]).toEqual([0, 0, 0, 0]);
     },
   );
@@ -418,7 +418,7 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
   it('SEC-03: a provider KS that is invalid shows the error', async () => {
     setKsProvider(() => 'a\nb');
     const { container } = await startSurface({ component: 'KalturaCaptionsEditor', partnerId: 1, entryId: '0_abc' }, {});
-    expect(container.textContent).toBe('Failed to load captions editor: Invalid ks');
+    expect(container.textContent).toBe('Failed to load captions editor: Invalid ks: call setKsProvider');
   });
 
   it('SEC-03: a hostile entryId arriving through the data model is refused', async () => {

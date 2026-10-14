@@ -55,7 +55,7 @@ let region: KalturaRegion = 'nvp1';
  * @example setRegion('irp2');
  */
 export function setRegion(code: KalturaRegion): void {
-  if (!KALTURA_REGIONS.includes(code)) throw new Error('Unknown Kaltura region');
+  if (!KALTURA_REGIONS.includes(code)) throw new Error(`Unknown Kaltura region. Use ${KALTURA_REGIONS.join(', ')}`);
   region = code;
 }
 

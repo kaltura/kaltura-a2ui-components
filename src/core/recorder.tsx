@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { renderLoadError } from './render-load-error';
 import { KalturaRecorderApi } from '../schemas/recorder';
-import { checkProps, StrictPendingContext, topLevelProps } from './validate-props';
+import { checkProps, invalidText, StrictPendingContext, topLevelProps } from './validate-props';
 import { withKs, withKsProp } from './ks';
 import { emitEvent, invalidCode, KalturaFailure, reportError, ReporterContext } from './host-hooks';
 import { kalturaHosts } from './region';
@@ -46,7 +46,7 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
     const optional = { entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime };
     const { invalid, pending } = checkProps(RUNTIME_SCHEMA, { partnerId, ks, uiconfId, ...optional }, strict);
     if (invalid.length) {
-      renderLoadError(container, 'recorder', new KalturaFailure(invalidCode(invalid), `Invalid ${invalid.join(', ')}`, topLevelProps(RUNTIME_SCHEMA, invalid)), 'recorder', reporter);
+      renderLoadError(container, 'recorder', new KalturaFailure(invalidCode(invalid), invalidText(invalid), topLevelProps(RUNTIME_SCHEMA, invalid)), 'recorder', reporter);
       return () => {
         container.replaceChildren();
       };

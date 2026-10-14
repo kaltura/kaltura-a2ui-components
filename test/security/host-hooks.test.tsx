@@ -126,7 +126,7 @@ describe('3.3e: setErrorHandler gets a typed error for each error state', () => 
     await hooks();
     const { RecorderCore } = await import('../../src/core/recorder');
     await render(RecorderCore, { partnerId: 1, uiconfId: 2, ks: '' });
-    expect(errors).toEqual([{ code: 'invalid-ks', widget: 'recorder', message: 'Failed to load recorder: Invalid ks', invalidProps: ['ks'] }]);
+    expect(errors).toEqual([{ code: 'invalid-ks', widget: 'recorder', message: 'Failed to load recorder: Invalid ks: call setKsProvider', invalidProps: ['ks'] }]);
   });
 
   it('3.3e: a missing createWorkspace export is load-failed for media-manager', async () => {
@@ -165,7 +165,7 @@ describe('3.3e: setErrorHandler gets a typed error for each error state', () => 
     const { GenieCore } = await import('../../src/core/genie');
     const view = await render(GenieCore, { partnerId: 1, uiconfId: 2, ks: KS, serverUrl: 'https://evil.invalid/v1' });
     expect(view.container.querySelector('[role=alert]')?.textContent).toBe(
-      'Failed to load Kaltura Genie: serverUrl is not an allowed Unisphere origin',
+      'Failed to load Kaltura Genie: serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)',
     );
   });
 

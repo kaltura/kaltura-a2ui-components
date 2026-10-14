@@ -38,7 +38,7 @@ describe('SEC-08: the avatar loads only through the allowlisted Unisphere loader
       vi.spyOn(console, 'warn').mockImplementation(() => {});
       const { remote, AvatarCore } = await setup();
       const { container } = await mount(AvatarCore, { ...VALID, serverUrl });
-      expect([container.textContent, remote.log]).toEqual(['Failed to load Kaltura Avatar: serverUrl is not an allowed Unisphere origin', []]);
+      expect([container.textContent, remote.log]).toEqual(['Failed to load Kaltura Avatar: serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)', []]);
     },
   );
 
@@ -86,7 +86,7 @@ describe('SEC-08: the KS comes from the host provider only', () => {
     const { AvatarCore, setKsProvider } = await loadAvatar(remote.module);
     setKsProvider(() => 'bad\u0000ks');
     const { container } = await mount(AvatarCore, VALID);
-    expect([container.textContent, remote.log]).toEqual(['Failed to load Kaltura Avatar: Invalid ks', []]);
+    expect([container.textContent, remote.log]).toEqual(['Failed to load Kaltura Avatar: Invalid ks: call setKsProvider', []]);
   });
 });
 
