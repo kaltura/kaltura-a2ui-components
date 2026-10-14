@@ -88,6 +88,7 @@ export {
   setErrorHandler,
   setEventHandler,
   toClientError,
+  type KalturaClientError,
   type KalturaError,
   type KalturaErrorCode,
   type KalturaEvent,

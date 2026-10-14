@@ -3,11 +3,17 @@ import type { KsWidget } from './ks';
 
 /** Why a widget did not render. See docs/host-api.md. */
 export type KalturaErrorCode =
+  /** A prop is missing or has the wrong type or value. `invalidProps` names it. */
   | 'invalid-props'
+  /** The KS is missing, empty or rejected, or the KS provider failed. */
   | 'invalid-ks'
+  /** A partner, uiConf or server URL is not on the allow list. */
   | 'origin-not-allowed'
+  /** A remote script or service did not load or did not start. */
   | 'load-failed'
+  /** An image, video or audio URL was refused. */
   | 'url-rejected'
+  /** The widget started, then failed while it ran. */
   | 'render-failed';
 
 /** The widget that reports. `unisphere` is a `UnisphereWidgetCore` used without a `widget` prop. */
@@ -84,12 +90,18 @@ export class KalturaFailure extends Error {
 let errorHandler: ((error: KalturaError) => void) | undefined;
 let eventHandler: ((event: KalturaEvent) => void) | undefined;
 
-/** Host option. Called once per error state. Pass `undefined` to remove it. Never call this from agent output. */
+/**
+ * Host option. Called once per error state. Pass `undefined` to remove it. Never call this from agent output.
+ * @example setErrorHandler(error => console.warn(error.widget, error.code));
+ */
 export function setErrorHandler(handler: ((error: KalturaError) => void) | undefined): void {
   errorHandler = handler;
 }
 
-/** Host option. Called for widget events. Pass `undefined` to remove it. Never call this from agent output. */
+/**
+ * Host option. Called for widget events. Pass `undefined` to remove it. Never call this from agent output.
+ * @example setEventHandler(event => event.type === 'entry-selected' && select(event.detail.entryId));
+ */
 export function setEventHandler(handler: ((event: KalturaEvent) => void) | undefined): void {
   eventHandler = handler;
 }
@@ -122,15 +134,22 @@ export function emitEvent(event: KalturaEvent, { surfaceId, send }: KalturaRepor
   });
 }
 
+/** The A2UI v0.9 client `error` message that `toClientError` returns. */
+export interface KalturaClientError {
+  version: 'v0.9';
+  error: { code: KalturaErrorCode; widget: KalturaWidget; surfaceId: string; message: string };
+}
+
 /**
  * An A2UI v0.9 client `error` message for the agent. Its message is the
  * widget, the code and `invalidProps`, never `message`. Pass `surfaceId` when
  * the error has none.
+ * @example setErrorHandler(error => sendToAgent(toClientError(error)));
  */
-export function toClientError(error: KalturaError, surfaceId = error.surfaceId ?? '') {
+export function toClientError(error: KalturaError, surfaceId = error.surfaceId ?? ''): KalturaClientError {
   const { code, widget, invalidProps } = error;
   const props = invalidProps?.length ? ` (${invalidProps.join(', ')})` : '';
-  return { version: 'v0.9', error: { code, widget, surfaceId, message: `Kaltura ${widget} error: ${code}${props}` } } as const;
+  return { version: 'v0.9', error: { code, widget, surfaceId, message: `Kaltura ${widget} error: ${code}${props}` } };
 }
 
 /** `invalid-ks` when the KS is one of the bad props. */

@@ -10,12 +10,19 @@ import { emitEvent, KalturaFailure, ReporterContext, type KalturaEvent } from '.
 export { deriveLoaderUrl } from './unisphere-loader';
 
 export interface MediaManagerCoreProps {
+  /** Kaltura partner (account) ID. */
   partnerId: number;
+  /** Kaltura Session. The host KS provider is used first. */
   ks: string;
+  /** Unisphere URL. Defaults to the Unisphere host of the region. Only Kaltura hosts and `setExtraAllowedOrigins` are accepted. */
   serverUrl?: string;
+  /** Default: the `data-theme` of the page, else `dark`. */
   theme?: 'dark' | 'light';
+  /** `select` picks entries (default). `manage` also edits them. */
   mode?: 'select' | 'manage';
+  /** Allow up to 5 entries. Default: false. */
   multiSelect?: boolean;
+  /** Content scope to browse, such as a category ID. */
   contextId?: string;
 }
 
@@ -74,7 +81,7 @@ export function buildWorkspaceConfig(props: {
       },
       ui: { theme: props.theme, language: 'en' },
     },
-    // Each instance gets its own named workspace — no shared singleton,
+    // Each instance gets its own named workspace, with no shared singleton and
     // no "workspace already reserved" collision across concurrent surfaces.
     workspaceName: props.instanceId,
   };

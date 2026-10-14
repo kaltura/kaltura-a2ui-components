@@ -10,16 +10,27 @@ import { loadPlayerScript, type PlayerHandle } from './player-script';
 import { refusedIdProp } from './allowed-ids';
 
 export interface PlayerCoreProps {
+  /** Kaltura partner (account) ID. */
   partnerId: number;
+  /** Player (uiConf) ID. */
   uiconfId: number;
+  /** Entry to play, such as `0_abc123`. */
   entryId: string;
+  /** Only for protected entries. The host KS provider is used first. */
   ks?: string;
+  /** Start playback on load. Browsers need `muted` too. */
   autoplay?: boolean;
+  /** Start muted. */
   muted?: boolean;
+  /** Seek to this second on load. */
   startTime?: number;
+  /** Stop playback at this second. */
   clipTo?: number;
+  /** Container ratio such as `16/9` (default) or `4/3`. */
   aspectRatio?: string;
+  /** Title shown above the player. */
   entryName?: string;
+  /** Text shown under the player. HTML tags are stripped. */
   entryDescription?: string;
 }
 
