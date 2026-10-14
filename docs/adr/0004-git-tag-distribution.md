@@ -2,7 +2,7 @@
 
 Status: accepted, live since v0.2.0 (decided 2026-10-12). The owner chose jsDelivr only, no npm.
 
-Findings: SEC-09, QA-09, SEC-19. Code: `.github/workflows/release.yml`. Runbook: [release.md](../release.md). Consumer checks: [verify-release.md](../verify-release.md).
+Findings: SEC-09, QA-09, SEC-19. Code: `.github/workflows/release.yml`. Consumer checks: [SECURITY.md](../../SECURITY.md#releases).
 
 ## Context
 
@@ -22,8 +22,8 @@ Findings: SEC-09, QA-09, SEC-19. Code: `.github/workflows/release.yml`. Runbook:
 
 ## Consequences
 
-- No registry provenance. The proof is the GitHub attestation and the SRI hashes ([verify-release.md](../verify-release.md)). Consumers get no registry update or advisory alerts for it.
-- Tags must be immutable. jsDelivr caches a file at a tag for a year, so a moved tag would serve mixed bytes. A tag ruleset that blocks updates and deletion enforces this (admin setup in [release.md](../release.md#one-time-admin-setup)). A wrong release is fixed by a new version, never by moving the tag.
+- No registry provenance. The proof is the GitHub attestation and the SRI hashes ([SECURITY.md](../../SECURITY.md#releases)). Consumers get no registry update or advisory alerts for it.
+- Tags must be immutable. jsDelivr caches a file at a tag for a year, so a moved tag would serve mixed bytes. A tag ruleset that blocks updates and deletion enforces this (repository admin setting). A wrong release is fixed by a new version, never by moving the tag.
 - Release commits are on no branch. `git log main` does not show them. `git fetch --tags` brings them in, and GitHub keeps them because a tag points to them. The attestation names the `main` commit the release was built from.
 - jsDelivr serves only files in the tagged tree, with a per-package size limit. `dist/` is small enough today. A large new asset needs a check against that limit.
 - `npm i github:...#tag` installs the tagged tree, filtered by `files`. There is no `prepare` script, so nothing builds on the host.

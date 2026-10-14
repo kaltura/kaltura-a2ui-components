@@ -48,7 +48,7 @@ The script-tag bundle (`kaltura-wc.js`) is unchanged: self-contained, no peers.
 |---|---|---|
 | Script | `https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.1.4/dist/kaltura-wc.js` | `https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js` |
 
-Only the tag changes. Old URLs for tags up to v0.1.4 keep working, but they serve the 0.1.4 bundle, which has none of the 0.2.0 fixes and none of the host functions. SRI: copy the script tag from the Release notes, or take the `cdn["dist/kaltura-wc.js"]` value from the Release's `hashes.json`. More checks: [verify-release.md](verify-release.md).
+Only the tag changes. Old URLs for tags up to v0.1.4 keep working, but they serve the 0.1.4 bundle, which has none of the 0.2.0 fixes and none of the host functions. SRI: copy the script tag from the Release notes, or take the `cdn["dist/kaltura-wc.js"]` value from the Release's `hashes.json`. More checks: [SECURITY.md](../SECURITY.md#releases).
 
 ## Kaltura Session
 

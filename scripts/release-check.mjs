@@ -35,7 +35,7 @@ export function checkRelease(version, { pkg }) {
 }
 
 // Files whose `kaltura-a2ui-components@v1.2.3` or `kaltura-a2ui-components#v1.2.3` pins must be the
-// release version. docs/migration-*.md and docs/verify-release.md name old versions on purpose.
+// release version. docs/migration-*.md name old versions on purpose.
 const PIN_FILES = ['README.md', 'SECURITY.md', 'e2e/README.md'];
 const PIN_DIRS = ['examples'];
 const PIN = /kaltura-a2ui-components[@#]v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)/g;
