@@ -123,6 +123,8 @@ const BAD: Array<[string, Record<string, unknown>, string]> = [
   ['player', { ...base, uiconfId: 2, entryId: '0_abc', partnerId: '1/../x' }, 'partnerId'],
   ['player', { ...base, uiconfId: 1.5, entryId: '0_abc' }, 'uiconfId'],
   ['player', { ...base, uiconfId: 2, entryId: '0_abc', partnerId: '123' }, 'partnerId'],
+  ['player', { ...base, uiconfId: 2, entryId: '0_abc', partnerId: { path: '/pid' } }, 'partnerId'],
+  ['player', { ...base, uiconfId: { path: '/uiconf' }, entryId: '0_abc' }, 'uiconfId'],
   ['player', { ...base, uiconfId: 2, entryId: 'a/b' }, 'entryId'],
   ['player', { ...base, uiconfId: 2, entryId: { path: '/not/resolved' } }, 'entryId'],
   ['player', { ...base, uiconfId: 2, entryId: '0_abc', ks: 'a\nb' }, 'ks'],
@@ -315,7 +317,7 @@ describe('SEC-03: resolved props never carry bindings or function calls', () => 
   const cases = ENTRIES.flatMap(e => dynamicKeys(e.api).map(key => [e.label, key] as const));
 
   it('SEC-03: the schemas have dynamic props to check', () => {
-    expect(cases.length).toBeGreaterThan(30);
+    expect(cases.length).toBeGreaterThan(25);
   });
 
   it.each(cases)('SEC-03: %s: %s rejects a path binding and a function call', (label, key) => {

@@ -4,8 +4,8 @@ import { CommonSchemas } from '@a2ui/web_core/v0_9';
 export const KalturaPlayerApi = {
   name: 'KalturaPlayer',
   schema: z.object({
-    partnerId: CommonSchemas.DynamicNumber,
-    uiconfId: CommonSchemas.DynamicNumber,
+    partnerId: z.number().int().positive(),
+    uiconfId: z.number().int().positive(),
     entryId: CommonSchemas.DynamicString,
     autoplay: CommonSchemas.DynamicBoolean.optional(),
     muted: CommonSchemas.DynamicBoolean.optional(),
