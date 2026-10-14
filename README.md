@@ -118,7 +118,7 @@ if (surface) createRoot(document.getElementById('root')!).render(createElement(A
 
 Your server mints the KS ([docs/ks-privileges.md](docs/ks-privileges.md)). Chart needs no KS, and Flashcards need one only for protected clips.
 
-- The catalog id `https://kaltura.github.io/a2ui/v2/catalog.json` is a name. Nothing is served there. Fetch the file from [Catalog JSON](#catalog-json). The `v1` id was the 0.3.x catalog: [docs/migration-0.4.md](docs/migration-0.4.md#catalog-v2).
+- The catalog id `https://kaltura.github.io/a2ui/v2/catalog.json` is a name, and the file is also served there (copy of the release asset). Pin the one from [Catalog JSON](#catalog-json). The `v1` id was the 0.3.x catalog: [docs/migration-0.4.md](docs/migration-0.4.md#catalog-v2).
 - Send `processor.getRendererCapabilities({ versions: ['v0.9'] })` to your agent as `a2uiClientCapabilities`, so it picks a catalog you registered.
 - `buildKalturaCatalog(id?)` builds the same catalog under another id. `loadKalturaCatalog(url)` fetches a catalog JSON and keys it by its `catalogId`.
 
