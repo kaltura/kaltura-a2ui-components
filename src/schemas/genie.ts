@@ -5,7 +5,7 @@ export const KalturaGenieApi = {
   name: 'KalturaGenie',
   schema: z.object({
     partnerId: z.number().int().positive(),
-    serverUrl: CommonSchemas.DynamicString,
+    serverUrl: CommonSchemas.DynamicString.optional(),
     uiconfId: z.number().int().positive(),
     categoryId: CommonSchemas.DynamicString.optional(),
     language: CommonSchemas.DynamicString.optional(),

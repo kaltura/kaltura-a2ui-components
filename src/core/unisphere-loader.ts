@@ -1,4 +1,5 @@
 import { KalturaFailure } from './host-hooks';
+import { currentRegion } from './region';
 
 /** serverUrl comes from agent output. Only known Unisphere origins may be imported. */
 // Same codes as KALTURA_REGIONS in region.ts. test/release/unisphere-smoke.test.ts reads this line.
@@ -28,6 +29,9 @@ export function parseOrigin(value: string): string {
 export function setExtraAllowedOrigins(origins: string[]): void {
   extraOrigins = origins.map(parseOrigin);
 }
+
+/** Unisphere host of the region set with `setRegion`. Used when `serverUrl` is not set. */
+export const defaultServerUrl = (): string => `https://unisphere.${currentRegion()}.ovp.kaltura.com/v1`;
 
 export function getExtraAllowedOrigins(): string[] {
   return [...extraOrigins];

@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import { loadUnisphereModule } from './unisphere-loader';
+import { defaultServerUrl, loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
 import { KalturaMediaManagerApi } from '../schemas/media-manager';
 import { withValidatedProps } from './validate-props';
@@ -12,19 +12,11 @@ export { deriveLoaderUrl } from './unisphere-loader';
 export interface MediaManagerCoreProps {
   partnerId: number;
   ks: string;
-  serverUrl: string;
+  serverUrl?: string;
   theme?: 'dark' | 'light';
   mode?: 'select' | 'manage';
   multiSelect?: boolean;
   contextId?: string;
-  /**
-   * Host option, not part of the A2UI schema. The React adapter always sets
-   * it to `true`, so an agent cannot change it. Default `true`: the selection
-   * event fires on the host element and bubbles up to `document`, as before.
-   * `false` lets it bubble up to the host element only. The default flips in
-   * the next release.
-   */
-  legacyDocumentEvents?: boolean;
 }
 
 /** Longest entry name kept from the media library. */
@@ -112,19 +104,18 @@ function MediaManagerView(props: MediaManagerCoreProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceIdRef = useRef('');
   const [selected, setSelected] = useState<SelectedEntry[]>([]);
-  const { partnerId, ks, serverUrl, mode, contextId } = props;
+  const { partnerId, ks, mode, contextId } = props;
+  const serverUrl = props.serverUrl ?? defaultServerUrl();
   const isMultiSelect = props.multiSelect === true;
-  const legacy = props.legacyDocumentEvents !== false;
   const themeProp = props.theme;
   const reporter = useContext(ReporterContext);
 
   /**
-   * `kaltura-entry-selected` fires on the host element (the web component tag,
-   * or the wrapper div in React) with the instance id. Legacy mode bubbles it
-   * to `document` as before. Otherwise it fires on the wrapper inside the host
-   * and bubbles up to the host element, and stops there. `name` is text from
-   * the media library or the agent: treat it as untrusted. The host event
-   * handler gets the same detail.
+   * `kaltura-entry-selected` fires on the wrapper inside the host element (the
+   * web component tag, or the parent in React) with the instance id. It bubbles
+   * up to the host element and stops there, so it never reaches `document`.
+   * `name` is text from the media library or the agent: treat it as untrusted.
+   * The host event handler gets the same detail.
    */
   const announce = (selection: Omit<Extract<KalturaEvent, { type: 'entry-selected' }>['detail'], 'instanceId'>) => {
     const wrapper = hostRef.current;
@@ -137,10 +128,6 @@ function MediaManagerView(props: MediaManagerCoreProps) {
       bubbles: true,
       composed: true,
     });
-    if (legacy) {
-      (host ?? wrapper).dispatchEvent(event);
-      return;
-    }
     const boundary = host ?? wrapper.parentElement ?? wrapper;
     const stop = (e: Event) => e.stopPropagation();
     boundary.addEventListener(event.type, stop);
@@ -232,9 +219,9 @@ function MediaManagerView(props: MediaManagerCoreProps) {
       cancelled = true;
       dispose();
     };
-    // announce reads only refs, the stable legacy flag and the stable reporter.
+    // announce reads only refs and the stable reporter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partnerId, ks, serverUrl, themeProp, mode, contextId, isMultiSelect, legacy, reporter]);
+  }, [partnerId, ks, serverUrl, themeProp, mode, contextId, isMultiSelect, reporter]);
 
   const handleConfirmSelection = () => {
     if (selected.length === 0) return;

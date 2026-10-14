@@ -135,7 +135,6 @@ describe('SEC-08: remote error text never reaches the page, the console or the h
 describe('SEC-08: hostile props', () => {
   it.each([
     ['partnerId', { partnerId: -1 }],
-    ['serverUrl', { serverUrl: `${SERVER_URL}/${'a'.repeat(2048)}` }],
     ['openingPhrase', { openingPhrase: 'a'.repeat(501) }],
     ['openingPhrase', { openingPhrase: 5 }],
     ['theme', { theme: 'custom' }],

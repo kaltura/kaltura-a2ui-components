@@ -1,11 +1,14 @@
 // Covers: QA-07 (Media Manager lifecycle) and SEC-18 (selection event scope).
 // Turns green: plan items 2.2 and 2.3.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, createElement } from 'react';
-import { createRoot } from 'react-dom/client';
-import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
+import { act } from 'react';
 import { URL_A, URL_B, loaderUrl, gate, render, fakeWorkspaceModule, errorSpy, tick, type MountedVisual } from './harness';
+
+const listen = (target: EventTarget) => {
+  const seen: CustomEvent[] = [];
+  target.addEventListener('kaltura-entry-selected', e => seen.push(e as CustomEvent));
+  return seen;
+};
 
 const base = { partnerId: 1, ks: 'ks-1', serverUrl: URL_A };
 let log: string[];
@@ -129,11 +132,10 @@ describe('QA-07: Media Manager lifecycle', () => {
     const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
     const view = await render(Mm, base);
     await view.rerender({ ...base, ks: 'ks-2' });
-    const seen: Event[] = [];
-    document.addEventListener('kaltura-entry-selected', e => seen.push(e));
+    const seen = listen(view.container.firstElementChild!);
     selectRow(0, { id: '0_old' });
     selectRow(1, { id: '0_new' });
-    expect(seen.map(e => (e as CustomEvent).detail.entryId)).toEqual(['0_new']);
+    expect(seen.map(e => e.detail.entryId)).toEqual(['0_new']);
   });
 
   it('QA-07: a row selected in the replaced workspace is not added to the multi-select bar', async () => {
@@ -176,30 +178,22 @@ describe('QA-07: Media Manager lifecycle', () => {
 
   it.each(['', 'a b', 'x'.repeat(65), 7, null, undefined])('APPSEC-09: row id %j is ignored', async id => {
     const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
-    await render(Mm, base);
-    const seen: Event[] = [];
-    document.addEventListener('kaltura-entry-selected', e => seen.push(e));
+    const view = await render(Mm, base);
+    const seen = listen(view.container.firstElementChild!);
     selectRow(0, { id } as never);
     expect(seen).toHaveLength(0);
   });
 
   it('APPSEC-09: a long row name is capped at 500 characters', async () => {
     const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
-    await render(Mm, base);
-    const seen: CustomEvent[] = [];
-    document.addEventListener('kaltura-entry-selected', e => seen.push(e as CustomEvent));
+    const view = await render(Mm, base);
+    const seen = listen(view.container.firstElementChild!);
     selectRow(0, { id: '0_abc', name: 'n'.repeat(100_000) });
     expect(seen[0].detail.name).toHaveLength(500);
   });
 });
 
 describe('SEC-18: kaltura-entry-selected is scoped to the host element', () => {
-  const listen = (target: EventTarget) => {
-    const seen: CustomEvent[] = [];
-    target.addEventListener('kaltura-entry-selected', e => seen.push(e as CustomEvent));
-    return seen;
-  };
-
   it('SEC-18: the event fires on the host element with an instanceId', async () => {
     const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
     const view = await render(Mm, base);
@@ -216,35 +210,27 @@ describe('SEC-18: kaltura-entry-selected is scoped to the host element', () => {
     expect([seen[0].bubbles, seen[0].composed]).toEqual([true, true]);
   });
 
-  it('SEC-18: by default a document listener still gets one event (legacy)', async () => {
+  it('SEC-18: the event stays off the document', async () => {
     const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
     await render(Mm, base);
-    const seen = listen(document);
-    selectRow(0, { id: '0_abc' });
-    expect(seen).toHaveLength(1);
-  });
-
-  it('SEC-18: legacyDocumentEvents false keeps the event off the document', async () => {
-    const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
-    await render(Mm, { ...base, legacyDocumentEvents: false });
     const seen = listen(document);
     selectRow(0, { id: '0_abc' });
     expect(seen).toHaveLength(0);
   });
 
-  it('SEC-18: legacyDocumentEvents false still fires on the host element', async () => {
+  it('SEC-18: the event reaches a listener on the host element', async () => {
     const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
-    const view = await render(Mm, { ...base, legacyDocumentEvents: false });
+    const view = await render(Mm, base);
     const seen = listen(view.container.firstElementChild!);
     selectRow(0, { id: '0_abc' });
     expect(seen).toHaveLength(1);
   });
 
-  it('SEC-18: legacyDocumentEvents false still reaches a listener on the host and one inside it', async () => {
+  it('SEC-18: the event reaches a listener on the host and one inside it', async () => {
     await manager(fakeWorkspaceModule({ log, configs, visuals }));
     await import('../../src/adapters/webcomponent/media-manager').then(m => m.defineMediaManagerWebComponent());
     const el = document.createElement('kaltura-media-manager') as HTMLElement & { config: object };
-    el.config = { ...base, legacyDocumentEvents: false };
+    el.config = base;
     await act(async () => { document.body.appendChild(el); });
     await tick();
     const [onHost, inside, onDocument] = [listen(el), listen(el.firstElementChild!), listen(document)];
@@ -254,8 +240,8 @@ describe('SEC-18: kaltura-entry-selected is scoped to the host element', () => {
 
   it('SEC-18: a host listener does not see the event of another instance', async () => {
     const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
-    const one = await render(Mm, { ...base, legacyDocumentEvents: false });
-    await render(Mm, { ...base, legacyDocumentEvents: false });
+    const one = await render(Mm, base);
+    await render(Mm, base);
     const seen = listen(one.container.firstElementChild!);
     selectRow(1, { id: '0_abc' });
     expect(seen).toHaveLength(0);
@@ -263,12 +249,11 @@ describe('SEC-18: kaltura-entry-selected is scoped to the host element', () => {
 
   it('SEC-18: two instances report different instanceIds', async () => {
     const Mm = await manager(fakeWorkspaceModule({ log, configs, visuals }));
-    await render(Mm, base);
-    await render(Mm, base);
-    const seen = listen(document);
+    const [one, two] = [await render(Mm, base), await render(Mm, base)];
+    const [first, second] = [listen(one.container.firstElementChild!), listen(two.container.firstElementChild!)];
     selectRow(0, { id: '0_abc' });
     selectRow(1, { id: '0_abc' });
-    expect(seen[0].detail.instanceId).not.toBe(seen[1].detail.instanceId);
+    expect(first[0].detail.instanceId).not.toBe(second[0].detail.instanceId);
   });
 
   it('SEC-18: the multi-select confirm event has the instanceId and entries', async () => {
@@ -281,7 +266,7 @@ describe('SEC-18: kaltura-entry-selected is scoped to the host element', () => {
     expect(seen[0].detail).toMatchObject({ entryId: '0_a,0_b', instanceId: expect.stringMatching(/^unisphere-mm-/) });
   });
 
-  it('SEC-18: the web component fires the event on the custom element', async () => {
+  it('SEC-18: the web component fires the event inside the custom element', async () => {
     await manager(fakeWorkspaceModule({ log, configs, visuals }));
     await import('../../src/adapters/webcomponent/media-manager').then(m => m.defineMediaManagerWebComponent());
     const el = document.createElement('kaltura-media-manager') as HTMLElement & { config: object };
@@ -290,41 +275,6 @@ describe('SEC-18: kaltura-entry-selected is scoped to the host element', () => {
     await tick();
     const seen = listen(el);
     selectRow(0, { id: '0_abc' });
-    expect(seen[0].target).toBe(el);
-  });
-});
-
-describe('SEC-18: an agent cannot set legacyDocumentEvents', () => {
-  const listen = (target: EventTarget) => {
-    const seen: CustomEvent[] = [];
-    target.addEventListener('kaltura-entry-selected', e => seen.push(e as CustomEvent));
-    return seen;
-  };
-
-  /** Mounts the component through a real A2UI message, as an agent would. */
-  async function agentSurface(extra: Record<string, unknown>) {
-    vi.doMock(loaderUrl(URL_A), () => fakeWorkspaceModule({ log, configs, visuals }));
-    const { kalturaReactCatalog, KALTURA_CATALOG_ID } = await import('../../src/adapters/react/index');
-    const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatalog]);
-    processor.processMessages([
-      { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
-      {
-        version: 'v0.9',
-        updateComponents: {
-          surfaceId: 's',
-          components: [{ id: 'root', component: 'KalturaMediaManager', ...base, ...extra }],
-        },
-      },
-    ] as never);
-    const host = document.body.appendChild(document.createElement('div'));
-    await act(async () => createRoot(host).render(createElement(A2uiSurface, { surface: processor.model.getSurface('s')! })));
-    await tick();
-  }
-
-  it('SEC-18: legacyDocumentEvents false from an agent still bubbles to document', async () => {
-    await agentSurface({ legacyDocumentEvents: false });
-    const seen = listen(document);
-    selectRow(0, { id: '0_abc' });
-    expect(seen).toHaveLength(1);
+    expect(el.contains(seen[0].target as Node)).toBe(true);
   });
 });
