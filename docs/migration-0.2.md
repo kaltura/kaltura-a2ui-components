@@ -60,7 +60,7 @@ After: `ks` is optional. Supply it from the host ([host-integration.md](host-int
 setKsProvider(widget => getKsFor(widget));
 ```
 
-A non-empty provider result wins over a `ks` prop. The prop still works for older hosts, but a KS in agent output is not protected. Remove it from your agent prompts and from the data model. Privileges per widget: [ks-privileges.md](ks-privileges.md).
+A non-empty provider result wins over a `ks` prop. The prop still worked in 0.2, but a KS in agent output is not protected. 0.4 removes it ([migration-0.4.md](migration-0.4.md#ks)). Remove it from your agent prompts and from the data model. Privileges per widget: [ks-privileges.md](ks-privileges.md).
 
 ## Validation
 
