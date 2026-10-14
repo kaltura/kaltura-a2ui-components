@@ -25,7 +25,7 @@ Look at the examples: build, serve the repo root with any static server and open
 
 ## Layout
 
-`src/schemas/` (zod) → `src/core/` (render logic) → `src/adapters/react/` (A2UI path) and `src/adapters/webcomponent/` (custom elements). `src/catalog/kaltura_catalog.json` is the catalog agents see. [README.md](README.md#layout) has the tree.
+`src/schemas/` (zod) → `src/core/` (render logic) → `src/adapters/react/` (A2UI path) and `src/adapters/webcomponent/` (custom elements). `src/catalog/kaltura_catalog.json` is the catalog agents see.
 
 ## Test pyramid
 
