@@ -16,10 +16,17 @@ npx playwright install chromium firefox webkit   # only for e2e and check:exampl
 | `npx vitest run test/path/file.test.ts` | One test file | While you work |
 | `npm run build` | `dist/kaltura-react.mjs` (with `dist/html-element-stub.mjs`), `dist/kaltura-wc.js`, types | Before the commands below |
 | `npm run e2e` | Playwright on three browsers against `dist/` | After a change to a component or the bundle |
+| `npm run e2e:live` | Player test against a real Kaltura account | After a change to the Player or the KS flow. See Live test below |
 | `npm run check:examples` | README snippets and `examples/` in Chromium, against `dist/` | After a change to README, examples or the public API |
 | `npm run check:bundle`, `check:package`, `check:consumer`, `size` | Bundle contents, package contract, consumer install, size budget | After a change to build config, `package.json` or dependencies |
 | `npm run test:conformance` | A2UI and Kaltura conformance suite only | After a change to a schema, the catalog or an export |
 | `npm run gen:catalog` | Is the catalog JSON in step with the zod schemas? Add `-- --write` to rewrite it | After a change to `src/schemas/` |
+
+## Live test
+
+It needs `NVP1_PARTNER_ID` and `NVP1_ADMIN_SECRET` in a gitignored `.env`. Without them the test is skipped.
+Run `npm run e2e:live` (add `-- --project=chromium` for one browser). It mints a 10 minute KS in the test process, plays a real entry and fails if the KS shows up in any request URL.
+Never run it in CI, and never commit the secret or a KS.
 
 Look at the examples: build, serve the repo root with any static server and open `examples/plain-html/index.html`. The React example needs Vite: `scripts/check-examples.mjs` shows how it is built.
 
@@ -36,7 +43,7 @@ Look at the examples: build, serve the repo root with any static server and open
 | Security regression | `test/security/`, `test/probes/` | One test per finding ID |
 | Conformance | `test/conformance/` | Catalog JSON is valid and equals what the zod schemas generate. Message streams render every component. Public API snapshot. Kaltura guide facts |
 | Package and release | `test/package/`, `test/release/` | `package.json` contract, workflows, release scripts |
-| E2E | `e2e/` (Playwright) | Built bundles in Chromium, Firefox and WebKit, with local fixture servers. No test talks to real Kaltura. Axe scans, CSP |
+| E2E | `e2e/` (Playwright) | Built bundles in Chromium, Firefox and WebKit, with local fixture servers. Axe scans, CSP. `e2e/live/` is the exception: `npm run e2e:live` talks to a real account and never runs in CI |
 | Docs | `scripts/check-examples.mjs`, `test/docs/`, `test/conformance/docs-content.test.ts` | README and example code run. Docs name only real exports |
 
 More in [test/README.md](test/README.md) and [e2e/README.md](e2e/README.md).
