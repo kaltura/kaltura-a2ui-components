@@ -35,7 +35,7 @@ export function releaseNotes({ version, hashes }) {
     '|---|---|',
     ...Object.entries(hashes.cdn).map(([path, value]) => `| \`${path}\` | \`${value}\` |`),
     '',
-    `\`SHA256SUMS\` covers every asset. Check the build provenance with \`gh attestation verify <file> --repo ${GH_REPO}\`. Steps: [docs/verify-release.md](https://github.com/${GH_REPO}/blob/${tag}/docs/verify-release.md).`,
+    `\`SHA256SUMS\` covers every asset. Check the build provenance with \`gh attestation verify <file> --repo ${GH_REPO}\`. Steps: [SECURITY.md](https://github.com/${GH_REPO}/blob/${tag}/SECURITY.md#releases).`,
     '',
   ].join('\n');
 }

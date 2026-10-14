@@ -25,7 +25,7 @@ An A2UI surface binds to one catalog id, and `kalturaReactCatalog` serves the 18
 - `KalturaPlayer.partnerId` and `uiconfId` are `DynamicNumber`, as in zod. The dynamic types already accept a `FunctionCall`, because the shared defs are copied whole.
 - Kaltura components have no `weight`, as before. Nothing in the React or web component code reads `weight`, `tooltip` or `visible`, so the catalog keeps them as they were and adds no prop that does nothing.
 - `copyToClipboard` is the one Kaltura function. It is listed in `functions`.
-- The id changed to `https://kaltura.github.io/a2ui/v2/catalog.json`, because this layout and the 0.4 props break the 0.3 contract. A catalog id only has to be a unique string ("not necessarily a resolvable URI" in the A2UI schemas). See [migration-0.4.md](../migration-0.4.md#catalog-v2) and [release.md](../release.md#catalog-id-url).
+- The id changed to `https://kaltura.github.io/a2ui/v2/catalog.json`, because this layout and the 0.4 props break the 0.3 contract. A catalog id only has to be a unique string ("not necessarily a resolvable URI" in the A2UI schemas). See [migration-0.4.md](../migration-0.4.md#catalog-v2). The file is served from the [kaltura/a2ui](https://github.com/kaltura/a2ui) repo (GitHub Pages, `v2/catalog.json`). Nothing in this repo publishes there. After each release that changes the catalog, a PR in that repo replaces `v2/catalog.json` with the Release asset `kaltura_catalog.json`, unchanged. Do not copy it from `main`: it has placeholders instead of the tag URL and SRI hashes.
 - Tests: `test/adapter.test.ts` (runtime names equal JSON names), `test/conformance/catalog-schema.test.ts`.
 
 ## Consequences
