@@ -146,7 +146,7 @@ test.describe('missing KS', () => {
     await h.settle();
     expect(await h.page.locator('#host iframe').count()).toBe(0);
     expect(await h.page.locator('#host [role=alert]').allTextContents()).toEqual(
-      Array(UNISPHERE_TAGS.length + 1).fill(expect.stringMatching(/^Failed to load .*: Invalid ks$/)),
+      Array(UNISPHERE_TAGS.length + 1).fill(expect.stringMatching(/^Failed to load .*: Invalid ks: call setKsProvider$/)),
     );
     expect(h.loaderRequests()).toEqual([]);
   });

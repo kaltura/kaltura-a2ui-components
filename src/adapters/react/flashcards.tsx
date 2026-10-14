@@ -10,7 +10,7 @@ export const flashcardsReactImpl = createComponentImplementation(
   // @a2ui/web_core generic-binder: scrapeSchemaBehavior builds ARRAY/OBJECT
   // nodes and resolveAndBind resolves DYNAMIC values). The SDK's
   // ResolveA2uiProps type only maps top-level keys, so the nested unions
-  // survive at the type level — narrow them here.
+  // survive at the type level, so narrow them here.
   ({ props: { action, ...props }, context }) => (
     <AgentAction context={context} action={action}>
       <FlashcardsCore {...(props as unknown as FlashcardsCoreProps)} />

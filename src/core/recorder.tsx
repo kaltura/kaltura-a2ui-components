@@ -2,8 +2,8 @@ import { useContext, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { renderLoadError } from './render-load-error';
 import { KalturaRecorderApi } from '../schemas/recorder';
-import { checkProps, StrictPendingContext } from './validate-props';
-import { withKs } from './ks';
+import { checkProps, invalidText, StrictPendingContext, topLevelProps } from './validate-props';
+import { withKs, withKsProp } from './ks';
 import { emitEvent, invalidCode, KalturaFailure, reportError, ReporterContext } from './host-hooks';
 import { kalturaHosts } from './region';
 import { isEntryId } from './ids';
@@ -11,17 +11,25 @@ import { refusedIdProp } from './allowed-ids';
 import { loadRecorderScript, type ExpressRecorderHandle } from './recorder-script';
 
 export interface RecorderCoreProps {
+  /** Kaltura partner (account) ID. */
   partnerId: number;
+  /** Kaltura Session. The host KS provider is used first. */
   ks: string;
+  /** Player (uiConf) ID that loads the recorded entry. */
   uiconfId: number;
+  /** Name of the new entry. */
   entryName?: string;
+  /** Allow webcam video. */
   allowVideo?: boolean;
+  /** Allow audio only. */
   allowAudio?: boolean;
+  /** Allow screen recording. */
   allowScreenShare?: boolean;
+  /** Longest recording in seconds. At most 86400. */
   maxRecordingTime?: number;
 }
 
-const RUNTIME_SCHEMA = KalturaRecorderApi.schema.required({ ks: true });
+const RUNTIME_SCHEMA = withKsProp(KalturaRecorderApi.schema);
 
 const detailOf = (event: unknown): { entryId?: unknown } => (event as { detail?: object } | null)?.detail ?? {};
 
@@ -38,7 +46,7 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
     const optional = { entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime };
     const { invalid, pending } = checkProps(RUNTIME_SCHEMA, { partnerId, ks, uiconfId, ...optional }, strict);
     if (invalid.length) {
-      renderLoadError(container, 'recorder', new KalturaFailure(invalidCode(invalid), `Invalid ${invalid.join(', ')}`), 'recorder', reporter);
+      renderLoadError(container, 'recorder', new KalturaFailure(invalidCode(invalid), invalidText(invalid), topLevelProps(RUNTIME_SCHEMA, invalid)), 'recorder', reporter);
       return () => {
         container.replaceChildren();
       };
