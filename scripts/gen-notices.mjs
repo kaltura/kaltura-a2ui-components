@@ -79,7 +79,7 @@ export function renderNotices(packages) {
   const intro = [
     'THIRD-PARTY NOTICES',
     '',
-    '@kaltura/a2ui-react is AGPL-3.0-only (see LICENSE). The files in dist/ also contain the',
+    '@kaltura/a2ui-react is Apache-2.0 (see LICENSE). The files in dist/ also contain the',
     'third-party packages below, as found in the source maps of dist/kaltura-react.mjs and',
     'dist/kaltura-wc.js. Each entry gives the licence text the package ships.',
   ].join('\n');

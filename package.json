@@ -3,7 +3,7 @@
   "version": "0.4.0",
   "private": true,
   "description": "Kaltura Experience Components for A2UI: Player, Flashcards, Media Manager, Recorder, Captions Editor, Analytics, Genie, Content Lab, Avatar, VOD Avatar, Agents Widget and Chart. A React catalog for A2UI clients and a self-contained web component bundle for plain HTML pages.",
-  "license": "AGPL-3.0-only",
+  "license": "Apache-2.0",
   "type": "module",
   "repository": {
     "type": "git",

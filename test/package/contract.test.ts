@@ -45,8 +45,8 @@ describe('QA-08: shared libraries are peers of the ESM build', () => {
 });
 
 describe('QA-11: package contract', () => {
-  it('QA-11: license field is AGPL-3.0-only and the LICENSE file is the AGPL v3 text', () => {
-    expect([pkg.license, read('LICENSE').includes('GNU AFFERO GENERAL PUBLIC LICENSE\n                       Version 3, 19 November 2007')]).toEqual(['AGPL-3.0-only', true]);
+  it('QA-11: license field is Apache-2.0 and the LICENSE file is the Apache 2.0 text', () => {
+    expect([pkg.license, read('LICENSE').includes('Apache License\n                           Version 2.0, January 2004')]).toEqual(['Apache-2.0', true]);
   });
 
   it('QA-11: ./webcomponent has types before default', () => {
