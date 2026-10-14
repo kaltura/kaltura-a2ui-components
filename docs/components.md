@@ -6,7 +6,7 @@ Each section has the props, an A2UI payload and the matching web component `conf
 
 - In A2UI, a `string`, `number` or `boolean` prop can be a data binding like `{ "path": "/title" }`. A `config` takes plain values.
 - Every component also takes an optional `action`. It tells the agent about errors and events ([host-api.md](host-api.md)).
-- No component has a `ks` prop. The host supplies the KS with `setKsProvider` ([host-integration.md](host-integration.md#kaltura-session-ks)).
+- A2UI components have no `ks` prop. The host supplies the KS with `setKsProvider` ([host-integration.md](host-integration.md#kaltura-session-ks)).
 
 | Component | Element | Needs a KS |
 |---|---|---|
