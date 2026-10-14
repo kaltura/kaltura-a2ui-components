@@ -25,6 +25,17 @@
       },
       "stripped": true,
       "leak": "alert(1)"
+    },
+    {
+      "why": "ks prop from the agent",
+      "props": {
+        "partnerId": 1,
+        "uiconfId": 2,
+        "entryId": "0_abc",
+        "ks": "agent-written-ks"
+      },
+      "stripped": true,
+      "leak": "agent-written-ks"
     }
   ],
   "KalturaFlashcards": [
@@ -51,15 +62,24 @@
           }
         ]
       }
+    },
+    {
+      "why": "ks prop from the agent",
+      "props": {
+        "title": "Deck",
+        "cards": [
+          {
+            "title": "A",
+            "content": "B"
+          }
+        ],
+        "ks": "agent-written-ks"
+      },
+      "stripped": true,
+      "leak": "agent-written-ks"
     }
   ],
   "KalturaMediaManager": [
-    {
-      "why": "missing serverUrl",
-      "props": {
-        "partnerId": 1
-      }
-    },
     {
       "why": "mode outside the enum",
       "props": {
@@ -75,6 +95,15 @@
         "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
         "multiSelect": "yes"
       }
+    },
+    {
+      "why": "ks prop from the agent",
+      "props": {
+        "partnerId": 1,
+        "ks": "agent-written-ks"
+      },
+      "stripped": true,
+      "leak": "agent-written-ks"
     }
   ],
   "KalturaAnalytics": [
@@ -119,6 +148,16 @@
         "assetId": "1"
       },
       "stripped": true
+    },
+    {
+      "why": "ks prop from the agent",
+      "props": {
+        "partnerId": 1,
+        "entryId": "0_abc",
+        "ks": "agent-written-ks"
+      },
+      "stripped": true,
+      "leak": "agent-written-ks"
     }
   ],
   "KalturaRecorder": [
@@ -140,15 +179,19 @@
         "showRecordButton": true
       },
       "stripped": true
+    },
+    {
+      "why": "ks prop from the agent",
+      "props": {
+        "partnerId": 1,
+        "uiconfId": 2,
+        "ks": "agent-written-ks"
+      },
+      "stripped": true,
+      "leak": "agent-written-ks"
     }
   ],
   "KalturaAvatar": [
-    {
-      "why": "missing serverUrl",
-      "props": {
-        "partnerId": 1
-      }
-    },
     {
       "why": "custom theme",
       "props": {
@@ -189,7 +232,7 @@
   ],
   "KalturaGenie": [
     {
-      "why": "missing serverUrl",
+      "why": "missing uiconfId",
       "props": {
         "partnerId": 1
       }
@@ -209,6 +252,16 @@
         "runtime": "x"
       },
       "stripped": true
+    },
+    {
+      "why": "ks prop from the agent",
+      "props": {
+        "partnerId": 1,
+        "uiconfId": 2,
+        "ks": "agent-written-ks"
+      },
+      "stripped": true,
+      "leak": "agent-written-ks"
     }
   ],
   "KalturaContentLab": [
@@ -241,23 +294,28 @@
         "x": 1
       },
       "stripped": true
+    },
+    {
+      "why": "ks prop from the agent",
+      "props": {
+        "partnerId": 1,
+        "uiconfId": 2,
+        "entryId": "0_abc",
+        "ks": "agent-written-ks"
+      },
+      "stripped": true,
+      "leak": "agent-written-ks"
     }
   ],
   "KalturaAgentsWidget": [
     {
-      "why": "missing serverUrl",
-      "props": {
-        "partnerId": 1
-      }
+      "why": "missing partnerId",
+      "props": {}
     },
     {
-      "why": "agentId is an object",
+      "why": "partnerId is a float",
       "props": {
-        "partnerId": 1,
-        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
-        "agentId": {
-          "a": 1
-        }
+        "partnerId": 1.5
       }
     },
     {
@@ -268,21 +326,23 @@
         "x": 1
       },
       "stripped": true
+    },
+    {
+      "why": "ks prop from the agent",
+      "props": {
+        "partnerId": 1,
+        "ks": "agent-written-ks"
+      },
+      "stripped": true,
+      "leak": "agent-written-ks"
     }
   ],
   "KalturaVodAvatar": [
     {
-      "why": "missing serverUrl",
-      "props": {
-        "partnerId": 1
-      }
-    },
-    {
       "why": "partnerId is null",
       "props": {
         "partnerId": null,
-        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
-        "entryId": "0_abc"
+        "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1"
       }
     },
     {
@@ -290,10 +350,18 @@
       "props": {
         "partnerId": 1,
         "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
-        "entryId": "0_abc",
         "x": 1
       },
       "stripped": true
+    },
+    {
+      "why": "ks prop from the agent",
+      "props": {
+        "partnerId": 1,
+        "ks": "agent-written-ks"
+      },
+      "stripped": true,
+      "leak": "agent-written-ks"
     }
   ],
   "KalturaChart": [

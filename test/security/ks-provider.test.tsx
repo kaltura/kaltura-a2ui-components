@@ -232,7 +232,7 @@ describe('SEC-05: widgets that need a KS wait for it and refuse a bad one', () =
     'SEC-05: %s with ks %j shows the error and loads nothing',
     async (label, ks, component, props) => {
       const { container } = await mount(component, { ...props, ks });
-      expect([container.textContent, container.querySelectorAll('iframe').length, seen.configs.length]).toEqual([`Failed to load ${label}: Invalid ks`, 0, 0]);
+      expect([container.textContent, container.querySelectorAll('iframe').length, seen.configs.length]).toEqual([`Failed to load ${label}: Invalid ks: call setKsProvider`, 0, 0]);
     },
   );
 });
@@ -275,19 +275,19 @@ describe('SEC-05: invalid provider output', () => {
   ])('SEC-05: %s shows the plain-text error and no widget', async (_name, provider) => {
     setKsProvider(provider as never);
     const { container } = await mount(AnalyticsCore, { partnerId: 1 });
-    expect([container.textContent, container.querySelectorAll('iframe').length]).toEqual(['Failed to load analytics: Invalid ks', 0]);
+    expect([container.textContent, container.querySelectorAll('iframe').length]).toEqual(['Failed to load analytics: Invalid ks: call setKsProvider', 0]);
   });
 
   it('SEC-05: the recorder shows the error inside its container', async () => {
     setKsProvider(() => SECRET);
     const { container } = await mount(RecorderCore, { partnerId: 1, uiconfId: 2 });
-    expect(container.textContent).toBe('Failed to load recorder: Invalid ks');
+    expect(container.textContent).toBe('Failed to load recorder: Invalid ks: call setKsProvider');
   });
 
   it('SEC-05: a bad provider KS is refused even when the ks prop is fine', async () => {
     setKsProvider(() => SECRET);
     const { container } = await mount(PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc', ks: AGENT_KS });
-    expect(container.textContent).toBe('Failed to load player: Invalid ks');
+    expect(container.textContent).toBe('Failed to load player: Invalid ks: call setKsProvider');
   });
 });
 

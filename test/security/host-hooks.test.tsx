@@ -111,14 +111,22 @@ describe('3.3e: setErrorHandler gets a typed error for each error state', () => 
   it('3.3e: an invalid prop names the widget and the prop', async () => {
     await hooks();
     await CASES['invalid-props']();
-    expect(errors).toEqual([{ code: 'invalid-props', widget: 'player', message: 'Failed to load player: Invalid entryId' }]);
+    expect(errors).toEqual([{ code: 'invalid-props', widget: 'player', message: 'Failed to load player: Invalid entryId', invalidProps: ['entryId'] }]);
+  });
+
+  it('3.3e: invalidProps holds schema keys only, never a row key or a value', async () => {
+    await hooks();
+    const { ChartCore } = await import('../../src/core/chart');
+    const key = `HOSTILE_KEY${HOSTILE}`;
+    await render(ChartCore, { chartType: 'nope', data: [{ [key]: HOSTILE }, 5], [key]: HOSTILE });
+    expect([errors[0].invalidProps, JSON.stringify(errors).includes('HOSTILE_')]).toEqual([['chartType', 'data'], false]);
   });
 
   it('3.3e: a bad recorder ks is reported as invalid-ks', async () => {
     await hooks();
     const { RecorderCore } = await import('../../src/core/recorder');
     await render(RecorderCore, { partnerId: 1, uiconfId: 2, ks: '' });
-    expect(errors).toEqual([{ code: 'invalid-ks', widget: 'recorder', message: 'Failed to load recorder: Invalid ks' }]);
+    expect(errors).toEqual([{ code: 'invalid-ks', widget: 'recorder', message: 'Failed to load recorder: Invalid ks: call setKsProvider', invalidProps: ['ks'] }]);
   });
 
   it('3.3e: a missing createWorkspace export is load-failed for media-manager', async () => {
@@ -157,7 +165,7 @@ describe('3.3e: setErrorHandler gets a typed error for each error state', () => 
     const { GenieCore } = await import('../../src/core/genie');
     const view = await render(GenieCore, { partnerId: 1, uiconfId: 2, ks: KS, serverUrl: 'https://evil.invalid/v1' });
     expect(view.container.querySelector('[role=alert]')?.textContent).toBe(
-      'Failed to load Kaltura Genie: serverUrl is not an allowed Unisphere origin',
+      'Failed to load Kaltura Genie: serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)',
     );
   });
 

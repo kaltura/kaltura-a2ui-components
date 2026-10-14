@@ -44,7 +44,7 @@ test.describe('case 1 and 2: loader error text is inert', () => {
         await h.mount(tag, unisphereConfig(`${ALLOWED}/v1`));
         await h.settle();
         expect(await unsafeNodes(h)).toEqual([]);
-        expect(await hostText(h)).toContain('<img src=x onerror=');
+        expect(await hostText(h)).toMatch(/^Failed to load [\w ]+$/);
         expect(await h.pwned()).toEqual([]);
       });
 
