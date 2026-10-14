@@ -52,9 +52,10 @@ let region: KalturaRegion = 'nvp1';
  * Host option. Sets the region of the Kaltura account. Default `nvp1` (US).
  * Call it before the widgets mount. Throws on an unknown code. Never call
  * this from agent output.
+ * @example setRegion('irp2');
  */
 export function setRegion(code: KalturaRegion): void {
-  if (!KALTURA_REGIONS.includes(code)) throw new Error('Unknown Kaltura region');
+  if (!KALTURA_REGIONS.includes(code)) throw new Error(`Unknown Kaltura region. Use ${KALTURA_REGIONS.join(', ')}`);
   region = code;
 }
 

@@ -1,7 +1,8 @@
 // Covers: QA-16 (the README and examples run against the built bundles).
 // Runs the README snippets and the pages in examples/ in a real browser against
 // dist/. Fails when one throws, logs a console error, loads a missing local file
-// or does not show what its "check-examples: expect" comment lists.
+// or does not show what its "check-examples: expect" comment lists. React pages
+// build with examples/react/vite.config.ts, the config of "npm run example:react".
 // Run after "npm run build": npm run check:examples
 //
 // Marking rules (README.md):
@@ -16,8 +17,7 @@ import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { build } from 'vite';
-import react from '@vitejs/plugin-react';
+import { build, loadConfigFromFile } from 'vite';
 import { chromium } from '@playwright/test';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -71,15 +71,21 @@ function readmeBlocks() {
   return blocks;
 }
 
-/** Builds a Vite app (React example or README module) into dir/out and returns its page path. */
+// The same config as "npm run example:react": plugins and the package alias.
+const exampleConfig = (await loadConfigFromFile({ command: 'build', mode: 'production' }, join(root, 'examples/react/vite.config.ts')))?.config;
+if (!exampleConfig) {
+  console.error('examples/react/vite.config.ts could not be loaded.');
+  process.exit(1);
+}
+
+/** Builds a Vite app (React example or README module) into outDir. */
 async function buildApp(appRoot, outDir) {
   await build({
+    ...exampleConfig,
     root: appRoot,
     configFile: false,
     logLevel: 'error',
     base: './',
-    plugins: [react()],
-    resolve: { alias: { '@kaltura/a2ui-react': join(root, 'dist/kaltura-react.mjs') } },
     build: { outDir, emptyOutDir: true, minify: false },
   });
 }

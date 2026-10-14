@@ -1,5 +1,5 @@
 // Covers: SEC-05 (a KS in agent output or the data model), plus the serverUrl example fix from 1.2.
-// Plan items 1.6b and 3.1: ks is an optional DynamicString, the host supplies it and agents never set it.
+// Agents have no ks prop. The host supplies the KS with setKsProvider.
 import { describe, it, expect } from 'vitest';
 import catalog from '../../src/catalog/kaltura_catalog.json';
 import { deriveLoaderUrl } from '../../src/core/unisphere-loader';
@@ -12,18 +12,24 @@ import { KalturaGenieApi } from '../../src/schemas/genie';
 import { KalturaContentLabApi } from '../../src/schemas/content-lab';
 import { KalturaAgentsWidgetApi } from '../../src/schemas/agents-widget';
 import { KalturaVodAvatarApi } from '../../src/schemas/vod-avatar';
+import { KalturaAnalyticsApi } from '../../src/schemas/analytics';
+import { KalturaAvatarApi } from '../../src/schemas/avatar';
+import { KalturaChartApi } from '../../src/schemas/chart';
 
-const WITH_KS = [
-  KalturaPlayerApi,
-  KalturaFlashcardsApi,
-  KalturaMediaManagerApi,
-  KalturaCaptionsEditorApi,
-  KalturaRecorderApi,
-  KalturaGenieApi,
-  KalturaContentLabApi,
-  KalturaAgentsWidgetApi,
-  KalturaVodAvatarApi,
-] as const;
+const ALL_APIS = {
+  KalturaPlayer: KalturaPlayerApi,
+  KalturaFlashcards: KalturaFlashcardsApi,
+  KalturaMediaManager: KalturaMediaManagerApi,
+  KalturaCaptionsEditor: KalturaCaptionsEditorApi,
+  KalturaRecorder: KalturaRecorderApi,
+  KalturaGenie: KalturaGenieApi,
+  KalturaContentLab: KalturaContentLabApi,
+  KalturaAgentsWidget: KalturaAgentsWidgetApi,
+  KalturaVodAvatar: KalturaVodAvatarApi,
+  KalturaAnalytics: KalturaAnalyticsApi,
+  KalturaAvatar: KalturaAvatarApi,
+  KalturaChart: KalturaChartApi,
+};
 
 type Prop = { description?: string };
 type Component = { allOf: Array<{ properties?: Record<string, Prop>; required?: string[] }> };
@@ -39,44 +45,13 @@ const withProp = (prop: string) =>
     return description === undefined ? [] : [[name, description] as const];
   });
 
-type Field = { safeParse(v: unknown): { success: boolean } };
-
-describe('SEC-05: ks is optional in every schema', () => {
-  it.each(WITH_KS.map(api => [api.name, api] as const))('SEC-05: %s accepts a component without ks', (_name, api) => {
-    expect((api.schema.shape as Record<string, Field>).ks.safeParse(undefined).success).toBe(true);
+describe('SEC-05: agents have no ks prop', () => {
+  it.each(Object.entries(ALL_APIS))('SEC-05: the %s schema has no ks', (_name, api) => {
+    expect(Object.keys(api.schema.shape)).not.toContain('ks');
   });
 
-  it.each(WITH_KS.map(api => [api.name, api] as const))('SEC-05: %s ks still takes a binding, for older hosts', (_name, api) => {
-    expect((api.schema.shape as Record<string, Field>).ks.safeParse({ path: '/session/ks' }).success).toBe(true);
-  });
-
-  it.each(Object.keys(catalog.components))('SEC-05: catalog %s does not require ks', name => {
-    const component = (catalog.components as unknown as Record<string, Component>)[name];
-    expect(component.allOf.flatMap(part => part.required ?? [])).not.toContain('ks');
-  });
-});
-
-describe('SEC-05: catalog ks descriptions', () => {
-  const ksDescriptions = withProp('ks');
-
-  it('SEC-05: the catalog documents ks for the components that take one', () => {
-    expect(ksDescriptions.length).toBeGreaterThanOrEqual(9);
-  });
-
-  it.each(ksDescriptions)('SEC-05: %s says the host supplies ks and agents never set or ask for it', (_name, description) => {
-    expect([
-      description.includes('The host supplies it'),
-      description.includes('Agents must never set this prop or ask for a KS'),
-      description.includes('/session/ks'),
-    ]).toEqual([true, true, false]);
-  });
-
-  it.each(ksDescriptions)('SEC-05: %s asks for a USER KS and does not mention ADMIN', (_name, description) => {
-    expect([description.includes('USER KS'), /ADMIN/.test(description)]).toEqual([true, false]);
-  });
-
-  it('SEC-05: Media Manager no longer asks for an ADMIN KS in manage mode', () => {
-    expect(catalogProps('KalturaMediaManager').ks.description).not.toMatch(/ADMIN|type=2|manage mode/);
+  it.each(Object.keys(catalog.components).filter(name => name.startsWith('Kaltura')))('SEC-05: catalog %s has no ks', name => {
+    expect(Object.keys(catalogProps(name))).not.toContain('ks');
   });
 });
 

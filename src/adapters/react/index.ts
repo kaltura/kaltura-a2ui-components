@@ -28,6 +28,10 @@ import { guardBasic } from './basic-media';
 // Every import above has run, so @a2ui/react has loaded.
 removeHtmlElementStub();
 
+/**
+ * The catalog id the agent puts in `createSurface`.
+ * @example { createSurface: { surfaceId: 's1', catalogId: KALTURA_CATALOG_ID } }
+ */
 export const KALTURA_CATALOG_ID = 'https://kaltura.github.io/a2ui/v2/catalog.json';
 
 // basicCatalog is the host's own copy (a peer), and 0.1.x told hosts to
@@ -83,11 +87,11 @@ export function buildKalturaCatalog(
 export const kalturaReactCatalog: Catalog<ReactCatalogComponent> = buildKalturaCatalog();
 
 /**
- * Fetches a catalog descriptor from `url` and builds a Kaltura catalog keyed by
- * the fetched descriptor's `catalogId` (then `$id`, then the canonical id). The fetched
- * JSON is used only for its id and to validate availability — the component
- * implementations are always the locally-bundled ones, since A2UI clients never
- * load component code at runtime.
+ * Reads only the id (`catalogId`, then `$id`, then the canonical id) from the
+ * descriptor at `url` and builds a Kaltura catalog with it. The components are
+ * always the ones in this bundle, because A2UI clients never load component
+ * code at runtime.
+ * @example const catalog = await loadKalturaCatalog('/catalog.json');
  */
 export async function loadKalturaCatalog(
   url: string,
@@ -143,6 +147,7 @@ export {
   setErrorHandler,
   setEventHandler,
   toClientError,
+  type KalturaClientError,
   type KalturaError,
   type KalturaErrorCode,
   type KalturaEvent,

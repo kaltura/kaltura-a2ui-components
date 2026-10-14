@@ -1,19 +1,23 @@
 # Host API
 
-Options the host page sets. Agents never call these. Set them once, before the components mount. Each call replaces the previous value.
+The reference for the host options: signatures, rules, codes and tables. For the step-by-step setup, see [host-integration.md](host-integration.md).
+
+Agents never call these. Set them once, before the components mount. Each call replaces the previous value.
 
 | Function | React adapter | Web component bundle | What it does |
 |---|---|---|---|
-| `setKsProvider(fn)` | yes | yes | Supplies the KS. See docs/security/ks.md |
+| `setKsProvider(fn)` | yes | yes | Supplies the KS. The only source: agents have no `ks` prop. See [security/ks.md](security/ks.md) |
 | `setExtraAllowedOrigins(origins)` | yes | yes | Adds Unisphere `serverUrl` origins (private cloud, on-prem) |
 | `setExtraMediaOrigins(origins)` | yes | no | Adds origins for the basic Image, Video and AudioPlayer |
-| `setRegion(code)` | yes | yes | Picks the Kaltura region for the hosts in the table below |
+| `setRegion(code)` | yes | yes | Picks the Kaltura region for the hosts in the [table below](#regions) |
 | `setAllowedPartners(rule)` | yes | yes | Limits the `partnerId` values the components accept. Default: all |
 | `setAllowedUiconfs(rule)` | yes | yes | Limits the `uiconfId` values the components accept. Default: all |
 | `setErrorHandler(fn)` | yes | yes | Gets a `KalturaError` for each error state |
 | `setEventHandler(fn)` | yes | yes | Gets a `KalturaEvent` for widget events |
 
 In the web component bundle they are on `window.KalturaA2UIWebComponents`. That bundle has no basic Image, Video or AudioPlayer, so it has no `setExtraMediaOrigins`.
+
+Web components take their settings as a `config` property (an object), not as an attribute: `el.config = { ... }`. The elements are typed in `HTMLElementTagNameMap`, so `document.querySelector('kaltura-player')` gives a typed `config`.
 
 ## Basic media URLs
 
@@ -25,9 +29,7 @@ In the web component bundle they are on `window.KalturaA2UIWebComponents`. That 
 
 Otherwise nothing renders and the error handler gets `url-rejected`. The check runs on the resolved value, so a data binding or a `formatString` call is checked too.
 
-The `ks` check goes by name. A KS under another parameter name, or as a plain path segment, passes on a Kaltura host or an added origin. Keep the KS out of the data model, and do not add an origin whose URLs carry a KS.
-
-The basic `Text` renders markdown with the renderer you put in `MarkdownContext` (for example `@a2ui/markdown-it`). The Kaltura catalog runs that output through the package sanitiser: images load only from the URLs above (other images become their alt text), a link with a scheme other than `http`, `https` or `mailto` loses its `href`, and tags and attributes outside a short formatting list are removed. Without a renderer, Text shows plain text, as before.
+This check is a second layer. The real control is that the KS never enters the data model. Do not add a media origin whose URLs carry a KS.
 
 ```ts
 setExtraMediaOrigins(['https://media.example.com']);
@@ -35,27 +37,28 @@ setExtraMediaOrigins(['https://media.example.com']);
 
 `setExtraMediaOrigins` throws on an entry that is not an `https` origin (no path, query or user name).
 
-**Register the Kaltura catalog only.** The agent picks the catalog by id in `createSurface`. Importing the package guards the shared `basicCatalog` in place (Image, Video, AudioPlayer and Text), so an agent that picks it gets these checks too. A catalog you build yourself from the raw `Image`, `Video`, `AudioPlayer` or `Text` exports, or from a second copy of `@a2ui/web_core`, is not guarded. To keep the basic catalog id for older agents, register `buildKalturaCatalog(basicCatalog.id)` in its place.
+The basic `Text` renders markdown with the renderer you put in `MarkdownContext` (for example `@a2ui/markdown-it`). The Kaltura catalog runs that output through the package sanitiser:
+
+- Images load only from the URLs above. Other images become their alt text.
+- A link with a scheme other than `http`, `https` or `mailto` loses its `href`.
+- Tags and attributes outside a short formatting list are removed.
+
+Without a renderer, Text shows plain text. Register the Kaltura catalog alone for these checks to apply: [host-integration.md](host-integration.md#register-the-kaltura-catalog-alone).
 
 ## Player and Captions editor
 
-The Player, the Flashcards clips and the Captions editor run in your page. The KS goes in JavaScript, not in the URL of any script or iframe ([ADR 0008](adr/0008-in-page-player-and-captions-editor.md)). There is no iframe left to sandbox, so the player sandbox option of 0.3 is removed in 0.4.0 ([migration-0.4.md](migration-0.4.md#player-flashcards-and-captions-editor)).
+Both run in your page. The KS goes in JavaScript, never in the URL of a script or iframe ([ADR 0008](adr/0008-in-page-player-and-captions-editor.md)). The trade-offs (same origin, the uiConf is the pin, `window` globals, query parameters) are in [host-integration.md](host-integration.md#remote-code-from-kaltura).
 
 | Widget | How it loads | Where the KS goes |
 |---|---|---|
-| Player, flashcard clips | The `embedPlaykitJs` script of the `uiconfId` from the `cdn` host (table below), then `KalturaPlayer.setup` | The player config, with `useHeaderForKs: true`. Not in any URL |
-| Captions editor | `<serviceUrl>/apps/captionstudio/v1.3.10/embed.php` is fetched (with `integrity`) into a blob URL iframe | `data-*` attributes on that iframe. The editor's own player requests a `playManifest` URL with the KS in its path ([CSP reports](host-integration.md#rollout)) |
+| Player, flashcard clips | The `embedPlaykitJs` script of the `uiconfId` from the `cdn` host ([Regions](#regions)), then `KalturaPlayer.setup` | The player config, with `useHeaderForKs: true`. Not in any URL |
+| Captions editor | The editor page (`embed.php`, pinned to a fixed version, see `src/core/captions-editor.tsx`) is fetched from the `serviceUrl` host with `integrity` into a blob URL iframe | `data-*` attributes on that iframe. The editor's own player requests a `playManifest` URL with the KS in its path ([CSP reports](host-integration.md#rollout)) |
 
-- The script and the editor page run in your page origin and can read the KS and your page. The captions iframe `sandbox` has `allow-same-origin` and `allow-scripts`, so it is not a security boundary. If you need isolation, embed the component in a page on a separate origin, or use a CSP.
-- Versions: the player version is the one the customer admin picks for the uiConf in KMC, so the uiConf is the pin. The editor is pinned to `v1.3.10` and checked with `integrity` (page, `main.js`, `main.css`). The player bundle that the editor loads has no integrity: pins cover the first hop only. See [Remote code from Kaltura](host-integration.md#remote-code-from-kaltura).
-- The player adds `KalturaPlayer`, `__kalturaplayerdata` and `regeneratorRuntime` to `window`. Each bundle replaces `KalturaPlayer`, so two uiconfs on one page make the loader load the bundle again when it switches.
-- The uiconf sets the plugins. The `plugins=` URL parameter is gone. `autoplay` and `muted` reach the player only when the prop is set, so the uiconf defaults apply otherwise.
-- The player also reads `kalturaSeekFrom`, `kalturaClipTo` and `kalturaStartTime` from the query string of your page. Those parameters can change which part of a clip plays.
-- CSP: [host-integration.md](host-integration.md#content-security-policy). The Player needs `media-src data:` and `worker-src blob:`. The Captions editor needs `frame-src blob:` and `connect-src <serviceUrl>`.
+The uiconf sets the plugins. `autoplay` and `muted` reach the player only when the prop is set, so the uiconf defaults apply otherwise.
 
 ## Allowed partners and uiconfs
 
-The agent picks `partnerId` and `uiconfId`. A uiconf decides which player or recorder code runs in your page, with your KS. Whoever owns a uiconf can put any JavaScript in it, so the code that runs is only as trusted as the account behind the id. Set an allowlist so the agent can use only your accounts.
+The agent picks `partnerId` and `uiconfId`. Both are literal integers in agent messages: a string such as `"123"` or a data binding gives `invalid-props`. A uiconf decides which player or recorder code runs in your page, with your KS. Whoever owns a uiconf can put any JavaScript in it, so the code that runs is only as trusted as the account behind the id. Set an allowlist so the agent can use only your accounts.
 
 ```ts
 import { setAllowedPartners, setAllowedUiconfs } from '@kaltura/a2ui-react';
@@ -76,7 +79,7 @@ The rule is one of:
 - A RegExp is tested against the id as text and is not anchored. `/123/` allows `91234`. Write `^` and `$`: `/^(123|456)$/`. A `g` or `y` flag does not change the result between calls.
 - Any other value throws and keeps the current rule. A list entry of `'*'` matches only the text `*`, so use the plain `'*'` rule to allow all.
 - `uiconfId: 0` (the default uiConf) is checked like any other id. An unset optional `uiconfId` is not checked.
-- Call both before the components mount. Each call replaces the previous rule. They are not a replacement for `setKsProvider` with a least-privilege KS.
+- Call both before the components mount. They are not a replacement for `setKsProvider` with a least-privilege KS.
 
 A refused id loads nothing: no script, request or iframe. The component shows `Failed to load <widget>: partnerId is not allowed` (or `uiconfId`), never the id, and the error handler gets `origin-not-allowed`. The check covers every component that takes the ids, through A2UI and the web components:
 
@@ -93,7 +96,7 @@ A refused Flashcards `partnerId` or `uiconfId` affects the clips only. The cards
 setRegion('irp2');
 ```
 
-Codes: `nvp1` (default, US), `irp2`, `frp2`, `cap2`, `syp2`. Any other code throws and keeps the current region. Components read the region when they build a URL or load a script, so call `setRegion` before they mount.
+Codes: `nvp1` (default, US), `irp2`, `frp2`, `cap2`, `syp2`. Any other code throws and keeps the current region. Components read the region when they build a URL or load a script, so call `setRegion` before they mount. Unisphere widgets use the Unisphere host of the region when you set no `serverUrl`.
 
 | Host | nvp1 | irp2 | frp2 | cap2 | syp2 | Used by |
 |---|---|---|---|---|---|---|
@@ -101,19 +104,13 @@ Codes: `nvp1` (default, US), `irp2`, `frp2`, `cap2`, `syp2`. Any other code thro
 | vod | `https://cfvod.kaltura.com` | `https://cfvod.irp2.ovp.kaltura.com` | `https://cfvod.frp2.ovp.kaltura.com` | `https://cfvod.cap2.ovp.kaltura.com` | `https://cfvod.syp2.ovp.kaltura.com` | Flashcards thumbnails |
 | cdn | `https://cdnapisec.kaltura.com` | `https://api.eu.kaltura.com` | `https://api.de.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | Player script, flashcard clips, captions editor `cdnurl` |
 | kmc | `https://kmc.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` | `https://kmc.de.kaltura.com` | `https://kmc.ca.kaltura.com` | `https://kmc.ap.kaltura.com` | Analytics (`/apps/kmc-analytics/latest/index.html`, and the `postMessage` origin) |
-| recorder | `https://www.kaltura.com` | same as cdn | same as cdn | same as cdn | same as cdn | Express Recorder script (`/apps/expressrecorder/v2.2.10/express-recorder.js`) |
+| recorder | `https://www.kaltura.com` | same as cdn | same as cdn | same as cdn | same as cdn | Express Recorder script (pinned to a fixed version, see `src/core/recorder-script.ts`) |
 
-The guide lists no regional CDN host, so the player script loads from the regional API host shown in the cdn row. The recorder script loads from the recorder host of the row above. It gets the regional API host as `serviceUrl` and the cdn host as `playerUrl`.
-
-Sources:
-
-- serviceUrl: https://kaltura.md/KALTURA_API_GETTING_STARTED/ §4.1 lists the API base URL per region (`https://api.eu.kaltura.com/api_v3` and so on). The captions editor and the Express Recorder take it without `/api_v3` (the recorder script adds it), as in https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/.
-- vod: the same guide, §4.3, gives `cfvod.{code}.ovp.kaltura.com`.
-- kmc: the same guide, §4, "Rich Media CMS" row of each region.
-- cdn, recorder: the guide lists no regional CDN host. Kaltura confirmed (2026-10-13) that regional accounts serve the player from the API host and that the recorder uses the US path on it. The Canada and Australia API hosts use the internal `{code}.ovp` form.
-- The captions editor page comes from the `serviceUrl` host. CORS on its `embed.php` was verified on `www.kaltura.com`, `api.eu`, `api.de`, `api.ca`, `api.ap`, `api.cap2.ovp` and `api.syp2.ovp`. The editor itself was loaded only on `nvp1`. Check a regional account before you rely on it.
+The Kaltura API guide lists no regional CDN host, so the player script loads from the regional API host shown in the cdn row. The recorder script loads from the recorder host. It gets the regional API host as `serviceUrl` and the cdn host as `playerUrl`.
 
 `sgp2` (Singapore) is in the API guide but not supported here: the guide says it runs no microservices, so there is no Unisphere host for it.
+
+Sources: `src/core/region.ts`, checked by `e2e/csp.spec.ts`.
 
 ## Errors
 
@@ -123,7 +120,12 @@ import { setErrorHandler, type KalturaError } from '@kaltura/a2ui-react';
 setErrorHandler((error: KalturaError) => log(error.code, error.widget, error.message));
 ```
 
-`KalturaError` is `{ code, widget, message, surfaceId? }`. The handler runs when a component shows an error state. A handler that throws is ignored. `surfaceId` is the A2UI surface of the component. It is missing when the component is not on a surface, as in the web component bundle.
+`KalturaError` is `{ code, widget, message, surfaceId?, invalidProps? }`. The handler runs when a component shows an error state. A handler that throws is ignored.
+
+| Field | Value |
+|---|---|
+| `surfaceId` | The A2UI surface of the component. Missing when the component is not on a surface, as in the web component bundle |
+| `invalidProps` | The names of the props that failed, on `invalid-props` and `invalid-ks`. Names only, never values |
 
 | Code | When |
 |---|---|
@@ -150,11 +152,28 @@ setEventHandler(event => {
 
 | Type | Widget | `detail` |
 |---|---|---|
-| `entry-selected` | `media-manager` | `{ entryId, name, instanceId, entries? }`, the same as the `kaltura-entry-selected` DOM event |
+| `entry-selected` | `media-manager` | `{ entryId, name, instanceId, entries? }`, the same as the `kaltura-entry-selected` DOM event below |
 | `recorder-upload-ended` | `recorder` | `{ entryId?, instanceId }`. `entryId` is there only when the recorder sent a valid entry id. `instanceId` is the recorder container id |
 | `avatar-disconnected` | `avatar` | `{ reason, instanceId }`. `reason` is a name such as `ConversationEnded`, or `UnknownReason`. `instanceId` is the avatar container id |
 
-Each event also has `surfaceId`, as in `KalturaError`. The DOM event still fires. `name` comes from the media library or the agent: treat it as untrusted text. A handler that throws is ignored.
+Each event also has `surfaceId`, as in `KalturaError`. A handler that throws is ignored.
+
+### Media Manager selection
+
+The Media Manager also fires a `kaltura-entry-selected` DOM event. It fires on the `<kaltura-media-manager>` element and stops there: it does not reach `document`. In React there is no such element, so use `setEventHandler`.
+
+| `detail` field | Value |
+|---|---|
+| `entryId` | The selected entry. With `multiSelect`, the ids joined by commas |
+| `name` | The entry name, 500 characters at most. With `multiSelect`, the names with ids as one text. Untrusted: it comes from the media library or the agent. Show it as text, never as HTML |
+| `instanceId` | The id of the widget container. Compare it when a page holds several Media Managers |
+| `entries` | `multiSelect` only: `[{ entryId, name }]`, 5 entries at most |
+
+```js
+document.querySelector('kaltura-media-manager').addEventListener('kaltura-entry-selected', event => {
+  console.log(event.detail.entryId);
+});
+```
 
 ## Agent feedback
 
@@ -165,7 +184,38 @@ Give a Kaltura component an `action` prop and its errors and events go to the ag
   "action": { "event": { "name": "recorderFeedback", "context": { "step": "upload" } } } }
 ```
 
-With `event`, the `MessageProcessor` action handler gets `{ name, surfaceId, sourceComponentId, timestamp, context }`, as for a Button. `context` is the agent's own context, resolved, plus the fields below. They replace agent keys of the same name. Their type is `KalturaActionContext` (without the first three).
+### Wire it up
+
+Three paths reach the agent. `agent.send` is your transport.
+
+```ts
+import { MessageProcessor, type A2uiMessage } from '@a2ui/web_core/v0_9';
+import { kalturaReactCatalog, setErrorHandler, toClientError } from '@kaltura/a2ui-react';
+
+// Actions of components with an `action` prop: the second argument.
+const processor = new MessageProcessor([kalturaReactCatalog], action => agent.send({ version: 'v0.9', action }));
+// Rule errors (bad id, id not allowed, load failed).
+setErrorHandler(error => agent.send(toClientError(error)));
+// Schema errors (wrong type, unknown prop) throw from processMessages.
+function onAgentMessages(messages: A2uiMessage[], surfaceId: string) {
+  try {
+    processor.processMessages(messages);
+  } catch (error) {
+    agent.send({ version: 'v0.9', error: { code: 'VALIDATION_ERROR', surfaceId, message: (error as Error).message } });
+  }
+}
+```
+
+| Error kind | Where it shows up |
+|---|---|
+| Schema (wrong type, unknown prop, unknown catalog) | `processMessages` throws. Nothing renders |
+| Rule (bad id value, id not allowed, load failed, URL refused) | The component renders an error state. `setErrorHandler` runs and the `action` is sent |
+
+A component with an `action` prop reports a rule error on both paths. Forward one of them, or the agent gets the error twice. The `action` carries the agent's own context. The error handler covers components with no `action`.
+
+### What the agent receives
+
+The action handler gets `{ name, surfaceId, sourceComponentId, timestamp, context }`, as for a Button. `context` is the agent's own context, resolved, plus the Kaltura fields below. The Kaltura fields replace agent keys of the same name. Their type is `KalturaActionContext` (without the first three).
 
 | Field | Value |
 |---|---|
@@ -173,8 +223,45 @@ With `event`, the `MessageProcessor` action handler gets `{ name, surfaceId, sou
 | `widget` | As in `KalturaError` |
 | `event` | `error`, `entry-selected`, `recorder-upload-ended` or `avatar-disconnected` |
 | `code` | The [error code](#errors), on `error` only |
+| `invalidProps` | The failed prop names, on `error` with `invalid-props` or `invalid-ks` |
 | `entryId` | On `entry-selected` (one entry) and `recorder-upload-ended`, only in the `1_abc12345` form (digit, underscore, up to 16 lowercase letters or digits) |
 | `entryIds` | On `entry-selected` with `multiSelect`, ids in that form only, 5 at most |
+
+One full action for each event:
+
+```json
+{ "name": "playerFeedback", "surfaceId": "s", "sourceComponentId": "player", "timestamp": "<time>",
+  "context": { "step": "play", "component": "KalturaPlayer", "componentId": "player", "surfaceId": "s",
+    "widget": "player", "event": "error", "code": "invalid-props", "invalidProps": ["entryId"] } }
+```
+
+```json
+{ "name": "pickFeedback", "surfaceId": "s", "sourceComponentId": "mm", "timestamp": "<time>",
+  "context": { "component": "KalturaMediaManager", "componentId": "mm", "surfaceId": "s",
+    "widget": "media-manager", "event": "entry-selected", "entryId": "1_abc12345" } }
+```
+
+```json
+{ "name": "recorderFeedback", "surfaceId": "s", "sourceComponentId": "rec", "timestamp": "<time>",
+  "context": { "step": "upload", "component": "KalturaRecorder", "componentId": "rec", "surfaceId": "s",
+    "widget": "recorder", "event": "recorder-upload-ended", "entryId": "1_abc12345" } }
+```
+
+```json
+{ "name": "avatarFeedback", "surfaceId": "s", "sourceComponentId": "avatar", "timestamp": "<time>",
+  "context": { "component": "KalturaAvatar", "componentId": "avatar", "surfaceId": "s",
+    "widget": "avatar", "event": "avatar-disconnected" } }
+```
+
+| Event | What the agent should do |
+|---|---|
+| `error`, `invalid-props` | Fix the props in `invalidProps` and send the component again |
+| `error`, `origin-not-allowed` | Use an id the host allows. Do not retry the same id |
+| `error`, `invalid-ks` | Do not retry. The host owns the KS. Tell the user the session is not valid |
+| `error`, `load-failed` or `render-failed` | Show the answer another way, such as text. Retry later, not in a loop |
+| `entry-selected` | Treat `entryId` or `entryIds` as the user's choice and go to the next step. The name is not sent |
+| `recorder-upload-ended` | Use `entryId` to show or process the new entry. If it is missing, ask the user to check the upload |
+| `avatar-disconnected` | The session ended. Ask the user before it starts again |
 
 With `functionCall`, the function runs on the client on each error and event, and the agent gets nothing.
 
@@ -185,13 +272,15 @@ With `functionCall`, the function runs on the client on each error and event, an
 | `KalturaRecorder` | `recorder-upload-ended` |
 | `KalturaAvatar` | `avatar-disconnected` |
 
-A Flashcards clip player reports as `KalturaFlashcards`, widget `flashcards`. The Player has no `ended` event. The basic Image, Video and AudioPlayer have no `action`: only the error handler gets `url-rejected`.
+A Flashcards clip player reports as `KalturaFlashcards`, widget `flashcards`. The basic Image, Video and AudioPlayer have no `action`: only the error handler gets `url-rejected`.
+
+Known gap: the Player has no `ended` event, so the agent cannot learn that a video finished.
 
 The context goes into the model's prompt. Remote error text can hold the KS or markup, so it is never sent. The Kaltura fields hold only fixed names, codes and checked entry ids: never the KS, `message`, an entry `name`, an avatar `reason` or other text from a remote service or the page.
 
 ### Web component bundle
 
-Set `config.action` to `{ event: { name } }`. On each error and event the element fires a `kaltura-action` DOM event (it bubbles and crosses shadow roots) with `detail: { name, context }`. `context` has `widget`, `event`, `code`, `entryId` and `entryIds`, as above. There is no surface, so there is no `component`, `componentId` or `surfaceId`. `config.action.event.context` is not sent back, and `functionCall` does nothing. Forward `detail` to your agent yourself:
+Set `config.action` to `{ event: { name } }`. On each error and event the element fires a `kaltura-action` DOM event (it bubbles and crosses shadow roots) with `detail: { name, context }`. `context` has `widget`, `event`, `code`, `invalidProps`, `entryId` and `entryIds`, as above. There is no surface, so there is no `component`, `componentId` or `surfaceId`. `config.action.event.context` is not sent back, and `functionCall` does nothing. Forward `detail` to your agent yourself:
 
 ```js
 document.addEventListener('kaltura-action', event => agent.send(event.detail));
@@ -210,22 +299,44 @@ setErrorHandler(error => agent.send(toClientError(error)));
 
 ## Client functions
 
-The Kaltura catalog replaces the basic `openUrl`. It opens only absolute `https:` URLs. Anything else (a relative URL, `javascript:`, `http:`) is blocked with a console warning. The agent and the error handler get no signal. `copyToClipboard` copies the agent's text without a preview, so treat it as agent output.
+The Kaltura catalog replaces the basic `openUrl` and `copyToClipboard`.
+
+| Function | Rule |
+|---|---|
+| `openUrl` | Runs only after a user gesture, such as a click. Opens only absolute `https:` URLs. Anything else (a relative URL, `javascript:`, `http:`) is blocked with a console warning |
+| `copyToClipboard` | Runs only after a user gesture. It copies the agent's text without a preview, so treat it as agent output |
+
+The agent and the error handler get no signal when a call is blocked.
 
 ## Capability negotiation
 
-An agent that offers catalog choices needs to know which catalogs your client renders. Ask the `MessageProcessor` and send the result in the `a2uiClientCapabilities` field of your request to the agent (A2UI v0.9 [client capabilities](https://a2ui.org/specification/v0_9/client_capabilities.json)):
+An agent that offers catalog choices needs to know which catalogs your client renders. Ask the `MessageProcessor` and send the result in the `a2uiClientCapabilities` field of your request to the agent (A2UI v0.9 [client capabilities](https://a2ui.org/specification/v0_9/client_capabilities.json)).
+
+One round trip:
 
 ```ts
 const processor = new MessageProcessor([kalturaReactCatalog]);
 
-const request = {
+// 1. Client to agent.
+agent.send({
   message: userText,
-  // { 'v0.9': { supportedCatalogIds: [KALTURA_CATALOG_ID] } }
   a2uiClientCapabilities: processor.getRendererCapabilities({ versions: ['v0.9'] }),
-};
+});
 ```
 
-- `supportedCatalogIds` lists the id of every catalog you registered. The agent must use one of them in `createSurface`.
-- Add `includeInlineCatalogs: true` to send the full catalog definitions. Only do that for an agent that declares `acceptsInlineCatalogs: true`.
+The field holds the ids of the catalogs you registered:
+
+```json
+{ "v0.9": { "supportedCatalogIds": ["https://kaltura.github.io/a2ui/v2/catalog.json"] } }
+```
+
+The agent answers with a `createSurface` that names one of them:
+
+```json
+{ "version": "v0.9", "createSurface": { "surfaceId": "s", "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json" } }
+```
+
+- An id you did not register makes `processMessages` throw (`Catalog not found`).
+- Sending the catalog id is lighter than `includeInlineCatalogs: true`. The default sends only the ids. Inline sends every definition in full. Use it only for an agent that declares `acceptsInlineCatalogs: true`.
+- `KALTURA_CATALOG_ID` is an identifier, not a download link. To fetch the catalog file, use the jsDelivr URL of the tag you pin ([README](../README.md#quick-start)).
 - `getRendererCapabilities` comes from `@a2ui/web_core` (it replaces `getClientCapabilities`). The transport that carries the field depends on your agent protocol.

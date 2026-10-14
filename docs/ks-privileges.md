@@ -2,7 +2,7 @@
 
 What the Kaltura guides ask of the KS for each component. Your server mints the KS and your `setKsProvider` function returns it ([host-integration.md](host-integration.md#kaltura-session-ks)). The component never mints or renews one.
 
-Checked against the guides on 2026-10-12. If a guide changes, the guide wins.
+Source: the linked Kaltura guides. If a guide differs, the guide wins.
 
 ## Rules for every widget
 
@@ -34,7 +34,7 @@ Checked against the guides on 2026-10-12. If a guide changes, the guide wins.
 | Player, flashcard clips | In the player config of the `embedPlaykitJs` script, with `useHeaderForKs: true`, which runs in your page. The KS is in no URL. Every script on the page can read it. See [ADR 0008](adr/0008-in-page-player-and-captions-editor.md) |
 | Captions editor | In `data-*` attributes on a same-origin iframe (its page is loaded from a blob URL). The KS is in no script or iframe URL, but the editor's own player requests a `playManifest` URL with the KS in its path. The editor runs in your page origin and can read it. See [ADR 0008](adr/0008-in-page-player-and-captions-editor.md) |
 | Recorder | In the `create` options of the Express Recorder script, which runs in your page. The KS is visible to every script on that page. See [ADR 0005](adr/0005-analytics-and-recorder-integration.md) |
-| Analytics | `postMessage` (`init`, then `updateConfig`) to the Kaltura Analytics origin only. Never in the iframe URL. The KS must belong to an admin user that has a role. See finding ANA-01 and [ADR 0005](adr/0005-analytics-and-recorder-integration.md) |
+| Analytics | `postMessage` (`init`, then `updateConfig`) to the Kaltura Analytics origin only. Never in the iframe URL. The KS must belong to an admin user that has a role. See [ADR 0005](adr/0005-analytics-and-recorder-integration.md) |
 | Unisphere widgets | In the workspace config, in page memory |
 
 ## Mixed widgets on one page

@@ -25,6 +25,7 @@ let extraMediaOrigins: string[] = [];
  * Host option. Adds https origins that the basic Image, Video and AudioPlayer
  * may load from, next to the Kaltura hosts. Replaces the previous list.
  * Throws on an entry that is not an https origin. Never call this from agent output.
+ * @example setExtraMediaOrigins(['https://cdn.example.com']);
  */
 export function setExtraMediaOrigins(origins: string[]): void {
   extraMediaOrigins = origins.map(parseOrigin);
