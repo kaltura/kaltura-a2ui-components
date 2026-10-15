@@ -14,11 +14,11 @@ The host owns the KS. The agent never sees it, writes it or asks for it.
 |---|---|
 | 1 | Your server mints a KS for the signed-in user. |
 | 2 | The host page registers a provider with `setKsProvider`. |
-| 3 | A component that needs a KS calls the provider once, when it mounts, with its widget name. |
+| 3 | A component that needs a KS checks its props, then calls the provider with its widget name and a request: the scope of that one instance ([The request](#the-request)). |
 | 4 | The component checks the value with the ks rule: a non-empty string with no control characters. |
 
 - **Order.** On the A2UI path the provider is the only source. If it returns `undefined` or `''`, or no provider is set, the component has no KS. Every call to Kaltura needs a KS, and a KS only works for its own account, so an agent cannot act on an account whose KS it does not hold.
-- **Async.** The component renders nothing until the provider's promise settles.
+- **Async.** The component renders nothing until its first KS arrives. When the scope changes later, it keeps showing the last props with the KS minted for them until the next KS arrives (no remount).
 - **Errors.** An invalid value, a throw or a rejected promise shows `Failed to load <widget>: Invalid ks`. The value and the error are never shown or logged.
 - **Components.** Player, Flashcards, Media Manager, Analytics, Captions Editor, Recorder, Genie, Content Lab, Agents Widget, VOD Avatar and Avatar use the provider.
 - **No KS.** The player loads without one (public entries). The other widgets in the list above render nothing until a KS arrives. A web component gets no later config, so there they show `Failed to load <widget>: Invalid ks` instead.
@@ -31,17 +31,71 @@ Set the provider before the components mount.
 React host:
 
 ```ts
-import { setKsProvider, type KsWidget } from '@kaltura/a2ui-react';
+import { setKsProvider, type KsRequest, type KsWidget } from '@kaltura/a2ui-react';
 
-setKsProvider(async (widget: KsWidget) => {
-  const res = await fetch(`/api/kaltura-session?widget=${widget}`, { credentials: 'same-origin' });
+setKsProvider(async (widget: KsWidget, request: KsRequest) => {
+  const res = await fetch('/api/kaltura-session', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ widget, version: request.version, scope: request.scope }),
+    signal: request.signal,
+  });
   return res.ok ? (await res.json()).ks : undefined;
 });
 ```
 
-A provider with no argument, such as `() => ks`, still works.
+A provider that ignores its arguments, such as `() => ks`, still works. Use the request to mint a KS for one entry or category: [The request](#the-request).
 
 Plain-HTML host: the bundle exposes the same function as `KalturaA2UIWebComponents.setKsProvider`. Call it in a script right after the bundle `<script>` and before the Kaltura elements in the page.
+
+## The request
+
+The second argument says what one widget instance asks for. Every value is data the agent chose, so treat it as untrusted input.
+
+| Field | Meaning |
+|---|---|
+| `widget` | The `KsWidget` name. Narrow on it to read the matching `scope`. |
+| `version` | `1`. Bumped when a widget gains a scope key. Reject versions and keys you do not know. |
+| `scope` | Deep-frozen. `partnerId` and `region` always. Then per widget (below). |
+| `surfaceId`, `componentId`, `dataPath` | A2UI only. Chosen by the agent. For logs and correlation, never for access decisions. |
+| `signal` | Aborted when the scope changes again or the widget unmounts. Pass it to `fetch`. |
+
+| `widget` | `scope` adds |
+|---|---|
+| `player`, `captions-editor`, `content-lab` | `entryId` |
+| `flashcards` | `entryIds`: the clip entries, sorted, unique, at most 20 |
+| `analytics` | optional `entryId`, `reportType`, `fromDate`, `toDate` |
+| `media-manager` | optional `contextId` (category id, digits only) |
+| `genie` | optional `categoryId` (digits only) |
+| `recorder`, `agents-widget`, `vod-avatar`, `avatar` | nothing |
+
+Rules the component applies before it calls you:
+
+- The props must pass the widget's schema and the field rules. A bad value shows the error and the provider is not called. An id the host [allowlists](../host-api.md#allowed-partners-and-uiconfs) refuse also stops the call.
+- The scope has no `ks`, no config props and no free text.
+- `region` comes from the `serverUrl` host, or else from `setRegion`.
+
+What your backend must do:
+
+- Check `partnerId` against the accounts you serve, and `entryId`, `entryIds`, `categoryId` and `contextId` against what the signed-in user may see. A scope value is a request, not a grant.
+- Put the scope into the KS privileges (for example `sview:<entryId>`). Per widget: [ks-privileges.md](../ks-privileges.md).
+- Reject unknown `version` and unknown scope keys. Rate-limit the endpoint.
+- Never log or echo the returned KS.
+
+A UI-level prop that the KS cannot enforce (for example the `analytics` dates) is a hint. The KS is the only boundary.
+
+### When the scope changes
+
+| Event | What the component does |
+|---|---|
+| First render | Calls the provider at once. |
+| A prop in the scope changes | Waits 300 ms for the scope to settle, aborts the open request, calls the provider again. One request is in flight per instance. |
+| `flashcards` gains a clip | Reuses the held KS while the new `entryIds` are a subset of the old ones. Otherwise it mints again. |
+| The provider throws or rejects | Shows `Invalid ks`. No retry. |
+| Unmount, or the A2UI surface is deleted | Aborts the open request. |
+
+A reply for an old scope is dropped.
 
 ## What to put in a KS
 
@@ -76,7 +130,7 @@ setKsProvider(widget => (widget === 'analytics' ? session.adminKs : session.user
 
 ## When the KS expires
 
-A component reads the provider once, at mount. It does not know when the KS expires and it does not renew it. After the expiry, Kaltura rejects the calls the widget makes with that KS. The widget shows its own Kaltura message, or plays no protected media. This package shows no error for it.
+A component calls the provider when it mounts and when its scope changes. It never calls it to renew. It does not know when the KS expires. After the expiry, Kaltura rejects the calls the widget makes with that KS. The widget shows its own Kaltura message, or plays no protected media. This package shows no error for it.
 
 A chat can outlast a short KS. To renew, mint a new KS before the old one expires and remount the surface. The provider then runs again and returns the new KS.
 

@@ -138,7 +138,7 @@ export {
 export { UnisphereWidgetCore, type UnisphereWidgetCoreProps } from '../../core/unisphere-widget';
 // Host option only. Never call this from agent output.
 export { setExtraAllowedOrigins, getExtraAllowedOrigins } from '../../core/unisphere-loader';
-export { setKsProvider, type KsProvider, type KsWidget } from '../../core/ks';
+export { setKsProvider, type KsProvider, type KsRequest, type KsScopeByWidget, type KsWidget } from '../../core/ks';
 // Host options. Never call these from agent output. See docs/host-api.md.
 export { setExtraMediaOrigins } from '../../core/media-url';
 export { setRegion, type KalturaRegion } from '../../core/region';

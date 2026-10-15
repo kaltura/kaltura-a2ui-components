@@ -34,7 +34,8 @@ async function setup() {
   return { ...api, errors, events };
 }
 
-const box = (container: HTMLElement) => container.querySelector('.kaltura-recorder-container') as HTMLElement;
+// With a provider, a bad prop is caught before the recorder container exists, so the error stands alone.
+const box = (container: HTMLElement) => (container.querySelector('.kaltura-recorder-container') ?? container) as HTMLElement;
 
 describe('REC-01: the script comes from one fixed place', () => {
   it('REC-01: a valid recorder adds one script tag with the fixed Kaltura URL', async () => {

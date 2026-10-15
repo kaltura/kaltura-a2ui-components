@@ -7,10 +7,16 @@ Agents never call these functions. Call them once, before any component mounts.
 ### Minimum host setup
 
 ```ts
-import { setKsProvider, setAllowedPartners, setAllowedUiconfs, setErrorHandler, type KsWidget } from '@kaltura/a2ui-react';
+import { setKsProvider, setAllowedPartners, setAllowedUiconfs, setErrorHandler, type KsRequest, type KsWidget } from '@kaltura/a2ui-react';
 
-setKsProvider(async (widget: KsWidget) => {
-  const response = await fetch(`/api/kaltura-session?widget=${widget}`, { credentials: 'same-origin' });
+setKsProvider(async (widget: KsWidget, request: KsRequest) => {
+  const response = await fetch('/api/kaltura-session', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ widget, version: request.version, scope: request.scope }),
+    signal: request.signal,
+  });
   return response.ok ? (await response.json()).ks : undefined;
 });
 setAllowedPartners([1234567]); // your partner ids
@@ -43,14 +49,14 @@ The provider in [Minimum host setup](#minimum-host-setup) is the full contract. 
 
 - The provider runs in the browser. Your server mints the KS (AppToken flow, USER KS, 1 hour or less).
 - It is the only source of the KS. Agents have no `ks` prop.
-- It gets the widget name, so each widget can get its own least-privilege KS. Privileges per widget: [ks-privileges.md](ks-privileges.md).
+- It gets the widget name and a request with the scope of that instance (partner, region, entry, category), so each widget can get its own least-privilege KS. Treat the request as untrusted: the agent chose it. Fields, rules and timing: [security/ks.md](security/ks.md#the-request). Privileges per widget: [ks-privileges.md](ks-privileges.md).
 - Per-widget mapping, with the analytics widget as the one ADMIN KS:
 
 ```ts
 setKsProvider(widget => (widget === 'analytics' ? session.adminKs : session.userKs));
 ```
 
-- Components never renew a KS. To use a new one, remount the component. The Analytics KS must belong to an admin user that has a role ([security/ks.md](security/ks.md)).
+- Components call the provider when they mount and when their scope changes, never to renew a KS. To use a new one, remount the component. The Analytics KS must belong to an admin user that has a role ([security/ks.md](security/ks.md)).
 - Keep the KS out of the A2UI data model and out of agent messages. [security/ks.md](security/ks.md) has the full rules.
 
 ## Region

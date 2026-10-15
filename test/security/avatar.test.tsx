@@ -64,7 +64,7 @@ describe('SEC-08: the KS comes from the host provider only', () => {
     setKsProvider(provider);
     await mount(AvatarCore, VALID);
     await remote.mounted();
-    expect(provider.mock.calls).toEqual([['avatar']]);
+    expect(provider.mock.calls).toEqual([['avatar', expect.objectContaining({ widget: 'avatar' })]]);
   });
 
   it('SEC-08: with no provider a ks prop is ignored and nothing loads', async () => {

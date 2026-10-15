@@ -4,7 +4,7 @@ Find the text you see. Error texts are exact. `<widget>` is the widget name, suc
 
 | If you see | Cause | Fix |
 |---|---|---|
-| `Failed to load <widget>: Invalid ks: call setKsProvider` | The KS is empty, has control characters, is not a string, or `setKsProvider` threw or rejected | Return the KS as a plain string. Log errors inside your provider: the widget never shows them ([KS](host-integration.md#kaltura-session-ks)) |
+| `Failed to load <widget>: Invalid ks: call setKsProvider` | The KS is empty, has control characters, is not a string, or `setKsProvider` threw or rejected | Return the KS as a plain string. Log errors inside your provider: the widget never shows them. A bad `entryId`, `categoryId` or `contextId` is caught before the provider runs ([KS](host-integration.md#kaltura-session-ks)) |
 | A widget shows nothing and no error | A required prop is missing. For most widgets that is the KS: your provider returned `undefined` | Return a KS from `setKsProvider`. Only Chart needs none. Player and Flashcards need one for protected entries |
 | `Failed to load <widget>: Invalid partnerId` (also `uiconfId`, `entryId`) | The value is not valid. A numeric string like `"123"`, `0` or a decimal is refused for `partnerId` | Send a positive integer. An `entryId` looks like `1_abc12345`. Tell the agent in the [prompt](agent-guide.md#3-one-config-for-the-prompt-and-the-limits) |
 | `Failed to load <widget>: partnerId is not allowed` (also `uiconfId`) | The id is not in your `setAllowedPartners` or `setAllowedUiconfs` list | Add the id, or fix the id the agent used ([allowed ids](host-api.md#allowed-partners-and-uiconfs)) |

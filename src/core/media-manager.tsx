@@ -277,4 +277,5 @@ function MediaManagerView(props: MediaManagerCoreProps) {
 export const MediaManagerCore = withKs(
   'media-manager',
   withValidatedProps(withKsProp(KalturaMediaManagerApi.schema), 'Media Manager', MediaManagerView, 'media-manager'),
+  { schema: KalturaMediaManagerApi.schema, label: 'Media Manager' },
 );

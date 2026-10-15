@@ -8,7 +8,7 @@ import { createElement, act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
 import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
-import { mount } from '../helpers/render';
+import { afterQuietPeriod, mount } from '../helpers/render';
 import { playerRemote } from '../helpers/player-remote';
 import { captionsRemote } from '../helpers/captions-remote';
 import { setKsProvider, type KsWidget } from '../../src/core/ks';
@@ -180,7 +180,7 @@ describe('SEC-05: the provider learns which widget asks, for a least-privilege K
   const WIDGETS = [
     ['player', PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' }],
     ['analytics', AnalyticsCore, { partnerId: 1 }],
-    ['flashcards', FlashcardsCore, { title: 'Deck', partnerId: 1, uiconfId: 2, cards: [] }],
+    ['flashcards', FlashcardsCore, { title: 'Deck', partnerId: 1, uiconfId: 2, cards: [{ title: 'A', content: 'a', clips: [{ entryId: '0_abc', startTime: 0, endTime: 5 }] }] }],
     ['captions-editor', CaptionsEditorCore, { partnerId: 1, entryId: '0_abc' }],
     ['recorder', RecorderCore, { partnerId: 1, uiconfId: 2 }],
     ['media-manager', MediaManagerCore, unisphere],
@@ -195,7 +195,7 @@ describe('SEC-05: the provider learns which widget asks, for a least-privilege K
     const provider = vi.fn((_widget: KsWidget) => HOST_KS);
     setKsProvider(provider);
     await mount(component, props);
-    expect(provider.mock.calls).toEqual([[widget]]);
+    expect(provider.mock.calls).toEqual([[widget, expect.objectContaining({ widget, version: 1 })]]);
   });
 
   it('SEC-05: a zero-argument provider still works', async () => {
@@ -204,12 +204,12 @@ describe('SEC-05: the provider learns which widget asks, for a least-privilege K
     expect(await playerKs()).toBe(HOST_KS);
   });
 
-  it('SEC-05: the provider is called once per mount, even after re-renders', async () => {
+  it('SEC-05: the provider is called once per scope, even after re-renders with the same scope', async () => {
     const provider = vi.fn(() => HOST_KS);
     setKsProvider(provider);
-    const { root } = await mount(AnalyticsCore, { partnerId: 1 });
-    await act(async () => root.render(createElement(AnalyticsCore, { partnerId: 1, reportType: 'live' })));
-    await act(async () => root.render(createElement(AnalyticsCore, { partnerId: 2, reportType: 'live' })));
+    const { root } = await mount(PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc' });
+    await act(async () => root.render(createElement(PlayerCore, { partnerId: 1, uiconfId: 2, entryId: '0_abc', autoplay: true })));
+    await afterQuietPeriod();
     expect(provider).toHaveBeenCalledTimes(1);
   });
 });

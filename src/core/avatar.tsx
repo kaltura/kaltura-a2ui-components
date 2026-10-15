@@ -112,7 +112,10 @@ const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
   return <div ref={containerRef} className="kaltura-avatar-container" style={{ width: '100%', aspectRatio: '16/9' }} />;
 };
 
-const Validated = withKs('avatar', withValidatedProps(KalturaAvatarApi.schema.extend({ ks: z.string() }), LABEL, AvatarView, 'avatar'));
+const Validated = withKs('avatar', withValidatedProps(KalturaAvatarApi.schema.extend({ ks: z.string() }), LABEL, AvatarView, 'avatar'), {
+  schema: KalturaAvatarApi.schema,
+  label: LABEL,
+});
 
 /** The avatar takes its KS from `setKsProvider` only. A `ks` prop is dropped, because the KS picks the agent. */
 export const AvatarCore: FC<AvatarCoreProps> = props => createElement(Validated, { ...props, ks: undefined });
