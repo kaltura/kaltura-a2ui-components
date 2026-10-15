@@ -5,6 +5,7 @@ import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { MessageProcessor } from '@a2ui/web_core/v0_9';
 import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
+import { setKsProvider } from '../../src/core/ks';
 import { CASES, installRemote, remote, resetFakes, settle, expectInert, type Case } from './cases';
 
 vi.setConfig({ testTimeout: 30000, hookTimeout: 60000 });
@@ -23,12 +24,15 @@ beforeAll(async () => {
 });
 beforeEach(() => {
   resetFakes();
+  // On the A2UI path the provider is the only KS source. The `ks` in the cases is ignored here.
+  setKsProvider(() => 'ks-1');
   errors = vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   host = document.body.appendChild(document.createElement('div'));
   root = createRoot(host);
 });
 afterEach(() => {
+  setKsProvider(undefined);
   act(() => root.unmount());
   document.body.innerHTML = '';
   vi.restoreAllMocks();

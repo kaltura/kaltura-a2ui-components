@@ -201,7 +201,7 @@ function onAgentMessages(messages: A2uiMessage[], surfaceId: string) {
   try {
     processor.processMessages(messages);
   } catch (error) {
-    agent.send({ version: 'v0.9', error: { code: 'VALIDATION_ERROR', surfaceId, message: (error as Error).message } });
+    agent.send({ version: 'v0.9', error: { code: 'VALIDATION_FAILED', surfaceId, path: '/', message: (error as Error).message } });
   }
 }
 ```

@@ -1,4 +1,4 @@
-import { createElement, useEffect, useState } from 'react';
+import { createContext, createElement, useContext, useEffect, useState } from 'react';
 import type { ComponentType, FC } from 'react';
 import { z } from 'zod';
 
@@ -31,6 +31,13 @@ export type KsProvider = (widget: KsWidget) => string | undefined | Promise<stri
 export function withKsProp<T extends z.ZodRawShape>(schema: z.ZodObject<T>, required = true) {
   return schema.extend({ ks: required ? z.string() : z.string().optional() });
 }
+
+/**
+ * False on the A2UI path: there the provider is the only KS source and a `ks`
+ * prop from the agent is ignored. True for the web components and for direct
+ * use of a core component, where `ks` is a prop the host sets.
+ */
+export const KsPropContext = createContext(true);
 
 let ksProvider: KsProvider | undefined;
 
@@ -82,15 +89,16 @@ function useProviderKs(widget: KsWidget): unknown {
 
 /**
  * Wraps a core component so its `ks` comes from the host provider first, then
- * from the `ks` prop. Renders nothing while an async provider runs. `Inner`
+ * from the `ks` prop (not on the A2UI path, see `KsPropContext`). Renders nothing while an async provider runs. `Inner`
  * checks the value with the usual ks rule. Widgets that cannot load without a
  * KS pass a schema with `ks` required, so a missing KS stays pending.
  */
 export function withKs<P extends { ks?: string }>(widget: KsWidget, Inner: ComponentType<P>): FC<Omit<P, 'ks'> & { ks?: string }> {
   const WithKs: FC<Omit<P, 'ks'> & { ks?: string }> = props => {
     const fromProvider = useProviderKs(widget);
+    const propAllowed = useContext(KsPropContext);
     if (fromProvider === PENDING) return null;
-    const ks = fromProvider === undefined || fromProvider === '' ? props.ks : fromProvider;
+    const ks = fromProvider === undefined || fromProvider === '' ? (propAllowed ? props.ks : undefined) : fromProvider;
     return createElement(Inner, { ...props, ks } as unknown as P);
   };
   WithKs.displayName = `WithKs(${Inner.displayName || Inner.name || 'Component'})`;

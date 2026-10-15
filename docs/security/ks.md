@@ -4,7 +4,7 @@ The host owns the KS. The agent never sees it, writes it or asks for it.
 
 > [!IMPORTANT]
 > **Agent rules**
-> - Components have no `ks` prop. An agent cannot set the KS, and a `ks` in agent output is dropped.
+> - The catalog has no `ks` prop. The A2UI adapter ignores a `ks` in agent output, so an agent cannot set the KS.
 > - Do not put a KS in the data model, a URL or any text you give the agent.
 > - The only source is `setKsProvider`, which the host page calls. No agent message can call it.
 

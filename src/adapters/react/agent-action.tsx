@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react';
 import type { ComponentContext } from '@a2ui/web_core/v0_9';
 import { ReporterContext, type KalturaReporter } from '../../core/host-hooks';
+import { KsPropContext } from '../../core/ks';
 
 interface RawAction {
   event?: { name: string; context?: Record<string, unknown> };
@@ -30,5 +31,9 @@ export function AgentAction({ context, action, children }: { context: ComponentC
       context.dispatchAction({ event: { name: raw.event.name, context: fields } }).catch(() => {});
     },
   }));
-  return <ReporterContext.Provider value={reporter}>{children}</ReporterContext.Provider>;
+  return (
+    <ReporterContext.Provider value={reporter}>
+      <KsPropContext.Provider value={false}>{children}</KsPropContext.Provider>
+    </ReporterContext.Provider>
+  );
 }
