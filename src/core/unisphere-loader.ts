@@ -1,8 +1,8 @@
 import { KalturaFailure } from './host-hooks';
-import { currentRegion } from './region';
+import { environmentUnisphereOrigins } from './region';
 
 /** serverUrl comes from agent output. Only known Unisphere origins may be imported. */
-// Same codes as KALTURA_REGIONS in region.ts. test/release/unisphere-smoke.test.ts reads this line.
+// The codes of KALTURA_REGIONS in region.ts, without sgp2: it has no Unisphere host. test/release/unisphere-smoke.test.ts reads this line.
 const KALTURA_REGIONS = ['nvp1', 'irp2', 'frp2', 'cap2', 'syp2'];
 const BUILT_IN_ORIGINS = KALTURA_REGIONS.map(region => `https://unisphere.${region}.ovp.kaltura.com`);
 
@@ -31,9 +31,6 @@ export function setExtraAllowedOrigins(origins: string[]): void {
   extraOrigins = origins.map(parseOrigin);
 }
 
-/** Unisphere host of the region set with `setRegion`. Used when `serverUrl` is not set. */
-export const defaultServerUrl = (): string => `https://unisphere.${currentRegion()}.ovp.kaltura.com/v1`;
-
 export function getExtraAllowedOrigins(): string[] {
   return [...extraOrigins];
 }
@@ -45,7 +42,7 @@ const loaderUrlOf = (serverUrl: string): string | undefined => {
   } catch {
     return undefined;
   }
-  const allowed = [...BUILT_IN_ORIGINS, ...extraOrigins].includes(origin);
+  const allowed = [...BUILT_IN_ORIGINS, ...extraOrigins, ...environmentUnisphereOrigins()].includes(origin);
   const exact = [origin, `${origin}/`, `${origin}/v1`, `${origin}/v1/`].includes(serverUrl);
   return allowed && exact ? `${origin}/v1/loader/index.esm.js` : undefined;
 };

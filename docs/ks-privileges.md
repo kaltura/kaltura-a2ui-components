@@ -4,6 +4,8 @@ What the Kaltura guides ask of the KS for each component. Your server mints the 
 
 Source: the linked Kaltura guides. If a guide differs, the guide wins.
 
+Mint against the API of `request.scope.region`. It is a region code or the name of an environment you registered with `setEnvironments`. Refuse a name you do not know and a partner that does not live in that region.
+
 ## Rules for every widget
 
 - USER KS (type=0), minted on your server, 1 hour or less. [Session Guide](https://kaltura.md/KALTURA_SESSION_GUIDE/) (best practices, section 7).

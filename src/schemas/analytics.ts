@@ -22,6 +22,7 @@ export const KalturaAnalyticsApi = {
   name: 'KalturaAnalytics',
   schema: z.object({
     partnerId: z.number().int().positive(),
+    region: z.string().optional(),
     entryId: CommonSchemas.DynamicString.optional(),
     reportType: CommonSchemas.DynamicString.optional(),
     fromDate: CommonSchemas.DynamicString.optional(),

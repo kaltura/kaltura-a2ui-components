@@ -12,7 +12,7 @@ Short records of decisions that affect security or the public contract. One file
 | [0006](0006-catalog-generation.md) | Catalog generation | accepted |
 | [0007](0007-ssr-html-element-stub.md) | HTMLElement stub for Node imports (a2ui#3158) | accepted |
 | [0008](0008-in-page-player-and-captions-editor.md) | In-page Player and Captions editor | accepted |
-| [0009](0009-per-instance-ks-scope.md) | Per-instance KS scope | accepted (Phase 1 implemented) |
+| [0009](0009-per-instance-ks-scope.md) | Per-instance KS scope | accepted (Phase 1 and `region` implemented) |
 
 ## Template
 

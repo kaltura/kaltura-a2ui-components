@@ -5,6 +5,7 @@ export const KalturaPlayerApi = {
   name: 'KalturaPlayer',
   schema: z.object({
     partnerId: z.number().int().positive(),
+    region: z.string().optional(),
     uiconfId: z.number().int().positive(),
     entryId: CommonSchemas.DynamicString,
     autoplay: CommonSchemas.DynamicBoolean.optional(),

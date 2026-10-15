@@ -1,6 +1,6 @@
 # 0009. Per-instance KS scope
 
-Status: accepted (2026-10-15). Phase 0 and Phase 1 are implemented (0.5.0). Phase 2 is not. Builds on [ADR 0002](0002-ks-handling.md).
+Status: accepted (2026-10-15). Phase 0 and Phase 1 are implemented (0.5.0). Phase 2 is implemented for `region` only (section 9). The other Phase 2 props wait for sandbox tests. Builds on [ADR 0002](0002-ks-handling.md).
 
 Code today: `src/core/ks.ts`, `src/core/validate-props.ts`, `src/adapters/react/agent-action.tsx`, `src/schemas/*.ts`.
 
@@ -311,15 +311,17 @@ Today only the six Unisphere widgets take a per-widget setting (`serverUrl`, che
 
 | Rule | Detail |
 |---|---|
-| Prop | Every widget gets an optional `region` prop. The value is a region code from `KALTURA_REGIONS` or the name of a host-registered environment (see "Local and custom hosts"). It is a catalog change, so it ships in Phase 2 with the new catalog id |
+| Prop | Every widget gets an optional `region` prop. The value is a region code from `KALTURA_REGIONS` or the name of a host-registered environment (see "Local and custom hosts"). It is an optional new prop, so it ships on the existing `v2` catalog id (see the deviation note below) |
 | Resolution | `region` prop, else the region in `serverUrl`, else the `setRegion` default. If the prop and `serverUrl` disagree, the widget shows `origin-not-allowed` |
-| Host limit | A new host option for regions, with the same rule shape as `setAllowedPartners`. Default: every known code and every registered environment |
+| Host limit | `setAllowedRegions(rule)`, with the same rule shape as `setAllowedPartners`. It checks the default region as well. Default: every known code and every registered environment |
 | Class | R. The agent asks by name, the library resolves the name, the backend checks that the partner lives in that region |
 | In the request | `scope.region` always holds the resolved region or environment name. The backend mints against that region's API and rejects a partner from another region. No partner-to-region map exists, so the backend cannot infer the region |
 | Hosts | Computed per instance from the resolved region, never from a global read at render time |
-| No capability gating | The library does not know which widget runs in which region. A widget in a region that lacks it fails with that region's own error. New regions and capabilities then need no library change. This includes `sgp2` |
+| No capability gating | The library does not know which widget runs in which region. A widget in a region that lacks it fails with that region's own error. New regions and capabilities then need no library change. This includes `sgp2`. One exception: the Captions editor page runs in the host origin, so it needs a pinned hash per host (`EDITOR_PAGE_INTEGRITY`). It fails closed in `sgp2` and in every environment |
 | EU | `irp2` is the EU region. No separate `eu2` code |
-| New codes | Adding a region is a data change in `region.ts`. `sgp2` is the first to add: API `api.sg.kaltura.com`, VOD `cfvod.sgp2.ovp.kaltura.com`, KMC `kmc.sg.kaltura.com`, analytics `analytics.sg.kaltura.com` |
+| New codes | Adding a region is a data change in `region.ts`. `sgp2` is the first: API `api.sg.kaltura.com`, VOD `cfvod.sgp2.ovp.kaltura.com`, KMC `kmc.sg.kaltura.com`. It runs no microservices, so it has no Unisphere host and the Unisphere widgets refuse it |
+| Deviation | The ADR planned a new catalog id for Phase 2. `region` is optional and additive, and `v2` consumers ignore props they do not know, so the id stays `v2`. A new id comes with the first breaking catalog change |
+| Where it is checked | `gateProps` (`src/core/validate-props.ts`) runs for every widget, with or without a provider. A refused region gives `origin-not-allowed` with fixed text before the provider, a script, a fetch or an iframe |
 
 #### Local and custom hosts
 
@@ -331,7 +333,7 @@ setEnvironments({
 });
 ```
 
-The agent then sends `region: 'local'`. The host app owns the name table.
+The agent then sends `region: 'local'`. The host app owns the name table. Only `serviceUrl` is required: `cdn`, `vod`, `kmc` and `recorder` default to it. Values are origins only. A Unisphere widget needs `unisphere`, which is also added to the Unisphere origin allowlist.
 
 | Why not a raw URL from the agent | |
 |---|---|
@@ -366,7 +368,7 @@ Fixed on branch `mixed-region-hosts`: Genie, Content Lab, VOD Avatar and Agents 
 |---|---|---|---|
 | 0 | Ships first, before the rest of this ADR is relied on. Hardening with no API change. The A2UI path takes the KS only from the provider. The docs fixes. | no change | patch |
 | 1 (implemented) | The pre-check before the provider (it needs the mint to move into an effect), the provider request, scope change, timing rules and the size limit bump. Uses the props that exist today: `entryId`, flashcards `entryIds`, Genie `categoryId`, Media Manager `contextId`, Analytics and Content Lab `entryId`, `partnerId` | no change | 0.5.0 |
-| 2 | `region` on every widget (section 9). New R props, each added only after a sandbox test shows the widget or the KS uses it: `playlistId`, `assetId`, `ancestorCategoryId`, `virtualEventId`, Analytics `categoryId`/`playlistId`, Genie `entryId`, Agents Widget `categoryId`, VOD Avatar filters. Analytics `userId` and Avatar `autoConnect` only as host opt-ins | new catalog id and a migration note | with the id bump |
+| 2 (`region` implemented) | `region` on every widget except Chart (section 9), `setEnvironments`, `setAllowedRegions`, `sgp2`. Still open: new R props, each added only after a sandbox test shows the widget or the KS uses it: `playlistId`, `assetId`, `ancestorCategoryId`, `virtualEventId`, Analytics `categoryId`/`playlistId`, Genie `entryId`, Agents Widget `categoryId`, VOD Avatar filters. Analytics `userId` and Avatar `autoConnect` only as host opt-ins | `region` added to `v2`, no new id | 0.5.0 |
 | Later | A way for the host to supply H runtime settings (`reachProfileId`, `genieId`, `allowedProjectTypes`), for example a provider that returns `{ ks, settings }` with a fixed allowlist of setting names per widget. Not decided here. Also the A2UI v1.0 migration | | |
 
 ## Consequences
@@ -402,7 +404,7 @@ These need a sandbox partner. They set the entry cap (provisional 20) and decide
 Phase 1 docs are done: `docs/security/ks.md`, `docs/host-api.md`, `docs/host-integration.md`, `docs/ks-privileges.md`, `docs/troubleshooting.md` and `docs/migration-0.5.md`. Still open:
 
 - `docs/ks-privileges.md`: replace the Genie scope privileges and the chaining rule with verified text after the sandbox test.
-- Media Manager `mode: 'manage'` only removes the select button. Fix the "full content manager" claim in the schema description. `docs/components.md` is generated from it, so this ships with the Phase 2 catalog change.
+- Media Manager `mode: 'manage'` only removes the select button. The "full content manager" claim is fixed in the schema description (done in Phase 2).
 - Content Lab and Agents Widget KS type, after the sandbox test.
 - `docs/host-api.md` and `docs/host-integration.md`: the per-widget `region` prop, the region allowlist and the precedence rule.
 

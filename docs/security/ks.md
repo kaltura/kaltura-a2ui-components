@@ -74,7 +74,7 @@ Rules the component applies before it calls you:
 
 - The props must pass the widget's schema and the field rules, and `serverUrl` must be an allowed Unisphere origin. A bad value shows the error and the provider is not called. An id the host [allowlists](../host-api.md#allowed-partners-and-uiconfs) refuse also stops the call.
 - The scope has no `ks`, no config props and no free text.
-- `region` comes from the `serverUrl` host, or else from `setRegion`.
+- `region` is the region of the widget: its `region` prop, else the region in `serverUrl`, else `setRegion`. It is a region code, or the name of an environment the host registered with `setEnvironments`. A name that is unknown or not allowed never reaches the provider.
 
 What your backend must do:
 

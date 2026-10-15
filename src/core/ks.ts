@@ -2,13 +2,14 @@ import { createContext, createElement, useContext, useEffect, useRef, useState }
 import type { ComponentType, FC } from 'react';
 import { z } from 'zod';
 import type { AnalyticsReportType } from '../schemas/analytics';
-import { currentRegion, regionOf, type KalturaRegion } from './region';
+import { resolveRegion } from './region';
 import { gateProps, StrictPendingContext } from './validate-props';
 
 /** What every request names: the account and the region it lives in (resolved by the library). */
 interface Account {
   partnerId: number;
-  region: KalturaRegion;
+  /** A region code, or the name of an environment the host registered. */
+  region: string;
 }
 
 /**
@@ -191,8 +192,8 @@ export function withKs<P extends { ks?: string }>(widget: KsWidget, Inner: Compo
     const [provider] = useState(() => ksProvider);
     const checked = provider ? gateProps(gate.schema, gate.label, widget, props, strict, gate.check && (() => gate.check?.(outer) ?? [])) : undefined;
     const base = provider && checked && !checked.error && !checked.pending ? (gate.scope ? gate.scope(outer) : scopeFromProps(widget, props)) : undefined;
-    const serverUrl = props.serverUrl;
-    const scope = base && { ...base, region: regionOf(typeof serverUrl === 'string' ? serverUrl : '') ?? currentRegion() };
+    // The pre-check has passed, so the region resolves.
+    const scope = base && { ...base, region: resolveRegion(typeof props.region === 'string' ? props.region : undefined, typeof props.serverUrl === 'string' ? props.serverUrl : undefined).name };
     const key = scope && JSON.stringify(scope);
     const [held, setHeld] = useState<Held>();
 

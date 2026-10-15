@@ -2,7 +2,7 @@ import { UnisphereWidgetCore } from './unisphere-widget';
 import { KalturaGenieApi } from '../schemas/genie';
 import { withValidatedProps } from './validate-props';
 import { withKs, withKsProp } from './ks';
-import { kalturaHosts, regionOf } from './region';
+import { resolveRegion } from './region';
 
 export interface GenieCoreProps {
   /** Kaltura partner (account) ID. */
@@ -11,6 +11,8 @@ export interface GenieCoreProps {
   ks: string;
   /** Unisphere URL. Defaults to the Unisphere host of the region. Only Kaltura hosts and `setExtraAllowedOrigins` are accepted. */
   serverUrl?: string;
+  /** Region code or host-registered environment name. Default: the region of `serverUrl`, else the `setRegion` value. */
+  region?: string;
   /** Player (uiConf) ID. Genie needs it to start. */
   uiconfId: number;
   /** Category that scopes the Genie content. */
@@ -25,6 +27,7 @@ function GenieView(props: GenieCoreProps) {
       partnerId={props.partnerId}
       ks={props.ks}
       serverUrl={props.serverUrl}
+      region={props.region}
       widgetName="unisphere.widget.genie"
       runtimeName="application"
       visualType="page"
@@ -32,7 +35,7 @@ function GenieView(props: GenieCoreProps) {
         ks: props.ks,
         pid: String(props.partnerId),
         uiConfId: String(props.uiconfId),
-        kalturaServerURI: kalturaHosts(regionOf(props.serverUrl ?? '')).cdn,
+        kalturaServerURI: resolveRegion(props.region, props.serverUrl).hosts.cdn,
         ...(props.categoryId ? { categoryId: props.categoryId } : {}),
         language: props.language || 'en',
       }}

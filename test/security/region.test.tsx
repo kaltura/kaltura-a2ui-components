@@ -55,7 +55,7 @@ async function urls() {
 }
 
 // api, vod and kmc: kaltura.md API Getting Started §4. web: the regional API host (player, recorder).
-const REGIONAL: Record<Exclude<KalturaRegion, 'nvp1'>, { api: string; vod: string; web: string; kmc: string }> = {
+const REGIONAL: Record<Exclude<KalturaRegion, 'nvp1' | 'sgp2'>, { api: string; vod: string; web: string; kmc: string }> = {
   irp2: { api: 'https://api.eu.kaltura.com', vod: 'https://cfvod.irp2.ovp.kaltura.com', web: 'https://api.eu.kaltura.com', kmc: 'https://kmc.irp2.ovp.kaltura.com' },
   frp2: { api: 'https://api.de.kaltura.com', vod: 'https://cfvod.frp2.ovp.kaltura.com', web: 'https://api.de.kaltura.com', kmc: 'https://kmc.de.kaltura.com' },
   cap2: { api: 'https://api.ca.kaltura.com', vod: 'https://cfvod.cap2.ovp.kaltura.com', web: 'https://api.cap2.ovp.kaltura.com', kmc: 'https://kmc.ca.kaltura.com' },
@@ -95,8 +95,23 @@ describe('REG-01: setRegion', () => {
     });
   });
 
-  it.each(['sgp2', 'us', '', 'nvp1 '])('REG-01: refuses the unknown code %j', code => {
-    expect(() => setRegion(code as KalturaRegion)).toThrow('Unknown Kaltura region. Use nvp1, irp2, frp2, cap2, syp2');
+  it('REG-01: sgp2 maps every host except the captions editor, which has no pinned page', async () => {
+    setRegion('sgp2');
+    expect([
+      playerScriptUrl(1, 2),
+      buildThumbnailUrl(clip, 1),
+      buildAnalyticsUrl(),
+      recorderScriptUrl(),
+    ]).toEqual([
+      'https://api.sgp2.ovp.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2',
+      'https://cfvod.sgp2.ovp.kaltura.com/p/1/thumbnail/entry_id/0_abc/width/200/vid_sec/5',
+      'https://kmc.sg.kaltura.com/apps/kmc-analytics/latest/index.html',
+      'https://api.sgp2.ovp.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js',
+    ]);
+  });
+
+  it.each(['us', '', 'nvp1 '])('REG-01: refuses the unknown code %j', code => {
+    expect(() => setRegion(code as KalturaRegion)).toThrow('Unknown Kaltura region. Use nvp1, irp2, frp2, cap2, syp2, sgp2');
   });
 
   it('REG-01: an unknown code keeps the region', async () => {

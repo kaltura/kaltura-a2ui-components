@@ -4,11 +4,13 @@ import { z } from 'zod';
 import { ANALYTICS_REPORT_TYPES, KalturaAnalyticsApi } from '../schemas/analytics';
 import { LoadError, withValidatedProps } from './validate-props';
 import { withKs } from './ks';
-import { kalturaHosts } from './region';
+import { resolveRegion } from './region';
 
 export interface AnalyticsCoreProps {
   /** Kaltura partner (account) ID. */
   partnerId: number;
+  /** Region code or host-registered environment name. Default: the host region. */
+  region?: string;
   /** Shows the analytics of this entry. Wins over `reportType`. */
   entryId?: string;
   /** Dashboard view when there is no `entryId`. Default: `engagement`. */
@@ -27,9 +29,9 @@ export interface AnalyticsNavigation {
 const MIN_HEIGHT = 400;
 const MAX_HEIGHT = 10000;
 
-/** The Analytics app of the current region. It holds no KS and no ids: those travel by `postMessage`. */
-export function buildAnalyticsUrl(): string {
-  return `${kalturaHosts().kmc}/apps/kmc-analytics/latest/index.html`;
+/** The Analytics app of a region. It holds no KS and no ids: those travel by `postMessage`. */
+export function buildAnalyticsUrl(region?: string): string {
+  return `${resolveRegion(region).hosts.kmc}/apps/kmc-analytics/latest/index.html`;
 }
 
 function isIsoDate(value: unknown): value is string {
@@ -69,10 +71,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
  * and `updateConfig` messages, sent to the Analytics origin and nowhere else.
  * A new `ks` prop renews the session in place, with no reload.
  */
-export const AnalyticsFrame: FC<{ partnerId: number; ks: string; nav: AnalyticsNavigation }> = ({ partnerId, ks, nav }) => {
+export const AnalyticsFrame: FC<{ partnerId: number; region?: string; ks: string; nav: AnalyticsNavigation }> = ({ partnerId, region, ks, nav }) => {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState<number>();
-  const src = buildAnalyticsUrl();
+  const hosts = resolveRegion(region).hosts;
+  const src = buildAnalyticsUrl(region);
   const origin = new URL(src).origin;
   const latest = useRef({ partnerId, ks, nav });
   const session = useRef({ ready: false, sentKs: '' });
@@ -96,7 +99,6 @@ export const AnalyticsFrame: FC<{ partnerId: number; ks: string; nav: AnalyticsN
       if (!frame || event.origin !== origin || event.source !== frame.contentWindow || !isRecord(event.data)) return;
       const { messageType, payload } = event.data;
       if (messageType === 'analyticsInit') {
-        const hosts = kalturaHosts();
         const viewsConfig = isRecord(payload) && isRecord(payload.viewsConfig) ? payload.viewsConfig : undefined;
         session.current = { ready: false, sentKs: latest.current.ks };
         post('init', {
@@ -124,7 +126,7 @@ export const AnalyticsFrame: FC<{ partnerId: number; ks: string; nav: AnalyticsN
     };
     // post, sendNav and sendKs only read refs and the origin.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [origin]);
+  }, [origin, hosts.serviceUrl, hosts.cdn]);
 
   useLayoutEffect(() => {
     if (session.current.ready && session.current.sentKs !== ks) sendKs();
@@ -150,14 +152,15 @@ export const AnalyticsFrame: FC<{ partnerId: number; ks: string; nav: AnalyticsN
   );
 };
 
-const AnalyticsView: FC<AnalyticsCoreProps & { ks: string }> = ({ partnerId, ks, ...filters }) => {
+const AnalyticsView: FC<AnalyticsCoreProps & { ks: string }> = ({ partnerId, region, ks, ...filters }) => {
   let nav: AnalyticsNavigation;
   try {
+    resolveRegion(region);
     nav = analyticsNavigation(filters);
   } catch (e) {
     return <LoadError widget="analytics">{`Failed to load analytics: ${(e as Error).message}`}</LoadError>;
   }
-  return <AnalyticsFrame partnerId={partnerId} ks={ks} nav={nav} />;
+  return <AnalyticsFrame partnerId={partnerId} region={region} ks={ks} nav={nav} />;
 };
 
 const Validated = withKs('analytics', withValidatedProps(KalturaAnalyticsApi.schema.extend({ ks: z.string() }), 'analytics', AnalyticsView, 'analytics'), {

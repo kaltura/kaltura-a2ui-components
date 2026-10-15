@@ -1,5 +1,5 @@
 import { KalturaFailure } from './host-hooks';
-import { kalturaHosts } from './region';
+import { resolveRegion } from './region';
 
 /** The parts of the Kaltura Player API we use. It is remote code: check every call. */
 export interface PlayerSetupConfig {
@@ -23,8 +23,8 @@ export interface PlayerApi {
  * The bundle is built per uiconf and its version is set by the customer admin in KMC, so it has no SRI
  * (docs/adr/0008). It runs in the page origin and can read the KS.
  */
-export const playerScriptUrl = (partnerId: number, uiconfId: number): string =>
-  `${kalturaHosts().cdn}/p/${partnerId}/embedPlaykitJs/partner_id/${partnerId}/uiconf_id/${uiconfId}`;
+export const playerScriptUrl = (partnerId: number, uiconfId: number, region?: string): string =>
+  `${resolveRegion(region).hosts.cdn}/p/${partnerId}/embedPlaykitJs/partner_id/${partnerId}/uiconf_id/${uiconfId}`;
 
 // Each bundle replaces `window.KalturaPlayer`. The API is read right after the
 // bundle runs, and the bundle is loaded again when another one ran in between.
@@ -35,8 +35,13 @@ let current: { url: string; loading: Promise<PlayerApi> } | undefined;
  * promise. A failed load is dropped from the cache, so the next mount tries
  * again. Rejects with a `KalturaFailure` whose message is fixed text.
  */
-export function loadPlayerScript(partnerId: number, uiconfId: number): Promise<PlayerApi> {
-  const url = playerScriptUrl(partnerId, uiconfId);
+export function loadPlayerScript(partnerId: number, uiconfId: number, region?: string): Promise<PlayerApi> {
+  let url: string;
+  try {
+    url = playerScriptUrl(partnerId, uiconfId, region);
+  } catch (error) {
+    return Promise.reject(error);
+  }
   if (current?.url === url) return current.loading;
 
   const loading = new Promise<PlayerApi>((resolve, reject) => {

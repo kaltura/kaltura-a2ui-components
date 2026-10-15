@@ -2,7 +2,7 @@ import { UnisphereWidgetCore } from './unisphere-widget';
 import { KalturaVodAvatarApi } from '../schemas/vod-avatar';
 import { withValidatedProps } from './validate-props';
 import { withKs, withKsProp } from './ks';
-import { kalturaHosts, regionOf } from './region';
+import { resolveRegion } from './region';
 
 export interface VodAvatarCoreProps {
   /** Kaltura partner (account) ID. */
@@ -11,6 +11,8 @@ export interface VodAvatarCoreProps {
   ks: string;
   /** Unisphere URL. Defaults to the Unisphere host of the region. Only Kaltura hosts and `setExtraAllowedOrigins` are accepted. */
   serverUrl?: string;
+  /** Region code or host-registered environment name. Default: the region of `serverUrl`, else the `setRegion` value. */
+  region?: string;
 }
 
 function VodAvatarView(props: VodAvatarCoreProps) {
@@ -19,13 +21,14 @@ function VodAvatarView(props: VodAvatarCoreProps) {
       partnerId={props.partnerId}
       ks={props.ks}
       serverUrl={props.serverUrl}
+      region={props.region}
       widgetName="unisphere.widget.vod-avatars"
       runtimeName="studio"
       visualType="application"
       runtimeSettings={{
         ks: props.ks,
         partnerId: props.partnerId,
-        kalturaServerURI: kalturaHosts(regionOf(props.serverUrl ?? '')).serviceUrl,
+        kalturaServerURI: resolveRegion(props.region, props.serverUrl).hosts.serviceUrl,
       }}
       label="Kaltura VOD Avatar"
       containerClass="kaltura-kaltura-vod-avatar-container"

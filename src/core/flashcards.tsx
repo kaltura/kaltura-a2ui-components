@@ -4,7 +4,7 @@ import { renderSafeMarkdown } from './safe-markdown';
 import { isAllowedMediaUrl } from './media-url';
 import { KalturaFlashcardsApi } from '../schemas/flashcards';
 import { LoadError, withValidatedProps } from './validate-props';
-import { kalturaHosts } from './region';
+import { resolveRegion } from './region';
 import { refusedIdProp } from './allowed-ids';
 import { PlayerEmbed } from './player';
 import { withKs, withKsProp } from './ks';
@@ -44,6 +44,8 @@ export interface FlashcardsCoreProps {
   cards: FlashCard[];
   /** Kaltura partner (account) ID. Needed to play the clips. */
   partnerId?: number;
+  /** Region code or host-registered environment name. Default: the host region. */
+  region?: string;
   /** Player (uiConf) ID used to play the clips. */
   uiconfId?: number;
   /** Only for protected entries. The host KS provider is used first. */
@@ -54,14 +56,20 @@ export interface FlashcardsCoreProps {
  * CDN thumbnail URL for a clip. It seeks to startTime+1s for a meaningful frame.
  * Uses the clip's own thumbnail field only when isAllowedMediaUrl accepts it (an https
  * Kaltura CDN URL or a host-added media origin, with no api_v3 path or KS). Otherwise builds the CDN URL, or returns an
- * empty string. A `partnerId` that the host allowlist refuses also gives an empty string.
+ * empty string. A `partnerId` or `region` that the host allowlist refuses also gives an empty string.
  */
-export function buildThumbnailUrl(clip: Clip, partnerId?: number): string {
+export function buildThumbnailUrl(clip: Clip, partnerId?: number, region?: string): string {
   const own = clip.thumbnail;
   if (own && isAllowedMediaUrl(own)) return new URL(own).href;
   if (!isPositiveInt(partnerId) || !isEntryId(clip.entryId) || refusedIdProp({ partnerId })) return '';
   const sec = Math.round(clip.startTime) + 1;
-  return `${kalturaHosts().vod}/p/${encodeURIComponent(partnerId)}/thumbnail/entry_id/${encodeURIComponent(clip.entryId)}/width/200/vid_sec/${sec}`;
+  let vod: string;
+  try {
+    vod = resolveRegion(region).hosts.vod;
+  } catch {
+    return '';
+  }
+  return `${vod}/p/${encodeURIComponent(partnerId)}/thumbnail/entry_id/${encodeURIComponent(clip.entryId)}/width/200/vid_sec/${sec}`;
 }
 
 /**
@@ -126,12 +134,14 @@ function CardContentInner({ content }: { content: string }) {
 function ClipPlayer({
   clip,
   partnerId,
+  region,
   uiconfId,
   ks,
   active,
 }: {
   clip: Clip;
   partnerId?: number;
+  region?: string;
   uiconfId?: number;
   ks?: string;
   active: boolean;
@@ -148,6 +158,7 @@ function ClipPlayer({
   return (
     <PlayerEmbed
       partnerId={partnerId}
+      region={region}
       uiconfId={uiconfId}
       entryId={clip.entryId}
       ks={ks}
@@ -164,12 +175,14 @@ function ClipPlayer({
 function ClipGallery({
   clips,
   partnerId,
+  region,
   uiconfId,
   ks,
   cardActive,
 }: {
   clips: Clip[];
   partnerId?: number;
+  region?: string;
   uiconfId?: number;
   ks?: string;
   cardActive: boolean;
@@ -182,6 +195,7 @@ function ClipGallery({
       <ClipPlayer
         clip={activeClip}
         partnerId={partnerId}
+        region={region}
         uiconfId={uiconfId}
         ks={ks}
         active={cardActive}
@@ -189,7 +203,7 @@ function ClipGallery({
       {clips.length > 1 && (
         <div className="flashcard-clip-thumbs">
           {clips.map((clip, ci) => {
-            const thumbUrl = buildThumbnailUrl(clip, partnerId);
+            const thumbUrl = buildThumbnailUrl(clip, partnerId, region);
             return (
               <button
                 key={ci}
@@ -223,6 +237,7 @@ const FlashcardsView: FC<FlashcardsCoreProps> = ({
   summary,
   cards,
   partnerId,
+  region,
   uiconfId,
   ks,
 }) => {
@@ -302,6 +317,7 @@ const FlashcardsView: FC<FlashcardsCoreProps> = ({
                   <ClipGallery
                     clips={card.clips}
                     partnerId={partnerId}
+                    region={region}
                     uiconfId={uiconfId}
                     ks={ks}
                     cardActive={isActive}
