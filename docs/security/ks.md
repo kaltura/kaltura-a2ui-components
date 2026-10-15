@@ -63,7 +63,8 @@ The second argument says what one widget instance asks for. Every value is data 
 
 | `widget` | `scope` adds |
 |---|---|
-| `player`, `captions-editor`, `content-lab` | `entryId` |
+| `player`, `content-lab` | `entryId` |
+| `captions-editor` | `entryId`, optional `assetId` |
 | `flashcards` | `entryIds`: the clip entries, sorted, unique, at most 20 |
 | `analytics` | optional `entryId`, `reportType`, `fromDate`, `toDate` |
 | `media-manager` | optional `contextId` (category id, digits only) |

@@ -129,6 +129,17 @@ describe('KS-SCOPE: what the provider gets', () => {
     expect(scopes(provider)).toEqual([{ region: 'nvp1', partnerId: 1, entryId: '0_a', assetId: '1_asset' }]);
   });
 
+  it('a new assetId asks the provider again with the new scope', async () => {
+    const captions = captionsRemote();
+    const provider = vi.fn<KsProvider>(() => 'host-ks');
+    setKsProvider(provider);
+    const { root } = await mount(CaptionsEditorCore, { partnerId: 1, entryId: '0_a', assetId: '1_aaa' });
+    await act(async () => root.render(createElement(CaptionsEditorCore, { partnerId: 1, entryId: '0_a', assetId: '1_bbb' })));
+    await afterQuietPeriod();
+    captions.restore();
+    expect(scopes(provider).map(scope => (scope as { assetId?: string }).assetId)).toEqual(['1_aaa', '1_bbb']);
+  });
+
   it('an empty optional id is left out of the scope', async () => {
     const provider = vi.fn<KsProvider>(() => 'host-ks');
     setKsProvider(provider);

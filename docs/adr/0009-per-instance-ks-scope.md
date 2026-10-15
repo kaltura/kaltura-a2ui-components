@@ -152,7 +152,7 @@ Rules:
 | Parameter | Source | Class | Enforced by | Phase |
 |---|---|---|---|---|
 | `entryId` | prop | R | KS `edit:<id>` + `sview:<id>`. A USER KS needs a role that can add captions | 1 |
-| `assetId` | prop (`data-assetid`, tested against editor v1.3.10). Optional | R | the editor. It must belong to the entry | 2 (implemented) |
+| `assetId` | prop (`data-assetid`, read by the pinned editor page v1.3.10). Optional | R | the editor. It must belong to the entry | 2 (implemented) |
 | `uiconfId` | prop | allowlist | | |
 | `userId`, expiry (about 2 hours) | KS | H | KS | |
 
@@ -388,7 +388,7 @@ These need a sandbox partner. They set the entry cap (provisional 20) and decide
 
 - Length limit of the privilege string, and the KS size where URLs break. Done: `session.start` kept 500 ids in one `sview` value (5.5 kB of privileges, an 8.8 kB KS) without truncation. The cap of 20 entries gives a 464 character KS, so size is not the limit. The real limit of any one service (player, CDN URL) is untested.
 - `sview:a/b` (slash) against repeated keys. Done with a KS-protected entry: repeated keys collapse to the last one. The slash list `sview:a/b` works. `,`, `|` and `;` do not.
-- Captions editor: done. The editor reads `data-assetid`. A USER KS needs a role that can add captions.
+- Captions editor: done. The pinned editor page (v1.3.10) reads `data-assetid`. The editing screen with a real caption asset was not run end to end. A USER KS needs a role that can add captions.
 - Whether Genie privileges narrow results, and whether the server checks the client `context_id`.
 - Which claim selects the avatar agent, and whether `autoConnect` needs a user gesture.
 - ADMIN or USER KS for Content Lab and Agents Widget.
