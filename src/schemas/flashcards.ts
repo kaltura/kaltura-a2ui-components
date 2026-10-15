@@ -25,6 +25,7 @@ export const KalturaFlashcardsApi = {
     summary: CommonSchemas.DynamicString.optional(),
     cards: z.array(CardSchema),
     partnerId: z.number().int().positive().optional(),
+    region: z.string().optional(),
     uiconfId: z.number().int().positive().optional(),
     action: CommonSchemas.Action.optional(),
   }),

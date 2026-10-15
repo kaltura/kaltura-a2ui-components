@@ -16,6 +16,8 @@ export interface PlayerCoreProps {
   uiconfId: number;
   /** Entry to play, such as `0_abc123`. */
   entryId: string;
+  /** Region code or host-registered environment. Default: the `setRegion` value. */
+  region?: string;
   /** Only for protected entries. The host KS provider is used first. */
   ks?: string;
   /** Start playback on load. Browsers need `muted` too. */
@@ -38,6 +40,7 @@ export interface PlayerEmbedProps {
   partnerId: number;
   uiconfId: number;
   entryId: string;
+  region?: string;
   ks?: string;
   autoplay?: boolean;
   muted?: boolean;
@@ -59,7 +62,7 @@ const invalidProp = (p: Pick<PlayerEmbedProps, 'partnerId' | 'uiconfId' | 'entry
  * there is no iframe sandbox (docs/adr/0008).
  */
 export function PlayerEmbed(props: PlayerEmbedProps) {
-  const { partnerId, uiconfId, entryId, ks, autoplay, muted, seekFrom, clipTo, widget } = props;
+  const { partnerId, uiconfId, entryId, region, ks, autoplay, muted, seekFrom, clipTo, widget } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const invalid = invalidProp(props);
   const refused = invalid ? undefined : refusedIdProp(props);
@@ -85,7 +88,7 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
       player = undefined;
     };
 
-    loadPlayerScript(partnerId, uiconfId)
+    loadPlayerScript(partnerId, uiconfId, region)
       .then(api => {
         if (cancelled) return;
         player = api.setup({
@@ -128,7 +131,7 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
       destroy();
       container.replaceChildren();
     };
-  }, [partnerId, uiconfId, entryId, ks, autoplay, muted, seekFrom, clipTo, widget, invalid, refused, reporter]);
+  }, [partnerId, uiconfId, entryId, region, ks, autoplay, muted, seekFrom, clipTo, widget, invalid, refused, reporter]);
 
   if (invalid) return <LoadError widget={widget}>{`Failed to load player: Invalid ${invalid}`}</LoadError>;
   if (refused) return <LoadError widget={widget} code="origin-not-allowed">{`Failed to load player: ${refused} is not allowed`}</LoadError>;
@@ -151,6 +154,7 @@ const PlayerView: FC<PlayerCoreProps> = (props) => {
         partnerId={props.partnerId}
         uiconfId={props.uiconfId}
         entryId={props.entryId}
+        region={props.region}
         ks={props.ks}
         autoplay={props.autoplay}
         muted={props.muted}

@@ -2,7 +2,7 @@ import { UnisphereWidgetCore } from './unisphere-widget';
 import { KalturaAgentsWidgetApi } from '../schemas/agents-widget';
 import { withValidatedProps } from './validate-props';
 import { withKs, withKsProp } from './ks';
-import { currentRegion, kalturaHosts, regionOf } from './region';
+import { KALTURA_REGIONS, resolveRegion } from './region';
 
 export interface AgentsWidgetCoreProps {
   /** Kaltura partner (account) ID. */
@@ -11,22 +11,26 @@ export interface AgentsWidgetCoreProps {
   ks: string;
   /** Unisphere URL. Defaults to the Unisphere host of the region. Only Kaltura hosts and `setExtraAllowedOrigins` are accepted. */
   serverUrl?: string;
+  /** Region code or host-registered environment name. Default: the region of `serverUrl`, else the `setRegion` value. */
+  region?: string;
 }
 
 function AgentsWidgetView(props: AgentsWidgetCoreProps) {
+  const { name, hosts } = resolveRegion(props.region, props.serverUrl);
   return (
     <UnisphereWidgetCore
       partnerId={props.partnerId}
       ks={props.ks}
       serverUrl={props.serverUrl}
+      region={props.region}
       widgetName="unisphere.widget.agents"
       runtimeName="manager"
       visualType="drawer"
       runtimeSettings={{
         ks: props.ks,
         pid: String(props.partnerId),
-        agentsServiceURI: `https://agents-manager.${regionOf(props.serverUrl ?? '') ?? currentRegion()}.ovp.kaltura.com`,
-        kalturaServerURI: kalturaHosts(regionOf(props.serverUrl ?? '')).serviceUrl,
+        agentsServiceURI: KALTURA_REGIONS.some(code => code === name) ? `https://agents-manager.${name}.ovp.kaltura.com` : hosts.serviceUrl,
+        kalturaServerURI: hosts.serviceUrl,
         analyticsServerURI: 'analytics.kaltura.com',
         hostAppName: 1,
       }}

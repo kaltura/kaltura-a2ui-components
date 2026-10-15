@@ -1,4 +1,4 @@
 [
-  { "name": "kaltura-react.mjs", "path": ["dist/kaltura-react.mjs", "dist/html-element-stub.mjs"], "gzip": true, "limit": "169.5 kB" },
-  { "name": "kaltura-wc.js", "path": "dist/kaltura-wc.js", "gzip": true, "limit": "229.4 kB" }
+  { "name": "kaltura-react.mjs", "path": ["dist/kaltura-react.mjs", "dist/html-element-stub.mjs"], "gzip": true, "limit": "170.5 kB" },
+  { "name": "kaltura-wc.js", "path": "dist/kaltura-wc.js", "gzip": true, "limit": "230.5 kB" }
 ]

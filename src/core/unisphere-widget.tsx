@@ -1,5 +1,6 @@
 import { useContext, useEffect, useRef } from 'react';
-import { defaultServerUrl, loadUnisphereModule } from './unisphere-loader';
+import { loadUnisphereModule } from './unisphere-loader';
+import { unisphereUrl } from './region';
 import { renderLoadError } from './render-load-error';
 import { KalturaFailure, ReporterContext, type KalturaWidget } from './host-hooks';
 import { refusedIdProp } from './allowed-ids';
@@ -9,8 +10,10 @@ export { deriveLoaderUrl } from './unisphere-loader';
 export interface UnisphereWidgetCoreProps {
   partnerId: number;
   ks: string;
-  /** Unisphere host. Default: the host of the region set with `setRegion`. */
+  /** Unisphere host. Default: the Unisphere host of `region`. */
   serverUrl?: string;
+  /** Region code or host-registered environment name. Default: the region of `serverUrl`, else the `setRegion` value. */
+  region?: string;
   widgetName: string;
   runtimeName: string;
   runtimeSettings?: Record<string, unknown>;
@@ -39,8 +42,7 @@ function killWorkspace(workspace: unknown): void {
 
 export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { partnerId, ks, widgetName, runtimeName, visualType, label, widget = 'unisphere' } = props;
-  const serverUrl = props.serverUrl ?? defaultServerUrl();
+  const { partnerId, ks, region, serverUrl: serverUrlProp, widgetName, runtimeName, visualType, label, widget = 'unisphere' } = props;
   const reporter = useContext(ReporterContext);
   const onRuntimeRef = useRef(props.onRuntime);
   onRuntimeRef.current = props.onRuntime;
@@ -56,6 +58,14 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
     const refused = refusedIdProp({ partnerId });
     if (refused) {
       renderLoadError(container, label, new KalturaFailure('origin-not-allowed', `${refused} is not allowed`), widget, reporter);
+      return;
+    }
+
+    let serverUrl: string;
+    try {
+      serverUrl = unisphereUrl(region, serverUrlProp);
+    } catch (error) {
+      renderLoadError(container, label, error, widget, reporter);
       return;
     }
 
@@ -124,7 +134,7 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
       killWorkspace(workspace);
       workspace = null;
     };
-  }, [partnerId, ks, serverUrl, widgetName, runtimeName, visualType, label, widget, settingsKey, reporter]);
+  }, [partnerId, ks, region, serverUrlProp, widgetName, runtimeName, visualType, label, widget, settingsKey, reporter]);
 
   return (
     <div

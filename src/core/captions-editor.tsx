@@ -3,7 +3,7 @@ import type { FC } from 'react';
 import { KalturaCaptionsEditorApi } from '../schemas/captions-editor';
 import { withValidatedProps } from './validate-props';
 import { withKs, withKsProp } from './ks';
-import { kalturaHosts } from './region';
+import { resolveRegion, type KalturaHosts } from './region';
 import { KalturaFailure, ReporterContext } from './host-hooks';
 import { renderLoadError } from './render-load-error';
 
@@ -67,6 +67,8 @@ export interface CaptionsEditorCoreProps {
   ks: string;
   /** Entry whose captions to edit. */
   entryId: string;
+  /** Region code. Only built-in regions with a pinned editor page work. Default: the host region. */
+  region?: string;
   /** uiConf ID of the editor's own player. */
   uiconfId?: number;
 }
@@ -79,7 +81,7 @@ export interface CaptionsEditorCoreProps {
  * page origin, so the iframe sandbox is not a boundary (docs/adr/0008).
  */
 const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
-  const { partnerId, ks, entryId, uiconfId } = props;
+  const { partnerId, ks, region, entryId, uiconfId } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const reporter = useContext(ReporterContext);
 
@@ -89,7 +91,7 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
 
     let cancelled = false;
     let blobUrl: string | undefined;
-    const hosts = kalturaHosts();
+    let hosts: KalturaHosts;
 
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), PAGE_TIMEOUT_MS);
@@ -98,6 +100,7 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
     // and only if it matches the pinned hash, within a time and size limit.
     Promise.resolve()
       .then(() => {
+        hosts = resolveRegion(region).hosts;
         const integrity = EDITOR_PAGE_INTEGRITY[hosts.serviceUrl];
         if (!integrity) throw new Error();
         return fetch(`${hosts.serviceUrl}${EDITOR_PATH}`, { credentials: 'omit', referrerPolicy: 'no-referrer', redirect: 'error', integrity, signal: abort.signal });
@@ -129,9 +132,9 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
         frame.src = blobUrl;
         container.replaceChildren(frame);
       })
-      .catch(() => {
+      .catch(error => {
         if (cancelled) return;
-        renderLoadError(container, 'captions editor', new KalturaFailure('load-failed', 'Captions editor could not start'), 'captions-editor', reporter);
+        renderLoadError(container, 'captions editor', error instanceof KalturaFailure && error.code === 'origin-not-allowed' ? error : new KalturaFailure('load-failed', 'Captions editor could not start'), 'captions-editor', reporter);
       })
       .finally(() => clearTimeout(timer));
 
@@ -142,7 +145,7 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
       container.replaceChildren();
       if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
-  }, [partnerId, ks, entryId, uiconfId, reporter]);
+  }, [partnerId, ks, region, entryId, uiconfId, reporter]);
 
   return <div ref={containerRef} className="kaltura-captions-editor-container" style={{ width: '100%', minHeight: '600px' }} />;
 };

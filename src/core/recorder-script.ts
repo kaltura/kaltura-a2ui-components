@@ -1,5 +1,5 @@
 import { KalturaFailure } from './host-hooks';
-import { kalturaHosts } from './region';
+import { resolveRegion } from './region';
 
 /** The parts of the Express Recorder API we use. It is remote code: check every call. */
 export interface ExpressRecorderOptions {
@@ -44,24 +44,30 @@ export const RECORDER_SCRIPT: RecorderScript = {};
 // The one fixed, versioned path. The host comes from the region, which only the host sets.
 const SCRIPT_PATH = '/apps/expressrecorder/v2.2.10/express-recorder.js';
 
-let loading: Promise<ExpressRecorderApi> | undefined;
+// Each load replaces `window.Kaltura.ExpressRecorder`, so the cache holds the last URL only.
+let current: { url: string; loading: Promise<ExpressRecorderApi> } | undefined;
 
-/** The script URL for the current region. Fixed host and path, no input from props. */
-export const recorderScriptUrl = (): string => `${kalturaHosts().recorder}${SCRIPT_PATH}`;
+/** The script URL for a region. Fixed path. The host comes from the region the host app allows. */
+export const recorderScriptUrl = (region?: string): string => `${resolveRegion(region).hosts.recorder}${SCRIPT_PATH}`;
 
 /**
- * Loads the Express Recorder script once per page. Every caller shares the
- * same promise, also after a region change: the script is the same on every
- * Kaltura host. A failed load is dropped from the cache, so the
- * next mount tries again. Rejects with a `KalturaFailure` whose message is
- * fixed text.
+ * Loads the Express Recorder script of one region. Callers of the same URL
+ * share one promise. A failed load is dropped from the cache, so the next
+ * mount tries again. Rejects with a `KalturaFailure` whose message is fixed
+ * text.
  */
-export function loadRecorderScript(script: RecorderScript = RECORDER_SCRIPT): Promise<ExpressRecorderApi> {
-  if (loading) return loading;
+export function loadRecorderScript(script: RecorderScript = RECORDER_SCRIPT, region?: string): Promise<ExpressRecorderApi> {
+  let url: string;
+  try {
+    url = recorderScriptUrl(region);
+  } catch (error) {
+    return Promise.reject(error);
+  }
+  if (current?.url === url) return current.loading;
 
-  loading = new Promise<ExpressRecorderApi>((resolve, reject) => {
+  const loading: Promise<ExpressRecorderApi> = new Promise<ExpressRecorderApi>((resolve, reject) => {
     const tag = document.createElement('script');
-    tag.src = recorderScriptUrl();
+    tag.src = url;
     if (script.integrity) {
       tag.setAttribute('integrity', script.integrity);
       tag.setAttribute('crossorigin', 'anonymous');
@@ -69,7 +75,7 @@ export function loadRecorderScript(script: RecorderScript = RECORDER_SCRIPT): Pr
     // A failed load must not stay cached: the next mount tries again.
     const fail = (message: string) => {
       tag.remove();
-      loading = undefined;
+      if (current?.loading === loading) current = undefined;
       reject(new KalturaFailure('load-failed', message));
     };
     tag.onload = () => {
@@ -80,5 +86,6 @@ export function loadRecorderScript(script: RecorderScript = RECORDER_SCRIPT): Pr
     tag.onerror = () => fail(script.integrity ? 'Recorder script failed to load or failed its integrity check' : 'Recorder script failed to load');
     document.head.append(tag);
   });
+  current = { url, loading };
   return loading;
 }

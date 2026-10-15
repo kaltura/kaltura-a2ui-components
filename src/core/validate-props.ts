@@ -6,6 +6,7 @@ import { isCategoryId, isEntryId, isPositiveInt } from './ids';
 import { invalidCode, reportError, ReporterContext, type KalturaErrorCode, type KalturaWidget } from './host-hooks';
 import { refusedIdProp } from './allowed-ids';
 import { isAllowedServerUrl } from './unisphere-loader';
+import { resolveRegion, unisphereUrl } from './region';
 
 // Core components get resolved props, so the bindings and function calls that the
 // A2UI schemas allow must not appear. Use the schema, minus those two options.
@@ -49,6 +50,8 @@ const FIELD_RULES: Record<string, (value: unknown) => boolean> = {
   partnerId: isPositiveInt,
   // 0 selects the default uiConf. Schemas that need a real id are stricter.
   uiconfId: value => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0,
+  // A region code or an environment name. Whether it is known and allowed is decided in `gateProps`.
+  region: value => typeof value === 'string' && /^[a-z][a-z0-9-]{0,31}$/.test(value),
   entryId: isEntryId,
   // Category ids. They go into the KS request and into widget settings.
   categoryId: isCategoryId,
@@ -162,6 +165,16 @@ export function gateProps(
   if ('serverUrl' in schema.shape && typeof serverUrl === 'string' && !isAllowedServerUrl(serverUrl)) {
     const children = `Failed to load ${label}: serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)`;
     return { error: createElement(LoadError, { widget, code: 'origin-not-allowed', children }), pending: false };
+  }
+  if ('region' in schema.shape) {
+    try {
+      const url = typeof serverUrl === 'string' ? serverUrl : undefined;
+      // A Unisphere widget needs a Unisphere host in its region too.
+      if ('serverUrl' in schema.shape) unisphereUrl((props as { region?: string }).region, url);
+      else resolveRegion((props as { region?: string }).region, url);
+    } catch {
+      return { error: createElement(LoadError, { widget, code: 'origin-not-allowed', children: `Failed to load ${label}: region is not allowed` }), pending: false };
+    }
   }
   return { pending: false };
 }

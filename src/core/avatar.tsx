@@ -1,10 +1,10 @@
 import { createElement, useContext, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { z } from 'zod';
-import { defaultServerUrl, loadUnisphereModule } from './unisphere-loader';
+import { loadUnisphereModule } from './unisphere-loader';
 import { renderLoadError } from './render-load-error';
 import { KalturaFailure, emitEvent, ReporterContext } from './host-hooks';
-import { regionOf } from './region';
+import { regionOf, unisphereUrl } from './region';
 import { KalturaAvatarApi } from '../schemas/avatar';
 import { withValidatedProps } from './validate-props';
 import { withKs } from './ks';
@@ -14,6 +14,8 @@ export interface AvatarCoreProps {
   partnerId: number;
   /** Unisphere URL. Defaults to the Unisphere host of the region. Only Kaltura hosts and `setExtraAllowedOrigins` are accepted. */
   serverUrl?: string;
+  /** Region code or host-registered environment name. Default: the region of `serverUrl`, else the `setRegion` value. */
+  region?: string;
   /** Start the session on load. Default: false, the user clicks to start. */
   autoConnect?: boolean;
   /** What the avatar says first. Plain text. */
@@ -46,8 +48,7 @@ const safeReason = (reason: unknown) => (typeof reason === 'string' && /^[A-Za-z
 
 const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { partnerId, ks, autoConnect, openingPhrase, captions, theme } = props;
-  const serverUrl = props.serverUrl ?? defaultServerUrl();
+  const { partnerId, ks, region, serverUrl: serverUrlProp, autoConnect, openingPhrase, captions, theme } = props;
   const reporter = useContext(ReporterContext);
 
   useEffect(() => {
@@ -65,6 +66,13 @@ const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
         }
       });
     container.replaceChildren();
+    let serverUrl: string;
+    try {
+      serverUrl = unisphereUrl(region, serverUrlProp);
+    } catch (error) {
+      renderLoadError(container, LABEL, error, 'avatar', reporter);
+      return;
+    }
     const id = `kaltura-avatar-${crypto.randomUUID()}`;
     container.id = id;
     const settings = {
@@ -107,7 +115,7 @@ const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
       stop();
       container.replaceChildren();
     };
-  }, [partnerId, ks, serverUrl, autoConnect, openingPhrase, captions, theme, reporter]);
+  }, [partnerId, ks, region, serverUrlProp, autoConnect, openingPhrase, captions, theme, reporter]);
 
   return <div ref={containerRef} className="kaltura-avatar-container" style={{ width: '100%', aspectRatio: '16/9' }} />;
 };

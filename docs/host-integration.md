@@ -62,10 +62,12 @@ setKsProvider(widget => (widget === 'analytics' ? session.adminKs : session.user
 ## Region
 
 ```ts
-setRegion('irp2'); // nvp1 (default), irp2, frp2, cap2, syp2
+setRegion('irp2'); // nvp1 (default), irp2, frp2, cap2, syp2, sgp2
 ```
 
 It changes every Kaltura host the components build: player, flashcard clips and thumbnails, captions editor, Analytics and recorder. Unisphere widgets use the Unisphere host of the region when the agent sets no `serverUrl`. Unknown codes throw. The host table and the `sgp2` note: [host-api.md](host-api.md#regions).
+
+A widget can use another region than the default: the agent sets its `region`. To keep it on your regions, set `setAllowedRegions(['irp2'])`. For localhost, an IP or a private cloud, register [environments](host-api.md#environments) and add their hosts to your CSP. `http:` environments send the KS without encryption: use them for local development only.
 
 ## Allowed partners and uiconfs
 
@@ -252,6 +254,7 @@ These hosts come from `src/core/region.ts` (`e2e/csp.spec.ts` checks the table a
 | frp2 | `https://api.de.kaltura.com` | `https://api.de.kaltura.com` | `https://api.de.kaltura.com` | `https://cfvod.frp2.ovp.kaltura.com` | `https://kmc.de.kaltura.com` |
 | cap2 | `https://api.ca.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://cfvod.cap2.ovp.kaltura.com` | `https://kmc.ca.kaltura.com` |
 | syp2 | `https://api.ap.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | `https://cfvod.syp2.ovp.kaltura.com` | `https://kmc.ap.kaltura.com` |
+| sgp2 | `https://api.sg.kaltura.com` | `https://api.sgp2.ovp.kaltura.com` | `https://api.sgp2.ovp.kaltura.com` | `https://cfvod.sgp2.ovp.kaltura.com` | `https://kmc.sg.kaltura.com` |
 
 In a region, replace the hosts of the starting policy like this:
 
@@ -262,7 +265,7 @@ In a region, replace the hosts of the starting policy like this:
 | `frame-src` | `<kmc>` |
 | `img-src`, `media-src`, `connect-src` | `https://*.kaltura.com` already covers `<vod>`, `<cdn>` and `<serviceUrl>` |
 
-For `cap2` and `syp2`, `serviceUrl` and `cdn` are different hosts. Add both. The Unisphere `script-src` entries use the region code (`https://unisphere.<region>.ovp.kaltura.com/v1/`).
+For `cap2`, `syp2` and `sgp2`, `serviceUrl` and `cdn` are different hosts. Add both. The Unisphere `script-src` entries use the region code (`https://unisphere.<region>.ovp.kaltura.com/v1/`). `sgp2` has none.
 
 ### Rollout
 

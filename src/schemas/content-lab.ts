@@ -5,6 +5,7 @@ export const KalturaContentLabApi = {
   name: 'KalturaContentLab',
   schema: z.object({
     partnerId: z.number().int().positive(),
+    region: z.string().optional(),
     serverUrl: CommonSchemas.DynamicString.optional(),
     uiconfId: z.number().int().positive(),
     entryId: CommonSchemas.DynamicString,
