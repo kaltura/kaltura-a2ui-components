@@ -81,6 +81,26 @@ class LivePage {
     await this.page.evaluate((ks) => (window as unknown as LiveWindow).KalturaA2UIWebComponents.setKsProvider(() => ks), this.ks);
   }
 
+  /**
+   * Swaps in a provider that does what a host backend does: it takes the scope request and mints a
+   * USER KS limited to it. The minting runs in this process. Each request is recorded.
+   */
+  async useScopedProvider(): Promise<{ widget: string; scope: Record<string, unknown> }[]> {
+    const calls: { widget: string; scope: Record<string, unknown> }[] = [];
+    await this.page.exposeFunction('__mintScoped', async (widget: string, scope: Record<string, unknown>) => {
+      calls.push({ widget, scope });
+      const privileges = [scope.entryId && `sview:${String(scope.entryId)}`, scope.playlistId && `sviewplaylist:${String(scope.playlistId)}`].filter(Boolean).join(',');
+      const ks = await mintKs(partnerId, adminSecret ?? '', 'a2ui-live-scoped', { type: 0, privileges });
+      this.ks = ks;
+      return ks;
+    });
+    await this.page.evaluate(() => {
+      const w = window as unknown as LiveWindow & { __mintScoped(widget: string, scope: unknown): Promise<string> };
+      w.KalturaA2UIWebComponents.setKsProvider(((widget: string, request: { scope: unknown }) => w.__mintScoped(widget, request.scope)) as never);
+    });
+    return calls;
+  }
+
   /** Text of the first frame from the Analytics app. */
   analyticsText(): Promise<string> {
     const frame = this.page.frames().find((f) => f !== this.page.mainFrame() && f.url().includes('kmc-analytics'));
@@ -242,4 +262,22 @@ test('LIVE-08: analytics opens the view of a playlist', async ({ live }) => {
   await live.mount('kaltura-analytics', { partnerId, playlistId: PLAYLIST_ID });
   await expect.poll(() => live.analyticsText(), { timeout: PLAY_TIMEOUT, message: 'the playlist view shows' }).toContain(PLAYLIST_NAME);
   expect(live.consoleErrors).toEqual([]);
+});
+
+test('LIVE-09: the provider gets the scope of a player and mints a KS limited to its entry', async ({ live }) => {
+  const calls = await live.useScopedProvider();
+  await live.mount('kaltura-player', { partnerId, uiconfId: UICONF_ID, entryId: ENTRY_ID, autoplay: true, muted: true });
+  await expect.poll(async () => (await live.state())?.currentTime ?? 0, { timeout: PLAY_TIMEOUT, message: 'currentTime advances' }).toBeGreaterThan(1);
+  expect(calls).toEqual([{ widget: 'player', scope: { region: 'nvp1', partnerId, entryId: ENTRY_ID } }]);
+  expect(live.consoleErrors).toEqual([]);
+  expectNoKsInUrls(live);
+});
+
+test('LIVE-10: the provider gets the scope of a playlist player and mints a KS limited to its playlist', async ({ live }) => {
+  const calls = await live.useScopedProvider();
+  await live.mount('kaltura-player', { partnerId, uiconfId: UICONF_ID, playlistId: PLAYLIST_ID, autoplay: true, muted: true });
+  await expect.poll(async () => (await live.state())?.currentTime ?? 0, { timeout: PLAY_TIMEOUT, message: 'currentTime advances' }).toBeGreaterThan(1);
+  expect(calls).toEqual([{ widget: 'player', scope: { region: 'nvp1', partnerId, playlistId: PLAYLIST_ID } }]);
+  expect(live.consoleErrors).toEqual([]);
+  expectNoKsInUrls(live);
 });
