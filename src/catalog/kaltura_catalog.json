@@ -1207,6 +1207,10 @@
               "$ref": "#/$defs/DynamicString",
               "description": "Media entry ID whose captions to edit."
             },
+            "assetId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Optional. Caption asset ID to open, a string like '1_abc123'. It must belong to the entry. Leave it out to let the editor pick."
+            },
             "uiconfId": {
               "type": "integer",
               "description": "Optional. uiConf ID of the editor's own player. Integer, not a string, not a binding."
