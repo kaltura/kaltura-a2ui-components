@@ -2,7 +2,7 @@ import { UnisphereWidgetCore } from './unisphere-widget';
 import { KalturaVodAvatarApi } from '../schemas/vod-avatar';
 import { withValidatedProps } from './validate-props';
 import { withKs, withKsProp } from './ks';
-import { kalturaHosts } from './region';
+import { kalturaHosts, regionOf } from './region';
 
 export interface VodAvatarCoreProps {
   /** Kaltura partner (account) ID. */
@@ -25,7 +25,7 @@ function VodAvatarView(props: VodAvatarCoreProps) {
       runtimeSettings={{
         ks: props.ks,
         partnerId: props.partnerId,
-        kalturaServerURI: kalturaHosts().serviceUrl,
+        kalturaServerURI: kalturaHosts(regionOf(props.serverUrl ?? '')).serviceUrl,
       }}
       label="Kaltura VOD Avatar"
       containerClass="kaltura-kaltura-vod-avatar-container"
