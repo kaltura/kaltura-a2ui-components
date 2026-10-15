@@ -183,6 +183,13 @@ describe('CONF-13: invalid components are rejected', () => {
     expect(Object.entries(INVALID).filter(([, list]) => list.length < 3)).toEqual([]);
   });
 
+  it.each([
+    ['an entry', { entryId: '0_abc' }],
+    ['a playlist', { playlistId: '1_list' }],
+  ])('CONF-13: the catalog schema accepts a Player with %s', (_why, ids) => {
+    expect(componentValidator('KalturaPlayer')({ id: 'root', component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, ...ids })).toBe(true);
+  });
+
   it.each(cases)('CONF-13: the catalog schema rejects %s: %s', (component, _why, item) => {
     expect(componentValidator(component)({ id: 'root', component, ...item.props })).toBe(false);
   });

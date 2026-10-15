@@ -85,8 +85,8 @@ describe('CONF-07: the generator notices drift (so the test above is not vacuous
   });
 
   it('CONF-07: a required prop made optional leaves the required list', () => {
-    const next = generator.generateCatalog(catalog, [player({ ...shape, entryId: shape.entryId.optional() }), ...others]);
-    expect(ownBlock(next, 'KalturaPlayer').required).not.toContain('entryId');
+    const next = generator.generateCatalog(catalog, [player({ ...shape, uiconfId: shape.uiconfId.optional() }), ...others]);
+    expect(ownBlock(next, 'KalturaPlayer').required).not.toContain('uiconfId');
   });
 
   it('CONF-07: an enum change is copied', () => {
