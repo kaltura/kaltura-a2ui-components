@@ -1129,7 +1129,7 @@
             "mode": {
               "type": "string",
               "enum": ["select", "manage"],
-              "description": "Interaction mode. 'select' for content picking, 'manage' for full CRUD operations. Default: 'select'.",
+              "description": "Interaction mode. 'select' shows the select button. 'manage' hides it. What the user can change comes from the KS role. Default: 'select'.",
               "default": "select"
             },
             "multiSelect": {
