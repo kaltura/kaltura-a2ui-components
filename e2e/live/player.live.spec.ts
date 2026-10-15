@@ -8,6 +8,8 @@ import { mintKs } from './mint-ks';
 
 const partnerId = Number(process.env.NVP1_PARTNER_ID);
 const adminSecret = process.env.NVP1_ADMIN_SECRET;
+// An admin user of the partner that has a role. Analytics needs it: a KS without a role makes the app fail.
+const adminUserId = process.env.NVP1_ADMIN_USER_ID;
 // "MediaSpace Embed Player" on the account, listed with uiConf.list.
 const UICONF_ID = 1000092;
 // Transcoded, and clips work.
@@ -15,6 +17,7 @@ const ENTRY_ID = '1_aaaaaaaa';
 const CLIP = { start: 2, end: 7 };
 // A manual playlist of two ready entries.
 const PLAYLIST_ID = '1_bbbbbbbb';
+const PLAYLIST_NAME = 'a2ui-test-playlist';
 const PLAY_TIMEOUT = 45_000;
 
 interface PlayerState {
@@ -46,7 +49,7 @@ class LivePage {
 
   constructor(
     readonly page: Page,
-    private readonly ks: string,
+    private ks: string,
   ) {
     page.context().on('request', (r) => {
       this.requests.push(r.url());
@@ -70,6 +73,18 @@ class LivePage {
   async open(): Promise<void> {
     await this.page.goto(`${ORIGIN_A}/harness.html`);
     await this.page.evaluate((ks) => (window as unknown as LiveWindow).KalturaA2UIWebComponents.setKsProvider(() => ks), this.ks);
+  }
+
+  /** Replaces the KS in the provider with one of another user. */
+  async switchUser(userId: string): Promise<void> {
+    this.ks = await mintKs(partnerId, adminSecret ?? '', userId);
+    await this.page.evaluate((ks) => (window as unknown as LiveWindow).KalturaA2UIWebComponents.setKsProvider(() => ks), this.ks);
+  }
+
+  /** Text of the first frame from the Analytics app. */
+  analyticsText(): Promise<string> {
+    const frame = this.page.frames().find((f) => f !== this.page.mainFrame() && f.url().includes('kmc-analytics'));
+    return frame ? frame.evaluate(() => document.body.innerText).catch(() => '') : Promise.resolve('');
   }
 
   mount(tag: string, config: Record<string, unknown>): Promise<void> {
@@ -219,4 +234,12 @@ test('LIVE-06: the captions editor opens the caption asset named by assetId', as
 test('LIVE-07: without assetId the captions editor opens the first asset, not the French one', async ({ live }) => {
   await live.mount('kaltura-captions-editor', { partnerId, entryId: CAPTIONS_ENTRY_ID });
   await expect.poll(() => editorText(live), { timeout: PLAY_TIMEOUT, message: 'the English asset opens' }).toContain('English - a2ui-probe-en');
+});
+
+test('LIVE-08: analytics opens the view of a playlist', async ({ live }) => {
+  test.skip(!adminUserId, 'Needs NVP1_ADMIN_USER_ID in .env: an admin user that has a role.');
+  await live.switchUser(adminUserId ?? '');
+  await live.mount('kaltura-analytics', { partnerId, playlistId: PLAYLIST_ID });
+  await expect.poll(() => live.analyticsText(), { timeout: PLAY_TIMEOUT, message: 'the playlist view shows' }).toContain(PLAYLIST_NAME);
+  expect(live.consoleErrors).toEqual([]);
 });

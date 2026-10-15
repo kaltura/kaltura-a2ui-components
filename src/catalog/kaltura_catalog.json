@@ -1167,7 +1167,7 @@
     },
     "KalturaAnalytics": {
       "type": "object",
-      "description": "Kaltura Analytics: shows one view of the analytics app, for a media entry or a report type, over a date range. The host supplies the Kaltura Session, so there is no ks prop.",
+      "description": "Kaltura Analytics: shows one view of the analytics app, for a media entry, category, playlist, virtual event or report type, over a date range. The host supplies the Kaltura Session, so there is no ks prop.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -1181,11 +1181,23 @@
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Optional media entry ID. Shows the analytics of that entry. Wins over reportType."
+              "description": "Optional media entry ID. Shows the analytics of that entry. Wins over reportType. Use at most one of entryId, categoryId, playlistId and virtualEventId."
+            },
+            "categoryId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Optional category ID (digits only, up to 12). Shows the analytics of that category. Wins over reportType."
+            },
+            "playlistId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Optional playlist ID. Shows the analytics of that playlist. Wins over reportType."
+            },
+            "virtualEventId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Optional virtual event ID (digits only, up to 12). Shows the analytics of that virtual event. Wins over reportType."
             },
             "reportType": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Dashboard view to show when there is no entryId. One of engagement, content-interactions, technology, geo-location, contributors, overview, publisher, enduser or live. Default: engagement."
+              "description": "Dashboard view to show when there is no entryId, categoryId, playlistId or virtualEventId. One of engagement, content-interactions, technology, geo-location, contributors, overview, publisher, enduser or live. Default: engagement."
             },
             "fromDate": {
               "$ref": "#/$defs/DynamicString",

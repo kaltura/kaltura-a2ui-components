@@ -47,7 +47,7 @@ The request names the entry or category the widget asks for. The KS is the only 
 - One playlist (`player` with `playlistId`): `sviewplaylist:<playlistId>`, manual playlists only. Tested: it grants view of the playlist entries, so no `sview` is needed.
 - Several entries (`flashcards`, up to 20): do not repeat the key. `session.start` keeps only the last `sview` (tested), so `sview:a,sview:b` grants one entry at most. Put the ids in one `sview` value, separated by `/` (`sview:a/b`). Tested: `,`, `|` and `;` do not work.
 - Category (`genie`, `media-manager`): no privilege takes a category id. Resolve the category to entry ids on your server, or use a privacy context.
-- `analytics`: `entryId` and the dates are app parameters. The KS cannot limit them. Narrow with `setrole` and `iprestrict`.
+- `analytics`: `entryId`, `categoryId`, `playlistId`, `virtualEventId` and the dates are app parameters. The KS cannot limit them. Narrow with `setrole` and `iprestrict`.
 - `recorder`, `agents-widget`, `vod-avatar`, `avatar`: no scope beyond the account.
 
 Check every id in the request against what the signed-in user may see, then mint.

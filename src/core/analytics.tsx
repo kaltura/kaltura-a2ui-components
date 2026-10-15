@@ -11,9 +11,15 @@ export interface AnalyticsCoreProps {
   partnerId: number;
   /** Region code or host-registered environment name. Default: the host region. */
   region?: string;
-  /** Shows the analytics of this entry. Wins over `reportType`. */
+  /** Shows the analytics of this entry. Wins over `reportType`. One of the four subjects at most. */
   entryId?: string;
-  /** Dashboard view when there is no `entryId`. Default: `engagement`. */
+  /** Shows the analytics of this category. Wins over `reportType`. */
+  categoryId?: string;
+  /** Shows the analytics of this playlist. Wins over `reportType`. */
+  playlistId?: string;
+  /** Shows the analytics of this virtual event. Wins over `reportType`. */
+  virtualEventId?: string;
+  /** Dashboard view when there is no subject. Default: `engagement`. */
   reportType?: string;
   /** Start of the range, `YYYY-MM-DD`. Needs `toDate`. Default: the last 30 days. */
   fromDate?: string;
@@ -34,6 +40,14 @@ export function buildAnalyticsUrl(region?: string): string {
   return `${resolveRegion(region).hosts.kmc}/apps/kmc-analytics/latest/index.html`;
 }
 
+/** The prop that names the subject, with its route in the Analytics app. */
+const SUBJECTS = [
+  ['entryId', 'entry'],
+  ['categoryId', 'category'],
+  ['playlistId', 'playlist'],
+  ['virtualEventId', 'virtual-event'],
+] as const;
+
 function isIsoDate(value: unknown): value is string {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(value);
@@ -41,22 +55,28 @@ function isIsoDate(value: unknown): value is string {
 }
 
 /**
- * Maps the props to the `navigate` and `updateFilters` messages. An entry wins
- * over a report type. Both dates are needed for a range, else the last 30 days.
+ * Maps the props to the `navigate` and `updateFilters` messages. A subject (an
+ * entry, category, playlist or virtual event) wins over a report type. Both dates
+ * are needed for a range, else the last 30 days.
  * Throws a plain `Invalid <prop>` error for a bad value.
  */
-export function analyticsNavigation({ entryId, reportType, fromDate, toDate }: Omit<AnalyticsCoreProps, 'partnerId'>): AnalyticsNavigation {
-  const bad = invalidNavigationProp({ reportType, fromDate, toDate });
+export function analyticsNavigation(props: Omit<AnalyticsCoreProps, 'partnerId'>): AnalyticsNavigation {
+  const bad = invalidNavigationProp(props);
   if (bad) throw new Error(`Invalid ${bad}`);
+  const { reportType, fromDate, toDate } = props;
   const ranged = Boolean(fromDate || toDate);
+  const subject = SUBJECTS.find(([prop]) => props[prop]);
   return {
-    navigate: entryId ? { url: '/analytics/entry', queryParams: { id: entryId } } : { url: `/analytics/${reportType || 'engagement'}` },
+    navigate: subject ? { url: `/analytics/${subject[1]}`, queryParams: { id: props[subject[0]] as string } } : { url: `/analytics/${reportType || 'engagement'}` },
     filters: ranged ? { dateFrom: fromDate as string, dateTo: toDate as string } : { dateBy: 'last30days' },
   };
 }
 
-/** The first of `reportType`, `fromDate` and `toDate` that `analyticsNavigation` refuses. */
-function invalidNavigationProp({ reportType, fromDate, toDate }: Pick<AnalyticsCoreProps, 'reportType' | 'fromDate' | 'toDate'>) {
+/** The first of the subjects, `reportType`, `fromDate` and `toDate` that `analyticsNavigation` refuses. A second subject is refused. */
+function invalidNavigationProp(props: Omit<AnalyticsCoreProps, 'partnerId'>) {
+  const { reportType, fromDate, toDate } = props;
+  const second = SUBJECTS.filter(([prop]) => props[prop])[1];
+  if (second) return second[0];
   if (reportType && !(ANALYTICS_REPORT_TYPES as readonly string[]).includes(reportType)) return 'reportType';
   if ((fromDate || toDate) && !isIsoDate(fromDate)) return 'fromDate';
   if ((fromDate || toDate) && !isIsoDate(toDate)) return 'toDate';

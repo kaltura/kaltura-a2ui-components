@@ -45,7 +45,8 @@ function resolvedSchema(schema: z.ZodTypeAny): z.ZodTypeAny {
   return resolved;
 }
 
-// Props of which a widget needs exactly one. Applied to a schema that has both.
+// Props of which a widget needs exactly one. Applied to a schema that has both and a `uiconfId`:
+// Analytics has the same two props, but needs neither.
 const ONE_OF: ReadonlyArray<readonly [string, string]> = [['entryId', 'playlistId']];
 
 // Rules that the A2UI string and number types cannot carry. Applied by prop name.
@@ -62,6 +63,7 @@ const FIELD_RULES: Record<string, (value: unknown) => boolean> = {
   // Category ids. They go into the KS request and into widget settings.
   categoryId: isCategoryId,
   contextId: isCategoryId,
+  virtualEventId: isCategoryId,
   // A KS goes into URLs and widget settings. Reject empty values and control characters.
   ks: value => typeof value === 'string' && value !== '' && !/\p{Cc}/u.test(value),
 };
@@ -102,7 +104,7 @@ export function checkProps(
       if (!rule(value)) bad.add(key);
     }
     for (const [first, second] of ONE_OF) {
-      if (!(first in schema.shape && second in schema.shape)) continue;
+      if (!(first in schema.shape && second in schema.shape && 'uiconfId' in schema.shape)) continue;
       // An empty string is a set value here: it fails the id rule instead of waiting for a binding.
       const set = [first, second].filter(key => record[key] !== undefined);
       if (set.length === 2) bad.add(second);
