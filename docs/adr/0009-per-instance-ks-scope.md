@@ -391,7 +391,7 @@ These need a sandbox partner. They set the entry cap (provisional 20) and decide
 - Captions editor: done. The pinned editor page (v1.3.10) reads `data-assetid`. Live, in three browsers: with `assetId` the editor opens that asset, without it the first one (`e2e/live`, LIVE-06 and LIVE-07). A USER KS needs a role that can add captions.
 - Player `playlistId`: done. Live, in three browsers: a manual playlist loads and plays (LIVE-05). The KS rule is tested at the API: with a KS-protected entry, `sviewplaylist` lets `playManifest` answer for the playlist entries and no privilege does not.
 - Analytics `virtualEventId`: not added. A KS with `virtualeventid:<id>` returned the same totals as one without it on eight report types, so no limit was seen. The embed reads a `predefinedFilter` from its `init` message. That is a UI filter, and this library does not send it.
-- Whether Genie privileges narrow results, and whether the server checks the client `context_id`.
+- Whether Genie privileges narrow results, and whether the server checks the client `context_id`. Tried on the NVP1 partner: the Genie server answers, but says it has no tool to list videos, with or without a category context, so no scope effect could be seen. It needs a partner with a Genie set up for its content.
 - Which claim selects the avatar agent, and whether `autoConnect` needs a user gesture.
 - ADMIN or USER KS for Content Lab and Agents Widget.
 - `widget:1` for the player, and AppToken `sessionPrivileges` behaviour.
