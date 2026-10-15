@@ -53,6 +53,8 @@ const FIELD_RULES: Record<string, (value: unknown) => boolean> = {
   // A region code or an environment name. Whether it is known and allowed is decided in `gateProps`.
   region: value => typeof value === 'string' && /^[a-z][a-z0-9-]{0,31}$/.test(value),
   entryId: isEntryId,
+  // Caption asset ids look like entry ids.
+  assetId: isEntryId,
   // Category ids. They go into the KS request and into widget settings.
   categoryId: isCategoryId,
   contextId: isCategoryId,

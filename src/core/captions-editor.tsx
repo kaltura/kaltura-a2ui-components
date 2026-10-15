@@ -67,6 +67,8 @@ export interface CaptionsEditorCoreProps {
   ks: string;
   /** Entry whose captions to edit. */
   entryId: string;
+  /** Caption asset to open. Default: the editor picks. */
+  assetId?: string;
   /** Region code. Only built-in regions with a pinned editor page work. Default: the host region. */
   region?: string;
   /** uiConf ID of the editor's own player. */
@@ -81,7 +83,7 @@ export interface CaptionsEditorCoreProps {
  * page origin, so the iframe sandbox is not a boundary (docs/adr/0008).
  */
 const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
-  const { partnerId, ks, region, entryId, uiconfId } = props;
+  const { partnerId, ks, region, entryId, assetId, uiconfId } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const reporter = useContext(ReporterContext);
 
@@ -122,6 +124,7 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
           pid: partnerId,
           ks,
           entryid: entryId,
+          assetid: assetId || undefined,
           cdnurl: hosts.cdn,
           serviceurl: hosts.serviceUrl,
           uiconfid: uiconfId,
@@ -145,7 +148,7 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
       container.replaceChildren();
       if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
-  }, [partnerId, ks, region, entryId, uiconfId, reporter]);
+  }, [partnerId, ks, region, entryId, assetId, uiconfId, reporter]);
 
   return <div ref={containerRef} className="kaltura-captions-editor-container" style={{ width: '100%', minHeight: '600px' }} />;
 };

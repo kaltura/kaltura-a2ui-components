@@ -275,6 +275,7 @@ Element: `<kaltura-captions-editor>`. Needs a KS: Yes.
 |---|---|---|---|---|
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
 | `entryId` | string | yes |  | Media entry ID whose captions to edit. |
+| `assetId` | string |  |  | Optional. Caption asset ID to open, a string like '1_abc123'. It must belong to the entry. Leave it out to let the editor pick. |
 | `uiconfId` | integer |  |  | Optional. uiConf ID of the editor's own player. Integer, not a string, not a binding. |
 | `region` | string |  |  | Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused. |
 

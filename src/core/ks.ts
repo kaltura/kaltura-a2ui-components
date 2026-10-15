@@ -19,7 +19,7 @@ interface Account {
 export interface KsScopeByWidget {
   player: Account & { entryId: string };
   flashcards: Account & { entryIds: readonly string[] };
-  'captions-editor': Account & { entryId: string };
+  'captions-editor': Account & { entryId: string; assetId?: string };
   recorder: Account;
   analytics: Account & { entryId?: string; reportType?: AnalyticsReportType; fromDate?: string; toDate?: string };
   'media-manager': Account & { contextId?: string };
@@ -111,7 +111,7 @@ export function setKsProvider(provider: KsProvider | undefined): void {
 const SCOPE_KEYS: { [W in KsWidget]: { required: readonly string[]; optional?: readonly string[] } } = {
   player: { required: ['partnerId', 'entryId'] },
   flashcards: { required: ['partnerId'] },
-  'captions-editor': { required: ['partnerId', 'entryId'] },
+  'captions-editor': { required: ['partnerId', 'entryId'], optional: ['assetId'] },
   recorder: { required: ['partnerId'] },
   analytics: { required: ['partnerId'], optional: ['entryId', 'reportType', 'fromDate', 'toDate'] },
   'media-manager': { required: ['partnerId'], optional: ['contextId'] },

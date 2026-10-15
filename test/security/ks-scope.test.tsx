@@ -15,6 +15,8 @@ import { FlashcardsCore } from '../../src/core/flashcards';
 import { AnalyticsCore } from '../../src/core/analytics';
 import { RecorderCore } from '../../src/core/recorder';
 import { GenieCore } from '../../src/core/genie';
+import { CaptionsEditorCore } from '../../src/core/captions-editor';
+import { captionsRemote } from '../helpers/captions-remote';
 import { MediaManagerCore } from '../../src/core/media-manager';
 
 let player: ReturnType<typeof playerRemote>;
@@ -116,6 +118,15 @@ describe('KS-SCOPE: what the provider gets', () => {
       { region: 'nvp1', partnerId: 1, categoryId: '123' },
       { region: 'nvp1', partnerId: 1, contextId: '456' },
     ]);
+  });
+
+  it('the Captions editor scope holds its entry and its caption asset', async () => {
+    const captions = captionsRemote();
+    const provider = vi.fn<KsProvider>(() => 'host-ks');
+    setKsProvider(provider);
+    await mount(CaptionsEditorCore, { partnerId: 1, entryId: '0_a', assetId: '1_asset' });
+    captions.restore();
+    expect(scopes(provider)).toEqual([{ region: 'nvp1', partnerId: 1, entryId: '0_a', assetId: '1_asset' }]);
   });
 
   it('an empty optional id is left out of the scope', async () => {

@@ -145,9 +145,17 @@
       "props": {
         "partnerId": 1,
         "entryId": "0_abc",
-        "assetId": "1"
+        "categoryId": "1"
       },
       "stripped": true
+    },
+    {
+      "why": "assetId is a number",
+      "props": {
+        "partnerId": 1,
+        "entryId": "0_abc",
+        "assetId": 5
+      }
     },
     {
       "why": "ks prop from the agent",

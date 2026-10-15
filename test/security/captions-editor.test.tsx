@@ -51,6 +51,25 @@ describe('SEC-10: the editor page request', () => {
   });
 });
 
+describe('SEC-07: assetId', () => {
+  it('SEC-07: a valid assetId is one data attribute of the iframe', async () => {
+    const { container } = await mount(CaptionsEditorCore, { ...VALID, assetId: '1_asset123' });
+    await remote.ready();
+    expect(frame(container).getAttribute('data-assetid')).toBe('1_asset123');
+  });
+
+  it.each([undefined, ''])('SEC-07: assetId %j sets no attribute', async assetId => {
+    const { container } = await mount(CaptionsEditorCore, { ...VALID, assetId });
+    await remote.ready();
+    expect(frame(container).hasAttribute('data-assetid')).toBe(false);
+  });
+
+  it.each(['../x', '1_a"b', 'a b', '1_'.padEnd(70, 'a')])('SEC-07: the hostile assetId %j loads no page', async assetId => {
+    await mount(CaptionsEditorCore, { ...VALID, assetId });
+    expect(remote.fetches).toEqual([]);
+  });
+});
+
 describe('SEC-10: the editor iframe', () => {
   it('SEC-10: the iframe loads the blob URL of the page and is sandboxed', async () => {
     const { container } = await mount(CaptionsEditorCore, VALID);
