@@ -103,7 +103,8 @@ export function checkProps(
     }
     for (const [first, second] of ONE_OF) {
       if (!(first in schema.shape && second in schema.shape)) continue;
-      const set = [first, second].filter(key => record[key] !== undefined && record[key] !== '');
+      // An empty string is a set value here: it fails the id rule instead of waiting for a binding.
+      const set = [first, second].filter(key => record[key] !== undefined);
       if (set.length === 2) bad.add(second);
       else if (set.length === 0 && strict) bad.add(first);
       else if (set.length === 0) pending = true;

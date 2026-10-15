@@ -148,6 +148,15 @@ describe('KS-SCOPE: what the provider gets', () => {
     expect(scopes(provider)).toEqual([{ region: 'nvp1', partnerId: 1, playlistId: '1_list' }]);
   });
 
+  it('switching a Player from an entry to a playlist asks for a new scope', async () => {
+    const provider = vi.fn<KsProvider>(() => 'host-ks');
+    setKsProvider(provider);
+    const { root } = await mount(PlayerCore, PLAYER);
+    await act(async () => root.render(createElement(PlayerCore, { partnerId: PLAYER.partnerId, uiconfId: PLAYER.uiconfId, playlistId: '1_list' })));
+    await afterQuietPeriod();
+    expect(scopes(provider)).toEqual([expect.objectContaining({ entryId: PLAYER.entryId }), { region: 'nvp1', partnerId: PLAYER.partnerId, playlistId: '1_list' }]);
+  });
+
   it('an empty optional id is left out of the scope', async () => {
     const provider = vi.fn<KsProvider>(() => 'host-ks');
     setKsProvider(provider);

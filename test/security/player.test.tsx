@@ -156,6 +156,9 @@ describe('SEC-11: playlistId', () => {
     ['both ids', { ...PLAYLIST, entryId: '0_abc12345' }, 'playlistId'],
     ['a hostile playlistId', { ...PLAYLIST, playlistId: '../x' }, 'playlistId'],
     ['a playlistId with a quote', { ...PLAYLIST, playlistId: '1_a"b' }, 'playlistId'],
+    ['an empty entryId and a playlistId', { ...PLAYLIST, entryId: '' }, 'playlistId'],
+    ['an empty playlistId and an entryId', { ...VALID, playlistId: '' }, 'playlistId'],
+    ['an empty entryId alone', { partnerId: 123, uiconfId: 456, entryId: '' }, 'entryId'],
     ['a hostile entryId and no playlistId', { partnerId: 123, uiconfId: 456, entryId: '../x' }, 'entryId'],
   ])('SEC-11: %s loads nothing', async (_why, props, name) => {
     const { PlayerCore } = await setup();

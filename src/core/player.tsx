@@ -61,11 +61,13 @@ const invalidProp = (p: Pick<PlayerEmbedProps, 'partnerId' | 'uiconfId' | 'entry
     ? 'partnerId'
     : !isPositiveInt(p.uiconfId)
       ? 'uiconfId'
-      : (p.entryId === undefined) === (p.playlistId === undefined) || (p.entryId !== undefined && !isEntryId(p.entryId))
-        ? 'entryId'
-        : p.playlistId !== undefined && !isEntryId(p.playlistId)
-          ? 'playlistId'
-          : undefined;
+      : p.entryId !== undefined && p.playlistId !== undefined
+        ? 'playlistId'
+        : (p.entryId === undefined && p.playlistId === undefined) || (p.entryId !== undefined && !isEntryId(p.entryId))
+          ? 'entryId'
+          : p.playlistId !== undefined && !isEntryId(p.playlistId)
+            ? 'playlistId'
+            : undefined;
 
 /**
  * Plays an entry with the Kaltura Player script. The KS goes only into the
@@ -154,10 +156,7 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
 const MAX_LABEL_LENGTH = 1000;
 
 const PlayerView: FC<PlayerCoreProps> = (props) => {
-  // An empty string means "not set", as for every optional id.
-  const entryId = props.entryId || undefined;
-  const playlistId = props.playlistId || undefined;
-  const id = entryId ?? playlistId;
+  const id = props.entryId ?? props.playlistId;
   const title = props.entryName
     ? `${id} — ${props.entryName.slice(0, MAX_LABEL_LENGTH)}`
     : id;
@@ -169,8 +168,8 @@ const PlayerView: FC<PlayerCoreProps> = (props) => {
       <PlayerEmbed
         partnerId={props.partnerId}
         uiconfId={props.uiconfId}
-        entryId={entryId}
-        playlistId={playlistId}
+        entryId={props.entryId}
+        playlistId={props.playlistId}
         region={props.region}
         ks={props.ks}
         autoplay={props.autoplay}
