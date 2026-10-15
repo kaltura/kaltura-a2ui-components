@@ -220,15 +220,18 @@ The same in a web component:
 
 ## KalturaAnalytics
 
-Kaltura Analytics: shows one view of the analytics app, for a media entry or a report type, over a date range. The host supplies the Kaltura Session, so there is no ks prop.
+Kaltura Analytics: shows one view of the analytics app, for a media entry, category, playlist, virtual event or report type, over a date range. The host supplies the Kaltura Session, so there is no ks prop.
 
 Element: `<kaltura-analytics>`. Needs a KS: Yes.
 
 | Prop | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
-| `entryId` | string |  |  | Optional media entry ID. Shows the analytics of that entry. Wins over reportType. |
-| `reportType` | string |  |  | Dashboard view to show when there is no entryId. One of engagement, content-interactions, technology, geo-location, contributors, overview, publisher, enduser or live. Default: engagement. |
+| `entryId` | string |  |  | Optional media entry ID. Shows the analytics of that entry. Wins over reportType. Use at most one of entryId, categoryId, playlistId and virtualEventId. |
+| `categoryId` | string |  |  | Optional category ID (digits only, up to 12). Shows the analytics of that category. Wins over reportType. |
+| `playlistId` | string |  |  | Optional playlist ID. Shows the analytics of that playlist. Wins over reportType. |
+| `virtualEventId` | string |  |  | Optional virtual event ID (digits only, up to 12). Shows the analytics of that virtual event. Wins over reportType. |
+| `reportType` | string |  |  | Dashboard view to show when there is no entryId, categoryId, playlistId or virtualEventId. One of engagement, content-interactions, technology, geo-location, contributors, overview, publisher, enduser or live. Default: engagement. |
 | `fromDate` | string |  |  | Start of the date range, as YYYY-MM-DD. Needs toDate. Default range: the last 30 days. |
 | `toDate` | string |  |  | End of the date range, as YYYY-MM-DD. Needs fromDate. |
 | `region` | string |  |  | Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused. |

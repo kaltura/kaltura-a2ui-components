@@ -178,10 +178,10 @@ Entry, category, user and date scope are UI-level only. The KS can only limit th
 | `entryId` | prop | R | UI | 1 |
 | `reportType` | prop, 9 views | R | role permissions, `setrole` | 1 |
 | `fromDate`, `toDate` | props | R | UI. The user can change them | 1 |
-| `categoryId` | none. Route `/analytics/category` | R | UI. Entitlements: UNVERIFIED | 2 |
-| `playlistId` | none. Route `/analytics/playlist` | R | UI | 2 |
+| `categoryId` | prop. Route `/analytics/category` | R | UI. Entitlements: UNVERIFIED | 2, implemented |
+| `playlistId` | prop. Route `/analytics/playlist` | R | UI | 2, implemented |
 | `userId` (report subject) | none. Route `/analytics/user` | H until a host opts in | UI only. One wrong backend check shows another user's data | 2, opt-in |
-| `virtualEventId` | none. Route plus KS | R | KS `virtualeventid:<id>` for report APIs. For the embed: UNVERIFIED | 2 |
+| `virtualEventId` | prop. Route `/analytics/virtual-event` | R | UI. A KS `virtualeventid:<id>` limited nothing on 8 report types | 2, implemented |
 | owner filter (`predefinedFilter.ownerIdsIn`) | init option, not sent | H | UI | |
 | `customData.metadataProfileId` | init option, not sent | H | none. Only picks the metadata shown | |
 | `multiAccount`, `hostAppName`, `previewUIConfV7`, `viewsConfig` edits | init options, not sent | H | | |
@@ -368,7 +368,7 @@ Fixed on branch `mixed-region-hosts`: Genie, Content Lab, VOD Avatar and Agents 
 |---|---|---|---|
 | 0 | Ships first, before the rest of this ADR is relied on. Hardening with no API change. The A2UI path takes the KS only from the provider. The docs fixes. | no change | patch |
 | 1 (implemented) | The pre-check before the provider (it needs the mint to move into an effect), the provider request, scope change, timing rules and the size limit bump. Uses the props that exist today: `entryId`, flashcards `entryIds`, Genie `categoryId`, Media Manager `contextId`, Analytics and Content Lab `entryId`, `partnerId` | no change | 0.5.0 |
-| 2 (`region` implemented) | `region` on every widget except Chart (section 9), `setEnvironments`, `setAllowedRegions`, `sgp2`. `assetId` and Player `playlistId` are implemented. Not added, because no test shows that the hosted widget or the KS uses them: `ancestorCategoryId`, `virtualEventId`, Analytics `categoryId`/`playlistId`, Genie `entryId`, Agents Widget `categoryId`, VOD Avatar filters. Each is added only after such a test. Analytics `userId` and Avatar `autoConnect` only as host opt-ins | `region` added to `v2`, no new id | 0.5.0 |
+| 2 (`region` implemented) | `region` on every widget except Chart (section 9), `setEnvironments`, `setAllowedRegions`, `sgp2`. `assetId`, Player `playlistId` and Analytics `categoryId`, `playlistId` and `virtualEventId` are implemented. Not added, because no test shows that the hosted widget or the KS uses them: `ancestorCategoryId`, Genie `entryId`, Agents Widget `categoryId`, VOD Avatar filters. Each is added only after such a test. Analytics `userId` and Avatar `autoConnect` only as host opt-ins | `region` added to `v2`, no new id | 0.5.0 |
 | Later | A way for the host to supply H runtime settings (`reachProfileId`, `genieId`, `allowedProjectTypes`), for example a provider that returns `{ ks, settings }` with a fixed allowlist of setting names per widget. Not decided here. Also the A2UI v1.0 migration | | |
 
 ## Consequences
@@ -390,7 +390,7 @@ These need a sandbox partner. They set the entry cap (provisional 20) and decide
 - `sview:a/b` (slash) against repeated keys. Done with a KS-protected entry: repeated keys collapse to the last one. The slash list `sview:a/b` works. `,`, `|` and `;` do not.
 - Captions editor: done. The pinned editor page (v1.3.10) reads `data-assetid`. Live, in three browsers: with `assetId` the editor opens that asset, without it the first one (`e2e/live`, LIVE-06 and LIVE-07). A USER KS needs a role that can add captions.
 - Player `playlistId`: done. Live, in three browsers: a manual playlist loads and plays (LIVE-05). The KS rule is tested at the API: with a KS-protected entry, `sviewplaylist` lets `playManifest` answer for the playlist entries and no privilege does not.
-- Analytics `virtualEventId`: not added. A KS with `virtualeventid:<id>` returned the same totals as one without it on eight report types, so no limit was seen. The embed reads a `predefinedFilter` from its `init` message. That is a UI filter, and this library does not send it.
+- Analytics `categoryId`, `playlistId`, `virtualEventId`: done as route navigations, like `entryId`. Live (LIVE-08): the playlist view opens for the playlist. The category and virtual event routes answer with their own views (an unknown id gives the app's own "not found" box). They are UI-level: a KS with `virtualeventid:<id>` returned the same totals as one without it on eight report types, so no limit was seen. At most one of the four subjects is allowed. The embed's `predefinedFilter` is a UI filter, and this library does not send it.
 - Whether Genie privileges narrow results, and whether the server checks the client `context_id`. Tried on the NVP1 partner: the Genie server answers, but says it has no tool to list videos, with or without a category context, so no scope effect could be seen. It needs a partner with a Genie set up for its content.
 - Which claim selects the avatar agent, and whether `autoConnect` needs a user gesture.
 - ADMIN or USER KS for Content Lab and Agents Widget.

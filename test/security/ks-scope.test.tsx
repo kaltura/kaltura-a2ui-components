@@ -111,10 +111,16 @@ describe('KS-SCOPE: what the provider gets', () => {
     const provider = vi.fn<KsProvider>(() => 'host-ks');
     setKsProvider(provider);
     await mount(AnalyticsCore, { partnerId: 1, entryId: '0_a', reportType: 'live', fromDate: '2026-01-01', toDate: '2026-01-31' });
+    await mount(AnalyticsCore, { partnerId: 1, categoryId: '12' });
+    await mount(AnalyticsCore, { partnerId: 1, playlistId: '1_pl' });
+    await mount(AnalyticsCore, { partnerId: 1, virtualEventId: '34' });
     await mount(GenieCore, { partnerId: 1, uiconfId: 2, serverUrl: SERVER_URL, categoryId: '123' });
     await mount(MediaManagerCore, { partnerId: 1, serverUrl: SERVER_URL, contextId: '456' });
     expect(scopes(provider)).toEqual([
       { region: 'nvp1', partnerId: 1, entryId: '0_a', reportType: 'live', fromDate: '2026-01-01', toDate: '2026-01-31' },
+      { region: 'nvp1', partnerId: 1, categoryId: '12' },
+      { region: 'nvp1', partnerId: 1, playlistId: '1_pl' },
+      { region: 'nvp1', partnerId: 1, virtualEventId: '34' },
       { region: 'nvp1', partnerId: 1, categoryId: '123' },
       { region: 'nvp1', partnerId: 1, contextId: '456' },
     ]);
@@ -465,6 +471,7 @@ describe('KS-SCOPE: nothing bad reaches the provider', () => {
   it.each([
     [{ reportType: 'top' }, 'Invalid reportType'],
     [{ fromDate: '2026-01-01' }, 'Invalid toDate'],
+    [{ entryId: '0_a', playlistId: '1_pl' }, 'Invalid playlistId'],
     [{ fromDate: '2026-02-30', toDate: '2026-03-01' }, 'Invalid fromDate'],
     [{ fromDate: '2026-03-01', toDate: '2026-01-01' }, 'Invalid toDate'],
   ])('Analytics props %j give the error and no request', async (props, message) => {

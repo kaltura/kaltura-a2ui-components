@@ -67,7 +67,7 @@ The second argument says what one widget instance asks for. Every value is data 
 | `content-lab` | `entryId` |
 | `captions-editor` | `entryId`, optional `assetId` |
 | `flashcards` | `entryIds`: the clip entries, sorted, unique, at most 20 |
-| `analytics` | optional `entryId`, `reportType`, `fromDate`, `toDate` |
+| `analytics` | optional `entryId`, `categoryId`, `playlistId`, `virtualEventId` (at most one), `reportType`, `fromDate`, `toDate` |
 | `media-manager` | optional `contextId` (category id, digits only) |
 | `genie` | optional `categoryId` (digits only) |
 | `recorder`, `agents-widget`, `vod-avatar`, `avatar` | nothing |

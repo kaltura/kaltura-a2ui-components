@@ -4,7 +4,7 @@
 const SERVICE_URL = 'https://www.kaltura.com';
 const EXPIRY_SECONDS = 600;
 
-export async function mintKs(partnerId: number, adminSecret: string): Promise<string> {
+export async function mintKs(partnerId: number, adminSecret: string, userId = 'a2ui-live-test'): Promise<string> {
   const res = await fetch(`${SERVICE_URL}/api_v3/service/session/action/start`, {
     method: 'POST',
     body: new URLSearchParams({
@@ -12,7 +12,7 @@ export async function mintKs(partnerId: number, adminSecret: string): Promise<st
       partnerId: String(partnerId),
       secret: adminSecret,
       type: '2',
-      userId: 'a2ui-live-test',
+      userId,
       privileges: 'disableentitlement',
       expiry: String(EXPIRY_SECONDS),
     }),

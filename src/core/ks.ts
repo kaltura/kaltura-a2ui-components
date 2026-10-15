@@ -21,7 +21,7 @@ export interface KsScopeByWidget {
   flashcards: Account & { entryIds: readonly string[] };
   'captions-editor': Account & { entryId: string; assetId?: string };
   recorder: Account;
-  analytics: Account & { entryId?: string; reportType?: AnalyticsReportType; fromDate?: string; toDate?: string };
+  analytics: Account & { entryId?: string; categoryId?: string; playlistId?: string; virtualEventId?: string; reportType?: AnalyticsReportType; fromDate?: string; toDate?: string };
   'media-manager': Account & { contextId?: string };
   genie: Account & { categoryId?: string };
   'content-lab': Account & { entryId: string };
@@ -113,7 +113,7 @@ const SCOPE_KEYS: { [W in KsWidget]: { required: readonly string[]; optional?: r
   flashcards: { required: ['partnerId'] },
   'captions-editor': { required: ['partnerId', 'entryId'], optional: ['assetId'] },
   recorder: { required: ['partnerId'] },
-  analytics: { required: ['partnerId'], optional: ['entryId', 'reportType', 'fromDate', 'toDate'] },
+  analytics: { required: ['partnerId'], optional: ['entryId', 'categoryId', 'playlistId', 'virtualEventId', 'reportType', 'fromDate', 'toDate'] },
   'media-manager': { required: ['partnerId'], optional: ['contextId'] },
   genie: { required: ['partnerId'], optional: ['categoryId'] },
   'content-lab': { required: ['partnerId', 'entryId'] },
