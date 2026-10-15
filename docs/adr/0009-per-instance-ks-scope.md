@@ -393,7 +393,8 @@ These need a sandbox partner. They set the entry cap (provisional 20) and decide
 - Analytics `categoryId`, `playlistId`, `virtualEventId`: done as route navigations, like `entryId`. Live (LIVE-08): the playlist view opens for the playlist. The category and virtual event routes answer with their own views (an unknown id gives the app's own "not found" box). They are UI-level: a KS with `virtualeventid:<id>` returned the same totals as one without it on eight report types, so no limit was seen. At most one of the four subjects is allowed. The embed's `predefinedFilter` is a UI filter, and this library does not send it.
 - Whether Genie privileges narrow results, and whether the server checks the client `context_id`. Tried on the NVP1 partner: the Genie server answers, but says it has no tool to list videos, with or without a category context, so no scope effect could be seen. It needs a partner with a Genie set up for its content.
 - Which claim selects the avatar agent, and whether `autoConnect` needs a user gesture.
-- ADMIN or USER KS for Content Lab and Agents Widget.
+- ADMIN or USER KS for Content Lab and Agents Widget. Content Lab: a USER KS of an admin user, minted by the provider for the scope, loads the widget and shows its UI (LIVE-13). The Agents Widget could not be tried live: its host refuses the localhost origin.
+- Hosted widgets with a scoped provider: done for Genie, Media Manager, Content Lab, VOD Avatar and Recorder. The provider gets the expected `{ widget, scope }`, the widget shows its UI and no request URL holds the KS (LIVE-11 to LIVE-15, three browsers; the Recorder in Chromium with a fake camera). The Avatar did not start: the test partner has no avatar agent. Genie `ancestorCategoryId`, `virtualEventId` and `entryId`, Agents Widget `categoryId` and VOD Avatar filters stay out: no live check shows the widget or a KS uses them.
 - `widget:1` for the player, and AppToken `sessionPrivileges` behaviour.
 - Whether entitlement privileges limit Analytics and the Media Manager list by category.
 - Whether `sviewplaylist` implies entry view. Done: it does.
@@ -407,7 +408,7 @@ Phase 1 docs are done: `docs/security/ks.md`, `docs/host-api.md`, `docs/host-int
 
 - `docs/ks-privileges.md`: replace the Genie scope privileges and the chaining rule with verified text after the sandbox test. The repeated-key text is already fixed.
 - Media Manager `mode: 'manage'` only removes the select button. The "full content manager" claim is fixed in the schema description (done in Phase 2).
-- Content Lab and Agents Widget KS type, after the sandbox test.
+- Agents Widget KS type, after a test from an allowed origin.
 - `docs/host-api.md` and `docs/host-integration.md`: the per-widget `region` prop, the region allowlist and the precedence rule. Done in Phase 2.
 
 ## Tests

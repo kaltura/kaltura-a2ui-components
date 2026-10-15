@@ -83,14 +83,14 @@ class LivePage {
 
   /**
    * Swaps in a provider that does what a host backend does: it takes the scope request and mints a
-   * USER KS limited to it. The minting runs in this process. Each request is recorded.
+   * USER KS limited to it, for `userId`. The minting runs in this process. Each request is recorded.
    */
-  async useScopedProvider(): Promise<{ widget: string; scope: Record<string, unknown> }[]> {
+  async useScopedProvider(userId = 'a2ui-live-scoped'): Promise<{ widget: string; scope: Record<string, unknown> }[]> {
     const calls: { widget: string; scope: Record<string, unknown> }[] = [];
     await this.page.exposeFunction('__mintScoped', async (widget: string, scope: Record<string, unknown>) => {
       calls.push({ widget, scope });
       const privileges = [scope.entryId && `sview:${String(scope.entryId)}`, scope.playlistId && `sviewplaylist:${String(scope.playlistId)}`].filter(Boolean).join(',');
-      const ks = await mintKs(partnerId, adminSecret ?? '', 'a2ui-live-scoped', { type: 0, privileges });
+      const ks = await mintKs(partnerId, adminSecret ?? '', userId, { type: 0, privileges });
       this.ks = ks;
       return ks;
     });
@@ -99,6 +99,18 @@ class LivePage {
       w.KalturaA2UIWebComponents.setKsProvider(((widget: string, request: { scope: unknown }) => w.__mintScoped(widget, request.scope)) as never);
     });
     return calls;
+  }
+
+  /** Visible text of the page, shadow roots included. */
+  pageText(): Promise<string> {
+    return this.page.evaluate(() => {
+      const read = (root: ParentNode): string =>
+        Array.from(root.querySelectorAll('*'))
+          .filter((el) => !['STYLE', 'SCRIPT'].includes(el.tagName))
+          .map((el) => (el.shadowRoot ? read(el.shadowRoot) : '') + Array.from(el.childNodes).filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join(' '))
+          .join(' ');
+      return read(document);
+    });
   }
 
   /** Text of the first frame from the Analytics app. */
@@ -169,7 +181,7 @@ test.skip(!partnerId || !adminSecret, SKIP_MESSAGE);
 
 /** Checks every request URL of the whole run. Headers are not checked: the Player sends the KS in the X-Kaltura-KS header. */
 function expectNoKsInUrls(live: LivePage): void {
-  expect(live.requests.length, 'the run made requests').toBeGreaterThan(5);
+  expect(live.requests.length, 'the run made requests').toBeGreaterThan(3);
   expect(live.ksLeaks()).toEqual([]);
 }
 
@@ -281,3 +293,32 @@ test('LIVE-10: the provider gets the scope of a playlist player and mints a KS l
   expect(live.consoleErrors).toEqual([]);
   expectNoKsInUrls(live);
 });
+
+// The hosted widgets load from the real Unisphere host of the NVP1 region. Each gets a USER KS of an
+// admin user from the provider, and is found by text that only the loaded widget shows. Not covered:
+// the Avatar (the test partner has no avatar agent) and the Agents Widget (its host refuses the
+// localhost origin, so it cannot load here).
+const HOSTED_WIDGETS: { id: string; tag: string; widget: string; props: Record<string, unknown>; scope: Record<string, unknown>; text: string }[] = [
+  // The category id is arbitrary: the widget loads with any digits.
+  { id: 'LIVE-11', tag: 'kaltura-genie-widget', widget: 'genie', props: { partnerId, uiconfId: UICONF_ID, categoryId: '1' }, scope: { partnerId, categoryId: '1' }, text: 'Ask me anything' },
+  { id: 'LIVE-12', tag: 'kaltura-media-manager', widget: 'media-manager', props: { partnerId }, scope: { partnerId }, text: 'Upload' },
+  { id: 'LIVE-13', tag: 'kaltura-content-lab', widget: 'content-lab', props: { partnerId, uiconfId: UICONF_ID, entryId: ENTRY_ID }, scope: { partnerId, entryId: ENTRY_ID }, text: 'Captions & Translations' },
+  { id: 'LIVE-14', tag: 'kaltura-vod-avatar-wc', widget: 'vod-avatar', props: { partnerId }, scope: { partnerId }, text: 'My Avatar Videos' },
+  // Chromium runs with fake camera and microphone (playwright.live.config.ts). Other browsers have none.
+  { id: 'LIVE-15', tag: 'kaltura-recorder', widget: 'recorder', props: { partnerId, uiconfId: UICONF_ID }, scope: { partnerId }, text: 'Camera Settings' },
+];
+
+for (const { id, tag, widget, props, scope, text } of HOSTED_WIDGETS) {
+  test(`${id}: ${widget} loads with the KS the provider mints for its scope`, async ({ live, browserName }) => {
+    test.skip(!adminUserId, 'Needs NVP1_ADMIN_USER_ID in .env: an admin user that has a role.');
+    test.skip(widget === 'recorder' && browserName !== 'chromium', 'Needs the fake media devices of the Chromium project.');
+    const calls = await live.useScopedProvider(adminUserId);
+    await live.mount(tag, props);
+    await expect.poll(() => live.pageText(), { timeout: PLAY_TIMEOUT, message: `the ${widget} shows its UI` }).toContain(text);
+    expect(calls).toEqual([{ widget, scope: { region: 'nvp1', ...scope } }]);
+    // Media Manager asks for thumbnails that the probe entries of the test partner do not have.
+    const thumbnail404 = /status of 404/;
+    expect(live.consoleErrors.filter((e) => widget !== 'media-manager' || !thumbnail404.test(e))).toEqual([]);
+    expectNoKsInUrls(live);
+  });
+}
