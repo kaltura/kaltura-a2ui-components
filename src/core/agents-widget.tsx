@@ -26,7 +26,7 @@ function AgentsWidgetView(props: AgentsWidgetCoreProps) {
         ks: props.ks,
         pid: String(props.partnerId),
         agentsServiceURI: `https://agents-manager.${regionOf(props.serverUrl ?? '') ?? currentRegion()}.ovp.kaltura.com`,
-        kalturaServerURI: kalturaHosts().serviceUrl,
+        kalturaServerURI: kalturaHosts(regionOf(props.serverUrl ?? '')).serviceUrl,
         analyticsServerURI: 'analytics.kaltura.com',
         hostAppName: 1,
       }}
