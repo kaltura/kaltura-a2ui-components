@@ -58,6 +58,7 @@ function invalidNavigationProp({ reportType, fromDate, toDate }: Pick<AnalyticsC
   if (reportType && !(ANALYTICS_REPORT_TYPES as readonly string[]).includes(reportType)) return 'reportType';
   if ((fromDate || toDate) && !isIsoDate(fromDate)) return 'fromDate';
   if ((fromDate || toDate) && !isIsoDate(toDate)) return 'toDate';
+  if (fromDate && toDate && fromDate > toDate) return 'toDate';
   return undefined;
 }
 

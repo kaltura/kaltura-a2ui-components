@@ -72,7 +72,7 @@ The second argument says what one widget instance asks for. Every value is data 
 
 Rules the component applies before it calls you:
 
-- The props must pass the widget's schema and the field rules. A bad value shows the error and the provider is not called. An id the host [allowlists](../host-api.md#allowed-partners-and-uiconfs) refuse also stops the call.
+- The props must pass the widget's schema and the field rules, and `serverUrl` must be an allowed Unisphere origin. A bad value shows the error and the provider is not called. An id the host [allowlists](../host-api.md#allowed-partners-and-uiconfs) refuse also stops the call.
 - The scope has no `ks`, no config props and no free text.
 - `region` comes from the `serverUrl` host, or else from `setRegion`.
 
@@ -90,10 +90,10 @@ A UI-level prop that the KS cannot enforce (for example the `analytics` dates) i
 | Event | What the component does |
 |---|---|
 | First render | Calls the provider at once. |
-| A prop in the scope changes | Waits 300 ms for the scope to settle, aborts the open request, calls the provider again. One request is in flight per instance. |
+| A prop in the scope changes | Aborts the open request at once. Waits 300 ms for the scope to settle, then calls the provider again. This also holds while the first reply is still pending. One request is in flight per instance. |
 | `flashcards` gains a clip | Reuses the held KS while the new `entryIds` are a subset of the old ones. Otherwise it mints again. |
 | The provider throws or rejects | Shows `Invalid ks`. No retry. |
-| Unmount, or the A2UI surface is deleted | Aborts the open request. |
+| Unmount | Aborts the open request. After `deleteSurface` the React renderer keeps rendering until the host removes the surface, so remove it on `onSurfaceDeleted`. |
 
 A reply for an old scope is dropped.
 

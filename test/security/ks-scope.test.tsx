@@ -33,6 +33,8 @@ afterEach(() => {
 });
 
 const PLAYER = { partnerId: 1, uiconfId: 2, entryId: '0_a' };
+// A bound value that has not arrived yet.
+const PENDING = { ...PLAYER, entryId: undefined } as unknown as typeof PLAYER;
 const SERVER_URL = 'https://unisphere.nvp1.ovp.kaltura.com/v1';
 
 const requests = (provider: { mock: { calls: unknown[][] } }) => provider.mock.calls.map(([, request]) => request as KsRequest);
@@ -250,6 +252,7 @@ describe('KS-SCOPE: a scope change', () => {
     setKsProvider(provider);
     const { root } = await mount(PlayerCore, PLAYER);
     await act(async () => root.render(createElement(PlayerCore, { ...PLAYER, entryId: '0_b' })));
+    await afterQuietPeriod();
     await act(async () => pending[1].resolve('ks-b'));
     await act(async () => pending[0].resolve('ks-a'));
     await player.ready();
@@ -261,8 +264,41 @@ describe('KS-SCOPE: a scope change', () => {
     setKsProvider(provider);
     const { root } = await mount(PlayerCore, PLAYER);
     await act(async () => root.render(createElement(PlayerCore, { ...PLAYER, entryId: '0_b' })));
-    await act(async () => {});
+    await afterQuietPeriod();
     expect(pending.map(({ request }) => request.signal.aborted)).toEqual([true, false]);
+  });
+
+  it('a burst of changes before the first reply gives one more request', async () => {
+    const { provider, pending } = deferred();
+    setKsProvider(provider);
+    const { root } = await mount(PlayerCore, PLAYER);
+    for (const entryId of ['0_b', '0_c', '0_d', '0_e']) await act(async () => root.render(createElement(PlayerCore, { ...PLAYER, entryId })));
+    await afterQuietPeriod();
+    expect(pending.map(({ request }) => (request.scope as { entryId: string }).entryId)).toEqual(['0_a', '0_e']);
+  });
+
+  it('a scope that goes pending and comes back is minted again', async () => {
+    const { provider, pending } = deferred();
+    setKsProvider(provider);
+    const { root } = await mount(PlayerCore, PLAYER);
+    await act(async () => root.render(createElement(PlayerCore, PENDING)));
+    await act(async () => root.render(createElement(PlayerCore, PLAYER)));
+    await afterQuietPeriod();
+    await act(async () => pending[pending.length - 1].resolve('ks-a'));
+    await player.ready();
+    expect(player.created.map(({ config }) => config.provider.ks)).toEqual(['ks-a']);
+  });
+
+  it('a held scope that changes, goes pending and comes back to the new value is minted', async () => {
+    const { provider, pending } = deferred();
+    setKsProvider(provider);
+    const { root } = await mount(PlayerCore, PLAYER);
+    await act(async () => pending[0].resolve('ks-a'));
+    await act(async () => root.render(createElement(PlayerCore, { ...PLAYER, entryId: '0_b' })));
+    await act(async () => root.render(createElement(PlayerCore, PENDING)));
+    await act(async () => root.render(createElement(PlayerCore, { ...PLAYER, entryId: '0_b' })));
+    await afterQuietPeriod();
+    expect(pending.map(({ request }) => (request.scope as { entryId: string }).entryId).pop()).toBe('0_b');
   });
 
   it('unmount aborts the request in flight', async () => {
@@ -372,6 +408,13 @@ describe('KS-SCOPE: nothing bad reaches the provider', () => {
     expect([provider.mock.calls.length, alertOf(container)]).toEqual([0, 'Failed to load player: partnerId is not allowed']);
   });
 
+  it('a serverUrl that is not an allowed Unisphere origin gives the error and no request', async () => {
+    const provider = vi.fn<KsProvider>(() => 'host-ks');
+    setKsProvider(provider);
+    const { container } = await mount(GenieCore, { partnerId: 1, uiconfId: 2, serverUrl: 'https://evil.example.com/v1' });
+    expect([provider.mock.calls.length, alertOf(container)]).toEqual([0, 'Failed to load Kaltura Genie: serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)']);
+  });
+
   it('a recorder partner the host refuses gives the error and no request', async () => {
     setAllowedPartners([9]);
     const provider = vi.fn<KsProvider>(() => 'host-ks');
@@ -384,6 +427,7 @@ describe('KS-SCOPE: nothing bad reaches the provider', () => {
     [{ reportType: 'top' }, 'Invalid reportType'],
     [{ fromDate: '2026-01-01' }, 'Invalid toDate'],
     [{ fromDate: '2026-02-30', toDate: '2026-03-01' }, 'Invalid fromDate'],
+    [{ fromDate: '2026-03-01', toDate: '2026-01-01' }, 'Invalid toDate'],
   ])('Analytics props %j give the error and no request', async (props, message) => {
     const provider = vi.fn<KsProvider>(() => 'host-ks');
     setKsProvider(provider);

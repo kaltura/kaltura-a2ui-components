@@ -197,7 +197,10 @@ export function withKs<P extends { ks?: string }>(widget: KsWidget, Inner: Compo
     const [held, setHeld] = useState<Held>();
 
     const latest = useRef({ key, props, held, scope, identity, provider });
-    latest.current = { key, props, held, scope, identity, provider };
+    // Written after commit, so a render that React drops never changes what the mint effect reads. Runs before the mint effect.
+    useEffect(() => {
+      latest.current = { key, props, held, scope, identity, provider };
+    });
     const flight = useRef<Flight | undefined>(undefined);
 
     useEffect(() => {
@@ -205,12 +208,14 @@ export function withKs<P extends { ks?: string }>(widget: KsWidget, Inner: Compo
       if (!key || !scope || !provider) return;
       if (held && (held.key === key || covers(held.scope, scope))) return;
       let mine = flight.current;
-      if (mine && mine.key === key && mine.orphan) {
+      if (mine && mine.key === key && mine.orphan && !mine.controller.signal.aborted) {
         // A StrictMode remount: keep the request that is already running.
         mine.orphan = false;
       } else {
         mine?.controller.abort();
         const controller = new AbortController();
+        // The first request of an instance runs at once. Every later one waits for the scope to settle.
+        const first = !mine;
         const started: Flight = (mine = { key, controller, orphan: false });
         flight.current = started;
         const settle = (value: unknown) => {
@@ -230,8 +235,8 @@ export function withKs<P extends { ks?: string }>(widget: KsWidget, Inner: Compo
             settle(null);
           }
         };
-        if (held) started.timer = setTimeout(run, KS_QUIET_MS);
-        else run();
+        if (first) run();
+        else started.timer = setTimeout(run, KS_QUIET_MS);
       }
       const current = mine;
       return () => {
