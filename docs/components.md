@@ -175,7 +175,7 @@ Element: `<kaltura-media-manager>`. Needs a KS: Yes.
 | Prop | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
-| `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2, sgp2). Other hosts are refused. |
+| `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused. |
 | `theme` | "dark" / "light" |  |  | UI theme mode. Default: the host page's data-theme attribute, else 'dark'. |
 | `mode` | "select" / "manage" |  | `"select"` | Interaction mode. 'select' shows the select button. 'manage' hides it. What the user can change comes from the KS role. Default: 'select'. |
 | `multiSelect` | boolean |  | `false` | Allow picking up to 5 entries. Default: false. |
@@ -370,7 +370,7 @@ Element: `<kaltura-avatar>`. Needs a KS: Yes.
 | Prop | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
-| `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2, sgp2). Other hosts are refused. |
+| `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused. |
 | `autoConnect` | boolean |  |  | Start the session as soon as the avatar loads. Default: false, the user clicks to start. |
 | `openingPhrase` | string |  |  | What the agent says first. Plain text. Default: the agent's own greeting. |
 | `captions` | boolean |  |  | Show captions of what the agent says. Default: the agent's setting. |
@@ -419,7 +419,7 @@ Element: `<kaltura-genie-widget>`. Needs a KS: Yes.
 | Prop | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
-| `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2, sgp2). Other hosts are refused. |
+| `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused. |
 | `categoryId` | string |  |  | Optional category ID to scope the Genie content context. |
 | `language` | string |  |  | UI language code. Default: 'en'. |
 | `uiconfId` | integer | yes |  | Player (uiConf) ID. Genie needs it to start. Integer, not a string, not a binding. |
@@ -469,7 +469,7 @@ Element: `<kaltura-content-lab>`. Needs a KS: Yes.
 | Prop | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
-| `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2, sgp2). Other hosts are refused. |
+| `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused. |
 | `entryId` | string | yes |  | Media entry ID that Content Lab opens. |
 | `uiconfId` | integer | yes |  | Player (uiConf) ID for the video preview. Integer, not a string, not a binding. |
 | `region` | string |  |  | Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused. |
@@ -520,7 +520,7 @@ Element: `<kaltura-agents-widget>`. Needs a KS: Yes.
 | Prop | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
-| `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2, sgp2). Other hosts are refused. |
+| `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused. |
 | `region` | string |  |  | Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused. |
 
 A2UI messages, sent after `createSurface`:
@@ -565,7 +565,7 @@ Element: `<kaltura-vod-avatar-wc>`. Needs a KS: Yes.
 | Prop | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
-| `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2, sgp2). Other hosts are refused. |
+| `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused. |
 | `region` | string |  |  | Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused. |
 
 A2UI messages, sent after `createSurface`:
