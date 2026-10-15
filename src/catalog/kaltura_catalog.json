@@ -1121,7 +1121,7 @@
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2, sgp2). Other hosts are refused."
+              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "theme": {
               "type": "string",
@@ -1282,7 +1282,7 @@
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2, sgp2). Other hosts are refused."
+              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "autoConnect": {
               "type": "boolean",
@@ -1326,7 +1326,7 @@
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2, sgp2). Other hosts are refused."
+              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "categoryId": {
               "$ref": "#/$defs/DynamicString",
@@ -1364,7 +1364,7 @@
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2, sgp2). Other hosts are refused."
+              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
@@ -1398,7 +1398,7 @@
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2, sgp2). Other hosts are refused."
+              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." },
             "region": { "type": "string", "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused." }
@@ -1424,7 +1424,7 @@
             },
             "serverUrl": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2, sgp2). Other hosts are refused."
+              "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." },
             "region": { "type": "string", "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused." }

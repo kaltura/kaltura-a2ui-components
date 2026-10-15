@@ -190,7 +190,6 @@ export function resolveRegion(prop?: string, serverUrl?: string): ResolvedRegion
 /** The Unisphere URL of one instance: `serverUrl`, else the Unisphere host of its region. Throws like `resolveRegion`. */
 export function unisphereUrl(prop?: string, serverUrl?: string): string {
   const { unisphere } = resolveRegion(prop, serverUrl);
-  if (serverUrl !== undefined) return serverUrl;
   if (!unisphere) throw new KalturaFailure('origin-not-allowed', 'region has no Unisphere host');
-  return `${unisphere}/v1`;
+  return serverUrl ?? `${unisphere}/v1`;
 }

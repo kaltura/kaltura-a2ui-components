@@ -321,7 +321,7 @@ Today only the six Unisphere widgets take a per-widget setting (`serverUrl`, che
 | EU | `irp2` is the EU region. No separate `eu2` code |
 | New codes | Adding a region is a data change in `region.ts`. `sgp2` is the first: API `api.sg.kaltura.com`, VOD `cfvod.sgp2.ovp.kaltura.com`, KMC `kmc.sg.kaltura.com`. It runs no microservices, so it has no Unisphere host and the Unisphere widgets refuse it |
 | Deviation | The ADR planned a new catalog id for Phase 2. `region` is optional and additive, and `v2` consumers ignore props they do not know, so the id stays `v2`. A new id comes with the first breaking catalog change |
-| Where it is checked | `gateProps` (`src/core/validate-props.ts`) runs for every widget, with or without a provider. A refused region gives `origin-not-allowed` with fixed text before the provider, a script, a fetch or an iframe |
+| Where it is checked | `gateProps` (`src/core/validate-props.ts`) checks it for every widget that has a provider. The Recorder without a provider is checked when it resolves the script URL instead (`recorderScriptUrl`). A refused region gives `origin-not-allowed` with fixed text before the provider, a script, a fetch or an iframe |
 
 #### Local and custom hosts
 

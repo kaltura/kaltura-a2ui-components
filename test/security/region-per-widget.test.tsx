@@ -4,7 +4,7 @@
 // host sets that the host app registers: an agent sends the name, never a URL.
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { createElement, Fragment } from 'react';
-import { mount } from '../helpers/render';
+import { mount, afterQuietPeriod } from '../helpers/render';
 import { playerRemote } from '../helpers/player-remote';
 import { recorderRemote } from '../helpers/recorder-remote';
 import { captionsRemote } from '../helpers/captions-remote';
@@ -240,5 +240,97 @@ describe('REG-02: environments', () => {
     m.setEnvironments(undefined);
     const { container } = await mount(m.PlayerCore, { ...PLAYER, ks: 'k', region: 'lab' });
     expect(alertOf(container)).toBe('Failed to load player: region is not allowed');
+  });
+});
+
+describe('REG-02: Unisphere URL from the region', () => {
+  // Each widget gets the Unisphere host of its region when it has no serverUrl.
+  const WIDGETS: Array<[string, string, Record<string, unknown>]> = [
+    ['genie', 'GenieCore', { uiconfId: 2 }],
+    ['content-lab', 'ContentLabCore', { uiconfId: 2, entryId: '0_a' }],
+    ['vod-avatar', 'VodAvatarCore', {}],
+    ['agents-widget', 'AgentsWidgetCore', {}],
+    ['media-manager', 'MediaManagerCore', {}],
+    ['avatar', 'AvatarCore', {}],
+  ];
+
+  async function loadWithSpy() {
+    vi.resetModules();
+    const urls: string[] = [];
+    vi.doMock('../../src/core/unisphere-loader', async importOriginal => ({
+      ...(await importOriginal<typeof import('../../src/core/unisphere-loader')>()),
+      loadUnisphereModule: (url: string) => {
+        urls.push(url);
+        return new Promise(() => undefined);
+      },
+    }));
+    const ks = await import('../../src/core/ks');
+    const widgets = {
+      GenieCore: (await import('../../src/core/genie')).GenieCore,
+      ContentLabCore: (await import('../../src/core/content-lab')).ContentLabCore,
+      VodAvatarCore: (await import('../../src/core/vod-avatar')).VodAvatarCore,
+      AgentsWidgetCore: (await import('../../src/core/agents-widget')).AgentsWidgetCore,
+      MediaManagerCore: (await import('../../src/core/media-manager')).MediaManagerCore,
+      AvatarCore: (await import('../../src/core/avatar')).AvatarCore,
+    };
+    ks.setKsProvider(() => 'ks');
+    return { urls, widgets, setKsProvider: ks.setKsProvider };
+  }
+
+  afterEach(() => vi.doUnmock('../../src/core/unisphere-loader'));
+
+  it.each(WIDGETS)('%s loads the Unisphere host of its region', async (_name, core, extra) => {
+    const spy = await loadWithSpy();
+    await mount(spy.widgets[core as keyof typeof spy.widgets], { partnerId: 1, region: 'irp2', ...extra });
+    spy.setKsProvider(undefined);
+    expect(spy.urls).toEqual(['https://unisphere.irp2.ovp.kaltura.com/v1']);
+  });
+
+  it('a registered Unisphere origin is used for a named environment', async () => {
+    const spy = await loadWithSpy();
+    const region = await import('../../src/core/region');
+    region.setEnvironments({ lab: LAB });
+    await mount(spy.widgets.GenieCore, { partnerId: 1, uiconfId: 2, region: 'lab' });
+    region.setEnvironments(undefined);
+    spy.setKsProvider(undefined);
+    expect(spy.urls).toEqual(['https://unisphere.lab.example.com/v1']);
+  });
+
+  it('serverUrl does not bypass a region with no Unisphere host', async () => {
+    const spy = await loadWithSpy();
+    const { unisphereUrl } = await import('../../src/core/region');
+    spy.setKsProvider(undefined);
+    expect(() => unisphereUrl('sgp2', 'https://extra.example.com/v1')).toThrow('region has no Unisphere host');
+  });
+});
+
+describe('REG-02: recorder without a provider', () => {
+  it('a refused region loads no script', async () => {
+    player.restore();
+    const recorder = recorderRemote();
+    try {
+      m.setAllowedRegions(['nvp1']);
+      const before = recorder.tags().length;
+      await mount(m.RecorderCore, { partnerId: 1, ks: 'k', uiconfId: 2, region: 'irp2' });
+      expect([recorder.tags().length - before, recorder.created]).toEqual([0, []]);
+    } finally {
+      recorder.restore();
+    }
+  });
+});
+
+describe('REG-02: analytics frame', () => {
+  it('a new frame starts when only the service host changes', async () => {
+    m.setEnvironments({
+      one: { serviceUrl: 'https://one.example.com', kmc: 'https://kmc.example.com' },
+      two: { serviceUrl: 'https://two.example.com', kmc: 'https://kmc.example.com' },
+    });
+    m.setKsProvider(() => 'ks');
+    const { container, root } = await mount(m.AnalyticsCore, { partnerId: 1, region: 'one' });
+    const before = container.querySelector('iframe');
+    const { act } = await import('react');
+    await act(async () => root.render(createElement(m.AnalyticsCore, { partnerId: 1, region: 'two' })));
+    await afterQuietPeriod();
+    expect(container.querySelector('iframe')).not.toBe(before);
   });
 });

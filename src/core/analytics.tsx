@@ -142,6 +142,7 @@ export const AnalyticsFrame: FC<{ partnerId: number; region?: string; ks: string
     <div className="kaltura-analytics-container" style={height ? { width: '100%', height } : { width: '100%', aspectRatio: '16/9' }}>
       <iframe
         ref={frameRef}
+        key={`${src}|${hosts.serviceUrl}|${hosts.cdn}`}
         src={src}
         style={{ width: '100%', height: '100%', border: 0 }}
         allow="fullscreen *"
