@@ -34,4 +34,7 @@ function VodAvatarView(props: VodAvatarCoreProps) {
   );
 }
 
-export const VodAvatarCore = withKs('vod-avatar', withValidatedProps(withKsProp(KalturaVodAvatarApi.schema), 'Kaltura VOD Avatar', VodAvatarView, 'vod-avatar'));
+export const VodAvatarCore = withKs('vod-avatar', withValidatedProps(withKsProp(KalturaVodAvatarApi.schema), 'Kaltura VOD Avatar', VodAvatarView, 'vod-avatar'), {
+  schema: KalturaVodAvatarApi.schema,
+  label: 'Kaltura VOD Avatar',
+});

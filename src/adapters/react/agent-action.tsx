@@ -1,7 +1,7 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ComponentContext } from '@a2ui/web_core/v0_9';
 import { ReporterContext, type KalturaReporter } from '../../core/host-hooks';
-import { KsPropContext } from '../../core/ks';
+import { KsIdentityContext, KsPropContext } from '../../core/ks';
 
 interface RawAction {
   event?: { name: string; context?: Record<string, unknown> };
@@ -31,9 +31,15 @@ export function AgentAction({ context, action, children }: { context: ComponentC
       context.dispatchAction({ event: { name: raw.event.name, context: fields } }).catch(() => {});
     },
   }));
+  const surfaceId = context.dataContext.surface?.id;
+  const { id: componentId } = context.componentModel;
+  const { path: dataPath } = context.dataContext;
+  const identity = useMemo(() => ({ surfaceId, componentId, dataPath }), [surfaceId, componentId, dataPath]);
   return (
     <ReporterContext.Provider value={reporter}>
-      <KsPropContext.Provider value={false}>{children}</KsPropContext.Provider>
+      <KsPropContext.Provider value={false}>
+        <KsIdentityContext.Provider value={identity}>{children}</KsIdentityContext.Provider>
+      </KsPropContext.Provider>
     </ReporterContext.Provider>
   );
 }

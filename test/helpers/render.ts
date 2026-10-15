@@ -2,6 +2,7 @@
 // Sets IS_REACT_ACT_ENVIRONMENT, mounts a component inside act(), and scans for unsafe DOM.
 import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { KS_QUIET_MS } from '../../src/core/ks';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -14,6 +15,12 @@ afterEach(async () => {
   });
   roots.clear();
 });
+
+/** Waits out the quiet period after which a changed scope asks the provider again. */
+export const afterQuietPeriod = () =>
+  act(async () => {
+    await new Promise(resolve => setTimeout(resolve, KS_QUIET_MS + 50));
+  });
 
 export const PAYLOAD = '<img src=x onerror="window.__pwned=1">';
 

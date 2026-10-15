@@ -150,4 +150,5 @@ const CaptionsEditorView: FC<CaptionsEditorCoreProps> = props => {
 export const CaptionsEditorCore = withKs(
   'captions-editor',
   withValidatedProps(withKsProp(KalturaCaptionsEditorApi.schema), 'captions editor', CaptionsEditorView, 'captions-editor'),
+  { schema: KalturaCaptionsEditorApi.schema, label: 'captions editor' },
 );

@@ -168,4 +168,7 @@ const PlayerView: FC<PlayerCoreProps> = (props) => {
   );
 };
 
-export const PlayerCore = withKs('player', withValidatedProps(withKsProp(KalturaPlayerApi.schema, false), 'player', PlayerView, 'player'));
+export const PlayerCore = withKs('player', withValidatedProps(withKsProp(KalturaPlayerApi.schema, false), 'player', PlayerView, 'player'), {
+  schema: KalturaPlayerApi.schema,
+  label: 'player',
+});

@@ -132,4 +132,4 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
   );
 };
 
-export const RecorderCore = withKs('recorder', RecorderView);
+export const RecorderCore = withKs('recorder', RecorderView, { schema: KalturaRecorderApi.schema, label: 'recorder' });

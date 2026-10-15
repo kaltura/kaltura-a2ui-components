@@ -80,4 +80,7 @@ function ContentLabView(props: ContentLabCoreProps) {
   );
 }
 
-export const ContentLabCore = withKs('content-lab', withValidatedProps(withKsProp(KalturaContentLabApi.schema), 'Kaltura Content Lab', ContentLabView, 'content-lab'));
+export const ContentLabCore = withKs('content-lab', withValidatedProps(withKsProp(KalturaContentLabApi.schema), 'Kaltura Content Lab', ContentLabView, 'content-lab'), {
+  schema: KalturaContentLabApi.schema,
+  label: 'Kaltura Content Lab',
+});
