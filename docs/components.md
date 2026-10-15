@@ -25,7 +25,7 @@ Each section has the props, an A2UI payload and the matching web component `conf
 
 ## KalturaPlayer
 
-Plays one entry with the player (uiConf) the host allows.
+Plays one entry or one manual playlist with the player (uiConf) the host allows.
 
 Element: `<kaltura-player>`. Needs a KS: Only for protected entries.
 
@@ -33,7 +33,8 @@ Element: `<kaltura-player>`. Needs a KS: Only for protected entries.
 |---|---|---|---|---|
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
 | `uiconfId` | integer | yes |  | Player (uiConf) ID. Integer, not a string, not a binding. |
-| `entryId` | string | yes |  | Entry ID to play, a string like '0_abc123'. |
+| `entryId` | string |  |  | Entry to play, a string like '0_abc123'. Set exactly one of entryId and playlistId. |
+| `playlistId` | string |  |  | Manual playlist to play, a string like '1_abc123'. Set exactly one of entryId and playlistId. startTime and clipTo do not apply to a playlist. |
 | `autoplay` | boolean |  | `false` | Auto-start playback. Requires muted=true per browser policy. Default: false. |
 | `muted` | boolean |  | `false` | Start muted. Must be true when autoplay is true. Default: false. |
 | `startTime` | number |  |  | Seek to this position (seconds) on load. |

@@ -45,6 +45,9 @@ function resolvedSchema(schema: z.ZodTypeAny): z.ZodTypeAny {
   return resolved;
 }
 
+// Props of which a widget needs exactly one. Applied to a schema that has both.
+const ONE_OF: ReadonlyArray<readonly [string, string]> = [['entryId', 'playlistId']];
+
 // Rules that the A2UI string and number types cannot carry. Applied by prop name.
 const FIELD_RULES: Record<string, (value: unknown) => boolean> = {
   partnerId: isPositiveInt,
@@ -53,8 +56,9 @@ const FIELD_RULES: Record<string, (value: unknown) => boolean> = {
   // A region code or an environment name. Whether it is known and allowed is decided in `gateProps`.
   region: value => typeof value === 'string' && /^[a-z][a-z0-9-]{0,31}$/.test(value),
   entryId: isEntryId,
-  // Caption asset ids look like entry ids.
+  // Caption asset and playlist ids look like entry ids.
   assetId: isEntryId,
+  playlistId: isEntryId,
   // Category ids. They go into the KS request and into widget settings.
   categoryId: isCategoryId,
   contextId: isCategoryId,
@@ -68,7 +72,8 @@ const FIELD_RULES: Record<string, (value: unknown) => boolean> = {
  *   `cards.0.clips.1.title`), at most 5. Names come from the schema only, never
  *   from the values.
  * - `pending`: a required top-level prop is still undefined, for example a
- *   binding the host has not filled yet. That is not an error, the value may
+ *   binding the host has not filled yet. The same holds when none of a
+ *   one-of pair (`entryId`, `playlistId`) is set. That is not an error, the value may
  *   still arrive. An undefined value inside a prop (a clip without `startTime`)
  *   is invalid. With `strict`, a missing top-level prop is invalid too.
  */
@@ -95,6 +100,13 @@ export function checkProps(
       // An empty optional value means "not set" to every builder.
       if (value === '' && schema.shape[key].isOptional()) continue;
       if (!rule(value)) bad.add(key);
+    }
+    for (const [first, second] of ONE_OF) {
+      if (!(first in schema.shape && second in schema.shape)) continue;
+      const set = [first, second].filter(key => record[key] !== undefined && record[key] !== '');
+      if (set.length === 2) bad.add(second);
+      else if (set.length === 0 && strict) bad.add(first);
+      else if (set.length === 0) pending = true;
     }
   }
   return { invalid: [...bad].slice(0, 5), pending };

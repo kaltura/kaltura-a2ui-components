@@ -11,6 +11,7 @@ export interface PlayerSetupConfig {
 export interface PlayerHandle {
   destroy?: () => void;
   loadMedia?: (info: { entryId: string }, options?: { seekFrom?: number; clipTo?: number }) => Promise<unknown>;
+  loadPlaylist?: (info: { playlistId: string }) => Promise<unknown>;
   addEventListener?: (type: string, listener: (event: unknown) => void) => void;
   Event?: { ERROR?: string };
 }

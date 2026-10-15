@@ -20,7 +20,7 @@ export interface PlayerRemote {
   script: 'load' | 'error' | 'hold' | 'no-api' | 'no-setup';
   /**
    * What `setup` and the handle do. `throw`: setup throws with the KS in its message.
-   * `no-player`: setup returns nothing. `no-load-media`: the handle has no `loadMedia`.
+   * `no-player`: setup returns nothing. `no-load-media`: the handle has no `loadMedia`. `no-load-playlist`: no `loadPlaylist`.
    * `no-add-listener`: the handle has no `addEventListener`. `no-event-const`: the handle has no `Event.ERROR`.
    * `destroy-throws`: `destroy` throws. `load-rejects` and `load-throws`: `loadMedia` fails with the KS in its message.
    */
@@ -29,6 +29,7 @@ export interface PlayerRemote {
     | 'throw'
     | 'no-player'
     | 'no-load-media'
+    | 'no-load-playlist'
     | 'no-add-listener'
     | 'no-event-const'
     | 'destroy-throws'
@@ -75,6 +76,15 @@ const api: PlayerApi = {
         : {
             addEventListener: (type: string, listener: (event: unknown) => void) => {
               (remote.listeners[type] ??= []).push(listener);
+            },
+          }),
+      ...(remote.setup === 'no-load-playlist'
+        ? {}
+        : {
+            loadPlaylist: (info: { playlistId: string }) => {
+              remote.log.push('loadPlaylist');
+              entry.loads.push({ info, options: undefined });
+              return Promise.resolve({});
             },
           }),
       ...(remote.setup === 'no-load-media'

@@ -40,6 +40,7 @@ export const INTENTIONAL_DIFFERENCES = [
   'zod .positive() and .nonnegative() on ids are not written to the catalog (type: integer only).',
   'zod objects strip unknown keys. The catalog sets additionalProperties: false on nested objects.',
   'z.unknown() (Flashcards clip entryId) keeps the catalog type. The component checks the value with isEntryId.',
+  'The catalog Player has a oneOf rule (entryId or playlistId) that zod does not carry. The component checks the pair.',
   'Descriptions and defaults live in the JSON only.',
 ];
 

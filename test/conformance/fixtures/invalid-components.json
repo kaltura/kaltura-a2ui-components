@@ -1,6 +1,23 @@
 {
   "KalturaPlayer": [
     {
+      "why": "entryId and playlistId together",
+      "props": {
+        "partnerId": 1,
+        "uiconfId": 2,
+        "entryId": "0_abc",
+        "playlistId": "1_abc"
+      }
+    },
+    {
+      "why": "playlistId is a number",
+      "props": {
+        "partnerId": 1,
+        "uiconfId": 2,
+        "playlistId": 5
+      }
+    },
+    {
       "why": "missing entryId",
       "props": {
         "partnerId": 1,
