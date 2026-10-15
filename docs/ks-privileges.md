@@ -44,6 +44,7 @@ Mint against the API of `request.scope.region`. It is a region code or the name 
 The request names the entry or category the widget asks for. The KS is the only boundary. A prop the KS cannot enforce is a hint.
 
 - One entry (`player`, `captions-editor`): `sview:<entryId>`. The captions editor also needs `edit:<entryId>`.
+- One playlist (`player` with `playlistId`): `sviewplaylist:<playlistId>`, manual playlists only. Tested: it grants view of the playlist entries, so no `sview` is needed.
 - Several entries (`flashcards`, up to 20): do not repeat the key. `session.start` keeps only the last `sview` (tested), so `sview:a,sview:b` grants one entry at most. Put the ids in one `sview` value, separated by `/` (`sview:a/b`). Tested: `,`, `|` and `;` do not work.
 - Category (`genie`, `media-manager`): no privilege takes a category id. Resolve the category to entry ids on your server, or use a privacy context.
 - `analytics`: `entryId` and the dates are app parameters. The KS cannot limit them. Narrow with `setrole` and `iprestrict`.

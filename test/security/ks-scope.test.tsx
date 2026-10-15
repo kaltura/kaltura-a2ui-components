@@ -140,6 +140,14 @@ describe('KS-SCOPE: what the provider gets', () => {
     expect(scopes(provider).map(scope => (scope as { assetId?: string }).assetId)).toEqual(['1_aaa', '1_bbb']);
   });
 
+  it('a Player playlist scope holds the playlist and no entry', async () => {
+    const provider = vi.fn<KsProvider>(() => 'host-ks');
+    setKsProvider(provider);
+    await mount(PlayerCore, { partnerId: 1, uiconfId: 2, playlistId: '1_list' });
+    await player.ready();
+    expect(scopes(provider)).toEqual([{ region: 'nvp1', partnerId: 1, playlistId: '1_list' }]);
+  });
+
   it('an empty optional id is left out of the scope', async () => {
     const provider = vi.fn<KsProvider>(() => 'host-ks');
     setKsProvider(provider);

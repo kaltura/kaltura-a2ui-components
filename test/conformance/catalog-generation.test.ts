@@ -137,6 +137,6 @@ describe('CONF-08: differences between zod and the catalog are on purpose', () =
   });
 
   it('CONF-08: the list of intended differences is this one', () => {
-    expect(generator.INTENTIONAL_DIFFERENCES).toHaveLength(4);
+    expect(generator.INTENTIONAL_DIFFERENCES).toHaveLength(5);
   });
 });

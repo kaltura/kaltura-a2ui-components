@@ -17,7 +17,7 @@ interface Account {
  * Arrays are sorted and unique. See docs/adr/0009-per-instance-ks-scope.md.
  */
 export interface KsScopeByWidget {
-  player: Account & { entryId: string };
+  player: Account & ({ entryId: string; playlistId?: undefined } | { playlistId: string; entryId?: undefined });
   flashcards: Account & { entryIds: readonly string[] };
   'captions-editor': Account & { entryId: string; assetId?: string };
   recorder: Account;
@@ -109,7 +109,7 @@ export function setKsProvider(provider: KsProvider | undefined): void {
 
 /** The props that name data, per widget. Nothing else enters a request: not `ks`, not config props. */
 const SCOPE_KEYS: { [W in KsWidget]: { required: readonly string[]; optional?: readonly string[] } } = {
-  player: { required: ['partnerId', 'entryId'] },
+  player: { required: ['partnerId'], optional: ['entryId', 'playlistId'] },
   flashcards: { required: ['partnerId'] },
   'captions-editor': { required: ['partnerId', 'entryId'], optional: ['assetId'] },
   recorder: { required: ['partnerId'] },

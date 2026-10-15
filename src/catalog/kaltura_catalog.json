@@ -961,7 +961,7 @@
     },
     "KalturaPlayer": {
       "type": "object",
-      "description": "Plays one entry with the player (uiConf) the host allows.",
+      "description": "Plays one entry or one manual playlist with the player (uiConf) the host allows.",
       "allOf": [
         { "$ref": "#/$defs/ComponentCommon" },
         { "$ref": "#/$defs/CatalogComponentCommon" },
@@ -979,7 +979,11 @@
             },
             "entryId": {
               "$ref": "#/$defs/DynamicString",
-              "description": "Entry ID to play, a string like '0_abc123'."
+              "description": "Entry to play, a string like '0_abc123'. Set exactly one of entryId and playlistId."
+            },
+            "playlistId": {
+              "$ref": "#/$defs/DynamicString",
+              "description": "Manual playlist to play, a string like '1_abc123'. Set exactly one of entryId and playlistId. startTime and clipTo do not apply to a playlist."
             },
             "autoplay": {
               "$ref": "#/$defs/DynamicBoolean",
@@ -1013,9 +1017,13 @@
               "description": "Optional entry description shown under the player. HTML tags are stripped."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." },
-            "region": { "type": "string", "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused." }
+            "region": {
+              "type": "string",
+              "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused."
+            }
           },
-          "required": ["component", "partnerId", "uiconfId", "entryId"]
+          "required": ["component", "partnerId", "uiconfId"],
+          "oneOf": [{ "required": ["entryId"] }, { "required": ["playlistId"] }]
         }
       ],
       "unevaluatedProperties": false
@@ -1098,7 +1106,10 @@
               }
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." },
-            "region": { "type": "string", "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused." }
+            "region": {
+              "type": "string",
+              "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused."
+            }
           },
           "required": ["component", "title", "cards"]
         }
@@ -1144,7 +1155,10 @@
               "description": "ID of the content scope (e.g. category ID to browse)."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." },
-            "region": { "type": "string", "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused." }
+            "region": {
+              "type": "string",
+              "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused."
+            }
           },
           "required": ["component", "partnerId"]
         }
@@ -1182,7 +1196,10 @@
               "description": "End of the date range, as YYYY-MM-DD. Needs fromDate."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." },
-            "region": { "type": "string", "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused." }
+            "region": {
+              "type": "string",
+              "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused."
+            }
           },
           "required": ["component", "partnerId"]
         }
@@ -1216,7 +1233,10 @@
               "description": "Optional. uiConf ID of the editor's own player. Integer, not a string, not a binding."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." },
-            "region": { "type": "string", "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused." }
+            "region": {
+              "type": "string",
+              "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused."
+            }
           },
           "required": ["component", "partnerId", "entryId"]
         }
@@ -1263,7 +1283,10 @@
               "description": "Longest recording in seconds. At most 86400."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." },
-            "region": { "type": "string", "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused." }
+            "region": {
+              "type": "string",
+              "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused."
+            }
           },
           "required": ["component", "partnerId", "uiconfId"]
         }
@@ -1307,7 +1330,10 @@
               "description": "Colour theme. Default: 'light' when the page has data-theme=\"light\", otherwise 'dark'."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." },
-            "region": { "type": "string", "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused." }
+            "region": {
+              "type": "string",
+              "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused."
+            }
           },
           "required": ["component", "partnerId"]
         }
@@ -1345,7 +1371,10 @@
               "description": "Player (uiConf) ID. Genie needs it to start. Integer, not a string, not a binding."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." },
-            "region": { "type": "string", "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused." }
+            "region": {
+              "type": "string",
+              "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused."
+            }
           },
           "required": ["component", "partnerId", "uiconfId"]
         }
@@ -1379,7 +1408,10 @@
               "description": "Player (uiConf) ID for the video preview. Integer, not a string, not a binding."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." },
-            "region": { "type": "string", "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused." }
+            "region": {
+              "type": "string",
+              "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused."
+            }
           },
           "required": ["component", "partnerId", "uiconfId", "entryId"]
         }
@@ -1405,7 +1437,10 @@
               "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." },
-            "region": { "type": "string", "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused." }
+            "region": {
+              "type": "string",
+              "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused."
+            }
           },
           "required": ["component", "partnerId"]
         }
@@ -1431,7 +1466,10 @@
               "description": "Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused."
             },
             "action": { "$ref": "#/$defs/Action", "description": "Optional. Tells the agent about this widget's errors and events, with fixed fields only (never the KS or remote text)." },
-            "region": { "type": "string", "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused." }
+            "region": {
+              "type": "string",
+              "description": "Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused."
+            }
           },
           "required": ["component", "partnerId"]
         }
