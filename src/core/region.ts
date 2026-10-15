@@ -62,9 +62,9 @@ export function setRegion(code: KalturaRegion): void {
 /** The region set by `setRegion`. */
 export const currentRegion = (): KalturaRegion => region;
 
-/** Hosts for the current region. */
-export function kalturaHosts(): KalturaHosts {
-  if (region === 'nvp1') return US;
-  const web = WEB_HOST[region];
-  return { serviceUrl: `https://api.${API_PREFIX[region]}.kaltura.com`, cdn: web, vod: `https://cfvod.${region}.ovp.kaltura.com`, kmc: KMC_HOST[region], recorder: web };
+/** Hosts for a region. Default: the region set with `setRegion`. */
+export function kalturaHosts(code: KalturaRegion = region): KalturaHosts {
+  if (code === 'nvp1') return US;
+  const web = WEB_HOST[code];
+  return { serviceUrl: `https://api.${API_PREFIX[code]}.kaltura.com`, cdn: web, vod: `https://cfvod.${code}.ovp.kaltura.com`, kmc: KMC_HOST[code], recorder: web };
 }

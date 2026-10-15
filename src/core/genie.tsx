@@ -2,7 +2,7 @@ import { UnisphereWidgetCore } from './unisphere-widget';
 import { KalturaGenieApi } from '../schemas/genie';
 import { withValidatedProps } from './validate-props';
 import { withKs, withKsProp } from './ks';
-import { kalturaHosts } from './region';
+import { kalturaHosts, regionOf } from './region';
 
 export interface GenieCoreProps {
   /** Kaltura partner (account) ID. */
@@ -32,7 +32,7 @@ function GenieView(props: GenieCoreProps) {
         ks: props.ks,
         pid: String(props.partnerId),
         uiConfId: String(props.uiconfId),
-        kalturaServerURI: kalturaHosts().cdn,
+        kalturaServerURI: kalturaHosts(regionOf(props.serverUrl ?? '')).cdn,
         ...(props.categoryId ? { categoryId: props.categoryId } : {}),
         language: props.language || 'en',
       }}
