@@ -368,7 +368,7 @@ Fixed on branch `mixed-region-hosts`: Genie, Content Lab, VOD Avatar and Agents 
 |---|---|---|---|
 | 0 | Ships first, before the rest of this ADR is relied on. Hardening with no API change. The A2UI path takes the KS only from the provider. The docs fixes. | no change | patch |
 | 1 (implemented) | The pre-check before the provider (it needs the mint to move into an effect), the provider request, scope change, timing rules and the size limit bump. Uses the props that exist today: `entryId`, flashcards `entryIds`, Genie `categoryId`, Media Manager `contextId`, Analytics and Content Lab `entryId`, `partnerId` | no change | 0.5.0 |
-| 2 (`region` implemented) | `region` on every widget except Chart (section 9), `setEnvironments`, `setAllowedRegions`, `sgp2`. `assetId` and Player `playlistId` are implemented. Still open (a test against the hosted widgets is the entry condition; the API-only tests did not settle them): new R props, each added only after a test shows the widget or the KS uses it: `ancestorCategoryId`, `virtualEventId`, Analytics `categoryId`/`playlistId`, Genie `entryId`, Agents Widget `categoryId`, VOD Avatar filters. Analytics `userId` and Avatar `autoConnect` only as host opt-ins | `region` added to `v2`, no new id | 0.5.0 |
+| 2 (`region` implemented) | `region` on every widget except Chart (section 9), `setEnvironments`, `setAllowedRegions`, `sgp2`. `assetId` and Player `playlistId` are implemented. Not added, because no test shows that the hosted widget or the KS uses them: `ancestorCategoryId`, `virtualEventId`, Analytics `categoryId`/`playlistId`, Genie `entryId`, Agents Widget `categoryId`, VOD Avatar filters. Each is added only after such a test. Analytics `userId` and Avatar `autoConnect` only as host opt-ins | `region` added to `v2`, no new id | 0.5.0 |
 | Later | A way for the host to supply H runtime settings (`reachProfileId`, `genieId`, `allowedProjectTypes`), for example a provider that returns `{ ks, settings }` with a fixed allowlist of setting names per widget. Not decided here. Also the A2UI v1.0 migration | | |
 
 ## Consequences
@@ -388,7 +388,9 @@ These need a sandbox partner. They set the entry cap (provisional 20) and decide
 
 - Length limit of the privilege string, and the KS size where URLs break. Done: `session.start` kept 500 ids in one `sview` value (5.5 kB of privileges, an 8.8 kB KS) without truncation. The cap of 20 entries gives a 464 character KS, so size is not the limit. The real limit of any one service (player, CDN URL) is untested.
 - `sview:a/b` (slash) against repeated keys. Done with a KS-protected entry: repeated keys collapse to the last one. The slash list `sview:a/b` works. `,`, `|` and `;` do not.
-- Captions editor: done. The pinned editor page (v1.3.10) reads `data-assetid`. The editing screen with a real caption asset was not run end to end. A USER KS needs a role that can add captions.
+- Captions editor: done. The pinned editor page (v1.3.10) reads `data-assetid`. Live, in three browsers: with `assetId` the editor opens that asset, without it the first one (`e2e/live`, LIVE-06 and LIVE-07). A USER KS needs a role that can add captions.
+- Player `playlistId`: done. Live, in three browsers: a manual playlist loads and plays (LIVE-05). The KS rule is tested at the API: with a KS-protected entry, `sviewplaylist` lets `playManifest` answer for the playlist entries and no privilege does not.
+- Analytics `virtualEventId`: not added. A KS with `virtualeventid:<id>` returned the same totals as one without it on eight report types, so no limit was seen. The embed reads a `predefinedFilter` from its `init` message. That is a UI filter, and this library does not send it.
 - Whether Genie privileges narrow results, and whether the server checks the client `context_id`.
 - Which claim selects the avatar agent, and whether `autoConnect` needs a user gesture.
 - ADMIN or USER KS for Content Lab and Agents Widget.

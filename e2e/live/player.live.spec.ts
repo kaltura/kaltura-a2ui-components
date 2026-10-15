@@ -13,6 +13,8 @@ const UICONF_ID = 58022092;
 // Transcoded, and clips work.
 const ENTRY_ID = '1_rvxt75rh';
 const CLIP = { start: 2, end: 7 };
+// A manual playlist of two ready entries.
+const PLAYLIST_ID = '1_8z2vu8s7';
 const PLAY_TIMEOUT = 45_000;
 
 interface PlayerState {
@@ -27,6 +29,7 @@ interface LiveWindow {
   __mount(tag: string, config: unknown): void;
 }
 interface LivePlayer {
+  playlist?: { items: unknown[] };
   currentTime: number;
   duration: number;
   paused: boolean;
@@ -184,4 +187,36 @@ test('LIVE-03: a flashcards clip plays only its range', async ({ live }) => {
 test('LIVE-04: the URL check sees a KS in a query string', async ({ live }) => {
   await live.requestWithKsInQuery();
   await expect.poll(() => live.ksLeaks()).toEqual(['https://www.kaltura.com/robots.txt?<query dropped>']);
+});
+
+test('LIVE-05: a playlist loads, plays, and no URL holds the KS', async ({ live }) => {
+  await live.mount('kaltura-player', { partnerId, uiconfId: UICONF_ID, playlistId: PLAYLIST_ID, autoplay: true, muted: true });
+  await expect
+    .poll(async () => (await live.state())?.currentTime ?? 0, { timeout: PLAY_TIMEOUT, message: 'currentTime advances' })
+    .toBeGreaterThan(1);
+  const items = await live.page.evaluate(() => Object.values((window as unknown as LiveWindow).KalturaPlayer.getPlayers())[0]?.playlist?.items.length);
+  expect(items).toBe(2);
+  expect(live.consoleErrors).toEqual([]);
+  expectNoKsInUrls(live);
+});
+
+// An entry with two caption assets: English (opens by default) and French.
+const CAPTIONS_ENTRY_ID = '1_fjrbnv7u';
+const FRENCH_ASSET_ID = '1_vgc71z7n';
+
+/** The text inside the editor frame, empty until the frame exists. */
+async function editorText(live: LivePage): Promise<string> {
+  const frame = live.page.frames().find((f) => f !== live.page.mainFrame());
+  return (await frame?.evaluate(() => document.body.innerText).catch(() => '')) ?? '';
+}
+
+test('LIVE-06: the captions editor opens the caption asset named by assetId', async ({ live }) => {
+  await live.mount('kaltura-captions-editor', { partnerId, entryId: CAPTIONS_ENTRY_ID, assetId: FRENCH_ASSET_ID });
+  await expect.poll(() => editorText(live), { timeout: PLAY_TIMEOUT, message: 'the French asset opens' }).toContain('French - a2ui-probe-fr');
+  expect(live.consoleErrors).toEqual([]);
+});
+
+test('LIVE-07: without assetId the captions editor opens the first asset, not the French one', async ({ live }) => {
+  await live.mount('kaltura-captions-editor', { partnerId, entryId: CAPTIONS_ENTRY_ID });
+  await expect.poll(() => editorText(live), { timeout: PLAY_TIMEOUT, message: 'the English asset opens' }).toContain('English - a2ui-probe-en');
 });
