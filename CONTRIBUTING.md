@@ -26,6 +26,7 @@ npx playwright install chromium firefox webkit   # only for e2e and check:exampl
 
 It needs `NVP1_PARTNER_ID` and `NVP1_ADMIN_SECRET` in a gitignored `.env`. Without them the test is skipped.
 Run `npm run e2e:live` (add `-- --project=chromium` for one browser). It mints a 10 minute KS in the test process, plays a real entry and fails if the KS shows up in any request URL.
+LIVE-05 to LIVE-07 use fixed ids on the NVP1 test partner: a two-entry manual playlist, and an entry with an English and a French caption asset. Another partner needs its own.
 Never run it in CI, and never commit the secret or a KS.
 
 Look at the examples: build, serve the repo root with any static server and open `examples/plain-html/index.html`. The React example needs Vite: `scripts/check-examples.mjs` shows how it is built.
