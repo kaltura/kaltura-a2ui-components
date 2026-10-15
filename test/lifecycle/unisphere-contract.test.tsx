@@ -2,7 +2,7 @@
 // without an error. Names, settings and visual types below were checked against
 // https://unisphere.nvp1.ovp.kaltura.com/v1/runtime.json and a live render on 2026-10-13.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { URL_A, loaderUrl, render } from './harness';
+import { URL_A, URL_B, loaderUrl, render } from './harness';
 
 type Checks = { status: string; isAvailable: boolean };
 interface Runtime { widgetName: string; runtimeName: string; settings: Record<string, unknown>; visuals: { type: string }[] }
@@ -162,5 +162,27 @@ describe('Unisphere runtime contract', () => {
     const Component = (await import('../../src/core/agents-widget')).AgentsWidgetCore as never;
     await render(Component, { ...props, serverUrl: privateUrl });
     expect(configs[0].runtimes[0].settings.agentsServiceURI).toBe('https://agents-manager.irp2.ovp.kaltura.com');
+  });
+});
+
+describe('Unisphere widgets take every host from the region of their serverUrl', () => {
+  beforeEach(() => {
+    vi.doMock(loaderUrl(URL_B), () => ({
+      loader: async (cfg: { runtimes: Runtime[] }) => {
+        configs.push(cfg);
+        return { kill: () => {}, getRuntimeAsync: async () => ({ openDrawer: () => {} }) };
+      },
+    }));
+  });
+
+  it.each([
+    ['../../src/core/genie', 'GenieCore', { uiconfId: 58022072 }, 'https://api.eu.kaltura.com'],
+    ['../../src/core/vod-avatar', 'VodAvatarCore', { entryId: '0_abc' }, 'https://api.eu.kaltura.com'],
+    ['../../src/core/content-lab', 'ContentLabCore', { uiconfId: 58022072, entryId: '1_hpc1olo6' }, 'https://api.eu.kaltura.com'],
+    ['../../src/core/agents-widget', 'AgentsWidgetCore', {}, 'https://api.eu.kaltura.com'],
+  ])('%s: kalturaServerURI follows an irp2 serverUrl while the default region is nvp1', async (module, name, extra, host) => {
+    const Component = ((await import(/* @vite-ignore */ module)) as Record<string, never>)[name];
+    await render(Component, { ...props, ...extra, serverUrl: URL_B });
+    expect(configs[0].runtimes[0].settings.kalturaServerURI).toBe(host);
   });
 });
