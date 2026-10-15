@@ -352,7 +352,29 @@ const FlashcardsView: FC<FlashcardsCoreProps> = ({
 };
 
 // Bad partnerId or uiconfId only disables the clips (SEC-11), so they are not checked here.
-export const FlashcardsCore = withKs(
+const SCHEMA = KalturaFlashcardsApi.schema.omit({ partnerId: true, uiconfId: true });
+
+/** One KS covers at most this many entries. Provisional until the privilege size limit is tested. */
+const MAX_KS_ENTRIES = 20;
+
+// The valid clip entries. A bad clip shows "This clip cannot be shown" and adds nothing.
+const clipEntryIds = ({ cards }: Omit<FlashcardsCoreProps, 'ks'>): string[] => [
+  ...new Set(cards.flatMap(card => (card.clips ?? []).map((clip): unknown => clip.entryId).filter(isEntryId))),
+].sort();
+
+export const FlashcardsCore = withKs<FlashcardsCoreProps>(
   'flashcards',
-  withValidatedProps(withKsProp(KalturaFlashcardsApi.schema.omit({ partnerId: true, uiconfId: true }), false), 'flashcards', FlashcardsView, 'flashcards'),
+  withValidatedProps(withKsProp(SCHEMA, false), 'flashcards', FlashcardsView, 'flashcards'),
+  {
+    schema: SCHEMA,
+    label: 'flashcards',
+    check: props => (clipEntryIds(props).length > MAX_KS_ENTRIES ? ['cards'] : []),
+    // No mint without an account and a player to play the clips in, or when the host refuses them.
+    scope: props => {
+      const { partnerId, uiconfId } = props;
+      const entryIds = clipEntryIds(props);
+      if (!isPositiveInt(partnerId) || !isPositiveInt(uiconfId) || refusedIdProp(props) || !entryIds.length) return undefined;
+      return { partnerId, entryIds };
+    },
+  },
 );

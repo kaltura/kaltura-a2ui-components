@@ -44,14 +44,22 @@ function isIsoDate(value: unknown): value is string {
  * Throws a plain `Invalid <prop>` error for a bad value.
  */
 export function analyticsNavigation({ entryId, reportType, fromDate, toDate }: Omit<AnalyticsCoreProps, 'partnerId'>): AnalyticsNavigation {
-  if (reportType && !(ANALYTICS_REPORT_TYPES as readonly string[]).includes(reportType)) throw new Error('Invalid reportType');
+  const bad = invalidNavigationProp({ reportType, fromDate, toDate });
+  if (bad) throw new Error(`Invalid ${bad}`);
   const ranged = Boolean(fromDate || toDate);
-  if (ranged && !isIsoDate(fromDate)) throw new Error('Invalid fromDate');
-  if (ranged && !isIsoDate(toDate)) throw new Error('Invalid toDate');
   return {
     navigate: entryId ? { url: '/analytics/entry', queryParams: { id: entryId } } : { url: `/analytics/${reportType || 'engagement'}` },
     filters: ranged ? { dateFrom: fromDate as string, dateTo: toDate as string } : { dateBy: 'last30days' },
   };
+}
+
+/** The first of `reportType`, `fromDate` and `toDate` that `analyticsNavigation` refuses. */
+function invalidNavigationProp({ reportType, fromDate, toDate }: Pick<AnalyticsCoreProps, 'reportType' | 'fromDate' | 'toDate'>) {
+  if (reportType && !(ANALYTICS_REPORT_TYPES as readonly string[]).includes(reportType)) return 'reportType';
+  if ((fromDate || toDate) && !isIsoDate(fromDate)) return 'fromDate';
+  if ((fromDate || toDate) && !isIsoDate(toDate)) return 'toDate';
+  if (fromDate && toDate && fromDate > toDate) return 'toDate';
+  return undefined;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
@@ -152,7 +160,11 @@ const AnalyticsView: FC<AnalyticsCoreProps & { ks: string }> = ({ partnerId, ks,
   return <AnalyticsFrame partnerId={partnerId} ks={ks} nav={nav} />;
 };
 
-const Validated = withKs('analytics', withValidatedProps(KalturaAnalyticsApi.schema.extend({ ks: z.string() }), 'analytics', AnalyticsView, 'analytics'));
+const Validated = withKs('analytics', withValidatedProps(KalturaAnalyticsApi.schema.extend({ ks: z.string() }), 'analytics', AnalyticsView, 'analytics'), {
+  schema: KalturaAnalyticsApi.schema,
+  label: 'analytics',
+  check: props => [invalidNavigationProp(props)].filter(name => name !== undefined),
+});
 
 /** The analytics app takes its KS from `setKsProvider` only. A `ks` prop is dropped: it is an ADMIN KS. */
 export const AnalyticsCore: FC<AnalyticsCoreProps> = props => createElement(Validated, { ...props, ks: undefined });

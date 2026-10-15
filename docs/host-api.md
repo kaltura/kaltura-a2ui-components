@@ -6,7 +6,7 @@ Agents never call these. Set them once, before the components mount. Each call r
 
 | Function | React adapter | Web component bundle | What it does |
 |---|---|---|---|
-| `setKsProvider(fn)` | yes | yes | Supplies the KS. The only source: agents have no `ks` prop. See [security/ks.md](security/ks.md) |
+| `setKsProvider(fn)` | yes | yes | Supplies the KS for each widget instance, with its scope (`(widget, request)`). The only source: agents have no `ks` prop. See [security/ks.md](security/ks.md#the-request) |
 | `setExtraAllowedOrigins(origins)` | yes | yes | Adds Unisphere `serverUrl` origins (private cloud, on-prem) |
 | `setExtraMediaOrigins(origins)` | yes | no | Adds origins for the basic Image, Video and AudioPlayer |
 | `setRegion(code)` | yes | yes | Picks the Kaltura region for the hosts in the [table below](#regions) |
@@ -201,7 +201,7 @@ function onAgentMessages(messages: A2uiMessage[], surfaceId: string) {
   try {
     processor.processMessages(messages);
   } catch (error) {
-    agent.send({ version: 'v0.9', error: { code: 'VALIDATION_ERROR', surfaceId, message: (error as Error).message } });
+    agent.send({ version: 'v0.9', error: { code: 'VALIDATION_FAILED', surfaceId, path: '/', message: (error as Error).message } });
   }
 }
 ```

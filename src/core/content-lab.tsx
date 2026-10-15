@@ -3,7 +3,7 @@ import { KalturaContentLabApi } from '../schemas/content-lab';
 import { withValidatedProps } from './validate-props';
 import { withKs, withKsProp } from './ks';
 import { isEntryId } from './ids';
-import { kalturaHosts } from './region';
+import { kalturaHosts, regionOf } from './region';
 
 export interface ContentLabCoreProps {
   /** Kaltura partner (account) ID. */
@@ -48,7 +48,7 @@ function ContentLabView(props: ContentLabCoreProps) {
         ks: props.ks,
         pid: String(props.partnerId),
         uiconfId: String(props.uiconfId),
-        kalturaServerURI: kalturaHosts().serviceUrl,
+        kalturaServerURI: kalturaHosts(regionOf(props.serverUrl ?? '')).serviceUrl,
         analyticsServerURI: 'analytics.kaltura.com',
         // 0 is KMC. With 1 (KMS) the menu hides captions unless reachConfig is set.
         hostAppName: 0,
@@ -80,4 +80,7 @@ function ContentLabView(props: ContentLabCoreProps) {
   );
 }
 
-export const ContentLabCore = withKs('content-lab', withValidatedProps(withKsProp(KalturaContentLabApi.schema), 'Kaltura Content Lab', ContentLabView, 'content-lab'));
+export const ContentLabCore = withKs('content-lab', withValidatedProps(withKsProp(KalturaContentLabApi.schema), 'Kaltura Content Lab', ContentLabView, 'content-lab'), {
+  schema: KalturaContentLabApi.schema,
+  label: 'Kaltura Content Lab',
+});

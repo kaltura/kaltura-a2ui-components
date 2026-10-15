@@ -81,7 +81,7 @@ const agent = {
 };
 
 // Actions (Button clicks, the "action" of Kaltura components) go to the agent.
-const processor = new MessageProcessor([kalturaReactCatalog], (action) => agent.send(action));
+const processor = new MessageProcessor([kalturaReactCatalog], (action) => agent.send({ version: 'v0.9', action }));
 
 // Widget errors go to the agent as A2UI client error messages. No error text, no KS.
 setErrorHandler((error) => agent.send(toClientError(error)));

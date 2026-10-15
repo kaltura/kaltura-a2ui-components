@@ -4,7 +4,7 @@
 // the `message` events the app would send and read what the component posts back.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act, createElement } from 'react';
-import { mount } from '../helpers/render';
+import { afterQuietPeriod, mount } from '../helpers/render';
 import { setKsProvider } from '../../src/core/ks';
 import { AnalyticsCore, AnalyticsFrame, analyticsNavigation } from '../../src/core/analytics';
 import { setRegion, kalturaHosts, KALTURA_REGIONS } from '../../src/core/region';
@@ -114,7 +114,7 @@ describe('ANA-01: init', () => {
     const provider = vi.fn((widget: string) => (widget === 'analytics' ? 'admin-ks' : 'user-ks'));
     const { emit, sent } = await setup({ partnerId: 123 }, provider as never);
     await emit({ messageType: 'analyticsInit', payload: {} });
-    expect([provider.mock.calls, (sent()[0][0].payload as { ks: string }).ks]).toEqual([[['analytics']], 'admin-ks']);
+    expect([provider.mock.calls, (sent()[0][0].payload as { ks: string }).ks]).toEqual([[['analytics', expect.objectContaining({ widget: 'analytics' })]], 'admin-ks']);
   });
 
   it('ANA-01: a ks prop from the agent is ignored', async () => {
@@ -179,6 +179,7 @@ describe('ANA-01: navigation and filters', () => {
     const { container, root, frame, handshake, sent } = await setup();
     await handshake();
     await act(async () => root.render(createElement(AnalyticsCore, { partnerId: 123, reportType: 'technology' })));
+    await afterQuietPeriod();
     expect([container.querySelector('iframe') === frame, sent().slice(3).map(([message]) => message)]).toEqual([
       true,
       [

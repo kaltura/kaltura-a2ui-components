@@ -69,6 +69,8 @@
       "KalturaRegion",
       "KalturaWidget",
       "KsProvider",
+      "KsRequest",
+      "KsScopeByWidget",
       "KsWidget",
       "MediaManagerCoreProps",
       "PlayerCoreProps",
@@ -129,6 +131,8 @@
       "KalturaRegion",
       "KalturaWidget",
       "KsProvider",
+      "KsRequest",
+      "KsScopeByWidget",
       "KsWidget"
     ]
   },

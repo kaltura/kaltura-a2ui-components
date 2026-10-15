@@ -7,7 +7,7 @@ The agent writes A2UI JSON and [your page renders it](../README.md#quick-start).
 - By URL: `https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@<tag>/src/catalog/kaltura_catalog.json` (`<tag>` is the tag you pinned).
 - Inline, for agents that accept it: `processor.getRendererCapabilities({ versions: ['v0.9'], includeInlineCatalogs: true })` ([host-api](host-api.md#capability-negotiation)).
 
-The full catalog is large. Send only the components you use: delete the other keys under `components` and their `$ref` lines in `$defs.anyComponent.oneOf`.
+Send the file as it is. Its `$id` must match the catalog id the renderer registers, so do not edit or prune it.
 
 ## 2. The smallest valid sequence
 
@@ -47,7 +47,7 @@ One object feeds both, so they cannot drift apart. There is no entry allowlist: 
 ## 4. Send errors and events back
 
 ```ts
-const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatalog], (action) => agent.send(action));
+const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatalog], (action) => agent.send({ version: 'v0.9', action }));
 setErrorHandler((error) => agent.send(toClientError(error)));
 ```
 
