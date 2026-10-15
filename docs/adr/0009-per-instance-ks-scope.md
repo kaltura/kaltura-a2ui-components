@@ -16,7 +16,7 @@ Code today: `src/core/ks.ts`, `src/core/validate-props.ts`, `src/adapters/react/
   2. **Config** parameters change look or behaviour: theme, autoplay, time window.
   3. **Host-only** parameters choose identity, persona, cost or write rights.
 - What the KS can enforce (Kaltura Session Guide https://kaltura.md/KALTURA_SESSION_GUIDE/, developer docs "Authentication and Security"):
-  - Per entry: `sview`, `edit`, `download`. Several entries use repeated keys, `sview:1_a,sview:1_b`. Pairs are separated by commas without spaces.
+  - Per entry: `sview`, `edit`, `download`. Pairs are separated by commas without spaces. Repeated keys (`sview:1_a,sview:1_b`) do not work: `session.start` keeps only the last one (sandbox test, 2026-10-15). Several entries need one `sview` key with a list value. The separator the server enforces is untested.
   - Per manual playlist: `sviewplaylist`, `editplaylist`.
   - Per user, role and limits: `userId`, `setrole`, `expiry`, `actionslimit`, `iprestrict`, `urirestrict`.
   - A category only indirectly: `enableentitlement` plus `privacycontext:<label>`.
@@ -368,7 +368,7 @@ Fixed on branch `mixed-region-hosts`: Genie, Content Lab, VOD Avatar and Agents 
 |---|---|---|---|
 | 0 | Ships first, before the rest of this ADR is relied on. Hardening with no API change. The A2UI path takes the KS only from the provider. The docs fixes. | no change | patch |
 | 1 (implemented) | The pre-check before the provider (it needs the mint to move into an effect), the provider request, scope change, timing rules and the size limit bump. Uses the props that exist today: `entryId`, flashcards `entryIds`, Genie `categoryId`, Media Manager `contextId`, Analytics and Content Lab `entryId`, `partnerId` | no change | 0.5.0 |
-| 2 (`region` implemented) | `region` on every widget except Chart (section 9), `setEnvironments`, `setAllowedRegions`, `sgp2`. Still open: new R props, each added only after a sandbox test shows the widget or the KS uses it: `playlistId`, `assetId`, `ancestorCategoryId`, `virtualEventId`, Analytics `categoryId`/`playlistId`, Genie `entryId`, Agents Widget `categoryId`, VOD Avatar filters. Analytics `userId` and Avatar `autoConnect` only as host opt-ins | `region` added to `v2`, no new id | 0.5.0 |
+| 2 (`region` implemented) | `region` on every widget except Chart (section 9), `setEnvironments`, `setAllowedRegions`, `sgp2`. Still open (a sandbox test with a KS-protected entry and the hosted widgets is the entry condition; the API-only test did not settle them): new R props, each added only after a test shows the widget or the KS uses it: `playlistId`, `assetId`, `ancestorCategoryId`, `virtualEventId`, Analytics `categoryId`/`playlistId`, Genie `entryId`, Agents Widget `categoryId`, VOD Avatar filters. Analytics `userId` and Avatar `autoConnect` only as host opt-ins | `region` added to `v2`, no new id | 0.5.0 |
 | Later | A way for the host to supply H runtime settings (`reachProfileId`, `genieId`, `allowedProjectTypes`), for example a provider that returns `{ ks, settings }` with a fixed allowlist of setting names per widget. Not decided here. Also the A2UI v1.0 migration | | |
 
 ## Consequences
@@ -386,8 +386,8 @@ Fixed on branch `mixed-region-hosts`: Genie, Content Lab, VOD Avatar and Agents 
 
 These need a sandbox partner. They set the entry cap (provisional 20) and decide which Phase 2 props are worth adding.
 
-- Length limit of the privilege string, and the KS size where URLs break. Test 10, 50 and 200 entries.
-- `sview:a/b` (slash) against repeated keys.
+- Length limit of the privilege string, and the KS size where URLs break. Done: `session.start` kept 500 ids in one `sview` value (5.5 kB of privileges, an 8.8 kB KS) without truncation. The cap of 20 entries gives a 464 character KS, so size is not the limit. The real limit of any one service (player, CDN URL) is untested.
+- `sview:a/b` (slash) against repeated keys. Done for storage only: repeated keys collapse to the last one, and `a/b`, `a|b` and `a;b` are stored as written. Whether the server enforces any of them needs a partner with a KS-protected entry. The sandbox partner has none, and the test rules forbid changing its access control.
 - A USER KS with `edit:<id>` for the Captions editor, and whether the editor reads `assetid`.
 - Whether Genie privileges narrow results, and whether the server checks the client `context_id`.
 - Which claim selects the avatar agent, and whether `autoConnect` needs a user gesture.
@@ -403,10 +403,10 @@ These need a sandbox partner. They set the entry cap (provisional 20) and decide
 
 Phase 1 docs are done: `docs/security/ks.md`, `docs/host-api.md`, `docs/host-integration.md`, `docs/ks-privileges.md`, `docs/troubleshooting.md` and `docs/migration-0.5.md`. Still open:
 
-- `docs/ks-privileges.md`: replace the Genie scope privileges and the chaining rule with verified text after the sandbox test.
+- `docs/ks-privileges.md`: replace the Genie scope privileges and the chaining rule with verified text after the sandbox test. The repeated-key text is already fixed.
 - Media Manager `mode: 'manage'` only removes the select button. The "full content manager" claim is fixed in the schema description (done in Phase 2).
 - Content Lab and Agents Widget KS type, after the sandbox test.
-- `docs/host-api.md` and `docs/host-integration.md`: the per-widget `region` prop, the region allowlist and the precedence rule.
+- `docs/host-api.md` and `docs/host-integration.md`: the per-widget `region` prop, the region allowlist and the precedence rule. Done in Phase 2.
 
 ## Tests
 
