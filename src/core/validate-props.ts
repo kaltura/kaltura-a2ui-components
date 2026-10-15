@@ -5,6 +5,7 @@ import { CommonSchemas } from '@a2ui/web_core/v0_9';
 import { isCategoryId, isEntryId, isPositiveInt } from './ids';
 import { invalidCode, reportError, ReporterContext, type KalturaErrorCode, type KalturaWidget } from './host-hooks';
 import { refusedIdProp } from './allowed-ids';
+import { isAllowedServerUrl } from './unisphere-loader';
 
 // Core components get resolved props, so the bindings and function calls that the
 // A2UI schemas allow must not appear. Use the schema, minus those two options.
@@ -129,7 +130,7 @@ export const LoadError: FC<{ widget: KalturaWidget; code?: KalturaErrorCode; chi
 /**
  * The check behind `withValidatedProps`, also run by `withKs` before it calls
  * the provider. `error` is the element to show for a bad value or a refused
- * id. `pending` means a required prop is still undefined. `extra` runs only on
+ * id or `serverUrl`. `pending` means a required prop is still undefined. `extra` runs only on
  * props that passed the schema. It names props that the widget finds invalid
  * by its own rules (for example Analytics dates).
  */
@@ -156,6 +157,11 @@ export function gateProps(
   const refused = refusedIdProp(props, schema.shape);
   if (refused) {
     return { error: createElement(LoadError, { widget, code: 'origin-not-allowed', children: `Failed to load ${label}: ${refused} is not allowed` }), pending: false };
+  }
+  const { serverUrl } = props as { serverUrl?: unknown };
+  if ('serverUrl' in schema.shape && typeof serverUrl === 'string' && !isAllowedServerUrl(serverUrl)) {
+    const children = `Failed to load ${label}: serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)`;
+    return { error: createElement(LoadError, { widget, code: 'origin-not-allowed', children }), pending: false };
   }
   return { pending: false };
 }

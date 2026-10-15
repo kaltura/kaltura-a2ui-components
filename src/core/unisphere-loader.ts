@@ -38,26 +38,34 @@ export function getExtraAllowedOrigins(): string[] {
   return [...extraOrigins];
 }
 
+const loaderUrlOf = (serverUrl: string): string | undefined => {
+  let origin: string | undefined;
+  try {
+    origin = new URL(serverUrl).origin;
+  } catch {
+    return undefined;
+  }
+  const allowed = [...BUILT_IN_ORIGINS, ...extraOrigins].includes(origin);
+  const exact = [origin, `${origin}/`, `${origin}/v1`, `${origin}/v1/`].includes(serverUrl);
+  return allowed && exact ? `${origin}/v1/loader/index.esm.js` : undefined;
+};
+
+/** True when `deriveLoaderUrl` accepts the value. Components call it before they ask for a KS. */
+export const isAllowedServerUrl = (serverUrl: string): boolean => loaderUrlOf(serverUrl) !== undefined;
+
 /**
  * Validates serverUrl and returns the loader URL. Throws before any import().
  * Accepted forms: `<origin>`, `<origin>/`, `<origin>/v1`, `<origin>/v1/`, exact
  * text only. Anything else (userinfo, port, query, odd case, backslash) is refused.
  */
 export function deriveLoaderUrl(serverUrl: string): string {
-  let origin: string | undefined;
-  try {
-    origin = new URL(serverUrl).origin;
-  } catch {
-    // handled below
-  }
-  const allowed = origin !== undefined && [...BUILT_IN_ORIGINS, ...extraOrigins].includes(origin);
-  const exact = origin !== undefined && [origin, `${origin}/`, `${origin}/v1`, `${origin}/v1/`].includes(serverUrl);
-  if (!origin || !allowed || !exact) {
+  const loaderUrl = loaderUrlOf(serverUrl);
+  if (!loaderUrl) {
     // The value comes from agent output: keep it out of the UI and the thrown message.
     console.warn('serverUrl rejected:', String(serverUrl).slice(0, 100));
     throw new KalturaFailure('origin-not-allowed', 'serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)');
   }
-  return `${origin}/v1/loader/index.esm.js`;
+  return loaderUrl;
 }
 
 /** The only dynamic import() of remote code. Rejects (never throws) for a bad serverUrl. */

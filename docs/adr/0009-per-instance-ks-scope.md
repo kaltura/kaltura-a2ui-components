@@ -47,25 +47,26 @@ interface KsScopeByWidget {
 
 type KsWidget = keyof KsScopeByWidget;
 
-interface KsRequest<W extends KsWidget = KsWidget> {
-  widget: W;
-  /** Bumped when a widget gains a scope key. Backends reject unknown versions and keys. */
-  version: 1;
-  /** Deep-frozen. Untrusted: the agent chose every value. */
-  scope: Readonly<KsScopeByWidget[W]>;
-  /** A2UI only. Chosen by the agent. Logs and correlation only. */
-  surfaceId?: string;
-  /** A2UI only. Chosen by the agent. Shared by every item of a template. Logs and correlation only. */
-  componentId?: string;
-  /** A2UI only. The data path of this instance, for example `/items/0`. Changes when a list reorders. */
-  dataPath?: string;
-  /** Aborted when the scope changes again or the widget unmounts. */
-  signal: AbortSignal;
-}
+// A union on `widget`: narrow it to read the matching `scope`.
+type KsRequest<W extends KsWidget = KsWidget> = {
+  [K in W]: {
+    widget: K;
+    /** Bumped when a widget gains a scope key. Backends reject unknown versions and keys. */
+    version: 1;
+    /** Deep-frozen. Untrusted: the agent chose every value. */
+    scope: Readonly<KsScopeByWidget[K]>;
+    /** A2UI only. Chosen by the agent. Logs and correlation only. */
+    surfaceId?: string;
+    /** A2UI only. Chosen by the agent. Shared by every item of a template. Logs and correlation only. */
+    componentId?: string;
+    /** A2UI only. The data path of this instance, for example `/items/0`. Changes when a list reorders. */
+    dataPath?: string;
+    /** Aborted when the scope changes again or the widget unmounts. */
+    signal: AbortSignal;
+  };
+}[W];
 
-type KsProvider = (
-  ...args: { [W in KsWidget]: [widget: W, request: KsRequest<W>] }[KsWidget]
-) => string | undefined | Promise<string | undefined>;
+type KsProvider = (widget: KsWidget, request: KsRequest) => string | undefined | Promise<string | undefined>;
 ```
 
 - A provider that throws or rejects denies the request. The widget shows `Invalid ks` and the library does not retry.
