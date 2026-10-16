@@ -66,7 +66,9 @@ class LivePage {
       );
     });
     page.on('websocket', (ws) => this.requests.push(ws.url()));
-    page.on('console', (m) => m.type() === 'error' && this.consoleErrors.push(this.scrub(m.text())));
+    // The Analytics app makes the browser ask `https://127.0.0.1/favicon.ico` now and then. Nothing of ours owns it
+    // and it holds no KS, so only that one URL is skipped.
+    page.on('console', (m) => m.type() === 'error' && m.location().url !== 'https://127.0.0.1/favicon.ico' && this.consoleErrors.push(this.scrub(m.text())));
     page.on('pageerror', (e) => this.consoleErrors.push(this.scrub(e.message)));
   }
 
