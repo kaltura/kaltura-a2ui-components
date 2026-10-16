@@ -50,7 +50,7 @@ afterEach(() => {
 
 const PLAYER = { partnerId: 1, uiconfId: 2, entryId: '0_a' };
 const NVP1_PLAYER = 'https://cdnapisec.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2';
-const EU_PLAYER = 'https://api.eu.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2';
+const EU_PLAYER = 'https://api.irp2.ovp.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2';
 const LAB = { serviceUrl: 'https://lab.example.com', unisphere: 'https://unisphere.lab.example.com' };
 
 const alertOf = (container: Element) => container.querySelector('[role="alert"]')?.textContent;
@@ -75,7 +75,7 @@ describe('REG-02: one region per widget', () => {
   it('analytics frames the KMC of its region', async () => {
     m.setKsProvider(() => 'ks');
     const { container } = await mount(m.AnalyticsCore, { partnerId: 1, region: 'syp2' });
-    expect(container.querySelector('iframe')?.getAttribute('src')).toBe('https://kmc.ap.kaltura.com/apps/kmc-analytics/latest/index.html');
+    expect(container.querySelector('iframe')?.getAttribute('src')).toBe('https://kmc.syp2.ovp.kaltura.com/apps/kmc-analytics/latest/index.html');
   });
 
   it('a flashcards thumbnail uses the VOD host of its region', () => {
@@ -98,8 +98,8 @@ describe('REG-02: recorder', () => {
     await mount(m.RecorderCore, { partnerId: 1, ks: 'k', uiconfId: 2, region: 'irp2' });
     await recorder.ready();
     expect([recorder.tags().map(tag => tag.src), recorder.created[0].options.serviceUrl]).toEqual([
-      ['https://api.eu.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js'],
-      'https://api.eu.kaltura.com',
+      ['https://api.irp2.ovp.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js'],
+      'https://api.irp2.ovp.kaltura.com',
     ]);
   });
 
@@ -108,7 +108,7 @@ describe('REG-02: recorder', () => {
     await recorder.ready();
     await mount(m.RecorderCore, { partnerId: 1, ks: 'k', uiconfId: 2, region: 'irp2' });
     await recorder.ready(2);
-    expect(recorder.created.map(({ options }) => options.serviceUrl)).toEqual(['https://www.kaltura.com', 'https://api.eu.kaltura.com']);
+    expect(recorder.created.map(({ options }) => options.serviceUrl)).toEqual(['https://www.kaltura.com', 'https://api.irp2.ovp.kaltura.com']);
   });
 });
 

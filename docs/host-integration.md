@@ -250,11 +250,11 @@ These hosts come from `src/core/region.ts` (`e2e/csp.spec.ts` checks the table a
 | Region | `serviceUrl` | `cdn` (Player script) | `recorder` | `vod` | `kmc` |
 |---|---|---|---|---|---|
 | nvp1 | `https://www.kaltura.com` | `https://cdnapisec.kaltura.com` | `https://www.kaltura.com` | `https://cfvod.kaltura.com` | `https://kmc.kaltura.com` |
-| irp2 | `https://api.eu.kaltura.com` | `https://api.eu.kaltura.com` | `https://api.eu.kaltura.com` | `https://cfvod.irp2.ovp.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` |
-| frp2 | `https://api.de.kaltura.com` | `https://api.de.kaltura.com` | `https://api.de.kaltura.com` | `https://cfvod.frp2.ovp.kaltura.com` | `https://kmc.de.kaltura.com` |
-| cap2 | `https://api.ca.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://cfvod.cap2.ovp.kaltura.com` | `https://kmc.ca.kaltura.com` |
-| syp2 | `https://api.ap.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | `https://cfvod.syp2.ovp.kaltura.com` | `https://kmc.ap.kaltura.com` |
-| sgp2 | `https://api.sg.kaltura.com` | `https://api.sgp2.ovp.kaltura.com` | `https://api.sgp2.ovp.kaltura.com` | `https://cfvod.sgp2.ovp.kaltura.com` | `https://kmc.sg.kaltura.com` |
+| irp2 | `https://api.irp2.ovp.kaltura.com` | `https://api.irp2.ovp.kaltura.com` | `https://api.irp2.ovp.kaltura.com` | `https://cfvod.irp2.ovp.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` |
+| frp2 | `https://api.frp2.ovp.kaltura.com` | `https://api.frp2.ovp.kaltura.com` | `https://api.frp2.ovp.kaltura.com` | `https://cfvod.frp2.ovp.kaltura.com` | `https://kmc.frp2.ovp.kaltura.com` |
+| cap2 | `https://api.cap2.ovp.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://cfvod.cap2.ovp.kaltura.com` | `https://kmc.cap2.ovp.kaltura.com` |
+| syp2 | `https://api.syp2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | `https://cfvod.syp2.ovp.kaltura.com` | `https://kmc.syp2.ovp.kaltura.com` |
+| sgp2 | `https://api.sgp2.ovp.kaltura.com` | `https://api.sgp2.ovp.kaltura.com` | `https://api.sgp2.ovp.kaltura.com` | `https://cfvod.sgp2.ovp.kaltura.com` | `https://kmc.sg.kaltura.com` |
 
 In a region, replace the hosts of the starting policy like this:
 

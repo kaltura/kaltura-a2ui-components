@@ -82,7 +82,7 @@ Checked live on `nvp1`: the editor loaded and signed in (it reached "Current vid
 **Open items**
 
 - Captions editor: the full UI with a real caption asset, and regional accounts are not verified.
-- A `cap2` or `syp2` account fetches `embed.php` from `api.ca.kaltura.com` or `api.ap.kaltura.com` (the `serviceUrl`). CORS is open on both. The editor itself was not loaded on a regional account.
+- A `cap2` or `syp2` account fetches `embed.php` from `api.cap2.ovp.kaltura.com` or `api.syp2.ovp.kaltura.com` (the `serviceUrl`). CORS is open on both. The editor itself was not loaded on a regional account.
 
 ## Alternatives rejected
 

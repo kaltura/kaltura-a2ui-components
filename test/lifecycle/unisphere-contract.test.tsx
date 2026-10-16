@@ -176,10 +176,10 @@ describe('Unisphere widgets take every host from the region of their serverUrl',
   });
 
   it.each([
-    ['../../src/core/genie', 'GenieCore', { uiconfId: 58022072 }, 'https://api.eu.kaltura.com'],
-    ['../../src/core/vod-avatar', 'VodAvatarCore', { entryId: '0_abc' }, 'https://api.eu.kaltura.com'],
-    ['../../src/core/content-lab', 'ContentLabCore', { uiconfId: 58022072, entryId: '1_hpc1olo6' }, 'https://api.eu.kaltura.com'],
-    ['../../src/core/agents-widget', 'AgentsWidgetCore', {}, 'https://api.eu.kaltura.com'],
+    ['../../src/core/genie', 'GenieCore', { uiconfId: 58022072 }, 'https://api.irp2.ovp.kaltura.com'],
+    ['../../src/core/vod-avatar', 'VodAvatarCore', { entryId: '0_abc' }, 'https://api.irp2.ovp.kaltura.com'],
+    ['../../src/core/content-lab', 'ContentLabCore', { uiconfId: 58022072, entryId: '1_hpc1olo6' }, 'https://api.irp2.ovp.kaltura.com'],
+    ['../../src/core/agents-widget', 'AgentsWidgetCore', {}, 'https://api.irp2.ovp.kaltura.com'],
   ])('%s: kalturaServerURI follows an irp2 serverUrl while the default region is nvp1', async (module, name, extra, host) => {
     const Component = ((await import(/* @vite-ignore */ module)) as Record<string, never>)[name];
     await render(Component, { ...props, ...extra, serverUrl: URL_B });

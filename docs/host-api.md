@@ -117,11 +117,13 @@ The Captions editor works only in a built-in region that has a pinned page (`nvp
 
 | Host | nvp1 | irp2 | frp2 | cap2 | syp2 | sgp2 | Used by |
 |---|---|---|---|---|---|---|---|
-| serviceUrl | `https://www.kaltura.com` | `https://api.eu.kaltura.com` | `https://api.de.kaltura.com` | `https://api.ca.kaltura.com` | `https://api.ap.kaltura.com` | `https://api.sg.kaltura.com` | Captions editor page (`embed.php`) and `serviceurl` |
+| serviceUrl | `https://www.kaltura.com` | `https://api.irp2.ovp.kaltura.com` | `https://api.frp2.ovp.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | `https://api.sgp2.ovp.kaltura.com` | Captions editor page (`embed.php`) and `serviceurl` |
 | vod | `https://cfvod.kaltura.com` | `https://cfvod.irp2.ovp.kaltura.com` | `https://cfvod.frp2.ovp.kaltura.com` | `https://cfvod.cap2.ovp.kaltura.com` | `https://cfvod.syp2.ovp.kaltura.com` | `https://cfvod.sgp2.ovp.kaltura.com` | Flashcards thumbnails |
-| cdn | `https://cdnapisec.kaltura.com` | `https://api.eu.kaltura.com` | `https://api.de.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | `https://api.sgp2.ovp.kaltura.com` | Player script, flashcard clips, captions editor `cdnurl` |
-| kmc | `https://kmc.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` | `https://kmc.de.kaltura.com` | `https://kmc.ca.kaltura.com` | `https://kmc.ap.kaltura.com` | `https://kmc.sg.kaltura.com` | Analytics (`/apps/kmc-analytics/latest/index.html`, and the `postMessage` origin) |
+| cdn | `https://cdnapisec.kaltura.com` | `https://api.irp2.ovp.kaltura.com` | `https://api.frp2.ovp.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | `https://api.sgp2.ovp.kaltura.com` | Player script, flashcard clips, captions editor `cdnurl` |
+| kmc | `https://kmc.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` | `https://kmc.frp2.ovp.kaltura.com` | `https://kmc.cap2.ovp.kaltura.com` | `https://kmc.syp2.ovp.kaltura.com` | `https://kmc.sg.kaltura.com` | Analytics (`/apps/kmc-analytics/latest/index.html`, and the `postMessage` origin) |
 | recorder | `https://www.kaltura.com` | same as cdn | same as cdn | same as cdn | same as cdn | same as cdn | Express Recorder script (pinned to a fixed version, see `src/core/recorder-script.ts`) |
+
+Hosts follow the [Kaltura firewall guide](https://knowledge.kaltura.com/help/configuring-your-firewall-rules-to-access-kaltura-products) and use its `.ovp` hosts. For KMC, the guide lists `.ovp` hosts for `irp2` and `frp2` only. `cap2` and `syp2` answer on their `.ovp` KMC host too (not in the guide, so a firewall that follows the guide must allow it). `sgp2` keeps the guide host: its `.ovp` KMC host answers HTTP 500.
 
 The Kaltura API guide lists no regional CDN host, so the player script loads from the regional API host shown in the cdn row. The recorder script loads from the recorder host. It gets the regional API host as `serviceUrl` and the cdn host as `playerUrl`.
 
