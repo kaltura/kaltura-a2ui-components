@@ -10,6 +10,11 @@ const partnerId = Number(process.env.NVP1_PARTNER_ID);
 const adminSecret = process.env.NVP1_ADMIN_SECRET;
 // An admin user of the partner that has a role. Analytics needs it: a KS without a role makes the app fail.
 const adminUserId = process.env.NVP1_ADMIN_USER_ID;
+// A second partner (US region) that has the Avatar agents enabled. Used by LIVE-16 to LIVE-18.
+const agentsPartnerId = Number(process.env.KALTURA_PARTNER_ID);
+const agentsAdminSecret = process.env.KALTURA_ADMIN_SECRET;
+const agentsUserId = process.env.KALTURA_ADMIN_USER_ID;
+const AVATAR_API = 'https://api.avatar.us.kaltura.ai/v1';
 // "MediaSpace Embed Player" on the account, listed with uiConf.list.
 const UICONF_ID = 1000092;
 // Transcoded, and clips work.
@@ -84,15 +89,20 @@ class LivePage {
   /**
    * Swaps in a provider that does what a host backend does: it takes the scope request and mints a
    * USER KS limited to it, for `userId`. The minting runs in this process. Each request is recorded.
+   * `mint` replaces the default minting (NVP1 partner, entry and playlist privileges).
    */
-  async useScopedProvider(userId = 'a2ui-live-scoped'): Promise<{ widget: string; scope: Record<string, unknown> }[]> {
+  async useScopedProvider(
+    userId = 'a2ui-live-scoped',
+    mint: (scope: Record<string, unknown>) => Promise<string> = (scope) => {
+      const privileges = [scope.entryId && `sview:${String(scope.entryId)}`, scope.playlistId && `sviewplaylist:${String(scope.playlistId)}`].filter(Boolean).join(',');
+      return mintKs(partnerId, adminSecret ?? '', userId, { type: 0, privileges });
+    },
+  ): Promise<{ widget: string; scope: Record<string, unknown> }[]> {
     const calls: { widget: string; scope: Record<string, unknown> }[] = [];
     await this.page.exposeFunction('__mintScoped', async (widget: string, scope: Record<string, unknown>) => {
       calls.push({ widget, scope });
-      const privileges = [scope.entryId && `sview:${String(scope.entryId)}`, scope.playlistId && `sviewplaylist:${String(scope.playlistId)}`].filter(Boolean).join(',');
-      const ks = await mintKs(partnerId, adminSecret ?? '', userId, { type: 0, privileges });
-      this.ks = ks;
-      return ks;
+      this.ks = await mint(scope);
+      return this.ks;
     });
     await this.page.evaluate(() => {
       const w = window as unknown as LiveWindow & { __mintScoped(widget: string, scope: unknown): Promise<string> };
@@ -296,8 +306,8 @@ test('LIVE-10: the provider gets the scope of a playlist player and mints a KS l
 
 // The hosted widgets load from the real Unisphere host of the NVP1 region. Each gets a USER KS of an
 // admin user from the provider, and is found by text that only the loaded widget shows. Not covered:
-// the Avatar (the test partner has no avatar agent) and the Agents Widget (its host refuses the
-// localhost origin, so it cannot load here).
+// the Agents Widget: its backend (agents-manager) answers 403 without CORS headers from the network
+// of the test machine, so its agent list cannot load here.
 const HOSTED_WIDGETS: { id: string; tag: string; widget: string; props: Record<string, unknown>; scope: Record<string, unknown>; text: string }[] = [
   // The category id is arbitrary: the widget loads with any digits.
   { id: 'LIVE-11', tag: 'kaltura-genie-widget', widget: 'genie', props: { partnerId, uiconfId: UICONF_ID, categoryId: '1' }, scope: { partnerId, categoryId: '1' }, text: 'Ask me anything' },
@@ -319,6 +329,45 @@ for (const { id, tag, widget, props, scope, text } of HOSTED_WIDGETS) {
     // Media Manager asks for thumbnails that the probe entries of the test partner do not have.
     const thumbnail404 = /status of 404/;
     expect(live.consoleErrors.filter((e) => widget !== 'media-manager' || !thumbnail404.test(e))).toEqual([]);
+    expectNoKsInUrls(live);
+  });
+}
+
+// The second partner has Avatar agents. These tests run against it with a USER KS of its admin user.
+const agentsAccount = Boolean(agentsPartnerId && agentsAdminSecret && agentsUserId);
+const mintAgentsKs = (privileges: string) => mintKs(agentsPartnerId, agentsAdminSecret ?? '', agentsUserId ?? '', { type: 0, privileges });
+
+/** The first agent of the partner, listed with an admin KS. The Avatar API is read only here. */
+async function firstAgentId(): Promise<string> {
+  const adminKs = await mintKs(agentsPartnerId, agentsAdminSecret ?? '', agentsUserId ?? '');
+  const res = await fetch(`${AVATAR_API}/agent/list`, { method: 'POST', headers: { authorization: `Bearer ${adminKs}`, 'content-type': 'application/json' }, body: '{}' });
+  const body = (await res.json()) as { objects?: { agentId?: string }[] };
+  const agentId = body.objects?.[0]?.agentId;
+  if (!agentId) throw new Error(`The partner has no Avatar agent (HTTP ${res.status}).`);
+  return agentId;
+}
+
+// These widgets are not part of the NVP1 table above: they need a KS with a role or an agent claim.
+const AGENT_PARTNER_WIDGETS: { id: string; tag: string; widget: string; props: Record<string, unknown>; privileges: () => Promise<string>; text: string; api?: string }[] = [
+  // The KS selects the agent: the `agentid` claim is the only thing that tells the Avatar which one to start.
+  { id: 'LIVE-16', tag: 'kaltura-avatar', widget: 'avatar', props: { partnerId: agentsPartnerId }, privileges: async () => `agentid:${await firstAgentId()}`, text: 'Speak with agent', api: '/application/appInit' },
+  // The Unisphere guide: a playback role is enough for Genie.
+  { id: 'LIVE-17', tag: 'kaltura-genie-widget', widget: 'genie', props: { partnerId: agentsPartnerId, uiconfId: UICONF_ID, categoryId: '1' }, privileges: async () => 'setrole:PLAYBACK_BASE_ROLE,sview:*', text: 'Ask me anything' },
+  // The avatar service refuses a playback role (403 on avatar/list). It needs an administrator role.
+  { id: 'LIVE-18', tag: 'kaltura-vod-avatar-wc', widget: 'vod-avatar', props: { partnerId: agentsPartnerId }, privileges: async () => 'setrole:Publisher Administrator', text: 'My Avatar Videos', api: '/avatar/list' },
+];
+
+for (const { id, tag, widget, props, privileges, text, api } of AGENT_PARTNER_WIDGETS) {
+  test(`${id}: ${widget} loads with the KS the provider mints on the agents partner`, async ({ live }) => {
+    test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
+    const calls = await live.useScopedProvider(agentsUserId, async () => mintAgentsKs(await privileges()));
+    // The UI shows before the service answers, so the answer is checked too: a refused KS is a 403 here.
+    const answer = api && live.page.waitForResponse((r) => r.url() === `${AVATAR_API}${api}`, { timeout: PLAY_TIMEOUT });
+    await live.mount(tag, props);
+    await expect.poll(() => live.pageText(), { timeout: PLAY_TIMEOUT, message: `the ${widget} shows its UI` }).toContain(text);
+    if (answer) expect((await answer).status()).toBe(200);
+    expect(calls).toEqual([{ widget, scope: { region: 'nvp1', partnerId: agentsPartnerId, ...(widget === 'genie' && { categoryId: '1' }) } }]);
+    expect(live.consoleErrors).toEqual([]);
     expectNoKsInUrls(live);
   });
 }
