@@ -5,6 +5,7 @@ export const KalturaRecorderApi = {
   name: 'KalturaRecorder',
   schema: z.object({
     partnerId: z.number().int().positive(),
+    region: z.string().optional(),
     // A player uiConf. The Express Recorder uses it to preview the recording.
     uiconfId: z.number().int().positive(),
     // Default name of the entry the recorder creates.

@@ -10,7 +10,15 @@ export default defineConfig({
   reporter: [['list']],
   use: { baseURL: ORIGIN_A, trace: 'off', video: 'off', screenshot: 'off' },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'chromium',
+      // A fake camera and microphone, so the Recorder can open.
+      use: {
+        ...devices['Desktop Chrome'],
+        permissions: ['camera', 'microphone'],
+        launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] },
+      },
+    },
     { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
     { name: 'webkit', use: { ...devices['Desktop Safari'] } },
   ],

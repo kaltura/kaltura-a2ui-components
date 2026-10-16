@@ -1,5 +1,6 @@
 import { useContext, useEffect, useRef, useState } from 'react';
-import { defaultServerUrl, loadUnisphereModule } from './unisphere-loader';
+import { loadUnisphereModule } from './unisphere-loader';
+import { unisphereUrl } from './region';
 import { renderLoadError } from './render-load-error';
 import { KalturaMediaManagerApi } from '../schemas/media-manager';
 import { withValidatedProps } from './validate-props';
@@ -16,6 +17,8 @@ export interface MediaManagerCoreProps {
   ks: string;
   /** Unisphere URL. Defaults to the Unisphere host of the region. Only Kaltura hosts and `setExtraAllowedOrigins` are accepted. */
   serverUrl?: string;
+  /** Region code or host-registered environment name. Default: the region of `serverUrl`, else the `setRegion` value. */
+  region?: string;
   /** Default: the `data-theme` of the page, else `dark`. */
   theme?: 'dark' | 'light';
   /** `select` picks entries (default). `manage` also edits them. */
@@ -111,8 +114,7 @@ function MediaManagerView(props: MediaManagerCoreProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const instanceIdRef = useRef('');
   const [selected, setSelected] = useState<SelectedEntry[]>([]);
-  const { partnerId, ks, mode, contextId } = props;
-  const serverUrl = props.serverUrl ?? defaultServerUrl();
+  const { partnerId, ks, region, serverUrl: serverUrlProp, mode, contextId } = props;
   const isMultiSelect = props.multiSelect === true;
   const themeProp = props.theme;
   const reporter = useContext(ReporterContext);
@@ -146,6 +148,13 @@ function MediaManagerView(props: MediaManagerCoreProps) {
     const container = containerRef.current;
     if (!container) return;
     container.replaceChildren();
+    let serverUrl: string;
+    try {
+      serverUrl = unisphereUrl(region, serverUrlProp);
+    } catch (error) {
+      renderLoadError(container, 'Media Manager', error, 'media-manager', reporter);
+      return;
+    }
 
     const instanceId = `unisphere-mm-${crypto.randomUUID()}`;
     container.id = instanceId;
@@ -227,7 +236,7 @@ function MediaManagerView(props: MediaManagerCoreProps) {
     };
     // announce reads only refs and the stable reporter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partnerId, ks, serverUrl, themeProp, mode, contextId, isMultiSelect, reporter]);
+  }, [partnerId, ks, region, serverUrlProp, themeProp, mode, contextId, isMultiSelect, reporter]);
 
   const handleConfirmSelection = () => {
     if (selected.length === 0) return;

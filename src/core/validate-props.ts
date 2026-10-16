@@ -6,6 +6,7 @@ import { isCategoryId, isEntryId, isPositiveInt } from './ids';
 import { invalidCode, reportError, ReporterContext, type KalturaErrorCode, type KalturaWidget } from './host-hooks';
 import { refusedIdProp } from './allowed-ids';
 import { isAllowedServerUrl } from './unisphere-loader';
+import { resolveRegion, unisphereUrl } from './region';
 
 // Core components get resolved props, so the bindings and function calls that the
 // A2UI schemas allow must not appear. Use the schema, minus those two options.
@@ -44,15 +45,25 @@ function resolvedSchema(schema: z.ZodTypeAny): z.ZodTypeAny {
   return resolved;
 }
 
+// Props of which a widget needs exactly one. Applied to a schema that has both and a `uiconfId`:
+// Analytics has the same two props, but needs neither.
+const ONE_OF: ReadonlyArray<readonly [string, string]> = [['entryId', 'playlistId']];
+
 // Rules that the A2UI string and number types cannot carry. Applied by prop name.
 const FIELD_RULES: Record<string, (value: unknown) => boolean> = {
   partnerId: isPositiveInt,
   // 0 selects the default uiConf. Schemas that need a real id are stricter.
   uiconfId: value => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0,
+  // A region code or an environment name. Whether it is known and allowed is decided in `gateProps`.
+  region: value => typeof value === 'string' && /^[a-z][a-z0-9-]{0,31}$/.test(value),
   entryId: isEntryId,
+  // Caption asset and playlist ids look like entry ids.
+  assetId: isEntryId,
+  playlistId: isEntryId,
   // Category ids. They go into the KS request and into widget settings.
   categoryId: isCategoryId,
   contextId: isCategoryId,
+  virtualEventId: isCategoryId,
   // A KS goes into URLs and widget settings. Reject empty values and control characters.
   ks: value => typeof value === 'string' && value !== '' && !/\p{Cc}/u.test(value),
 };
@@ -63,7 +74,8 @@ const FIELD_RULES: Record<string, (value: unknown) => boolean> = {
  *   `cards.0.clips.1.title`), at most 5. Names come from the schema only, never
  *   from the values.
  * - `pending`: a required top-level prop is still undefined, for example a
- *   binding the host has not filled yet. That is not an error, the value may
+ *   binding the host has not filled yet. The same holds when none of a
+ *   one-of pair (`entryId`, `playlistId`) is set. That is not an error, the value may
  *   still arrive. An undefined value inside a prop (a clip without `startTime`)
  *   is invalid. With `strict`, a missing top-level prop is invalid too.
  */
@@ -90,6 +102,14 @@ export function checkProps(
       // An empty optional value means "not set" to every builder.
       if (value === '' && schema.shape[key].isOptional()) continue;
       if (!rule(value)) bad.add(key);
+    }
+    for (const [first, second] of ONE_OF) {
+      if (!(first in schema.shape && second in schema.shape && 'uiconfId' in schema.shape)) continue;
+      // An empty string is a set value here: it fails the id rule instead of waiting for a binding.
+      const set = [first, second].filter(key => record[key] !== undefined);
+      if (set.length === 2) bad.add(second);
+      else if (set.length === 0 && strict) bad.add(first);
+      else if (set.length === 0) pending = true;
     }
   }
   return { invalid: [...bad].slice(0, 5), pending };
@@ -162,6 +182,16 @@ export function gateProps(
   if ('serverUrl' in schema.shape && typeof serverUrl === 'string' && !isAllowedServerUrl(serverUrl)) {
     const children = `Failed to load ${label}: serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)`;
     return { error: createElement(LoadError, { widget, code: 'origin-not-allowed', children }), pending: false };
+  }
+  if ('region' in schema.shape) {
+    try {
+      const url = typeof serverUrl === 'string' ? serverUrl : undefined;
+      // A Unisphere widget needs a Unisphere host in its region too.
+      if ('serverUrl' in schema.shape) unisphereUrl((props as { region?: string }).region, url);
+      else resolveRegion((props as { region?: string }).region, url);
+    } catch {
+      return { error: createElement(LoadError, { widget, code: 'origin-not-allowed', children: `Failed to load ${label}: region is not allowed` }), pending: false };
+    }
   }
   return { pending: false };
 }

@@ -1,6 +1,6 @@
 # 0009. Per-instance KS scope
 
-Status: accepted (2026-10-15). Phase 0 and Phase 1 are implemented (0.5.0). Phase 2 is not. Builds on [ADR 0002](0002-ks-handling.md).
+Status: accepted (2026-10-15). Phase 0 and Phase 1 are implemented (0.5.0). Phase 2 is implemented for `region`, the Captions editor `assetId` and the Player `playlistId` (section 9). The other Phase 2 props wait for tests against the hosted backends. Builds on [ADR 0002](0002-ks-handling.md).
 
 Code today: `src/core/ks.ts`, `src/core/validate-props.ts`, `src/adapters/react/agent-action.tsx`, `src/schemas/*.ts`.
 
@@ -16,7 +16,7 @@ Code today: `src/core/ks.ts`, `src/core/validate-props.ts`, `src/adapters/react/
   2. **Config** parameters change look or behaviour: theme, autoplay, time window.
   3. **Host-only** parameters choose identity, persona, cost or write rights.
 - What the KS can enforce (Kaltura Session Guide https://kaltura.md/KALTURA_SESSION_GUIDE/, developer docs "Authentication and Security"):
-  - Per entry: `sview`, `edit`, `download`. Several entries use repeated keys, `sview:1_a,sview:1_b`. Pairs are separated by commas without spaces.
+  - Per entry: `sview`, `edit`, `download`. Pairs are separated by commas without spaces. Repeated keys (`sview:1_a,sview:1_b`) do not work: `session.start` keeps only the last one (sandbox test, 2026-10-15). Several entries need one `sview` key with a list value. The separator the server enforces is untested.
   - Per manual playlist: `sviewplaylist`, `editplaylist`.
   - Per user, role and limits: `userId`, `setrole`, `expiry`, `actionslimit`, `iprestrict`, `urirestrict`.
   - A category only indirectly: `enableentitlement` plus `privacycontext:<label>`.
@@ -101,10 +101,10 @@ For an ADMIN KS (Analytics, Content Lab, Agents Widget) scope cannot narrow the 
 |---|---|---|
 | `partnerId` | positive integer, plus the existing allowlist | |
 | `region` | a code from the closed region list, plus the host allowlist (section 9) | |
-| `entryId` | `isEntryId` | |
+| `entryId`, `assetId` | `isEntryId` (caption asset ids look like entry ids) | |
 | `entryIds` | `isEntryId` each, unique, sorted | provisional 20 |
 | `categoryId`, `contextId`, `ancestorCategoryId` | digits only | 12 characters |
-| `playlistId`, `assetId`, `virtualEventId` | `[A-Za-z0-9_]{1,64}` (confirm per widget) | |
+| `playlistId`, `virtualEventId` | `[A-Za-z0-9_]{1,64}` (confirm per widget) | |
 | `reportType` | the existing enum | |
 | `fromDate`, `toDate` | real `YYYY-MM-DD`. Both or neither. `fromDate <= toDate`. The check never throws | |
 
@@ -122,7 +122,7 @@ For an ADMIN KS (Analytics, Content Lab, Agents Widget) scope cannot narrow the 
 | Parameter | Source | Class | Enforced by | Phase |
 |---|---|---|---|---|
 | `entryId` | prop | R | KS `sview:<id>` | 1 |
-| `playlistId` | none. The widget has no playlist loader | R | KS `sviewplaylist:<id>`, manual playlists only. Entry view implied: UNVERIFIED | 2 |
+| `playlistId` | prop, exactly one of `entryId` and `playlistId`. The widget asks the player bundle to load the playlist by id. `startTime` and `clipTo` do not apply | R | KS `sviewplaylist:<id>`, manual playlists only. Tested: it implies view of the playlist entries. With neither id the widget waits (A2UI) or shows `Invalid entryId` (web component), as before | 2 (implemented) |
 | category, as a label | none | H, backend derives it | KS `enableentitlement` + `privacycontext:<label>` | |
 | `partnerId`, `uiconfId` | props | allowlist | KS partner. A uiConf runs code in the page | |
 | `startTime`, `clipTo` | props | C | none. `sview` covers the whole entry, so the window is not a boundary | |
@@ -151,8 +151,8 @@ Rules:
 
 | Parameter | Source | Class | Enforced by | Phase |
 |---|---|---|---|---|
-| `entryId` | prop | R | KS `edit:<id>` + `sview:<id>`. A USER KS is enough: UNVERIFIED | 1 |
-| `assetId` | none. The guide lists `assetid`. Whether the editor reads `data-assetid`: UNVERIFIED | R | none | 2 |
+| `entryId` | prop | R | KS `edit:<id>` + `sview:<id>`. A USER KS needs a role that can add captions | 1 |
+| `assetId` | prop (`data-assetid`, read by the pinned editor page v1.3.10). Optional | R | the editor. It must belong to the entry | 2 (implemented) |
 | `uiconfId` | prop | allowlist | | |
 | `userId`, expiry (about 2 hours) | KS | H | KS | |
 
@@ -178,10 +178,10 @@ Entry, category, user and date scope are UI-level only. The KS can only limit th
 | `entryId` | prop | R | UI | 1 |
 | `reportType` | prop, 9 views | R | role permissions, `setrole` | 1 |
 | `fromDate`, `toDate` | props | R | UI. The user can change them | 1 |
-| `categoryId` | none. Route `/analytics/category` | R | UI. Entitlements: UNVERIFIED | 2 |
-| `playlistId` | none. Route `/analytics/playlist` | R | UI | 2 |
+| `categoryId` | prop. Route `/analytics/category` | R | UI. Entitlements: UNVERIFIED | 2, implemented |
+| `playlistId` | prop. Route `/analytics/playlist` | R | UI | 2, implemented |
 | `userId` (report subject) | none. Route `/analytics/user` | H until a host opts in | UI only. One wrong backend check shows another user's data | 2, opt-in |
-| `virtualEventId` | none. Route plus KS | R | KS `virtualeventid:<id>` for report APIs. For the embed: UNVERIFIED | 2 |
+| `virtualEventId` | prop. Route `/analytics/virtual-event` | R | UI. A KS `virtualeventid:<id>` limited nothing on 8 report types | 2, implemented |
 | owner filter (`predefinedFilter.ownerIdsIn`) | init option, not sent | H | UI | |
 | `customData.metadataProfileId` | init option, not sent | H | none. Only picks the metadata shown | |
 | `multiAccount`, `hostAppName`, `previewUIConfV7`, `viewsConfig` edits | init options, not sent | H | | |
@@ -258,7 +258,7 @@ The backend minting and the widget setting must match. One without the other giv
 
 | Parameter | Source | Class | Enforced by | Phase |
 |---|---|---|---|---|
-| agent persona | KS claim (`geniegpcid:<id>`, `agentid:<id>` or a widget session). Which one the embed reads: UNVERIFIED | H | KS | |
+| agent persona | KS claim `agentid:<id>`. Live: `application/appInit` answers `AGENT_NOT_FOUND` for an unknown id and `AGENT_ID_NOT_FOUND_IN_KS` for a KS without the claim, an ADMIN KS included. `geniegpcid:<id>` is a conversation token and does not select the agent. A widget session path is not used | H | KS | |
 | `widgetId` session path | the loader supports it | never. It bypasses the KS | | |
 | `autoConnect` | prop | H, or a host opt-in. It opens the microphone and starts billing time. Whether it needs a user gesture: UNVERIFIED | none | |
 | `openingPhrase` (500 characters, spoken) | prop | C, agent-controlled. A change rebuilds the embed and starts a new session | none | |
@@ -311,15 +311,17 @@ Today only the six Unisphere widgets take a per-widget setting (`serverUrl`, che
 
 | Rule | Detail |
 |---|---|
-| Prop | Every widget gets an optional `region` prop. The value is a region code from `KALTURA_REGIONS` or the name of a host-registered environment (see "Local and custom hosts"). It is a catalog change, so it ships in Phase 2 with the new catalog id |
+| Prop | Every widget gets an optional `region` prop. The value is a region code from `KALTURA_REGIONS` or the name of a host-registered environment (see "Local and custom hosts"). It is an optional new prop, so it ships on the existing `v2` catalog id (see the deviation note below) |
 | Resolution | `region` prop, else the region in `serverUrl`, else the `setRegion` default. If the prop and `serverUrl` disagree, the widget shows `origin-not-allowed` |
-| Host limit | A new host option for regions, with the same rule shape as `setAllowedPartners`. Default: every known code and every registered environment |
+| Host limit | `setAllowedRegions(rule)`, with the same rule shape as `setAllowedPartners`. It checks the default region as well. Default: every known code and every registered environment |
 | Class | R. The agent asks by name, the library resolves the name, the backend checks that the partner lives in that region |
 | In the request | `scope.region` always holds the resolved region or environment name. The backend mints against that region's API and rejects a partner from another region. No partner-to-region map exists, so the backend cannot infer the region |
 | Hosts | Computed per instance from the resolved region, never from a global read at render time |
-| No capability gating | The library does not know which widget runs in which region. A widget in a region that lacks it fails with that region's own error. New regions and capabilities then need no library change. This includes `sgp2` |
+| No capability gating | The library does not know which widget runs in which region. A widget in a region that lacks it fails with that region's own error. New regions and capabilities then need no library change. This includes `sgp2`. One exception: the Captions editor page runs in the host origin, so it needs a pinned hash per host (`EDITOR_PAGE_INTEGRITY`). It fails closed in `sgp2` and in every environment |
 | EU | `irp2` is the EU region. No separate `eu2` code |
-| New codes | Adding a region is a data change in `region.ts`. `sgp2` is the first to add: API `api.sg.kaltura.com`, VOD `cfvod.sgp2.ovp.kaltura.com`, KMC `kmc.sg.kaltura.com`, analytics `analytics.sg.kaltura.com` |
+| New codes | Adding a region is a data change in `region.ts`. `sgp2` is the first: API `api.sgp2.ovp.kaltura.com`, VOD `cfvod.sgp2.ovp.kaltura.com`, KMC `kmc.sg.kaltura.com`. It runs no microservices, so it has no Unisphere host and the Unisphere widgets refuse it |
+| Deviation | The ADR planned a new catalog id for Phase 2. `region` is optional and additive, and `v2` consumers ignore props they do not know, so the id stays `v2`. Player `playlistId` also keeps it: `entryId` stops being required, and a `oneOf` rule keeps one of the two ids required, so every earlier valid Player message stays valid. A new id comes with the first breaking catalog change |
+| Where it is checked | `gateProps` (`src/core/validate-props.ts`) checks it for every widget that has a provider. The Recorder without a provider is checked when it resolves the script URL instead (`recorderScriptUrl`). A refused region gives `origin-not-allowed` with fixed text before the provider, a script, a fetch or an iframe |
 
 #### Local and custom hosts
 
@@ -331,7 +333,7 @@ setEnvironments({
 });
 ```
 
-The agent then sends `region: 'local'`. The host app owns the name table.
+The agent then sends `region: 'local'`. The host app owns the name table. Only `serviceUrl` is required: `cdn`, `vod`, `kmc` and `recorder` default to it. Values are origins only. A Unisphere widget needs `unisphere`, which is also added to the Unisphere origin allowlist.
 
 | Why not a raw URL from the agent | |
 |---|---|
@@ -366,7 +368,7 @@ Fixed on branch `mixed-region-hosts`: Genie, Content Lab, VOD Avatar and Agents 
 |---|---|---|---|
 | 0 | Ships first, before the rest of this ADR is relied on. Hardening with no API change. The A2UI path takes the KS only from the provider. The docs fixes. | no change | patch |
 | 1 (implemented) | The pre-check before the provider (it needs the mint to move into an effect), the provider request, scope change, timing rules and the size limit bump. Uses the props that exist today: `entryId`, flashcards `entryIds`, Genie `categoryId`, Media Manager `contextId`, Analytics and Content Lab `entryId`, `partnerId` | no change | 0.5.0 |
-| 2 | `region` on every widget (section 9). New R props, each added only after a sandbox test shows the widget or the KS uses it: `playlistId`, `assetId`, `ancestorCategoryId`, `virtualEventId`, Analytics `categoryId`/`playlistId`, Genie `entryId`, Agents Widget `categoryId`, VOD Avatar filters. Analytics `userId` and Avatar `autoConnect` only as host opt-ins | new catalog id and a migration note | with the id bump |
+| 2 (`region` implemented) | `region` on every widget except Chart (section 9), `setEnvironments`, `setAllowedRegions`, `sgp2`. `assetId`, Player `playlistId` and Analytics `categoryId`, `playlistId` and `virtualEventId` are implemented. Not added, because no test shows that the hosted widget or the KS uses them: `ancestorCategoryId`, Genie `entryId`, Agents Widget `categoryId`, VOD Avatar filters. Each is added only after such a test. Analytics `userId` and Avatar `autoConnect` only as host opt-ins | `region` added to `v2`, no new id | 0.5.0 |
 | Later | A way for the host to supply H runtime settings (`reachProfileId`, `genieId`, `allowedProjectTypes`), for example a provider that returns `{ ks, settings }` with a fixed allowlist of setting names per widget. Not decided here. Also the A2UI v1.0 migration | | |
 
 ## Consequences
@@ -376,7 +378,7 @@ Fixed on branch `mixed-region-hosts`: Genie, Content Lab, VOD Avatar and Agents 
 - One mint call per instance, after a quiet period. The host batches or caches. The player and flashcards show a short blank during the first mint.
 - Docs must label every UI-level parameter as a hint. An agent that asks for a category on Analytics gets no boundary.
 - Scope limits what each KS can do at Kaltura. It does not hide one widget's KS from another script on the page, because all widget code runs in the host origin.
-- Size: the bundles sit within 108 B (React) and 84 B (web component) of the limits in `.size-limit.json`. A Phase 1 sketch measured +626 B and +711 B gzip. The real change is likely 0.7 to 1 kB. Phase 1 raises both limits in the same PR, with the measurement in the PR body. Phase 2 needs its own measured bump.
+- Size: the bundles sit within 108 B (React) and 84 B (web component) of the limits in `.size-limit.json`. A Phase 1 sketch measured +626 B and +711 B gzip. The real change is likely 0.7 to 1 kB. Phase 1 raises both limits in the same PR, with the measurement in the PR body. Phase 2 raised the React limit from 170.5 to 171 kB (`assetId`) and the web component limit from 230.5 to 231 kB (`playlistId`).
 - The KS still expires and the library does not renew it ([security/ks.md](../security/ks.md#when-the-ks-expires)).
 - Host-only runtime settings have no channel yet. Until "Later" lands, only the KS carries H parameters.
 
@@ -384,15 +386,19 @@ Fixed on branch `mixed-region-hosts`: Genie, Content Lab, VOD Avatar and Agents 
 
 These need a sandbox partner. They set the entry cap (provisional 20) and decide which Phase 2 props are worth adding.
 
-- Length limit of the privilege string, and the KS size where URLs break. Test 10, 50 and 200 entries.
-- `sview:a/b` (slash) against repeated keys.
-- A USER KS with `edit:<id>` for the Captions editor, and whether the editor reads `assetid`.
-- Whether Genie privileges narrow results, and whether the server checks the client `context_id`.
-- Which claim selects the avatar agent, and whether `autoConnect` needs a user gesture.
-- ADMIN or USER KS for Content Lab and Agents Widget.
+- Length limit of the privilege string, and the KS size where URLs break. Done: `session.start` kept 500 ids in one `sview` value (5.5 kB of privileges, an 8.8 kB KS) without truncation. The cap of 20 entries gives a 464 character KS, so size is not the limit. The real limit of any one service (player, CDN URL) is untested.
+- `sview:a/b` (slash) against repeated keys. Done with a KS-protected entry: repeated keys collapse to the last one. The slash list `sview:a/b` works. `,`, `|` and `;` do not.
+- Captions editor: done. The pinned editor page (v1.3.10) reads `data-assetid`. Live, in three browsers: with `assetId` the editor opens that asset, without it the first one (`e2e/live`, LIVE-06 and LIVE-07). A USER KS needs a role that can add captions.
+- Player `playlistId`: done. Live, in three browsers: a manual playlist loads and plays (LIVE-05). The KS rule is tested at the API: with a KS-protected entry, `sviewplaylist` lets `playManifest` answer for the playlist entries and no privilege does not.
+- Analytics `categoryId`, `playlistId`, `virtualEventId`: done as route navigations, like `entryId`. Live (LIVE-08): the playlist view opens for the playlist. The category and virtual event routes answer with their own views (an unknown id gives the app's own "not found" box). They are UI-level: a KS with `virtualeventid:<id>` returned the same totals as one without it on eight report types, so no limit was seen. At most one of the four subjects is allowed. The embed's `predefinedFilter` is a UI filter, and this library does not send it.
+- Whether Genie privileges narrow results, and whether the server checks the client `context_id`. Tried on the NVP1 partner: the Genie server answers, but says it has no tool to list videos, with or without a category context, so no scope effect could be seen. It needs a partner with a Genie set up for its content.
+- Whether Avatar `autoConnect` needs a user gesture. The agent claim is settled: `agentid:<id>` (LIVE-16).
+- ADMIN or USER KS for Content Lab and Agents Widget. Content Lab: a USER KS of an admin user, minted by the provider for the scope, loads the widget and shows its UI (LIVE-13). The Agents Widget could not be fully tried live: its UI loads, but its backend (`agents-manager`) answers 403 without CORS headers from the network of the test machine, curl included, so the agent list never loads.
+- Hosted widgets with a scoped provider: done for Genie, Media Manager, Content Lab, VOD Avatar and Recorder. The provider gets the expected `{ widget, scope }`, the widget shows its UI and no request URL holds the KS (LIVE-11 to LIVE-15, three browsers; the Recorder in Chromium with a fake camera). Genie `ancestorCategoryId`, `virtualEventId` and `entryId`, Agents Widget `categoryId` and VOD Avatar filters stay out: no live check shows the widget or a KS uses them.
+- Second partner with agents (US region, LIVE-16 to LIVE-18, three browsers): the Avatar starts with a USER KS that has `agentid:<id>` and `appInit` answers 200. Genie loads with the guide's `setrole:PLAYBACK_BASE_ROLE,sview:*`. VOD Avatar needs an administrator role: with `PLAYBACK_BASE_ROLE`, `avatar/list` answers 403, with `Publisher Administrator` it answers 200. Roles are per partner, so a host must pick its own role for the VOD Avatar.
 - `widget:1` for the player, and AppToken `sessionPrivileges` behaviour.
 - Whether entitlement privileges limit Analytics and the Media Manager list by category.
-- Whether `sviewplaylist` implies entry view.
+- Whether `sviewplaylist` implies entry view. Done: it does.
 - Whether the live Agents Widget and VOD Avatar runtimes accept the settings the guides list.
 - Why Genie sends the `cdn` host as `kalturaServerURI` while Content Lab and VOD Avatar send `serviceUrl`.
 - Why two timing tests failed in the Phase 1 sketch (a timer the test helper does not flush, or a real ordering bug).
@@ -401,10 +407,10 @@ These need a sandbox partner. They set the entry cap (provisional 20) and decide
 
 Phase 1 docs are done: `docs/security/ks.md`, `docs/host-api.md`, `docs/host-integration.md`, `docs/ks-privileges.md`, `docs/troubleshooting.md` and `docs/migration-0.5.md`. Still open:
 
-- `docs/ks-privileges.md`: replace the Genie scope privileges and the chaining rule with verified text after the sandbox test.
-- Media Manager `mode: 'manage'` only removes the select button. Fix the "full content manager" claim in the schema description. `docs/components.md` is generated from it, so this ships with the Phase 2 catalog change.
-- Content Lab and Agents Widget KS type, after the sandbox test.
-- `docs/host-api.md` and `docs/host-integration.md`: the per-widget `region` prop, the region allowlist and the precedence rule.
+- `docs/ks-privileges.md`: replace the Genie scope privileges and the chaining rule with verified text after the sandbox test. The repeated-key text is already fixed.
+- Media Manager `mode: 'manage'` only removes the select button. The "full content manager" claim is fixed in the schema description (done in Phase 2).
+- Agents Widget KS type, after a test from an allowed origin.
+- `docs/host-api.md` and `docs/host-integration.md`: the per-widget `region` prop, the region allowlist and the precedence rule. Done in Phase 2.
 
 ## Tests
 

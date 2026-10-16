@@ -7,6 +7,7 @@ export const KalturaAvatarApi = {
   name: 'KalturaAvatar',
   schema: z.object({
     partnerId: z.number().int().positive(),
+    region: z.string().optional(),
     serverUrl: CommonSchemas.DynamicString.optional(),
     autoConnect: z.boolean().optional(),
     openingPhrase: z.string().max(500).optional(),

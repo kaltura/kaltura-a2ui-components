@@ -163,6 +163,16 @@ describe('ANA-01: navigation and filters', () => {
     );
   });
 
+  it.each([
+    [{ categoryId: '123' }, 'category'],
+    [{ playlistId: '1_8z2vu8s7' }, 'playlist'],
+    [{ virtualEventId: '456' }, 'virtual-event'],
+  ])('ANA-01: %j opens the %s view and wins over reportType', async (subject, route) => {
+    expect(await afterHandshake({ partnerId: 123, reportType: 'live', ...subject })).toEqual(
+      wrap({ url: `/analytics/${route}`, queryParams: { id: Object.values(subject)[0] } }, { dateBy: 'last30days' }),
+    );
+  });
+
   it('ANA-01: reportType and a date range map to navigate and updateFilters', async () => {
     expect(await afterHandshake({ partnerId: 123, reportType: 'geo-location', fromDate: '2026-01-01', toDate: '2026-03-31' })).toEqual(
       wrap({ url: '/analytics/geo-location' }, { dateFrom: '2026-01-01', dateTo: '2026-03-31' }),
@@ -192,6 +202,11 @@ describe('ANA-01: navigation and filters', () => {
   it.each([
     [{ reportType: 'top' }, 'Invalid reportType'],
     [{ reportType: '../../x' }, 'Invalid reportType'],
+    [{ entryId: '0_abc', categoryId: '123' }, 'Invalid categoryId'],
+    [{ playlistId: '1_a', virtualEventId: '4' }, 'Invalid virtualEventId'],
+    [{ categoryId: 'abc' }, 'Invalid categoryId'],
+    [{ virtualEventId: '1_a' }, 'Invalid virtualEventId'],
+    [{ playlistId: 'a b' }, 'Invalid playlistId'],
     [{ fromDate: '2026-01-01' }, 'Invalid toDate'],
     [{ toDate: '2026-01-01' }, 'Invalid fromDate'],
     [{ fromDate: '2026-13-01', toDate: '2026-01-01' }, 'Invalid fromDate'],

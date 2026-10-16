@@ -4,6 +4,8 @@ What the Kaltura guides ask of the KS for each component. Your server mints the 
 
 Source: the linked Kaltura guides. If a guide differs, the guide wins.
 
+Mint against the API of `request.scope.region`. It is a region code or the name of an environment you registered with `setEnvironments`. Refuse a name you do not know and a partner that does not live in that region.
+
 ## Rules for every widget
 
 - USER KS (type=0), minted on your server, 1 hour or less. [Session Guide](https://kaltura.md/KALTURA_SESSION_GUIDE/) (best practices, section 7).
@@ -20,11 +22,12 @@ Source: the linked Kaltura guides. If a guide differs, the guide wins.
 | `KalturaFlashcards` | `flashcards` | USER | Same as the Player, for each clip. Clips use the same player script | [Player guide](https://kaltura.md/KALTURA_PLAYER_EMBED_GUIDE/) |
 | `KalturaMediaManager` | `media-manager` | USER | Read-only select mode: content browsing. Manage mode with uploads: explicit content creation (`baseEntry`, `uploadToken`, `categoryEntry`, `category` access). The guide also mentions an ADMIN KS for manage mode. Prefer a USER KS with these rights | [Media Manager guide](https://kaltura.md/KALTURA_MEDIA_MANAGER_API/) |
 | `KalturaAnalytics` | `analytics` | ADMIN | The guide requires an ADMIN KS (type=2) whose user has an analytics role (Publisher Administrator has it). Narrow it with `setrole` and `iprestrict`, keep the expiry short and keep it off agent output | [Analytics guide](https://kaltura.md/KALTURA_ANALYTICS_EMBED_API/) |
-| `KalturaCaptionsEditor` | `captions-editor` | USER | Edit rights on the entry's caption assets. Allow for the whole editing session: the editor does not renew the KS and saves fail without one. The guide suggests about 2 hours | [Captions guide](https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/) |
+| `KalturaCaptionsEditor` | `captions-editor` | USER | Edit rights on the entry's caption assets. A USER KS needs a role that can add captions. Allow for the whole editing session: the editor does not renew the KS and saves fail without one. The guide suggests about 2 hours | [Captions guide](https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/) |
 | `KalturaRecorder` | `recorder` | USER | `editadmintags:*` | [Express Recorder guide](https://kaltura.md/KALTURA_EXPRESS_RECORDER_API/) |
 | `KalturaGenie` | `genie` | USER | `setrole:PLAYBACK_BASE_ROLE`, `sview:*`. To narrow results to a category, the runtime reads privileges such as `geniecategoryid`, `genieancestorid`, `privacycontext` with `enableentitlement`. Unverified against a sandbox partner: test before you rely on them | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
-| `KalturaContentLab`, `KalturaAgentsWidget`, `KalturaVodAvatar` | `content-lab`, `agents-widget`, `vod-avatar` | USER | The Unisphere guide says the privileges depend on the services the runtime calls. Start with `setrole:PLAYBACK_BASE_ROLE` and widen only as the widget needs | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
-| `KalturaAvatar` | `avatar` | USER | The KS selects the avatar agent. From the provider only, never a `ks` prop. Privileges not verified yet | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
+| `KalturaContentLab`, `KalturaAgentsWidget` | `content-lab`, `agents-widget` | USER | The Unisphere guide says the privileges depend on the services the runtime calls. Start with `setrole:PLAYBACK_BASE_ROLE` and widen only as the widget needs | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
+| `KalturaVodAvatar` | `vod-avatar` | USER | A role that the avatar service accepts. `PLAYBACK_BASE_ROLE` gets 403 on the avatar list. An administrator role such as Publisher Administrator works. Roles are per partner |
+| `KalturaAvatar` | `avatar` | USER | `agentid:<agentId>` picks the agent. Without it the service answers `AGENT_ID_NOT_FOUND_IN_KS`, even for an ADMIN KS. From the provider only, never a `ks` prop | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
 | `KalturaChart` | none | none | Renders the data it is given | not applicable |
 
 ## Where the KS goes
@@ -42,9 +45,10 @@ Source: the linked Kaltura guides. If a guide differs, the guide wins.
 The request names the entry or category the widget asks for. The KS is the only boundary. A prop the KS cannot enforce is a hint.
 
 - One entry (`player`, `captions-editor`): `sview:<entryId>`. The captions editor also needs `edit:<entryId>`.
-- Several entries (`flashcards`, up to 20): one `sview:<entryId>` per entry, repeated keys joined by commas. Whether `sview:a/b` works is unverified.
+- One playlist (`player` with `playlistId`): `sviewplaylist:<playlistId>`, manual playlists only. Tested: it grants view of the playlist entries, so no `sview` is needed.
+- Several entries (`flashcards`, up to 20): do not repeat the key. `session.start` keeps only the last `sview` (tested), so `sview:a,sview:b` grants one entry at most. Put the ids in one `sview` value, separated by `/` (`sview:a/b`). Tested: `,`, `|` and `;` do not work.
 - Category (`genie`, `media-manager`): no privilege takes a category id. Resolve the category to entry ids on your server, or use a privacy context.
-- `analytics`: `entryId` and the dates are app parameters. The KS cannot limit them. Narrow with `setrole` and `iprestrict`.
+- `analytics`: `entryId`, `categoryId`, `playlistId`, `virtualEventId` and the dates are app parameters. The KS cannot limit them. Narrow with `setrole` and `iprestrict`.
 - `recorder`, `agents-widget`, `vod-avatar`, `avatar`: no scope beyond the account.
 
 Check every id in the request against what the signed-in user may see, then mint.

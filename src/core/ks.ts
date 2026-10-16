@@ -2,13 +2,14 @@ import { createContext, createElement, useContext, useEffect, useRef, useState }
 import type { ComponentType, FC } from 'react';
 import { z } from 'zod';
 import type { AnalyticsReportType } from '../schemas/analytics';
-import { currentRegion, regionOf, type KalturaRegion } from './region';
+import { resolveRegion } from './region';
 import { gateProps, StrictPendingContext } from './validate-props';
 
 /** What every request names: the account and the region it lives in (resolved by the library). */
 interface Account {
   partnerId: number;
-  region: KalturaRegion;
+  /** A region code, or the name of an environment the host registered. */
+  region: string;
 }
 
 /**
@@ -16,11 +17,11 @@ interface Account {
  * Arrays are sorted and unique. See docs/adr/0009-per-instance-ks-scope.md.
  */
 export interface KsScopeByWidget {
-  player: Account & { entryId: string };
+  player: Account & ({ entryId: string; playlistId?: undefined } | { playlistId: string; entryId?: undefined });
   flashcards: Account & { entryIds: readonly string[] };
-  'captions-editor': Account & { entryId: string };
+  'captions-editor': Account & { entryId: string; assetId?: string };
   recorder: Account;
-  analytics: Account & { entryId?: string; reportType?: AnalyticsReportType; fromDate?: string; toDate?: string };
+  analytics: Account & { entryId?: string; categoryId?: string; playlistId?: string; virtualEventId?: string; reportType?: AnalyticsReportType; fromDate?: string; toDate?: string };
   'media-manager': Account & { contextId?: string };
   genie: Account & { categoryId?: string };
   'content-lab': Account & { entryId: string };
@@ -108,11 +109,11 @@ export function setKsProvider(provider: KsProvider | undefined): void {
 
 /** The props that name data, per widget. Nothing else enters a request: not `ks`, not config props. */
 const SCOPE_KEYS: { [W in KsWidget]: { required: readonly string[]; optional?: readonly string[] } } = {
-  player: { required: ['partnerId', 'entryId'] },
+  player: { required: ['partnerId'], optional: ['entryId', 'playlistId'] },
   flashcards: { required: ['partnerId'] },
-  'captions-editor': { required: ['partnerId', 'entryId'] },
+  'captions-editor': { required: ['partnerId', 'entryId'], optional: ['assetId'] },
   recorder: { required: ['partnerId'] },
-  analytics: { required: ['partnerId'], optional: ['entryId', 'reportType', 'fromDate', 'toDate'] },
+  analytics: { required: ['partnerId'], optional: ['entryId', 'categoryId', 'playlistId', 'virtualEventId', 'reportType', 'fromDate', 'toDate'] },
   'media-manager': { required: ['partnerId'], optional: ['contextId'] },
   genie: { required: ['partnerId'], optional: ['categoryId'] },
   'content-lab': { required: ['partnerId', 'entryId'] },
@@ -191,8 +192,8 @@ export function withKs<P extends { ks?: string }>(widget: KsWidget, Inner: Compo
     const [provider] = useState(() => ksProvider);
     const checked = provider ? gateProps(gate.schema, gate.label, widget, props, strict, gate.check && (() => gate.check?.(outer) ?? [])) : undefined;
     const base = provider && checked && !checked.error && !checked.pending ? (gate.scope ? gate.scope(outer) : scopeFromProps(widget, props)) : undefined;
-    const serverUrl = props.serverUrl;
-    const scope = base && { ...base, region: regionOf(typeof serverUrl === 'string' ? serverUrl : '') ?? currentRegion() };
+    // The pre-check has passed, so the region resolves.
+    const scope = base && { ...base, region: resolveRegion(typeof props.region === 'string' ? props.region : undefined, typeof props.serverUrl === 'string' ? props.serverUrl : undefined).name };
     const key = scope && JSON.stringify(scope);
     const [held, setHeld] = useState<Held>();
 

@@ -15,6 +15,8 @@ import { FlashcardsCore } from '../../src/core/flashcards';
 import { AnalyticsCore } from '../../src/core/analytics';
 import { RecorderCore } from '../../src/core/recorder';
 import { GenieCore } from '../../src/core/genie';
+import { CaptionsEditorCore } from '../../src/core/captions-editor';
+import { captionsRemote } from '../helpers/captions-remote';
 import { MediaManagerCore } from '../../src/core/media-manager';
 
 let player: ReturnType<typeof playerRemote>;
@@ -109,13 +111,56 @@ describe('KS-SCOPE: what the provider gets', () => {
     const provider = vi.fn<KsProvider>(() => 'host-ks');
     setKsProvider(provider);
     await mount(AnalyticsCore, { partnerId: 1, entryId: '0_a', reportType: 'live', fromDate: '2026-01-01', toDate: '2026-01-31' });
+    await mount(AnalyticsCore, { partnerId: 1, categoryId: '12' });
+    await mount(AnalyticsCore, { partnerId: 1, playlistId: '1_pl' });
+    await mount(AnalyticsCore, { partnerId: 1, virtualEventId: '34' });
     await mount(GenieCore, { partnerId: 1, uiconfId: 2, serverUrl: SERVER_URL, categoryId: '123' });
     await mount(MediaManagerCore, { partnerId: 1, serverUrl: SERVER_URL, contextId: '456' });
     expect(scopes(provider)).toEqual([
       { region: 'nvp1', partnerId: 1, entryId: '0_a', reportType: 'live', fromDate: '2026-01-01', toDate: '2026-01-31' },
+      { region: 'nvp1', partnerId: 1, categoryId: '12' },
+      { region: 'nvp1', partnerId: 1, playlistId: '1_pl' },
+      { region: 'nvp1', partnerId: 1, virtualEventId: '34' },
       { region: 'nvp1', partnerId: 1, categoryId: '123' },
       { region: 'nvp1', partnerId: 1, contextId: '456' },
     ]);
+  });
+
+  it('the Captions editor scope holds its entry and its caption asset', async () => {
+    const captions = captionsRemote();
+    const provider = vi.fn<KsProvider>(() => 'host-ks');
+    setKsProvider(provider);
+    await mount(CaptionsEditorCore, { partnerId: 1, entryId: '0_a', assetId: '1_asset' });
+    captions.restore();
+    expect(scopes(provider)).toEqual([{ region: 'nvp1', partnerId: 1, entryId: '0_a', assetId: '1_asset' }]);
+  });
+
+  it('a new assetId asks the provider again with the new scope', async () => {
+    const captions = captionsRemote();
+    const provider = vi.fn<KsProvider>(() => 'host-ks');
+    setKsProvider(provider);
+    const { root } = await mount(CaptionsEditorCore, { partnerId: 1, entryId: '0_a', assetId: '1_aaa' });
+    await act(async () => root.render(createElement(CaptionsEditorCore, { partnerId: 1, entryId: '0_a', assetId: '1_bbb' })));
+    await afterQuietPeriod();
+    captions.restore();
+    expect(scopes(provider).map(scope => (scope as { assetId?: string }).assetId)).toEqual(['1_aaa', '1_bbb']);
+  });
+
+  it('a Player playlist scope holds the playlist and no entry', async () => {
+    const provider = vi.fn<KsProvider>(() => 'host-ks');
+    setKsProvider(provider);
+    await mount(PlayerCore, { partnerId: 1, uiconfId: 2, playlistId: '1_list' });
+    await player.ready();
+    expect(scopes(provider)).toEqual([{ region: 'nvp1', partnerId: 1, playlistId: '1_list' }]);
+  });
+
+  it('switching a Player from an entry to a playlist asks for a new scope', async () => {
+    const provider = vi.fn<KsProvider>(() => 'host-ks');
+    setKsProvider(provider);
+    const { root } = await mount(PlayerCore, PLAYER);
+    await act(async () => root.render(createElement(PlayerCore, { partnerId: PLAYER.partnerId, uiconfId: PLAYER.uiconfId, playlistId: '1_list' })));
+    await afterQuietPeriod();
+    expect(scopes(provider)).toEqual([expect.objectContaining({ entryId: PLAYER.entryId }), { region: 'nvp1', partnerId: PLAYER.partnerId, playlistId: '1_list' }]);
   });
 
   it('an empty optional id is left out of the scope', async () => {
@@ -426,6 +471,7 @@ describe('KS-SCOPE: nothing bad reaches the provider', () => {
   it.each([
     [{ reportType: 'top' }, 'Invalid reportType'],
     [{ fromDate: '2026-01-01' }, 'Invalid toDate'],
+    [{ entryId: '0_a', playlistId: '1_pl' }, 'Invalid playlistId'],
     [{ fromDate: '2026-02-30', toDate: '2026-03-01' }, 'Invalid fromDate'],
     [{ fromDate: '2026-03-01', toDate: '2026-01-01' }, 'Invalid toDate'],
   ])('Analytics props %j give the error and no request', async (props, message) => {

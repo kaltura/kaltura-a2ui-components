@@ -62,9 +62,9 @@ describe('REC-01: the script comes from one fixed place', () => {
       remote.created[0].options.serviceUrl,
       remote.created[0].options.playerUrl,
     ]).toEqual([
-      ['https://api.eu.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js'],
-      'https://api.eu.kaltura.com',
-      'https://api.eu.kaltura.com',
+      ['https://api.irp2.ovp.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js'],
+      'https://api.irp2.ovp.kaltura.com',
+      'https://api.irp2.ovp.kaltura.com',
     ]);
   });
 
