@@ -26,22 +26,15 @@ const US: KalturaHosts = {
   recorder: 'https://www.kaltura.com',
 };
 
-// serviceUrl, vod and kmc follow the Kaltura API guide, section 4. The guide lists no regional
-// CDN host and the recorder uses the US path, so the player and the recorder use the web host.
-const API_PREFIX: Record<Exclude<KalturaRegion, 'nvp1'>, string> = { irp2: 'eu', frp2: 'de', cap2: 'ca', syp2: 'ap', sgp2: 'sg' };
-const WEB_HOST: Record<Exclude<KalturaRegion, 'nvp1'>, string> = {
-  irp2: 'https://api.eu.kaltura.com',
-  frp2: 'https://api.de.kaltura.com',
-  cap2: 'https://api.cap2.ovp.kaltura.com',
-  syp2: 'https://api.syp2.ovp.kaltura.com',
-  sgp2: 'https://api.sgp2.ovp.kaltura.com',
-};
-
+// Hosts follow the Kaltura firewall guide, and prefer its `.ovp` hosts. The guide lists no regional CDN
+// host and the recorder uses the US path, so the player and the recorder use the API host. KMC: the
+// guide lists `.ovp` hosts for irp2 and frp2 only. cap2 and syp2 answer on `.ovp` too. sgp2 does not
+// (HTTP 500), so it keeps the guide host `kmc.sg.kaltura.com`.
 const KMC_HOST: Record<Exclude<KalturaRegion, 'nvp1'>, string> = {
   irp2: 'https://kmc.irp2.ovp.kaltura.com',
-  frp2: 'https://kmc.de.kaltura.com',
-  cap2: 'https://kmc.ca.kaltura.com',
-  syp2: 'https://kmc.ap.kaltura.com',
+  frp2: 'https://kmc.frp2.ovp.kaltura.com',
+  cap2: 'https://kmc.cap2.ovp.kaltura.com',
+  syp2: 'https://kmc.syp2.ovp.kaltura.com',
   sgp2: 'https://kmc.sg.kaltura.com',
 };
 
@@ -70,8 +63,8 @@ export const currentRegion = (): KalturaRegion => region;
 /** Hosts for a region. Default: the region set with `setRegion`. */
 export function kalturaHosts(code: KalturaRegion = region): KalturaHosts {
   if (code === 'nvp1') return US;
-  const web = WEB_HOST[code];
-  return { serviceUrl: `https://api.${API_PREFIX[code]}.kaltura.com`, cdn: web, vod: `https://cfvod.${code}.ovp.kaltura.com`, kmc: KMC_HOST[code], recorder: web };
+  const api = `https://api.${code}.ovp.kaltura.com`;
+  return { serviceUrl: api, cdn: api, vod: `https://cfvod.${code}.ovp.kaltura.com`, kmc: KMC_HOST[code], recorder: api };
 }
 
 /**

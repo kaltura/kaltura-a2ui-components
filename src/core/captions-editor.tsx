@@ -16,10 +16,10 @@ const EDITOR_PATH = '/apps/captionstudio/v1.3.10/embed.php';
 // The player bundle that the editor loads from the CDN is not pinned.
 const EDITOR_PAGE_INTEGRITY: Record<string, string> = {
   'https://www.kaltura.com': 'sha384-HajZJL7XrUQ8Z7IPRBS0KXRI4J5/fQ83kcyvxaVfGoi2pKKD4sWGltXVnNjZ6bFJ',
-  'https://api.eu.kaltura.com': 'sha384-gY+fJ1eIq2yg0cHegqeqF/wjyoVeIsfFsbKEamBy0PzJFK+vn4fbBIXyCPNfrUDo',
-  'https://api.de.kaltura.com': 'sha384-hqVKETsQxnnQdxWxfhI5EDysq0LFJr0XL05wGsXNCFp9fGyb3BjBf9iGrKgkHWzN',
-  'https://api.ca.kaltura.com': 'sha384-WBssm8TvVZKCM0CkzocUBctSyVRDDbuRRDc2Z3gayxn/j6Ihjhjy2lu034jNRiUj',
-  'https://api.ap.kaltura.com': 'sha384-QSOdmShx0N34wR32lvgT3vPzU4pM8z20TCeBSlijwFC5rNUZGMofxnWa2DDHdGrE',
+  'https://api.irp2.ovp.kaltura.com': 'sha384-eP8a9KFBm9rMOGwCdQuqsY9OF14VdPenUszLZnAQo5Pc54X5JHWU5LeoGHVD2eyT',
+  'https://api.frp2.ovp.kaltura.com': 'sha384-iRoamKdTKbBhVGve/kBdtlN/FHVupoFqknGRres+sqCL78iBOZrQlyg7z6L9PsfY',
+  'https://api.cap2.ovp.kaltura.com': 'sha384-o/ib5DNV+tst92V6IfwsVg8kwma0GCeAi/9pcdKgjS1Z8g1a53QBAIaPPc6k078c',
+  'https://api.syp2.ovp.kaltura.com': 'sha384-D9IkCxcrAjcXDfL1R8hLj45Aw9KL+jOrgIoJip4OdWXl6yAtK4AJVOHF96Oef/oS',
 };
 const EDITOR_ASSET_INTEGRITY: Record<string, string> = {
   './static/js/main.6315bf26.js': 'sha384-iYhkCPdMwqiJ1wjyPCV5MqsbuVv3oGWa++mhGj30xoyxj1cCaAWEQXB9nuy+dBU0',

@@ -79,6 +79,6 @@ describe('SEC-10: player script loader', () => {
     const { loadPlayerScript, setRegion } = await loadPlayer();
     setRegion('frp2');
     await loadPlayerScript(1, 2);
-    expect(remote.urls).toEqual(['https://api.de.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2']);
+    expect(remote.urls).toEqual(['https://api.frp2.ovp.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2']);
   });
 });

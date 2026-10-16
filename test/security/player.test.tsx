@@ -78,7 +78,7 @@ describe('SEC-10: the script comes from one fixed place', () => {
     setRegion('irp2');
     await mount(PlayerCore, VALID);
     await remote.ready();
-    expect(remote.urls).toEqual(['https://api.eu.kaltura.com/p/123/embedPlaykitJs/partner_id/123/uiconf_id/456']);
+    expect(remote.urls).toEqual(['https://api.irp2.ovp.kaltura.com/p/123/embedPlaykitJs/partner_id/123/uiconf_id/456']);
   });
 
   it('SEC-10: many players of one uiconf and remounts load the script once', async () => {

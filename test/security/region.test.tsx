@@ -56,10 +56,10 @@ async function urls() {
 
 // api, vod and kmc: kaltura.md API Getting Started §4. web: the regional API host (player, recorder).
 const REGIONAL: Record<Exclude<KalturaRegion, 'nvp1' | 'sgp2'>, { api: string; vod: string; web: string; kmc: string }> = {
-  irp2: { api: 'https://api.eu.kaltura.com', vod: 'https://cfvod.irp2.ovp.kaltura.com', web: 'https://api.eu.kaltura.com', kmc: 'https://kmc.irp2.ovp.kaltura.com' },
-  frp2: { api: 'https://api.de.kaltura.com', vod: 'https://cfvod.frp2.ovp.kaltura.com', web: 'https://api.de.kaltura.com', kmc: 'https://kmc.de.kaltura.com' },
-  cap2: { api: 'https://api.ca.kaltura.com', vod: 'https://cfvod.cap2.ovp.kaltura.com', web: 'https://api.cap2.ovp.kaltura.com', kmc: 'https://kmc.ca.kaltura.com' },
-  syp2: { api: 'https://api.ap.kaltura.com', vod: 'https://cfvod.syp2.ovp.kaltura.com', web: 'https://api.syp2.ovp.kaltura.com', kmc: 'https://kmc.ap.kaltura.com' },
+  irp2: { api: 'https://api.irp2.ovp.kaltura.com', vod: 'https://cfvod.irp2.ovp.kaltura.com', web: 'https://api.irp2.ovp.kaltura.com', kmc: 'https://kmc.irp2.ovp.kaltura.com' },
+  frp2: { api: 'https://api.frp2.ovp.kaltura.com', vod: 'https://cfvod.frp2.ovp.kaltura.com', web: 'https://api.frp2.ovp.kaltura.com', kmc: 'https://kmc.frp2.ovp.kaltura.com' },
+  cap2: { api: 'https://api.cap2.ovp.kaltura.com', vod: 'https://cfvod.cap2.ovp.kaltura.com', web: 'https://api.cap2.ovp.kaltura.com', kmc: 'https://kmc.cap2.ovp.kaltura.com' },
+  syp2: { api: 'https://api.syp2.ovp.kaltura.com', vod: 'https://cfvod.syp2.ovp.kaltura.com', web: 'https://api.syp2.ovp.kaltura.com', kmc: 'https://kmc.syp2.ovp.kaltura.com' },
 };
 
 afterEach(() => {
