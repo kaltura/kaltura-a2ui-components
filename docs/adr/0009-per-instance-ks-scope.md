@@ -209,9 +209,9 @@ The runtime reads its scope from KS privileges, not from the `categoryId` settin
 
 | Parameter | Source | Class | Enforced by | Phase |
 |---|---|---|---|---|
-| `categoryId` | prop, ignored by the runtime | R | KS `geniecategoryid`. Not confirmed live | 1 |
-| `ancestorCategoryId` | none. The runtime reads no such setting (bundle) | R | KS `genieancestorid`. Not confirmed live | not added |
-| `virtualEventId` | none. The runtime reads no such setting (bundle) | R | KS `virtualeventid`. Not confirmed live | not added |
+| `categoryId` | prop, ignored by the runtime | R | KS `geniecategoryid`. Read by the Genie backend (source). Effect not seen live: the test partners have no Genie search tool | 1 |
+| `ancestorCategoryId` | none. The runtime reads no such setting (bundle) | R | KS `genieancestorid`. Read by the Genie backend (source). Not seen live | not added |
+| `virtualEventId` | none. The runtime reads no such setting (bundle) | R | None. The Genie backend source has no `virtualeventid` privilege | not added |
 | `entryId` | none. The chat builds `context_type: entry` itself | R | UI. Do not rely on the KS for it | not added |
 | `genieId` | none | H, selects the Genie config. R only with a host allowlist, and only in Phase 2 | KS `genieid` | |
 | `privacycontext` + `enableentitlement` | none | H, backend derives it | KS | |
