@@ -44,6 +44,7 @@ Mint against the API of `request.scope.region`. It is a region code or the name 
 
 The request names the entry or category the widget asks for. The KS is the only boundary. A prop the KS cannot enforce is a hint.
 
+- `sview` only unlocks. It opens an entry that a KS-restricted access control profile protects, and it limits nothing else. For a hard limit on what a KS can read, use entitlement (`enableentitlement` plus `privacycontext`). Kaltura enforces it on every API call made with that KS. Privileges such as `geniecategoryid` are read by the Genie service only, and Kaltura does not enforce them.
 - One entry (`player`, `captions-editor`): `sview:<entryId>`. The captions editor also needs `edit:<entryId>`.
 - One playlist (`player` with `playlistId`): `sviewplaylist:<playlistId>`, manual playlists only. Tested: it grants view of the playlist entries, so no `sview` is needed.
 - Several entries (`flashcards`, up to 20): do not repeat the key. `session.start` keeps only the last `sview` (tested), so `sview:a,sview:b` grants one entry at most. Put the ids in one `sview` value, separated by `/` (`sview:a/b`). Tested: `,`, `|` and `;` do not work.
