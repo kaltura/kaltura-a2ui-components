@@ -410,3 +410,27 @@ test('LIVE-21: Agents Widget lists the agents of the partner', async ({ live }) 
   expect(live.consoleErrors).toEqual([]);
   expectNoKsInUrls(live);
 });
+
+// Entitlement is enforced by the Kaltura API on every call made with the KS, so the host cannot get it
+// wrong in the page. Needs a members-only category with entries. Read-only: nothing is created.
+test('LIVE-22: a members-only entry needs an entitlement-safe KS', async () => {
+  test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
+  const api = async (path: string, params: Record<string, string>): Promise<Record<string, unknown>> => {
+    const res = await fetch(`https://www.kaltura.com/api_v3/service/${path}`, { method: 'POST', signal: AbortSignal.timeout(20_000), body: new URLSearchParams({ format: '1', ...params }) });
+    return (await res.json()) as Record<string, unknown>;
+  };
+  const admin = await mintKs(agentsPartnerId, agentsAdminSecret ?? '', agentsUserId ?? '');
+  const categories = await api('category/action/list', { ks: admin, 'filter[privacyIn]': '3', 'filter[orderBy]': '-entriesCount', 'pager[pageSize]': '50' });
+  const members = ((categories.objects ?? []) as { id: number; privacyContext?: string; directEntriesCount: number }[]).find((c) => c.privacyContext && c.directEntriesCount > 0);
+  test.skip(!members, 'The partner has no members-only category with entries and a privacy context.');
+  const listed = await api('baseEntry/action/list', { ks: admin, 'filter[categoriesIdsMatchOr]': String(members?.id), 'pager[pageSize]': '1' });
+  const entryId = ((listed.objects ?? []) as { id: string }[])[0]?.id ?? '';
+  const read = async (privileges: string) => {
+    const ks = await mintKs(agentsPartnerId, agentsAdminSecret ?? '', 'a2ui-live-nonmember', { type: 0, privileges });
+    return (await api('baseEntry/action/get', { ks, entryId })).code ?? 'OK';
+  };
+  const role = 'setrole:PLAYBACK_BASE_ROLE';
+  expect(await read(`${role},enableentitlement,privacycontext:${members?.privacyContext}`)).toBe('ENTRY_ID_NOT_FOUND');
+  expect(await read(`${role},sview:*,genieancestorid:${members?.id}`)).toBe('ENTRY_ID_NOT_FOUND');
+  expect(await read(`${role},disableentitlement`)).toBe('OK');
+});

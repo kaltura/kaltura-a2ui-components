@@ -82,6 +82,7 @@ What your backend must do:
 
 - Check `partnerId` against the accounts you serve, and `entryId`, `entryIds`, `categoryId` and `contextId` against what the signed-in user may see. A scope value is a request, not a grant.
 - Put the scope into the KS privileges (for example `sview:<entryId>`). Per widget: [ks-privileges.md](../ks-privileges.md).
+- For a category, add `enableentitlement` and `privacycontext`. Do not mint `disableentitlement` for an end user. A tested reference that does this and fails closed: [`examples/ks-server/privileges.ts`](../../examples/ks-server/privileges.ts). The page cannot check the KS you return: it is encrypted.
 - Reject unknown `version` and unknown scope keys. Rate-limit the endpoint.
 - Never log or echo the returned KS.
 
