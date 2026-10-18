@@ -87,7 +87,8 @@ try {
 
   // The host installs the peers itself, as a real A2UI client does.
   // @types/react is a dev dependency of ours. A TypeScript host has it too.
-  install(consumer, [tarball, ...peers, `@types/react@${pkg.devDependencies['@types/react']}`]);
+  // @a2ui/markdown-it 0.2.2 needs web_core ^0.14.0, while @a2ui/react 0.13.0 still accepts it. Pinned until upstream fixes the range.
+  install(consumer, [tarball, ...peers, '@a2ui/markdown-it@0.2.1', `@types/react@${pkg.devDependencies['@types/react']}`]);
 
   // QA-08: one copy of every shared library, so one context and one zod.
   const tree = run('npm', ['ls', '--all', '--parseable'], consumer).split('\n');
