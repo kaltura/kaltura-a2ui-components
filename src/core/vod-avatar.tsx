@@ -13,6 +13,10 @@ export interface VodAvatarCoreProps {
   serverUrl?: string;
   /** Region code or host-registered environment name. Default: the region of `serverUrl`, else the `setRegion` value. */
   region?: string;
+  /** First screen of the studio. Default: `videoLibrary`. */
+  initialView?: 'videoLibrary' | 'editVideo' | 'projectBuilder';
+  /** Extra eSearch conditions for the entry picker, ANDed with the built-in ones. `itemType` is the `KalturaESearchItemType` number. */
+  additionalEsearchFilters?: Array<{ fieldName: string; itemType: number; searchTerm: string | number }>;
 }
 
 function VodAvatarView(props: VodAvatarCoreProps) {
@@ -28,6 +32,8 @@ function VodAvatarView(props: VodAvatarCoreProps) {
       runtimeSettings={{
         ks: props.ks,
         partnerId: props.partnerId,
+        initialView: props.initialView,
+        additionalEsearchFilters: props.additionalEsearchFilters,
         kalturaServerURI: resolveRegion(props.region, props.serverUrl).hosts.serviceUrl,
       }}
       label="Kaltura VOD Avatar"

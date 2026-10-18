@@ -62,6 +62,12 @@ describe('Unisphere runtime contract', () => {
     ]);
   });
 
+  it('vod avatar: initialView and additionalEsearchFilters go to the studio settings', async () => {
+    const additionalEsearchFilters = [{ fieldName: 'name', itemType: 2, searchTerm: 'demo' }];
+    const runtime = await runtimeOf('../../src/core/vod-avatar', 'VodAvatarCore', { initialView: 'projectBuilder', additionalEsearchFilters });
+    expect(runtime.settings).toEqual({ ks: 'ks-1', partnerId: 1234567, initialView: 'projectBuilder', additionalEsearchFilters, kalturaServerURI: 'https://www.kaltura.com' });
+  });
+
   it('agents: manager runtime, drawer visual, regional service URL', async () => {
     const runtime = await runtimeOf('../../src/core/agents-widget', 'AgentsWidgetCore', {});
     expect([runtime.widgetName, runtime.runtimeName, runtime.visuals[0].type, runtime.settings]).toEqual([

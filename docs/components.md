@@ -572,6 +572,8 @@ Element: `<kaltura-vod-avatar-wc>`. Needs a KS: Yes.
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
 | `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused. |
 | `region` | string |  |  | Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. A region the host app does not allow is refused. |
+| `initialView` | "videoLibrary" / "editVideo" / "projectBuilder" |  |  | Optional. The first screen: 'videoLibrary' (default), 'editVideo' or 'projectBuilder' (the new-video menu). |
+| `additionalEsearchFilters` | object[] |  |  | Optional. Extra eSearch conditions for the entry picker of the new-video flow. They are ANDed with the built-in ones. |
 
 A2UI messages, sent after `createSurface`:
 

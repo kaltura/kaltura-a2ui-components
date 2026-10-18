@@ -14,6 +14,7 @@ const adminUserId = process.env.NVP1_ADMIN_USER_ID;
 const agentsPartnerId = Number(process.env.KALTURA_PARTNER_ID);
 const agentsAdminSecret = process.env.KALTURA_ADMIN_SECRET;
 const agentsUserId = process.env.KALTURA_ADMIN_USER_ID;
+const AGENTS_MANAGER = 'https://agents-manager.nvp1.ovp.kaltura.com';
 const AVATAR_API = 'https://api.avatar.us.kaltura.ai/v1';
 // "MediaSpace Embed Player" on the account, listed with uiConf.list.
 const UICONF_ID = 1000092;
@@ -373,3 +374,39 @@ for (const { id, tag, widget, props, privileges, text, api } of AGENT_PARTNER_WI
     expectNoKsInUrls(live);
   });
 }
+
+test('LIVE-19: VOD Avatar initialView opens the new-video menu instead of the library', async ({ live }) => {
+  test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
+  await live.useScopedProvider(agentsUserId, async () => mintAgentsKs('setrole:Publisher Administrator'));
+  await live.mount('kaltura-vod-avatar-wc', { partnerId: agentsPartnerId, initialView: 'projectBuilder' });
+  await expect.poll(() => live.pageText(), { timeout: PLAY_TIMEOUT }).toContain('How would you like to start your new project?');
+  expect(live.consoleErrors).toEqual([]);
+  expectNoKsInUrls(live);
+});
+
+test('LIVE-20: VOD Avatar additionalEsearchFilters reach the entry search', async ({ live }) => {
+  test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
+  await live.useScopedProvider(agentsUserId, async () => mintAgentsKs('setrole:Publisher Administrator'));
+  const filter = { fieldName: 'name', itemType: 2, searchTerm: 'a2ui-live-filter' };
+  const search = live.page.waitForRequest((r) => r.url().includes('/service/elasticsearch_esearch/action/searchEntry'), { timeout: PLAY_TIMEOUT });
+  await live.mount('kaltura-vod-avatar-wc', { partnerId: agentsPartnerId, initialView: 'projectBuilder', additionalEsearchFilters: [filter] });
+  await live.page.getByText('Create session highlights').click({ timeout: PLAY_TIMEOUT });
+  await live.page.getByText('Choose source').first().click({ timeout: PLAY_TIMEOUT });
+  const items = (JSON.parse((await search).postData() ?? '{}') as { searchParams: { searchOperator: { searchItems: object[] } } }).searchParams.searchOperator.searchItems;
+  expect(items).toContainEqual(expect.objectContaining(filter));
+  expect(live.consoleErrors).toEqual([]);
+});
+
+// The agent list lives on agents-manager. Some networks block it (CloudFront 403), so the test skips there.
+test('LIVE-21: Agents Widget lists the agents of the partner', async ({ live }) => {
+  test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
+  const reachable = await fetch(`${AGENTS_MANAGER}/agent/list`, { method: 'POST' }).then((r) => r.status !== 403, () => false);
+  test.skip(!reachable, 'agents-manager is blocked on this network.');
+  const calls = await live.useScopedProvider(agentsUserId, async () => mintKs(agentsPartnerId, agentsAdminSecret ?? '', agentsUserId ?? ''));
+  const answer = live.page.waitForResponse((r) => r.url() === `${AGENTS_MANAGER}/agent/list`, { timeout: PLAY_TIMEOUT });
+  await live.mount('kaltura-agents-widget', { partnerId: agentsPartnerId });
+  expect((await answer).status()).toBe(200);
+  expect(calls).toEqual([{ widget: 'agents-widget', scope: { region: 'nvp1', partnerId: agentsPartnerId } }]);
+  expect(live.consoleErrors).toEqual([]);
+  expectNoKsInUrls(live);
+});

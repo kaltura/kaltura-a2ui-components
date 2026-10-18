@@ -1,6 +1,6 @@
 # 0009. Per-instance KS scope
 
-Status: accepted (2026-10-15). Phase 0 and Phase 1 are implemented (0.5.0). Phase 2 is implemented for `region`, the Captions editor `assetId` and the Player `playlistId` (section 9). The other Phase 2 props wait for tests against the hosted backends. Builds on [ADR 0002](0002-ks-handling.md).
+Status: accepted (2026-10-15). Phase 0 and Phase 1 are implemented (0.5.0). Phase 2 is implemented for `region`, the Captions editor `assetId`, the Player `playlistId` and the VOD Avatar `initialView` and `additionalEsearchFilters` (section 9). The other Phase 2 props wait for tests against the hosted backends. Builds on [ADR 0002](0002-ks-handling.md).
 
 Code today: `src/core/ks.ts`, `src/core/validate-props.ts`, `src/adapters/react/agent-action.tsx`, `src/schemas/*.ts`.
 
@@ -209,10 +209,10 @@ The runtime reads its scope from KS privileges, not from the `categoryId` settin
 
 | Parameter | Source | Class | Enforced by | Phase |
 |---|---|---|---|---|
-| `categoryId` | prop, ignored by the runtime | R | KS `geniecategoryid`. The prop is only a hint | 1 |
-| `ancestorCategoryId` | none | R | KS `genieancestorid` (category and descendants) | 2 |
-| `virtualEventId` | none | R | KS `virtualeventid` | 2 |
-| `entryId` | none. The chat builds `context_type: entry` itself | R | UI. Whether the server checks it: UNVERIFIED | 2 |
+| `categoryId` | prop, ignored by the runtime | R | KS `geniecategoryid`. Not confirmed live | 1 |
+| `ancestorCategoryId` | none. The runtime reads no such setting (bundle) | R | KS `genieancestorid`. Not confirmed live | not added |
+| `virtualEventId` | none. The runtime reads no such setting (bundle) | R | KS `virtualeventid`. Not confirmed live | not added |
+| `entryId` | none. The chat builds `context_type: entry` itself | R | UI. Do not rely on the KS for it | not added |
 | `genieId` | none | H, selects the Genie config. R only with a host allowlist, and only in Phase 2 | KS `genieid` | |
 | `privacycontext` + `enableentitlement` | none | H, backend derives it | KS | |
 | `searchcontext` | none | H | KS | |
@@ -238,7 +238,7 @@ The backend minting and the widget setting must match. One without the other giv
 
 | Parameter | Source | Class | Enforced by | Phase |
 |---|---|---|---|---|
-| `categoryId` | runtime setting in the guide, not sent. Live acceptance: UNVERIFIED | R | UI. A filter and the default category for new agents | 2 |
+| `categoryId` | runtime setting (runtime 1.0.73 reads it, bundle), not sent. Live acceptance needs a network that reaches `agents-manager` | R | UI. A filter and the default category for new agents | not added |
 | agent id | removed in 0.4 | | | |
 | everything else (create, change, delete, REACH spend) | KS type and role | H | KS. An unscoped ADMIN KS is the main risk | |
 
@@ -247,9 +247,9 @@ The backend minting and the widget setting must match. One without the other giv
 | Parameter | Source | Class | Enforced by | Phase |
 |---|---|---|---|---|
 | user | KS `userId` | H | the service isolates by user | |
-| `additionalEsearchFilters` (category, entry restrictions in the media picker) | runtime setting, not sent | R | UI | 2 |
-| `allowedProjectTypes` | runtime setting, not sent | H. It limits what the user can create | | |
-| `initialView` | runtime setting | C | | |
+| `additionalEsearchFilters` (category, entry restrictions in the media picker) | prop. Live (LIVE-20): the filter items reach the entry search | R | UI | 2, implemented |
+| `allowedProjectTypes` | runtime setting, not sent. Runtime 1.60.0 reads it but the new-video menu still shows all four types (live) | H. It limits what the user can create | | not added |
+| `initialView` | prop. Live (LIVE-19): `projectBuilder` opens the new-video menu | C | | 2, implemented |
 | `entryLink`, `handleShare` | runtime functions | never from the agent | | |
 | thumbnail-with-KS option | runtime setting | never | would put the KS in URLs | |
 | `avatarId`, source entry | chosen in the UI. The service checks account membership | | UI | |
@@ -368,7 +368,7 @@ Fixed on branch `mixed-region-hosts`: Genie, Content Lab, VOD Avatar and Agents 
 |---|---|---|---|
 | 0 | Ships first, before the rest of this ADR is relied on. Hardening with no API change. The A2UI path takes the KS only from the provider. The docs fixes. | no change | patch |
 | 1 (implemented) | The pre-check before the provider (it needs the mint to move into an effect), the provider request, scope change, timing rules and the size limit bump. Uses the props that exist today: `entryId`, flashcards `entryIds`, Genie `categoryId`, Media Manager `contextId`, Analytics and Content Lab `entryId`, `partnerId` | no change | 0.5.0 |
-| 2 (`region` implemented) | `region` on every widget except Chart (section 9), `setEnvironments`, `setAllowedRegions`, `sgp2`. `assetId`, Player `playlistId` and Analytics `categoryId`, `playlistId` and `virtualEventId` are implemented. Not added, because no test shows that the hosted widget or the KS uses them: `ancestorCategoryId`, Genie `entryId`, Agents Widget `categoryId`, VOD Avatar filters. Each is added only after such a test. Analytics `userId` and Avatar `autoConnect` only as host opt-ins | `region` added to `v2`, no new id | 0.5.0 |
+| 2 (`region` implemented) | `region` on every widget except Chart (section 9), `setEnvironments`, `setAllowedRegions`, `sgp2`. `assetId`, Player `playlistId`, Analytics `categoryId`, `playlistId` and `virtualEventId`, and VOD Avatar `initialView` and `additionalEsearchFilters` are implemented. Not added, because no test shows that the hosted widget or the KS uses them: Genie `ancestorCategoryId`, `virtualEventId` and `entryId`, Agents Widget `categoryId`, VOD Avatar `allowedProjectTypes`. Each is added only after such a test. Analytics `userId` and Avatar `autoConnect` only as host opt-ins | `region` added to `v2`, no new id | 0.5.0 |
 | Later | A way for the host to supply H runtime settings (`reachProfileId`, `genieId`, `allowedProjectTypes`), for example a provider that returns `{ ks, settings }` with a fixed allowlist of setting names per widget. Not decided here. Also the A2UI v1.0 migration | | |
 
 ## Consequences
@@ -394,12 +394,12 @@ These need a sandbox partner. They set the entry cap (provisional 20) and decide
 - Whether Genie privileges narrow results, and whether the server checks the client `context_id`. Tried on the NVP1 partner: the Genie server answers, but says it has no tool to list videos, with or without a category context, so no scope effect could be seen. It needs a partner with a Genie set up for its content.
 - Whether Avatar `autoConnect` needs a user gesture. The agent claim is settled: `agentid:<id>` (LIVE-16).
 - ADMIN or USER KS for Content Lab and Agents Widget. Content Lab: a USER KS of an admin user, minted by the provider for the scope, loads the widget and shows its UI (LIVE-13). The Agents Widget could not be fully tried live: its UI loads, but its backend (`agents-manager`) answers 403 without CORS headers from the network of the test machine, curl included, so the agent list never loads.
-- Hosted widgets with a scoped provider: done for Genie, Media Manager, Content Lab, VOD Avatar and Recorder. The provider gets the expected `{ widget, scope }`, the widget shows its UI and no request URL holds the KS (LIVE-11 to LIVE-15, three browsers; the Recorder in Chromium with a fake camera). Genie `ancestorCategoryId`, `virtualEventId` and `entryId`, Agents Widget `categoryId` and VOD Avatar filters stay out: no live check shows the widget or a KS uses them.
+- Hosted widgets with a scoped provider: done for Genie, Media Manager, Content Lab, VOD Avatar and Recorder. The provider gets the expected `{ widget, scope }`, the widget shows its UI and no request URL holds the KS (LIVE-11 to LIVE-15, three browsers; the Recorder in Chromium with a fake camera). Genie `ancestorCategoryId`, `virtualEventId` and `entryId` stay out: the runtime reads no such setting.
 - Second partner with agents (US region, LIVE-16 to LIVE-18, three browsers): the Avatar starts with a USER KS that has `agentid:<id>` and `appInit` answers 200. Genie loads with the guide's `setrole:PLAYBACK_BASE_ROLE,sview:*`. VOD Avatar needs an administrator role: with `PLAYBACK_BASE_ROLE`, `avatar/list` answers 403, with `Publisher Administrator` it answers 200. Roles are per partner, so a host must pick its own role for the VOD Avatar.
 - `widget:1` for the player, and AppToken `sessionPrivileges` behaviour.
 - Whether entitlement privileges limit Analytics and the Media Manager list by category.
 - Whether `sviewplaylist` implies entry view. Done: it does.
-- Whether the live Agents Widget and VOD Avatar runtimes accept the settings the guides list.
+- Whether the live Agents Widget and VOD Avatar runtimes accept the settings the guides list. VOD Avatar: `initialView` and `additionalEsearchFilters` work (LIVE-19, LIVE-20); `allowedProjectTypes` has no effect in runtime 1.60.0. Agents Widget `categoryId`: open. It needs a network that reaches `agents-manager`, where LIVE-21 also runs.
 - Why Genie sends the `cdn` host as `kalturaServerURI` while Content Lab and VOD Avatar send `serviceUrl`.
 - Why two timing tests failed in the Phase 1 sketch (a timer the test helper does not flush, or a real ordering bug).
 
