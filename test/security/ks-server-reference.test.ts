@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { privilegesFor, type KsPolicy } from '../../examples/ks-server/privileges';
-import type { KsRequest } from '../../src/core/ks';
 
 const policy: KsPolicy = { partnerId: 7, privacyContexts: { '123': 'room' } };
-const make = (widget: string, scope: Record<string, unknown>, version: unknown = 1) => ({ widget, version, scope: { partnerId: 7, region: 'nvp1', ...scope } }) as unknown as KsRequest;
+const make = (widget: string, scope: Record<string, unknown>, version: unknown = 1) => ({ widget, version, scope: { partnerId: 7, region: 'nvp1', ...scope } });
 
 describe('reference KS privileges', () => {
   it.each([

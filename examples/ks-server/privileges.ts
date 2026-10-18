@@ -1,5 +1,3 @@
-import type { KsRequest } from '@kaltura/a2ui-react';
-
 /**
  * Reference for the server side of `setKsProvider`: maps one KS request to a privilege string. Runs on
  * your server, never in the browser. It does not call Kaltura. Pass the result to `session.start` as a
@@ -9,6 +7,13 @@ import type { KsRequest } from '@kaltura/a2ui-react';
  * context for, and any widget it has no rule for. It never emits `disableentitlement`, a wildcard
  * `edit`, or an admin KS. See docs/ks-privileges.md for what each privilege does.
  */
+/** What your endpoint receives: the JSON the provider sent. Untrusted, so every field is checked. */
+export interface KsRequestBody {
+  widget: unknown;
+  version: unknown;
+  scope: unknown;
+}
+
 export interface KsPolicy {
   /** The one account this server mints for. */
   partnerId: number;
@@ -34,9 +39,10 @@ const entitlement = (policy: KsPolicy, categoryId: unknown): string => {
   return `enableentitlement,privacycontext:${context}`;
 };
 
-export function privilegesFor(request: KsRequest, policy: KsPolicy): string {
-  const { widget, version, scope } = request as { widget: unknown; version: unknown; scope: Record<string, unknown> };
+export function privilegesFor(request: KsRequestBody, policy: KsPolicy): string {
+  const { widget, version } = request;
   if (version !== 1) throw new Error('unknown version');
+  const scope = request.scope as Record<string, unknown> | null;
   if (typeof scope !== 'object' || scope === null || scope.partnerId !== policy.partnerId) throw new Error('wrong account');
   const only = (...allowed: string[]) => {
     const extra = Object.keys(scope).filter(key => key !== 'partnerId' && key !== 'region' && !allowed.includes(key));
