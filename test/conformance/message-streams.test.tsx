@@ -13,6 +13,7 @@ import { MessageProcessor } from '@a2ui/web_core/v0_9';
 import { A2uiSurface } from '@a2ui/react/v0_9';
 import { installRemote, remote, resetFakes, settle, fakes } from '../components/cases';
 import { setKsProvider } from '../../src/core/ks';
+import { afterQuietPeriod } from '../helpers/render';
 import { messageListValidator, componentValidator, readJson } from './helpers';
 import streamsJson from './fixtures/streams.json';
 
@@ -135,6 +136,7 @@ describe('CONF-11: every stream renders its widget through A2uiSurface', () => {
     async (_name, stream) => {
       const processor = await mount(stream.messages);
       await act(async () => process(processor as never, stream.after!.messages));
+      await afterQuietPeriod();
       await settle();
       check(stream.after!.expect);
     },

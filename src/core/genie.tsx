@@ -43,4 +43,7 @@ function GenieView(props: GenieCoreProps) {
   );
 }
 
-export const GenieCore = withKs('genie', withValidatedProps(withKsProp(KalturaGenieApi.schema), 'Kaltura Genie', GenieView, 'genie'));
+export const GenieCore = withKs('genie', withValidatedProps(withKsProp(KalturaGenieApi.schema), 'Kaltura Genie', GenieView, 'genie'), {
+  schema: KalturaGenieApi.schema,
+  label: 'Kaltura Genie',
+});

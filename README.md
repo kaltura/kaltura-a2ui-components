@@ -201,7 +201,7 @@ The host is the page that embeds the components. Agent output is untrusted: the 
 
 | Rule | What you do |
 |---|---|
-| Supply the KS yourself | Call `setKsProvider(widget => ks)`. It gets the widget name, so you can return a least-privilege KS per widget. [docs/security/ks.md](docs/security/ks.md) |
+| Supply the KS yourself | Call `setKsProvider(widget => ks)`. It gets the widget name and the scope of that instance (`(widget, request)`), so you can return a least-privilege KS per widget and entry. [docs/security/ks.md](docs/security/ks.md) |
 | Limit the accounts | Call `setAllowedPartners` and `setAllowedUiconfs` with your own ids. Default: any id. [docs/host-api.md](docs/host-api.md#allowed-partners-and-uiconfs) |
 | Name your private cloud | Call `setExtraAllowedOrigins` for a private or on-prem Unisphere. [docs/host-integration.md](docs/host-integration.md#unisphere-origins) |
 | Watch errors and events | Call `setErrorHandler` and `setEventHandler`, or send them to the agent. [docs/host-api.md](docs/host-api.md#agent-feedback) |

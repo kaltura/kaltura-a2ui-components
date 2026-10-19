@@ -14,6 +14,8 @@ export const ANALYTICS_REPORT_TYPES = [
   'live',
 ] as const;
 
+export type AnalyticsReportType = (typeof ANALYTICS_REPORT_TYPES)[number];
+
 // No `ks` prop: the analytics app gets its KS from the host provider only,
 // because it is an ADMIN KS.
 export const KalturaAnalyticsApi = {

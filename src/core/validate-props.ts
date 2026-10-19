@@ -1,10 +1,11 @@
 import { createContext, createElement, useContext, useEffect } from 'react';
-import type { ComponentType, FC } from 'react';
+import type { ComponentType, FC, ReactElement } from 'react';
 import { z } from 'zod';
 import { CommonSchemas } from '@a2ui/web_core/v0_9';
-import { isEntryId, isPositiveInt } from './ids';
+import { isCategoryId, isEntryId, isPositiveInt } from './ids';
 import { invalidCode, reportError, ReporterContext, type KalturaErrorCode, type KalturaWidget } from './host-hooks';
 import { refusedIdProp } from './allowed-ids';
+import { isAllowedServerUrl } from './unisphere-loader';
 
 // Core components get resolved props, so the bindings and function calls that the
 // A2UI schemas allow must not appear. Use the schema, minus those two options.
@@ -49,6 +50,9 @@ const FIELD_RULES: Record<string, (value: unknown) => boolean> = {
   // 0 selects the default uiConf. Schemas that need a real id are stricter.
   uiconfId: value => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0,
   entryId: isEntryId,
+  // Category ids. They go into the KS request and into widget settings.
+  categoryId: isCategoryId,
+  contextId: isCategoryId,
   // A KS goes into URLs and widget settings. Reject empty values and control characters.
   ks: value => typeof value === 'string' && value !== '' && !/\p{Cc}/u.test(value),
 };
@@ -124,6 +128,45 @@ export const LoadError: FC<{ widget: KalturaWidget; code?: KalturaErrorCode; chi
 };
 
 /**
+ * The check behind `withValidatedProps`, also run by `withKs` before it calls
+ * the provider. `error` is the element to show for a bad value or a refused
+ * id or `serverUrl`. `pending` means a required prop is still undefined. `extra` runs only on
+ * props that passed the schema. It names props that the widget finds invalid
+ * by its own rules (for example Analytics dates).
+ */
+export function gateProps(
+  schema: z.ZodObject<z.ZodRawShape>,
+  label: string,
+  widget: KalturaWidget,
+  props: object,
+  strict: boolean,
+  extra?: () => string[],
+): { error?: ReactElement; pending: boolean } {
+  const checked = checkProps(schema, props, strict);
+  const invalid = checked.invalid.length || checked.pending ? checked.invalid : (extra?.() ?? []).slice(0, 5);
+  if (invalid.length) {
+    const error = createElement(LoadError, {
+      widget,
+      code: invalidCode(invalid),
+      invalidProps: topLevelProps(schema, invalid),
+      children: `Failed to load ${label}: ${invalidText(invalid)}`,
+    });
+    return { error, pending: false };
+  }
+  if (checked.pending) return { pending: true };
+  const refused = refusedIdProp(props, schema.shape);
+  if (refused) {
+    return { error: createElement(LoadError, { widget, code: 'origin-not-allowed', children: `Failed to load ${label}: ${refused} is not allowed` }), pending: false };
+  }
+  const { serverUrl } = props as { serverUrl?: unknown };
+  if ('serverUrl' in schema.shape && typeof serverUrl === 'string' && !isAllowedServerUrl(serverUrl)) {
+    const children = `Failed to load ${label}: serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)`;
+    return { error: createElement(LoadError, { widget, code: 'origin-not-allowed', children }), pending: false };
+  }
+  return { pending: false };
+}
+
+/**
  * Wraps a core component. Props with a bad value show a plain-text error and
  * the component is never rendered. Props that are still undefined render
  * nothing until they arrive, except under `StrictPendingContext`. `label`
@@ -138,21 +181,9 @@ export function withValidatedProps<P extends object>(
   widget: KalturaWidget,
 ): FC<P> {
   const Validated: FC<P> = props => {
-    const { invalid, pending } = checkProps(schema, props, useContext(StrictPendingContext));
-    if (invalid.length) {
-      return createElement(LoadError, {
-        widget,
-        code: invalidCode(invalid),
-        invalidProps: topLevelProps(schema, invalid),
-        children: `Failed to load ${label}: ${invalidText(invalid)}`,
-      });
-    }
-    if (pending) return null;
-    const refused = refusedIdProp(props, schema.shape);
-    if (refused) {
-      return createElement(LoadError, { widget, code: 'origin-not-allowed', children: `Failed to load ${label}: ${refused} is not allowed` });
-    }
-    return createElement(Inner, props);
+    const { error, pending } = gateProps(schema, label, widget, props, useContext(StrictPendingContext));
+    if (error) return error;
+    return pending ? null : createElement(Inner, props);
   };
   Validated.displayName = `Validated(${Inner.displayName || Inner.name || label})`;
   return Validated;
