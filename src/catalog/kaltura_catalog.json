@@ -11,18 +11,18 @@
     "react": {
       "description": "ESM bundle. React is an external peer. The host provides it. Register kalturaReactCatalog alone (see buildKalturaCatalog). It already holds the basic components. The module imports a second file, the SSR stub at stubCdn. Pin it with stubIntegrity too.",
       "format": "esm",
-      "install": "npm i github:kaltura/kaltura-a2ui-components#__RELEASE_TAG__",
-      "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@__RELEASE_TAG__/dist/kaltura-react.mjs",
-      "integrity": "__REACT_SRI__",
-      "stubCdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@__RELEASE_TAG__/dist/html-element-stub.mjs",
-      "stubIntegrity": "__STUB_SRI__",
+      "install": "npm i github:kaltura/kaltura-a2ui-components#v0.6.0",
+      "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.6.0/dist/kaltura-react.mjs",
+      "integrity": "sha384-B4PTFnaQ4j48d2Vj4WhR+g2WmXL2TYT86wNxmp+rcPGK5V+RWGBXVhUg1qg9v12G",
+      "stubCdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.6.0/dist/html-element-stub.mjs",
+      "stubIntegrity": "sha384-2Uq/XKzmfYnpW8Bd6ZEYRNJgxXAWrZHcZpAu5CTwyoKnHkqgvR+Na3+fVBefzqdw",
       "exports": ["kalturaReactCatalog", "buildKalturaCatalog", "loadKalturaCatalog", "kalturaComponentImpls", "kalturaClientFunctions"]
     },
     "webcomponent": {
       "description": "Self-contained IIFE (React inlined, CSS-in-JS). Drop in via <script> on plain-HTML hosts; registers all Kaltura custom elements on load. Verify with the integrity hash.",
       "format": "iife",
-      "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@__RELEASE_TAG__/dist/kaltura-wc.js",
-      "integrity": "__WC_SRI__",
+      "cdn": "https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.6.0/dist/kaltura-wc.js",
+      "integrity": "sha384-2horo2JwSz52tNZk6W+ssvbKo8iqeY0v8ZObDorFmn+tBiSZHeOFGmXDI8AWS7Mf",
       "crossorigin": "anonymous",
       "customElements": [
         "kaltura-player",
