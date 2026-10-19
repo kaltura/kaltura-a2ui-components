@@ -238,7 +238,7 @@ The backend minting and the widget setting must match. One without the other giv
 
 | Parameter | Source | Class | Enforced by | Phase |
 |---|---|---|---|---|
-| `categoryId` | runtime setting (runtime 1.0.73 reads it, bundle), not sent. Not yet tried live | R | UI. A filter and the default category for new agents | not added |
+| `categoryId` | runtime setting (runtime 1.0.73), not sent. Live (probe, not a test): the trigger "When media is added to a category" opens with the category filled in and its picker disabled | R | UI only. The KS stays ADMIN and the API still lets the user act on any category | not added. It would look like a limit and is not one |
 | agent id | removed in 0.4 | | | |
 | everything else (create, change, delete, REACH spend) | KS type and role | H | KS. An unscoped ADMIN KS is the main risk | |
 
@@ -401,7 +401,7 @@ These need a sandbox partner. They set the entry cap (provisional 20) and decide
 - Whether the page can check a KS it received. No. A v2 KS is encrypted, and `session.get` is SERVICE_FORBIDDEN for every USER KS tested (with and without `PLAYBACK_BASE_ROLE`) and still uses one of the `actionslimit` calls. So the library does not inspect the KS. The host server enforces the scope: `examples/ks-server/privileges.ts` is a tested reference.
 - Whether entitlement is enforced for a members-only entry. Done (LIVE-22, read-only, 2026-10-18): a USER KS of a non-member gets `ENTRY_ID_NOT_FOUND` with `enableentitlement` plus `privacycontext`, and with `sview:*` plus `genieancestorid`. It reads the entry only with `disableentitlement`. Kaltura enforces this, so a Genie privilege is not a limit.
 - Whether `sviewplaylist` implies entry view. Done: it does.
-- Whether the live Agents Widget and VOD Avatar runtimes accept the settings the guides list. VOD Avatar: `initialView` and `additionalEsearchFilters` work (LIVE-19, LIVE-20); `allowedProjectTypes` has no effect in runtime 1.60.0. Agents Widget `categoryId`: open. Not yet tried live.
+- Whether the live Agents Widget and VOD Avatar runtimes accept the settings the guides list. VOD Avatar: `initialView` and `additionalEsearchFilters` work (LIVE-19, LIVE-20); `allowedProjectTypes` has no effect in runtime 1.60.0. Agents Widget `categoryId`: works live as a UI default and lock (see its row), so it is a choice, not a gap.
 - Why Genie sends the `cdn` host as `kalturaServerURI` while Content Lab and VOD Avatar send `serviceUrl`.
 - Why two timing tests failed in the Phase 1 sketch (a timer the test helper does not flush, or a real ordering bug).
 
