@@ -238,7 +238,7 @@ The backend minting and the widget setting must match. One without the other giv
 
 | Parameter | Source | Class | Enforced by | Phase |
 |---|---|---|---|---|
-| `categoryId` | runtime setting (runtime 1.0.73 reads it, bundle), not sent. Live acceptance needs a network that reaches `agents-manager` | R | UI. A filter and the default category for new agents | not added |
+| `categoryId` | runtime setting (runtime 1.0.73 reads it, bundle), not sent. Not yet tried live | R | UI. A filter and the default category for new agents | not added |
 | agent id | removed in 0.4 | | | |
 | everything else (create, change, delete, REACH spend) | KS type and role | H | KS. An unscoped ADMIN KS is the main risk | |
 
@@ -393,7 +393,7 @@ These need a sandbox partner. They set the entry cap (provisional 20) and decide
 - Analytics `categoryId`, `playlistId`, `virtualEventId`: done as route navigations, like `entryId`. Live (LIVE-08): the playlist view opens for the playlist. The category and virtual event routes answer with their own views (an unknown id gives the app's own "not found" box). They are UI-level: a KS with `virtualeventid:<id>` returned the same totals as one without it on eight report types, so no limit was seen. At most one of the four subjects is allowed. The embed's `predefinedFilter` is a UI filter, and this library does not send it.
 - Whether Genie privileges narrow results, and whether the server checks the client `context_id`. Tried on the NVP1 partner: the Genie server answers, but says it has no tool to list videos, with or without a category context, so no scope effect could be seen. It needs a partner with a Genie set up for its content.
 - Whether Avatar `autoConnect` needs a user gesture. The agent claim is settled: `agentid:<id>` (LIVE-16).
-- ADMIN or USER KS for Content Lab and Agents Widget. Content Lab: a USER KS of an admin user, minted by the provider for the scope, loads the widget and shows its UI (LIVE-13). The Agents Widget could not be fully tried live: its UI loads, but its backend (`agents-manager`) answers 403 without CORS headers from the network of the test machine, curl included, so the agent list never loads.
+- ADMIN or USER KS for Content Lab and Agents Widget. Content Lab: a USER KS of an admin user, minted by the provider for the scope, loads the widget and shows its UI (LIVE-13). The Agents Widget loads and lists agents (LIVE-21). It once failed because the component gave the widget an `agentsServiceURI` without `/api/v1`, so the widget called a route that does not exist. The URL now ends in `/api/v1`.
 - Hosted widgets with a scoped provider: done for Genie, Media Manager, Content Lab, VOD Avatar and Recorder. The provider gets the expected `{ widget, scope }`, the widget shows its UI and no request URL holds the KS (LIVE-11 to LIVE-15, three browsers; the Recorder in Chromium with a fake camera). Genie `ancestorCategoryId`, `virtualEventId` and `entryId` stay out: the runtime reads no such setting.
 - Second partner with agents (US region, LIVE-16 to LIVE-18, three browsers): the Avatar starts with a USER KS that has `agentid:<id>` and `appInit` answers 200. Genie loads with the guide's `setrole:PLAYBACK_BASE_ROLE,sview:*`. VOD Avatar needs an administrator role: with `PLAYBACK_BASE_ROLE`, `avatar/list` answers 403, with `Publisher Administrator` it answers 200. Roles are per partner, so a host must pick its own role for the VOD Avatar.
 - `widget:1` for the player, and AppToken `sessionPrivileges` behaviour.
@@ -401,7 +401,7 @@ These need a sandbox partner. They set the entry cap (provisional 20) and decide
 - Whether the page can check a KS it received. No. A v2 KS is encrypted, and `session.get` is SERVICE_FORBIDDEN for every USER KS tested (with and without `PLAYBACK_BASE_ROLE`) and still uses one of the `actionslimit` calls. So the library does not inspect the KS. The host server enforces the scope: `examples/ks-server/privileges.ts` is a tested reference.
 - Whether entitlement is enforced for a members-only entry. Done (LIVE-22, read-only, 2026-10-18): a USER KS of a non-member gets `ENTRY_ID_NOT_FOUND` with `enableentitlement` plus `privacycontext`, and with `sview:*` plus `genieancestorid`. It reads the entry only with `disableentitlement`. Kaltura enforces this, so a Genie privilege is not a limit.
 - Whether `sviewplaylist` implies entry view. Done: it does.
-- Whether the live Agents Widget and VOD Avatar runtimes accept the settings the guides list. VOD Avatar: `initialView` and `additionalEsearchFilters` work (LIVE-19, LIVE-20); `allowedProjectTypes` has no effect in runtime 1.60.0. Agents Widget `categoryId`: open. It needs a network that reaches `agents-manager`, where LIVE-21 also runs.
+- Whether the live Agents Widget and VOD Avatar runtimes accept the settings the guides list. VOD Avatar: `initialView` and `additionalEsearchFilters` work (LIVE-19, LIVE-20); `allowedProjectTypes` has no effect in runtime 1.60.0. Agents Widget `categoryId`: open. Not yet tried live.
 - Why Genie sends the `cdn` host as `kalturaServerURI` while Content Lab and VOD Avatar send `serviceUrl`.
 - Why two timing tests failed in the Phase 1 sketch (a timer the test helper does not flush, or a real ordering bug).
 

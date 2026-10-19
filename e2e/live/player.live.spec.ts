@@ -14,7 +14,7 @@ const adminUserId = process.env.NVP1_ADMIN_USER_ID;
 const agentsPartnerId = Number(process.env.KALTURA_PARTNER_ID);
 const agentsAdminSecret = process.env.KALTURA_ADMIN_SECRET;
 const agentsUserId = process.env.KALTURA_ADMIN_USER_ID;
-const AGENTS_MANAGER = 'https://agents-manager.nvp1.ovp.kaltura.com';
+const AGENTS_MANAGER = 'https://agents-manager.nvp1.ovp.kaltura.com/api/v1';
 const AVATAR_API = 'https://api.avatar.us.kaltura.ai/v1';
 // "MediaSpace Embed Player" on the account, listed with uiConf.list.
 const UICONF_ID = 1000092;
@@ -309,8 +309,7 @@ test('LIVE-10: the provider gets the scope of a playlist player and mints a KS l
 
 // The hosted widgets load from the real Unisphere host of the NVP1 region. Each gets a USER KS of an
 // admin user from the provider, and is found by text that only the loaded widget shows. Not covered:
-// the Agents Widget: its backend (agents-manager) answers 403 without CORS headers from the network
-// of the test machine, so its agent list cannot load here.
+// the Agents Widget, which has its own test (LIVE-21) on the second partner.
 const HOSTED_WIDGETS: { id: string; tag: string; widget: string; props: Record<string, unknown>; scope: Record<string, unknown>; text: string }[] = [
   // The category id is arbitrary: the widget loads with any digits.
   { id: 'LIVE-11', tag: 'kaltura-genie-widget', widget: 'genie', props: { partnerId, uiconfId: UICONF_ID, categoryId: '1' }, scope: { partnerId, categoryId: '1' }, text: 'Ask me anything' },
@@ -400,8 +399,6 @@ test('LIVE-20: VOD Avatar additionalEsearchFilters reach the entry search', asyn
 // The agent list lives on agents-manager. Some networks block it (CloudFront 403), so the test skips there.
 test('LIVE-21: Agents Widget lists the agents of the partner', async ({ live }) => {
   test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
-  const reachable = await fetch(`${AGENTS_MANAGER}/agent/list`, { method: 'POST' }).then((r) => r.status !== 403, () => false);
-  test.skip(!reachable, 'agents-manager is blocked on this network.');
   const calls = await live.useScopedProvider(agentsUserId, async () => mintKs(agentsPartnerId, agentsAdminSecret ?? '', agentsUserId ?? ''));
   const answer = live.page.waitForResponse((r) => r.url() === `${AGENTS_MANAGER}/agent/list`, { timeout: PLAY_TIMEOUT });
   await live.mount('kaltura-agents-widget', { partnerId: agentsPartnerId });

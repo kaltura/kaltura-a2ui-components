@@ -77,7 +77,7 @@ describe('Unisphere runtime contract', () => {
       {
         ks: 'ks-1',
         pid: '1234567',
-        agentsServiceURI: 'https://agents-manager.nvp1.ovp.kaltura.com',
+        agentsServiceURI: 'https://agents-manager.nvp1.ovp.kaltura.com/api/v1',
         kalturaServerURI: 'https://www.kaltura.com',
         analyticsServerURI: 'analytics.kaltura.com',
         hostAppName: 1,
@@ -167,7 +167,7 @@ describe('Unisphere runtime contract', () => {
     (await import('../../src/core/region')).setRegion('irp2');
     const Component = (await import('../../src/core/agents-widget')).AgentsWidgetCore as never;
     await render(Component, { ...props, serverUrl: privateUrl });
-    expect(configs[0].runtimes[0].settings.agentsServiceURI).toBe('https://agents-manager.irp2.ovp.kaltura.com');
+    expect(configs[0].runtimes[0].settings.agentsServiceURI).toBe('https://agents-manager.irp2.ovp.kaltura.com/api/v1');
   });
 });
 
