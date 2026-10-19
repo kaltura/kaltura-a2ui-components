@@ -1,6 +1,6 @@
 {
   "name": "@kaltura/a2ui-react",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": true,
   "description": "Kaltura Experience Components for A2UI: Player, Flashcards, Media Manager, Recorder, Captions Editor, Analytics, Genie, Content Lab, Avatar, VOD Avatar, Agents Widget and Chart. A React catalog for A2UI clients and a self-contained web component bundle for plain HTML pages.",
   "license": "Apache-2.0",
