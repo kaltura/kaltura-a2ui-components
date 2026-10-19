@@ -9,7 +9,7 @@ The agent sends JSON, your page renders the real widget.
 [![e2e](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/e2e.yml/badge.svg)](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/e2e.yml)
 [![licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-blue.svg)](LICENSE)
 
-![A bar chart and flashcards rendered by the Kaltura custom elements](docs/img/examples.png)
+![A Kaltura player, a bar chart and flashcards rendered by the Kaltura custom elements](docs/img/examples.png)
 
 ## How it works
 
