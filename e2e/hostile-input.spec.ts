@@ -1,5 +1,5 @@
-// Hostile input group (plan 6.4). Case numbers match the permanent case list in e2e/README.md.
-// A case that waits for a fix gets the title prefix "[pending SEC-xx]". None are left.
+// Hostile input group. Case numbers match the permanent case list in e2e/README.md.
+// No case carries the "[pending SEC-xx]" title prefix.
 import { test, expect, type Harness } from './fixtures/harness';
 import { ALLOWED_HOSTS, ORIGIN_A, ORIGIN_B } from './fixtures/constants';
 

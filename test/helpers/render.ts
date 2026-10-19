@@ -1,4 +1,4 @@
-// Shared helpers for security and probe tests.
+// Shared helpers for the security and lifecycle tests.
 // Sets IS_REACT_ACT_ENVIRONMENT, mounts a component inside act(), and scans for unsafe DOM.
 import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';

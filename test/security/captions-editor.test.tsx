@@ -4,7 +4,7 @@
 // in a sandboxed iframe that reads its settings from `data-*` attributes.
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { createElement, act } from 'react';
-import { mount } from '../helpers/render';
+import { mount, afterQuietPeriod } from '../helpers/render';
 import { captionsRemote, EDITOR_URL, EDITOR_INIT, EDITOR_INTEGRITY } from '../helpers/captions-remote';
 import { CaptionsEditorCore } from '../../src/core/captions-editor';
 import { setKsProvider } from '../../src/core/ks';
@@ -48,6 +48,34 @@ describe('SEC-10: the editor page request', () => {
   it('SEC-10: no page is requested for bad props', async () => {
     await mount(CaptionsEditorCore, { ...VALID, entryId: '../x' });
     expect(remote.fetches).toEqual([]);
+  });
+});
+
+describe('SEC-07: assetId', () => {
+  it('SEC-07: a valid assetId is one data attribute of the iframe', async () => {
+    const { container } = await mount(CaptionsEditorCore, { ...VALID, assetId: '1_asset123' });
+    await remote.ready();
+    expect(frame(container).getAttribute('data-assetid')).toBe('1_asset123');
+  });
+
+  it.each([undefined, ''])('SEC-07: assetId %j sets no attribute', async assetId => {
+    const { container } = await mount(CaptionsEditorCore, { ...VALID, assetId });
+    await remote.ready();
+    expect(frame(container).hasAttribute('data-assetid')).toBe(false);
+  });
+
+  it.each(['../x', '1_a"b', 'a b', '1_'.padEnd(70, 'a')])('SEC-07: the hostile assetId %j loads no page', async assetId => {
+    const { container } = await mount(CaptionsEditorCore, { ...VALID, assetId });
+    expect([remote.fetches, container.textContent]).toEqual([[], 'Failed to load captions editor: Invalid assetId']);
+  });
+
+  it('SEC-07: a new assetId rebuilds the iframe with the new attribute', async () => {
+    const { container, root } = await mount(CaptionsEditorCore, { ...VALID, assetId: '1_aaa' });
+    await remote.ready();
+    await act(async () => root.render(createElement(CaptionsEditorCore, { ...VALID, assetId: '1_bbb' })));
+    await afterQuietPeriod();
+    await remote.ready(2);
+    expect(frame(container).getAttribute('data-assetid')).toBe('1_bbb');
   });
 });
 

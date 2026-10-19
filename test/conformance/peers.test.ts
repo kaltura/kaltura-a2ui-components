@@ -1,4 +1,4 @@
-// Covers: CONF-14 (plan item 3.3c): the conformance run uses the oldest peers.
+// Covers: CONF-14: the conformance run uses the oldest peers.
 // package.json peers are ranges (both ^0.13.0). The lockfile installs the
 // lowest version each range allows, so every test in this suite is an
 // "oldest peer" run. CI has no "newest peer" run. To try one by hand, run

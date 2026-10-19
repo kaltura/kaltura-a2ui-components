@@ -141,8 +141,8 @@ export { setExtraAllowedOrigins, getExtraAllowedOrigins } from '../../core/unisp
 export { setKsProvider, type KsProvider, type KsRequest, type KsScopeByWidget, type KsWidget } from '../../core/ks';
 // Host options. Never call these from agent output. See docs/host-api.md.
 export { setExtraMediaOrigins } from '../../core/media-url';
-export { setRegion, type KalturaRegion } from '../../core/region';
-export { setAllowedPartners, setAllowedUiconfs, type AllowedIds } from '../../core/allowed-ids';
+export { setRegion, setEnvironments, type KalturaRegion, type KalturaEnvironment } from '../../core/region';
+export { setAllowedPartners, setAllowedUiconfs, setAllowedRegions, type AllowedIds } from '../../core/allowed-ids';
 export {
   setErrorHandler,
   setEventHandler,

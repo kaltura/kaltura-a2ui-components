@@ -4,20 +4,20 @@
 // 1. Every bare import left in the ESM, the IIFE and the .d.ts files a
 //    consumer can load (reachable from the "types" entries in exports) must
 //    name a package in dependencies or peerDependencies. Chart libraries are
-//    inlined, so they are devDependencies; an unreachable .d.ts may still name
+//    inlined, so they are devDependencies; an unreachable .d.ts can name
 //    them.
 // 2. The ESM entry imports in plain Node, with no bundler, and leaves no
 //    HTMLElement stub behind. A control run shows that @a2ui/react alone
 //    still fails there (a2ui#3158, ADR 0007).
 // 3. The web component entry runs in a bare jsdom window and registers every
 //    custom element listed in the catalog.
-// 4. QA-08: with the peers installed there is exactly one copy of each shared
+// 4. with the peers installed there is exactly one copy of each shared
 //    library, and the host's `Catalog` class is the one the ESM entry uses
 //    (an inlined second copy would break `instanceof`).
 // 5. A strict TypeScript consumer compiles against the shipped .d.ts files
 //    (strict, skipLibCheck false): host options, toClientError, a bad region
 //    code and PlayerCoreProps.
-// 6. QA-08: a host without the peers, or with a conflicting @a2ui/react, gets a
+// 6. a host without the peers, or with a conflicting @a2ui/react, gets a
 //    clear npm message (`npm ls` "missing", or an ERESOLVE error that names
 //    the peer), and the ESM entry fails on import with the package name.
 import { execFileSync } from 'node:child_process';
@@ -90,7 +90,7 @@ try {
   // @a2ui/markdown-it 0.2.2 needs web_core ^0.14.0, while @a2ui/react 0.13.0 still accepts it. Pinned until upstream fixes the range.
   install(consumer, [tarball, ...peers, '@a2ui/markdown-it@0.2.1', `@types/react@${pkg.devDependencies['@types/react']}`]);
 
-  // QA-08: one copy of every shared library, so one context and one zod.
+  // one copy of every shared library, so one context and one zod.
   const tree = run('npm', ['ls', '--all', '--parseable'], consumer).split('\n');
   for (const name of ['@a2ui/react', '@a2ui/web_core', 'zod']) {
     const copies = tree.filter((line) => line.endsWith(`/node_modules/${name}`));
@@ -113,10 +113,10 @@ try {
   }
 
   // Control: without the stub, @a2ui/react 0.13.0 fails in Node. If it loads,
-  // upstream fixed a2ui#3158: remove the stub (see ADR 0007).
+  // upstream fixed a2ui#3158. Remove the stub (see ADR 0007).
   try {
     run(process.execPath, ['--input-type=module', '-e', "await import('@a2ui/react/v0_9')"], consumer);
-    console.warn('NOTE @a2ui/react imports in plain Node without the stub. a2ui#3158 looks fixed: remove src/adapters/react/html-element-stub.ts (ADR 0007).');
+    console.warn('NOTE @a2ui/react imports in plain Node without the stub. a2ui#3158 is fixed. Remove src/adapters/react/html-element-stub.ts (ADR 0007).');
   } catch (error) {
     if (!/HTMLElement is not defined/.test(String(error.stderr))) {
       fail(`@a2ui/react failed in Node for a reason other than a2ui#3158: ${String(error.stderr).split('\n').find((l) => /Error/.test(l)) ?? error}`);
@@ -170,7 +170,7 @@ export const props: PlayerCoreProps = { partnerId: 1, uiconfId: 2, entryId: '0_a
     fail(`A strict TypeScript consumer failed to compile:\n${String(error.stdout ?? error).split('\n').slice(0, 12).join('\n')}`);
   }
 
-  // QA-08: a host that skipped the peers (npm >= 7 installs them unless told
+  // a host that skipped the peers (npm >= 7 installs them unless told
   // not to) sees the gap in `npm ls`, and the import names the package.
   const bare = join(work, 'no-peers');
   install(bare, ['--legacy-peer-deps', tarball]);
@@ -192,7 +192,7 @@ export const props: PlayerCoreProps = { partnerId: 1, uiconfId: 2, entryId: '0_a
     }
   }
 
-  // QA-08: a host on another @a2ui/react minor gets an install error that
+  // a host on another @a2ui/react minor gets an install error that
   // names the peer, instead of a second copy of the renderer.
   let conflict = '';
   try {

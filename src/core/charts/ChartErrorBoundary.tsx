@@ -20,7 +20,7 @@ export class ChartErrorBoundary extends Component<Props, State> {
     return { hasError: true };
   }
 
-  // The thrown error may hold data values: report fixed text only.
+  // The thrown error can hold data values: report fixed text only.
   componentDidCatch() {
     reportError('render-failed', 'chart', 'Unable to render chart.', this.context);
   }

@@ -1,7 +1,7 @@
 // Asserts on dist/ after `npm run build`. Exit 1 if any rule fails.
 //
 // CHECK_BUNDLE_KNOWN_FAILURES=1 turns the rules listed in KNOWN_FAILURES into
-// warnings so CI can stay green until the fix lands. Default is strict.
+// warnings. Default is strict.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,7 +10,7 @@ import { NOTICES_FILE, bundledPackages, entryHeader } from './gen-notices.mjs';
 const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 const bundles = { esm: 'kaltura-react.mjs', iife: 'kaltura-wc.js' };
 
-// Rule ids that may fail while a fix is pending. Remove each when fixed.
+// Rule ids that CHECK_BUNDLE_KNOWN_FAILURES=1 turns into warnings. Empty by default.
 const KNOWN_FAILURES = new Set();
 const allowKnown = process.env.CHECK_BUNDLE_KNOWN_FAILURES === '1';
 
@@ -41,7 +41,7 @@ if (sources.iife !== undefined) {
   }
 }
 
-// QA-08 (D4, plan 3.2): the ESM keeps @a2ui/react, @a2ui/web_core and zod external, so
+// The ESM keeps @a2ui/react, @a2ui/web_core and zod external, so
 // the host supplies one copy of each (one context, one zod, one instanceof).
 // The IIFE stays self-contained. The source maps list every bundled file, so
 // they show exactly what was inlined, including `createContext` from

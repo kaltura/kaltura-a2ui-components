@@ -1,5 +1,4 @@
-// Security regression files that are written but not yet green.
-// A fix removes its entry here in the same change. Must be empty before v0.1.5.
-// A file with any red test stays listed until its last red test is fixed.
+// Security test files that are excluded from the run until their fix lands.
+// The list is empty. QA-18 in test/docs/traceability.test.ts keeps it empty.
 export const PENDING: string[] = [
 ];

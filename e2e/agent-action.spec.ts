@@ -25,7 +25,7 @@ test.beforeAll(async () => {
     plugins: [
       {
         name: 'agent-action-entry',
-        // Vite may hand the lib entry over as an absolute path.
+        // Vite hands the lib entry over as an absolute path.
         resolveId: id => (id.endsWith(ENTRY) ? `\0${ENTRY}` : null),
         load: id =>
           id === `\0${ENTRY}`

@@ -10,7 +10,7 @@ What are you trying to do? What is hard today?
 
 ## Proposal
 
-What should change?
+Describe the change you want.
 
 ## Alternatives
 

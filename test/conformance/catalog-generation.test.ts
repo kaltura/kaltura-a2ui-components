@@ -1,4 +1,4 @@
-// Covers: CONF-06..08 (plan item 3.3c): src/catalog/kaltura_catalog.json equals
+// Covers: CONF-06..08: src/catalog/kaltura_catalog.json equals
 // what scripts/gen-catalog.mjs builds from the zod schemas in src/schemas, and
 // the places where it differs on purpose are pinned.
 //
@@ -85,8 +85,8 @@ describe('CONF-07: the generator notices drift (so the test above is not vacuous
   });
 
   it('CONF-07: a required prop made optional leaves the required list', () => {
-    const next = generator.generateCatalog(catalog, [player({ ...shape, entryId: shape.entryId.optional() }), ...others]);
-    expect(ownBlock(next, 'KalturaPlayer').required).not.toContain('entryId');
+    const next = generator.generateCatalog(catalog, [player({ ...shape, uiconfId: shape.uiconfId.optional() }), ...others]);
+    expect(ownBlock(next, 'KalturaPlayer').required).not.toContain('uiconfId');
   });
 
   it('CONF-07: an enum change is copied', () => {
@@ -113,7 +113,7 @@ describe('CONF-08: differences between zod and the catalog are on purpose', () =
     expect(Object.keys(generator.KEPT_FROM_CATALOG)).toEqual([]);
   });
 
-  it('CONF-08: each kept prop still differs from what zod gives (a stale entry should be removed)', () => {
+  it('CONF-08: each kept prop still differs from what zod gives (remove a stale entry)', () => {
     const strict = generator.generateCatalog(catalog, APIS, {});
     const stale = Object.keys(generator.KEPT_FROM_CATALOG).filter(key => {
       const [component, prop] = key.split('.');
@@ -137,6 +137,6 @@ describe('CONF-08: differences between zod and the catalog are on purpose', () =
   });
 
   it('CONF-08: the list of intended differences is this one', () => {
-    expect(generator.INTENTIONAL_DIFFERENCES).toHaveLength(4);
+    expect(generator.INTENTIONAL_DIFFERENCES).toHaveLength(5);
   });
 });

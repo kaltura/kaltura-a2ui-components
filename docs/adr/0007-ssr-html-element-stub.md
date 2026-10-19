@@ -2,7 +2,7 @@
 
 Status: accepted (2026-10-12)
 
-Upstream: [a2ui-project/a2ui#3158](https://github.com/a2ui-project/a2ui/issues/3158), open, no fixed version yet. A fix with a test is proposed in [#3197](https://github.com/a2ui-project/a2ui/pull/3197). Code: `src/adapters/react/html-element-stub.ts`, `src/adapters/react/index.ts`, `vite.config.ts`. Tests: `test/conformance/ssr-import.test.ts` (CONF-17). Checks: `scripts/check-bundle.mjs` (rule ESM-SSR-STUB), `scripts/check-consumer.mjs`.
+Upstream: [a2ui-project/a2ui#3158](https://github.com/a2ui-project/a2ui/issues/3158) (the bug) and [#3197](https://github.com/a2ui-project/a2ui/pull/3197) (a proposed fix). Code: `src/adapters/react/html-element-stub.ts`, `src/adapters/react/index.ts`, `vite.config.ts`. Tests: `test/conformance/ssr-import.test.ts` (CONF-17). Checks: `scripts/check-bundle.mjs` (rule ESM-SSR-STUB), `scripts/check-consumer.mjs`.
 
 ## Context
 
@@ -47,5 +47,5 @@ CONF-17 fails when the installed `@a2ui/react` imports in Node on its own, and `
 2. Delete `src/adapters/react/html-element-stub.ts` and its two lines in `src/adapters/react/index.ts`.
 3. Delete the `codeSplitting` and `chunkFileNames` lines in `vite.config.ts`.
 4. Remove `dist/html-element-stub.mjs` from `package.json` `sideEffects`, `.size-limit.json`, `CDN_FILES` in `scripts/release-hashes.mjs` and the release attestation in `.github/workflows/release.yml`, and update `test/release/`.
-5. Delete the ESM-SSR-STUB rule in `scripts/check-bundle.mjs`, the control run in `scripts/check-consumer.mjs` and `test/conformance/ssr-import.test.ts`. Keep the check-consumer probe that the ESM imports in Node.
+5. Delete the ESM-SSR-STUB rule in `scripts/check-bundle.mjs`, the control run in `scripts/check-consumer.mjs` and `test/conformance/ssr-import.test.ts`. Keep the `check-consumer` check that the ESM imports in Node.
 6. Mark this ADR superseded.

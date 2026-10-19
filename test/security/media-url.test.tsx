@@ -1,5 +1,5 @@
 // Covers: SEC-05 (a KS in the data model combined with a basic Image, Video or
-// AudioPlayer URL). Plan item 3.1: buildKalturaCatalog restricts their `url` to
+// AudioPlayer URL). buildKalturaCatalog restricts their `url` to
 // Kaltura hosts plus origins the host adds with setExtraMediaOrigins.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act } from 'react';
@@ -186,8 +186,8 @@ describe('SEC-05: the shipped catalogs guard the basic media components', () => 
   });
 });
 
-// 0.1.x told hosts to register basicCatalog next to the Kaltura catalog. The
-// agent picks the catalog by id, so it could pick the plain basic one.
+// Hosts may register basicCatalog next to the Kaltura catalog. The agent picks
+// the catalog by id, so it can pick the plain basic one.
 const BOTH: SurfaceOptions = { registered: [kalturaReactCatalog, basicCatalog] };
 
 describe('SEC-05: a host that also registers basicCatalog', () => {

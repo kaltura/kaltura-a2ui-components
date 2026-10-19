@@ -1,5 +1,5 @@
-// Covers: SEC-08 (the avatar loaded a `latest` SDK script with no SRI hash).
-// The avatar now loads through the allowlisted Unisphere loader and the
+// Covers: SEC-08 (the avatar loads no SDK script).
+// The avatar loads through the allowlisted Unisphere loader and the
 // embeds API. There is no script tag, the KS comes from the host provider
 // only, and errors are fixed text.
 import { describe, it, expect, vi, afterEach } from 'vitest';

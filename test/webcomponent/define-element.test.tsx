@@ -1,5 +1,4 @@
 // Covers: QA-01 / SEC-17 / QA-17 (defineKalturaElement helper).
-// Green since plan item 2.1.
 import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { act, createElement, useState } from 'react';
 import { createRoot } from 'react-dom/client';

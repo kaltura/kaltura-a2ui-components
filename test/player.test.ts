@@ -6,7 +6,7 @@ import { playerRemote, loadPlayer, scriptUrl, type PlayerRemote } from './helper
 
 const BASE_PROPS = {
   partnerId: 1234567,
-  uiconfId: 47011143,
+  uiconfId: 7654321,
   entryId: '1_abc123',
 };
 
@@ -40,7 +40,7 @@ describe('PlayerCore script and setup', () => {
     expect([remote.created[0].config, holder.id]).toEqual([
       {
         targetId: holder.id,
-        provider: { partnerId: 1234567, uiConfId: 47011143, useHeaderForKs: true },
+        provider: { partnerId: 1234567, uiConfId: 7654321, useHeaderForKs: true },
         playback: {},
       },
       expect.stringMatching(/^kaltura-player-[0-9a-f-]{36}$/),
@@ -60,7 +60,7 @@ describe('PlayerCore script and setup', () => {
 
   it('puts the ks prop in the provider config', async () => {
     await render({ ...BASE_PROPS, ks: 'djJ8MTIzNDU2N3w' });
-    expect(remote.created[0].config.provider).toEqual({ partnerId: 1234567, uiConfId: 47011143, ks: 'djJ8MTIzNDU2N3w', useHeaderForKs: true });
+    expect(remote.created[0].config.provider).toEqual({ partnerId: 1234567, uiConfId: 7654321, ks: 'djJ8MTIzNDU2N3w', useHeaderForKs: true });
   });
 
   it('passes autoplay and muted when they are true', async () => {

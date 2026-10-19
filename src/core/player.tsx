@@ -14,8 +14,12 @@ export interface PlayerCoreProps {
   partnerId: number;
   /** Player (uiConf) ID. */
   uiconfId: number;
-  /** Entry to play, such as `0_abc123`. */
-  entryId: string;
+  /** Entry to play, such as `0_abc123`. Set this or `playlistId`, not both. */
+  entryId?: string;
+  /** Manual playlist to play, such as `1_abc123`. Set this or `entryId`, not both. `startTime` and `clipTo` do not apply. */
+  playlistId?: string;
+  /** Region code or host-registered environment. Default: the `setRegion` value. */
+  region?: string;
   /** Only for protected entries. The host KS provider is used first. */
   ks?: string;
   /** Start playback on load. Browsers need `muted` too. */
@@ -37,7 +41,9 @@ export interface PlayerCoreProps {
 export interface PlayerEmbedProps {
   partnerId: number;
   uiconfId: number;
-  entryId: string;
+  entryId?: string;
+  playlistId?: string;
+  region?: string;
   ks?: string;
   autoplay?: boolean;
   muted?: boolean;
@@ -49,9 +55,19 @@ export interface PlayerEmbedProps {
   style?: CSSProperties;
 }
 
-/** The first prop that cannot be used, or `undefined`. */
-const invalidProp = (p: Pick<PlayerEmbedProps, 'partnerId' | 'uiconfId' | 'entryId'>): string | undefined =>
-  !isPositiveInt(p.partnerId) ? 'partnerId' : !isPositiveInt(p.uiconfId) ? 'uiconfId' : !isEntryId(p.entryId) ? 'entryId' : undefined;
+/** The first prop that cannot be used, or `undefined`. Exactly one of `entryId` and `playlistId` is needed. */
+const invalidProp = (p: Pick<PlayerEmbedProps, 'partnerId' | 'uiconfId' | 'entryId' | 'playlistId'>): string | undefined =>
+  !isPositiveInt(p.partnerId)
+    ? 'partnerId'
+    : !isPositiveInt(p.uiconfId)
+      ? 'uiconfId'
+      : p.entryId !== undefined && p.playlistId !== undefined
+        ? 'playlistId'
+        : (p.entryId === undefined && p.playlistId === undefined) || (p.entryId !== undefined && !isEntryId(p.entryId))
+          ? 'entryId'
+          : p.playlistId !== undefined && !isEntryId(p.playlistId)
+            ? 'playlistId'
+            : undefined;
 
 /**
  * Plays an entry with the Kaltura Player script. The KS goes only into the
@@ -59,7 +75,7 @@ const invalidProp = (p: Pick<PlayerEmbedProps, 'partnerId' | 'uiconfId' | 'entry
  * there is no iframe sandbox (docs/adr/0008).
  */
 export function PlayerEmbed(props: PlayerEmbedProps) {
-  const { partnerId, uiconfId, entryId, ks, autoplay, muted, seekFrom, clipTo, widget } = props;
+  const { partnerId, uiconfId, entryId, playlistId, region, ks, autoplay, muted, seekFrom, clipTo, widget } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const invalid = invalidProp(props);
   const refused = invalid ? undefined : refusedIdProp(props);
@@ -85,7 +101,7 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
       player = undefined;
     };
 
-    loadPlayerScript(partnerId, uiconfId)
+    loadPlayerScript(partnerId, uiconfId, region)
       .then(api => {
         if (cancelled) return;
         player = api.setup({
@@ -97,13 +113,14 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
             ...(muted !== undefined ? { muted } : {}),
           },
         });
-        if (!player?.loadMedia || !player.addEventListener) throw new Error();
+        if (!player?.addEventListener || (playlistId !== undefined ? !player.loadPlaylist : !player.loadMedia)) throw new Error();
         // Remote error text can hold the KS or markup. Never report it.
         player.addEventListener(player.Event?.ERROR ?? 'error', () => {
           if (!cancelled) reportError('render-failed', widget, 'Player error', reporter);
         });
-        return player.loadMedia(
-          { entryId },
+        if (playlistId !== undefined) return player.loadPlaylist?.({ playlistId });
+        return player.loadMedia?.(
+          { entryId: entryId ?? '' },
           {
             ...(seekFrom !== undefined ? { seekFrom: Math.round(seekFrom) } : {}),
             ...(clipTo !== undefined ? { clipTo: Math.round(clipTo) } : {}),
@@ -128,7 +145,7 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
       destroy();
       container.replaceChildren();
     };
-  }, [partnerId, uiconfId, entryId, ks, autoplay, muted, seekFrom, clipTo, widget, invalid, refused, reporter]);
+  }, [partnerId, uiconfId, entryId, playlistId, region, ks, autoplay, muted, seekFrom, clipTo, widget, invalid, refused, reporter]);
 
   if (invalid) return <LoadError widget={widget}>{`Failed to load player: Invalid ${invalid}`}</LoadError>;
   if (refused) return <LoadError widget={widget} code="origin-not-allowed">{`Failed to load player: ${refused} is not allowed`}</LoadError>;
@@ -139,9 +156,10 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
 const MAX_LABEL_LENGTH = 1000;
 
 const PlayerView: FC<PlayerCoreProps> = (props) => {
+  const id = props.entryId ?? props.playlistId;
   const title = props.entryName
-    ? `${props.entryId} — ${props.entryName.slice(0, MAX_LABEL_LENGTH)}`
-    : props.entryId;
+    ? `${id} — ${props.entryName.slice(0, MAX_LABEL_LENGTH)}`
+    : id;
 
   const description = props.entryDescription?.slice(0, MAX_LABEL_LENGTH).trim() ?? '';
 
@@ -151,6 +169,8 @@ const PlayerView: FC<PlayerCoreProps> = (props) => {
         partnerId={props.partnerId}
         uiconfId={props.uiconfId}
         entryId={props.entryId}
+        playlistId={props.playlistId}
+        region={props.region}
         ks={props.ks}
         autoplay={props.autoplay}
         muted={props.muted}

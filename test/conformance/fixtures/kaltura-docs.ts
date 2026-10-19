@@ -1,6 +1,6 @@
-// What the Kaltura guides say, next to what our code does (plan item 3.3c).
+// What the Kaltura guides say, next to what our code does.
 // The Player and the Captions editor have no URL row: they build no URL any more (ADR 0008).
-// Their guide iframe embeds are listed in KNOWN_DIVERGENCES as `integration`.
+// Their guide iframe embeds are listed in DOCUMENTED_DIFFERENCES as `integration`.
 // Read on 2026-10-12. Guide URLs:
 //   Player        https://kaltura.md/KALTURA_PLAYER_EMBED_GUIDE/
 //   Captions      https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/
@@ -8,13 +8,12 @@
 //   Recorder      https://kaltura.md/KALTURA_EXPRESS_RECORDER_API/
 //   Unisphere     https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/
 //   Session (KS)  https://kaltura.md/KALTURA_SESSION_GUIDE/
-// The Unisphere widget and runtime names were also checked against the live
-// manifest, https://unisphere.nvp1.ovp.kaltura.com/v1/runtime.json (GET only).
+// The Unisphere widget and runtime names match the manifest at
+// https://unisphere.nvp1.ovp.kaltura.com/v1/runtime.json.
 //
-// `guide` is what the guide says. `ours` is what the code does today. Where they
-// differ, the row is listed in KNOWN_DIVERGENCES with the finding or decision that
-// owns it. The test pins both sides: a code change that fixes a divergence makes
-// the test ask you to remove the entry.
+// `guide` is what the guide says. `ours` is what the code does. A row that
+// differs is listed in DOCUMENTED_DIFFERENCES with the reason. The test checks
+// both sides. When the code starts to match the guide, remove the entry.
 
 export interface UrlRow {
   /** Component name in the catalog. */
@@ -97,11 +96,11 @@ export const WIDGET_ROWS: WidgetRow[] = [
 /** The Unisphere loader the guide documents for the US region. */
 export const GUIDE_LOADER_URL = 'https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js';
 
-/** Where the code and the guide differ today. Each key is `<component>:<aspect>`. */
-export const KNOWN_DIVERGENCES: Record<string, string> = {
+/** Where the code and the guide differ on purpose. Each key is `<component>:<aspect>`. */
+export const DOCUMENTED_DIFFERENCES: Record<string, string> = {
   'KalturaPlayer:integration': 'The guide shows an iframe embed with the KS in the URL. We load the embedPlaykitJs script and pass the KS in the player config with useHeaderForKs. See docs/adr/0008.',
   'KalturaCaptionsEditor:integration': 'The guide shows an iframe with pid, ks and entryid in the URL. We load embed.php into a blob URL iframe and set data-* attributes. See docs/adr/0008.',
-  'KalturaMediaManager:runtime': 'We pass runtimeName kaltura-media-manager (live manifest, v1.12.0). The guide lists kaltura-items-media-manager, but its onRowSelected cannot be subscribed to in the live loader (v1.26.0), so a table has no way to report a selection. Checked live on 2026-10-13. Needs the Media Manager team.',
+  'KalturaMediaManager:runtime': 'The code passes runtimeName kaltura-media-manager, the runtime that takes `context` and `rowActions` and reports row selection. The guide lists kaltura-items-media-manager.',
 };
 
 /** KS privileges the guides name. Used by docs/ks-privileges.md, checked by the docs test. */

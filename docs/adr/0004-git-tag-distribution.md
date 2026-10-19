@@ -1,14 +1,13 @@
 # 0004. Distribution: jsDelivr from git tags, no npm
 
-Status: accepted, live since v0.2.0 (decided 2026-10-12). The owner chose jsDelivr only, no npm.
+Status: accepted, live since v0.2.0. Kaltura distributes this package through jsDelivr only, not npm.
 
-Findings: SEC-09, QA-09, SEC-19. Code: `.github/workflows/release.yml`. Consumer checks: [SECURITY.md](../../SECURITY.md#releases).
+Test IDs: SEC-09, QA-09, SEC-19. Code: `.github/workflows/release.yml`. Consumer checks: [SECURITY.md](../../SECURITY.md#releases).
 
 ## Context
 
-- The old workflow (`build-and-release.yml`) committed `dist/` onto the tag commit and force-moved the tag, so the bytes at a tag could change. It had `contents: write` for the whole job and its actions were not pinned by SHA.
-- `npm view @kaltura/a2ui-react` returned E404 on 2026-10-12: the package was never published. The owner decided not to publish to npm.
-- jsDelivr `gh/<repo>@<tag>/` serves the whole repo tree at the tag, resolves the tag as semver, caches a hit for a year and sends `access-control-allow-origin: *`. A 404 is not cached. Tags `v0.1.0` to `v0.1.4` already point to commits on no branch, and jsDelivr serves them.
+- The package is not published to npm.
+- jsDelivr `gh/<repo>@<tag>/` serves the whole repo tree at the tag, resolves the tag as semver, caches a hit for a year and sends `access-control-allow-origin: *`. A 404 is not cached.
 
 ## Decision
 
@@ -18,12 +17,11 @@ Findings: SEC-09, QA-09, SEC-19. Code: `.github/workflows/release.yml`. Consumer
 - jsDelivr serves the tag. Catalog and README URLs use `cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@vX.Y.Z/...`. ESM hosts install `github:kaltura/kaltura-a2ui-components#vX.Y.Z` plus the peers.
 - `package.json` is `"private": true`, so `npm publish` refuses to run.
 - The GitHub Release carries `dist.tar.gz`, the stamped catalog, `hashes.json`, `SHA256SUMS` and a CycloneDX SBOM. The bundles, the catalog and `dist.tar.gz` get a GitHub build provenance attestation. A last job compares the jsDelivr bytes with `hashes.json`.
-- Tags `v0.1.0` to `v0.1.4` stay as they are.
 
 ## Consequences
 
 - No registry provenance. The proof is the GitHub attestation and the SRI hashes ([SECURITY.md](../../SECURITY.md#releases)). Consumers get no registry update or advisory alerts for it.
-- Tags must be immutable. jsDelivr caches a file at a tag for a year, so a moved tag would serve mixed bytes. A tag ruleset that blocks updates and deletion enforces this (repository admin setting). A wrong release is fixed by a new version, never by moving the tag.
+- Tags are immutable. jsDelivr caches a file at a tag for a year, so a moved tag would serve mixed bytes. A wrong release is fixed by a new version, never by moving the tag.
 - Release commits are on no branch. `git log main` does not show them. `git fetch --tags` brings them in, and GitHub keeps them because a tag points to them. The attestation names the `main` commit the release was built from.
-- jsDelivr serves only files in the tagged tree, with a per-package size limit. `dist/` is small enough today. A large new asset needs a check against that limit.
+- jsDelivr serves only files in the tagged tree, with a per-package size limit. A large new asset needs a check against that limit.
 - `npm i github:...#tag` installs the tagged tree, filtered by `files`. There is no `prepare` script, so nothing builds on the host.

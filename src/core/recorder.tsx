@@ -5,7 +5,7 @@ import { KalturaRecorderApi } from '../schemas/recorder';
 import { checkProps, invalidText, StrictPendingContext, topLevelProps } from './validate-props';
 import { withKs, withKsProp } from './ks';
 import { emitEvent, invalidCode, KalturaFailure, reportError, ReporterContext } from './host-hooks';
-import { kalturaHosts } from './region';
+import { resolveRegion } from './region';
 import { isEntryId } from './ids';
 import { refusedIdProp } from './allowed-ids';
 import { loadRecorderScript, type ExpressRecorderHandle } from './recorder-script';
@@ -15,6 +15,8 @@ export interface RecorderCoreProps {
   partnerId: number;
   /** Kaltura Session. The host KS provider is used first. */
   ks: string;
+  /** Region code or host-registered environment name. Default: the host region. */
+  region?: string;
   /** Player (uiConf) ID that loads the recorded entry. */
   uiconfId: number;
   /** Name of the new entry. */
@@ -37,14 +39,14 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const strict = useContext(StrictPendingContext);
   const reporter = useContext(ReporterContext);
-  const { partnerId, ks, uiconfId, entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime } = props;
+  const { partnerId, ks, region, uiconfId, entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime } = props;
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     // The error goes inside the container, so the shared wrapper is not used here.
     const optional = { entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime };
-    const { invalid, pending } = checkProps(RUNTIME_SCHEMA, { partnerId, ks, uiconfId, ...optional }, strict);
+    const { invalid, pending } = checkProps(RUNTIME_SCHEMA, { partnerId, ks, region, uiconfId, ...optional }, strict);
     if (invalid.length) {
       renderLoadError(container, 'recorder', new KalturaFailure(invalidCode(invalid), invalidText(invalid), topLevelProps(RUNTIME_SCHEMA, invalid)), 'recorder', reporter);
       return () => {
@@ -76,10 +78,10 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
       recorder = undefined;
     };
 
-    const hosts = kalturaHosts();
-    loadRecorderScript()
+    loadRecorderScript(undefined, region)
       .then(api => {
         if (cancelled) return;
+        const { hosts } = resolveRegion(region);
         recorder = api.create(id, {
           ks,
           // The script adds /api_v3 itself.
@@ -121,7 +123,7 @@ const RecorderView: FC<RecorderCoreProps> = (props) => {
       destroy();
       container.replaceChildren();
     };
-  }, [partnerId, ks, uiconfId, entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime, strict, reporter]);
+  }, [partnerId, ks, region, uiconfId, entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime, strict, reporter]);
 
   return (
     <div

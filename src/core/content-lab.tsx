@@ -3,7 +3,7 @@ import { KalturaContentLabApi } from '../schemas/content-lab';
 import { withValidatedProps } from './validate-props';
 import { withKs, withKsProp } from './ks';
 import { isEntryId } from './ids';
-import { kalturaHosts, regionOf } from './region';
+import { resolveRegion } from './region';
 
 export interface ContentLabCoreProps {
   /** Kaltura partner (account) ID. */
@@ -12,6 +12,8 @@ export interface ContentLabCoreProps {
   ks: string;
   /** Unisphere URL. Defaults to the Unisphere host of the region. Only Kaltura hosts and `setExtraAllowedOrigins` are accepted. */
   serverUrl?: string;
+  /** Region code or host-registered environment name. Default: the region of `serverUrl`, else the `setRegion` value. */
+  region?: string;
   /** Player (uiConf) ID for the video preview. */
   uiconfId: number;
   /** Entry that Content Lab opens. */
@@ -40,6 +42,7 @@ function ContentLabView(props: ContentLabCoreProps) {
       partnerId={props.partnerId}
       ks={props.ks}
       serverUrl={props.serverUrl}
+      region={props.region}
       widgetName="unisphere.widget.content-lab"
       runtimeName="application"
       visualType="drawer"
@@ -48,7 +51,7 @@ function ContentLabView(props: ContentLabCoreProps) {
         ks: props.ks,
         pid: String(props.partnerId),
         uiconfId: String(props.uiconfId),
-        kalturaServerURI: kalturaHosts(regionOf(props.serverUrl ?? '')).serviceUrl,
+        kalturaServerURI: resolveRegion(props.region, props.serverUrl).hosts.serviceUrl,
         analyticsServerURI: 'analytics.kaltura.com',
         // 0 is KMC. With 1 (KMS) the menu hides captions unless reachConfig is set.
         hostAppName: 0,

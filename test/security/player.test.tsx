@@ -7,6 +7,8 @@ import { createElement, act, StrictMode } from 'react';
 import { mount } from '../helpers/render';
 import { playerRemote, loadPlayer, scriptUrl, ERROR_EVENT } from '../helpers/player-remote';
 import type { KalturaError } from '../../src/core/host-hooks';
+import { checkProps } from '../../src/core/validate-props';
+import { KalturaPlayerApi } from '../../src/schemas/player';
 
 const HOST_KS = 'djJ8MTIzfHVzZXIta3MtZnJvbS1ob3N0';
 const VALID = { partnerId: 123, uiconfId: 456, entryId: '0_abc12345' };
@@ -76,7 +78,7 @@ describe('SEC-10: the script comes from one fixed place', () => {
     setRegion('irp2');
     await mount(PlayerCore, VALID);
     await remote.ready();
-    expect(remote.urls).toEqual(['https://api.eu.kaltura.com/p/123/embedPlaykitJs/partner_id/123/uiconf_id/456']);
+    expect(remote.urls).toEqual(['https://api.irp2.ovp.kaltura.com/p/123/embedPlaykitJs/partner_id/123/uiconf_id/456']);
   });
 
   it('SEC-10: many players of one uiconf and remounts load the script once', async () => {
@@ -137,6 +139,58 @@ describe('SEC-10: setup config and loadMedia', () => {
     await mount(PlayerCore, VALID);
     await remote.ready(2);
     expect(new Set(remote.created.map(created => created.config.targetId)).size).toBe(2);
+  });
+});
+
+describe('SEC-11: playlistId', () => {
+  const PLAYLIST = { partnerId: 123, uiconfId: 456, playlistId: '1_play1234' };
+
+  it('SEC-11: a playlist loads with loadPlaylist and not loadMedia', async () => {
+    const { PlayerCore } = await setup();
+    await mount(PlayerCore, PLAYLIST);
+    await remote.ready();
+    expect([remote.log, remote.created[0].loads]).toEqual([['setup', 'loadPlaylist'], [{ info: { playlistId: '1_play1234' }, options: undefined }]]);
+  });
+
+  it.each([
+    ['both ids', { ...PLAYLIST, entryId: '0_abc12345' }, 'playlistId'],
+    ['a hostile playlistId', { ...PLAYLIST, playlistId: '../x' }, 'playlistId'],
+    ['a playlistId with a quote', { ...PLAYLIST, playlistId: '1_a"b' }, 'playlistId'],
+    ['an empty entryId and a playlistId', { ...PLAYLIST, entryId: '' }, 'playlistId'],
+    ['an empty playlistId and an entryId', { ...VALID, playlistId: '' }, 'playlistId'],
+    ['an empty entryId alone', { partnerId: 123, uiconfId: 456, entryId: '' }, 'entryId'],
+    ['a hostile entryId and no playlistId', { partnerId: 123, uiconfId: 456, entryId: '../x' }, 'entryId'],
+  ])('SEC-11: %s loads nothing', async (_why, props, name) => {
+    const { PlayerCore } = await setup();
+    const { container } = await mount(PlayerCore, props);
+    expect([container.textContent, remote.urls]).toEqual([`Failed to load player: Invalid ${name}`, []]);
+  });
+
+  it('SEC-11: neither id waits for a binding and loads nothing', async () => {
+    const { PlayerCore } = await setup();
+    const { container } = await mount(PlayerCore, { partnerId: 123, uiconfId: 456 });
+    expect([container.textContent, remote.urls]).toEqual(['', []]);
+  });
+
+  it.each([
+    [false, { invalid: [], pending: true }],
+    [true, { invalid: ['entryId'], pending: false }],
+  ])('SEC-11: with neither id, strict=%s gives %j', (strict, expected) => {
+    expect(checkProps(KalturaPlayerApi.schema, { partnerId: 1, uiconfId: 2 }, strict)).toEqual(expected);
+  });
+
+  it('SEC-11: a bundle without loadPlaylist shows the fixed failure text', async () => {
+    remote.setup = 'no-load-playlist';
+    const { PlayerCore } = await setup();
+    const { container } = await mount(PlayerCore, PLAYLIST);
+    await remote.ready();
+    await vi.waitFor(() => expect(container.textContent).toContain('Player could not start'));
+  });
+
+  it('SEC-11: the label shows the playlist id', async () => {
+    const { PlayerCore } = await setup();
+    const { container } = await mount(PlayerCore, PLAYLIST);
+    expect(container.querySelector('.player-title')?.textContent).toBe('1_play1234');
   });
 });
 

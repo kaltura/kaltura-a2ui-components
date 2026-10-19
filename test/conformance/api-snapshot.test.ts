@@ -1,4 +1,4 @@
-// Covers: CONF-16 (plan item 3.3c): the public API. The exported names of each
+// Covers: CONF-16: the public API. The exported names of each
 // package entry are compared with test/conformance/snapshots/public-api.json.
 // A change to the API fails here on purpose. If it is intended, update the
 // snapshot and describe the change in the PR (label `breaking` if it is):

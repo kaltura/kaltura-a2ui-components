@@ -1,6 +1,6 @@
 # Migrate from 0.1.x to 0.2.0
 
-0.2.0 fixes security and robustness bugs and changes the install and host contract. It is served from jsDelivr and git tags only, not npm. Do the checklist, then read the details you need. The full list is in [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
+0.2.0 changes the install and host contract. It is served from jsDelivr and git tags only, not npm. Do the checklist, then read the details you need. The full list is in [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
 
 The peer versions below are those of 0.2.0. Later releases need A2UI 0.13: see [migration-a2ui-0.13.md](migration-a2ui-0.13.md).
 
@@ -8,7 +8,7 @@ The peer versions below are those of 0.2.0. Later releases need A2UI 0.13: see [
 
 | # | Who | Do | Why |
 |---|---|---|---|
-| 1 | ESM users | Install from the git tag with the peers ([Install contract](#install-contract)). Add a `dompurify` override ([DOMPurify](#dompurify)) | The ESM no longer bundles the peers. `@a2ui/react` brings in a DOMPurify with advisories |
+| 1 | ESM users | Install from the git tag with the peers ([Install contract](#install-contract)). Add a `dompurify` override ([DOMPurify](#dompurify)) | The ESM no longer bundles the peers. `@a2ui/react` brings in an older DOMPurify |
 | 2 | CDN users | Change the tag in the URL to `@v0.2.0` and add the SRI hash from the Release ([CDN URLs](#cdn-urls)) | Tags up to `v0.1.4` serve the old bundle |
 | 3 | Everyone | Call `setKsProvider` and stop passing `ks` in agent output | The KS must not pass through the agent |
 | 4 | Hosts with a private cloud | Call `setExtraAllowedOrigins([...])` | Other `serverUrl` hosts are rejected |
@@ -36,7 +36,7 @@ The script-tag bundle (`kaltura-wc.js`) is unchanged: self-contained, no peers.
 
 ### DOMPurify
 
-`@a2ui/react` 0.11.1 depends on `@a2ui/markdown-it` 0.1.2, which pins `dompurify` 3.4.11. That version has published advisories, all fixed by 3.4.16. Override it in your `package.json` (pnpm: `pnpm.overrides`, Yarn: `resolutions`):
+`@a2ui/react` 0.11.1 depends on `@a2ui/markdown-it` 0.1.2, which pins `dompurify` 3.4.11. Override it in your `package.json` (pnpm: `pnpm.overrides`, Yarn: `resolutions`):
 
 ```json
 { "overrides": { "dompurify": "^3.4.17" } }
@@ -48,7 +48,7 @@ The script-tag bundle (`kaltura-wc.js`) is unchanged: self-contained, no peers.
 |---|---|---|
 | Script | `https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.1.4/dist/kaltura-wc.js` | `https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.2.0/dist/kaltura-wc.js` |
 
-Only the tag changes. Old URLs for tags up to v0.1.4 keep working, but they serve the 0.1.4 bundle, which has none of the 0.2.0 fixes and none of the host functions. SRI: copy the script tag from the Release notes, or take the `cdn["dist/kaltura-wc.js"]` value from the Release's `hashes.json`. More checks: [SECURITY.md](../SECURITY.md#releases).
+Only the tag changes. Old URLs for tags up to v0.1.4 keep working, but they serve the 0.1.4 bundle, which does not have the 0.2.0 host functions. SRI: copy the script tag from the Release notes, or take the `cdn["dist/kaltura-wc.js"]` value from the Release's `hashes.json`. More checks: [SECURITY.md](../SECURITY.md#releases).
 
 ## Kaltura Session
 
@@ -96,7 +96,7 @@ Show errors to developers with `setErrorHandler` ([host-api.md](host-api.md#erro
 |---|---|
 | `kaltura-entry-selected` | Fires on the `<kaltura-media-manager>` element with `detail.instanceId`. It still bubbles to `document` for one more release (`legacyDocumentEvents`, default `true`). Set `false` to stop that now. `detail.name` is untrusted text |
 | Iframes | Player, flashcard clips and the captions editor no longer allow camera, microphone or display capture. Only the recorder does |
-| Styles | Internal `--kaltura-*` tokens read your `--ds-*`, `--surface-*`, `--page-text*` and `--border-*` variables. With none set, surfaces are transparent and text inherits |
+| Styles | The `--kaltura-*` tokens read your `--ds-*`, `--surface-*`, `--page-text*` and `--border-*` variables. With none set, surfaces are transparent and text inherits |
 | Charts | At most 500 rows are drawn, with a note. The source table and CSV list all rows |
 | Geo map | World data is pinned to `world-atlas@2.0.2` |
 | CSV download | Cells starting with `=`, `+`, `-`, `@`, tab or CR get a leading `'` |

@@ -17,7 +17,7 @@ Do not open public issues, pull requests or discussions for vulnerabilities. Do 
 
 ## Disclosure timeline
 
-Targets, on a best-effort basis:
+Targets:
 
 | Step | Target |
 |---|---|
@@ -26,11 +26,11 @@ Targets, on a best-effort basis:
 | Fix released | 90 days after the report, sooner for high or critical |
 | Public advisory (GitHub Security Advisory, with a CVE if it applies) | When the fix is released, or at 90 days if we agree on that with you |
 
-We credit reporters in the advisory unless they ask us not to. Please keep the details private until the advisory is public.
+We credit reporters in the advisory unless they ask us not to. Keep the details private until the advisory is public.
 
 ## Trust model
 
-Agent output is untrusted input. Every A2UI message and every prop value can be hostile. The host page and your server are trusted. Kaltura services are trusted at the level of the Kaltura service.
+Agent output is untrusted input. Every A2UI message and every prop value can be hostile. The host page, your server and Kaltura services are trusted.
 
 | Who | Owns | Never does |
 |---|---|---|
@@ -44,7 +44,7 @@ The host controls are in [docs/host-integration.md](docs/host-integration.md):
 - `setKsProvider`: a server-minted, least-privilege KS per widget ([docs/ks-privileges.md](docs/ks-privileges.md), [docs/security/ks.md](docs/security/ks.md)).
 - `setExtraAllowedOrigins`: Unisphere origins beyond the five Kaltura regions. Each one runs code with your page origin.
 - `setExtraMediaOrigins`: hosts for the basic Image, Video and AudioPlayer.
-- `setAllowedPartners` and `setAllowedUiconfs`: the account and player ids the agent may pick. Owning a uiconf means running code in your page origin with your KS, so set both to your own ids. They default to open ([docs/host-api.md](docs/host-api.md#allowed-partners-and-uiconfs)).
+- `setAllowedPartners` and `setAllowedUiconfs`: the account and player ids the agent can pick. A uiconf runs code in your page origin with your KS, so set both to your own ids. They default to open ([docs/host-api.md](docs/host-api.md#allowed-partners-and-uiconfs)).
 - Register the Kaltura catalog alone ([why](docs/host-integration.md#register-the-kaltura-catalog-alone)).
 
 What the package does on its own:
@@ -53,9 +53,9 @@ What the package does on its own:
 - Every component validates its resolved props. A bad value shows a fixed, plain-text message. It never echoes a prop value, the KS or a remote error.
 - Markdown is sanitised in Flashcards and in the basic Text. The basic Text uses the renderer you put in `MarkdownContext`, then our sanitiser. Images in markdown load only from the hosts the basic Image allows. `openUrl` opens `https:` URLs only.
 - The basic Image, Video and AudioPlayer load only Kaltura URLs and `setExtraMediaOrigins` origins. They refuse URLs with `api_v3`, `partnerservices2` or a `ks` parameter or path segment. The real control is that the KS never enters the data model.
-- The KS is not in the script or iframe URL we build for the Player, flashcard clips, recorder, Analytics or Unisphere widgets. The Analytics app itself requests a player script with the KS in its path from inside its frame. The Player, flashcard clips, Captions editor and recorder get it in JavaScript and run in your page origin ([ADR 0008](docs/adr/0008-in-page-player-and-captions-editor.md)). The Captions editor's own player requests a `playManifest` URL with the KS in its path, so redact CSP reports ([host-integration.md](docs/host-integration.md#rollout)).
+- The KS is not in the script or iframe URL we build for the Player, flashcard clips, recorder, Analytics or Unisphere widgets. The Player, flashcard clips, Captions editor and recorder get it in JavaScript and run in your page origin ([ADR 0008](docs/adr/0008-in-page-player-and-captions-editor.md)). Redact URLs and console text in CSP reports ([host-integration.md](docs/host-integration.md#rollout)).
 - Remote Kaltura code is pinned where Kaltura allows it. Versions, integrity and what you trust: [host-integration.md](docs/host-integration.md#remote-code-from-kaltura).
-- The Captions editor frame is a same-origin blob frame, so your page's Permissions-Policy decides what it may use. Send `camera=(), microphone=(), display-capture=()` if it must not ask for them. The recorder is a script in your page. It asks the browser for camera and microphone itself.
+- The Captions editor frame is a same-origin blob frame, so your page's Permissions-Policy decides what it can use. Send `camera=(), microphone=(), display-capture=()` to block them. The recorder is a script in your page. It asks the browser for camera and microphone itself.
 - With an `action` prop, a component tells the agent about its errors and events. That context holds fixed names, codes and checked entry ids only, never the KS or text from a remote service or the page ([docs/host-api.md](docs/host-api.md#agent-feedback)).
 - CSV downloads neutralise spreadsheet formulas.
 
@@ -77,4 +77,4 @@ Verify a release before you use it:
 - Check a downloaded file with `gh attestation verify <file> --repo kaltura/kaltura-a2ui-components --signer-workflow kaltura/kaltura-a2ui-components/.github/workflows/release.yml`.
 - Check the Release assets with `sha256sum --check SHA256SUMS` (macOS: `shasum -a 256 --check SHA256SUMS`).
 - `kaltura-react.mjs` imports `html-element-stub.mjs` ([ADR 0007](docs/adr/0007-ssr-html-element-stub.md)). Pin that file too. The catalog `x-kaltura-adapters.react` has `integrity` and `stubIntegrity` for both.
-- Releases up to `v0.1.4` are older builds without these proofs.
+- Use `v0.2.0` or later.

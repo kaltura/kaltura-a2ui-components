@@ -1,6 +1,6 @@
 # Migrate from 0.3.x to 0.4.0
 
-0.4.0 changes how most widgets load. The KS no longer goes into an iframe or script URL. The one exception: the Captions editor's own player requests a `playManifest` URL with the KS in its path ([Rollout](host-integration.md#rollout)). The full change list is in [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
+0.4.0 changes how most widgets load. The KS no longer goes into an iframe or script URL. The full change list is in [GitHub Releases](https://github.com/kaltura/kaltura-a2ui-components/releases).
 
 ## Most hosts must do these
 
@@ -89,7 +89,7 @@ setKsProvider(widget => (widget === 'analytics' ? session.adminKs : session.user
 
 - The `ks` prop is gone from every component. A `ks` in agent output is dropped. A host that passed the KS as a prop must move it to the provider.
 - Analytics: the component sends the KS in a `postMessage` to the Analytics origin only, and accepts messages only from that origin and from its own iframe.
-- `session.adminKs` must belong to an admin user that has a role. How to pick one: [security/ks.md](security/ks.md#what-to-put-in-a-ks). Without a role the app fails with "Invalid object id [0]".
+- `session.adminKs` must belong to an admin user that has a role. How to pick one: [security/ks.md](security/ks.md#what-to-put-in-a-ks).
 - Renewal: the provider is read once at mount. To use a new KS, remount the component ([pattern](security/ks.md#when-the-ks-expires)).
 
 ## URL
@@ -146,16 +146,16 @@ A refused id loads nothing and the error handler gets `origin-not-allowed`. Rule
 
 Trade-off: the script runs in your page origin and can read the KS. Use a short expiry. Details: [security/ks.md](security/ks.md).
 
-The script is pinned to `/apps/expressrecorder/v2.2.10/`. It has no SRI yet, because the Kaltura CDN sends no CORS header for it. The loader can take a hash once Kaltura sends one.
+The script is pinned to `/apps/expressrecorder/v2.2.10/`. The host CSP `script-src` allowlist limits where it loads from.
 
 ## Unisphere widgets
 
-The live runtimes skip a widget silently when its config does not match, so earlier versions showed an empty box. The runtime names, visual types and settings now match the live runtimes ([props table](host-integration.md#unisphere-widget-props)).
+The runtime names, visual types and settings are in the [props table](host-integration.md#unisphere-widget-props).
 
 | Widget | Change |
 |---|---|
 | `KalturaGenie` | `uiconfId` is required |
-| `KalturaContentLab` | `uiconfId` and `entryId` are required. The menu lists the features the account has in Reach. AI features ask for AI consent first |
+| `KalturaContentLab` | `uiconfId` and `entryId` are required. AI features ask for AI consent first |
 | `KalturaVodAvatar` | `entryId` and `avatarStyle` are removed |
 | `KalturaAgentsWidget` | `agentId` is removed. The drawer opens on load |
 
@@ -194,17 +194,9 @@ What to do about each, with the CSP detail:
 
 New in 0.4 for the Player, clips and Captions editor. The code runs in your page origin and can read the KS: see [Remote code from Kaltura](host-integration.md#remote-code-from-kaltura) for versions and integrity.
 
-- New globals on `window`: `KalturaPlayer`, `__kalturaplayerdata`, `regeneratorRuntime`.
 - Two uiconfs on one page: each bundle replaces `window.KalturaPlayer`, so the loader loads a bundle again when the uiconf switches.
-- The player reads `kalturaSeekFrom`, `kalturaClipTo` and `kalturaStartTime` from the query string of your page. A link with those parameters can change which part of a clip plays.
 - `autoplay` and `muted` reach the player only when the prop is set. The uiconf defaults apply otherwise.
 - Flashcards clips take the KS from your `setKsProvider` function (called with `flashcards`).
-
-### Not verified
-
-- The full Captions editor UI with a real caption asset. The live check on `nvp1` reached the "Current video does not have captions" state.
-- Regional accounts for the Captions editor. CORS on `embed.php` was verified on `www.kaltura.com`, `api.eu`, `api.de`, `api.ca`, `api.ap`, `api.cap2.ovp` and `api.syp2.ovp`. The editor itself was loaded only on `nvp1`.
-- The effect of a strict host CSP on the player script.
 
 ## Events and actions
 

@@ -46,7 +46,7 @@ setKsProvider(widget => (widget === 'avatar' ? avatarKs : userKs));
 
 ## CSP
 
-The avatar now loads through the Unisphere loader, which `script-src` already lists. The old SDK host is no longer contacted. A live session also calls `https://api.avatar.<region>.kaltura.ai` and opens media connections. Those hosts are not verified yet: watch the console for `Content Security Policy` messages. Policy: [host-integration.md](host-integration.md#content-security-policy).
+The avatar now loads through the Unisphere loader, which `script-src` already lists. The old SDK host is no longer contacted. A live session calls the avatar API host: add it to `connect-src` (`https://api.avatar.us.kaltura.ai` in the US). Policy: [host-integration.md](host-integration.md#content-security-policy).
 
 ## Events
 

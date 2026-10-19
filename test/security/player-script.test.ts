@@ -1,6 +1,6 @@
 // Covers: SEC-10 (the Player script loader). One fixed URL per bundle, no query string, a shared load,
-// fixed failure text and no cache of a failed load. The bundle has no SRI: Kaltura builds it per
-// uiconf at an unversioned path (docs/adr/0008). The fake bundle is in test/helpers/player-remote.ts.
+// fixed failure text and no cache of a failed load. The bundle URL is per uiconf and carries
+// no SRI (docs/adr/0008). The fake bundle is in test/helpers/player-remote.ts.
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { playerRemote, loadPlayer, scriptUrl } from '../helpers/player-remote';
 
@@ -79,6 +79,6 @@ describe('SEC-10: player script loader', () => {
     const { loadPlayerScript, setRegion } = await loadPlayer();
     setRegion('frp2');
     await loadPlayerScript(1, 2);
-    expect(remote.urls).toEqual(['https://api.de.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2']);
+    expect(remote.urls).toEqual(['https://api.frp2.ovp.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2']);
   });
 });

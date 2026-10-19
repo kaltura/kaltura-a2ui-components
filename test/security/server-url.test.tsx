@@ -1,10 +1,7 @@
-// Covers: SEC-01 / QA-03 (agent-supplied serverUrl reaches import() unchecked).
-// Turns green: plan item 1.2 (serverUrl allowlist in core/unisphere-loader.ts).
+// Covers: SEC-01 / QA-03 (an agent-supplied serverUrl is checked before import()).
 // Technique: vi.doMock() on each derived loader URL records whether import()
-// was reached. A fix must reject before import().
-// deriveLoaderUrl is imported from core/media-manager today. Item 1.2 moves it
-// to core/unisphere-loader.ts: re-export it from media-manager or update the
-// import paths below in the same change.
+// was reached. A rejected URL must never reach import().
+// deriveLoaderUrl lives in core/unisphere-loader.ts and is re-exported from core/media-manager.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '../helpers/render';
 
@@ -21,7 +18,7 @@ const BAD = [
   '//evil.example/v1',
   '/relative/v1',
 ];
-// An origin on the D1 allowlist (plan 3, item 1.2).
+// An origin on the allowlist.
 const GOOD = 'https://unisphere.nvp1.ovp.kaltura.com/v1';
 
 beforeEach(() => {
@@ -69,13 +66,13 @@ describe('SEC-01: serverUrl allowlist: import() must not be reached for non-Kalt
 });
 
 describe('SEC-01: serverUrl allowlist: control', () => {
-  it.each(NAMES)('SEC-01: %s: real Kaltura origin is still imported (control, must stay green)', async name => {
+  it.each(NAMES)('SEC-01: %s: real Kaltura origin is still imported (control)', async name => {
     await run(name, GOOD);
     expect(loaded).toEqual([GOOD]);
   });
 });
 
-describe('SEC-01: deriveLoaderUrl (design-coupled: assumes the fix validates here)', () => {
+describe('SEC-01: deriveLoaderUrl', () => {
   it.each([...BAD, 'blob:https://evil.example/uuid/v1'])('SEC-01: throws for %s', async bad => {
     const { deriveLoaderUrl } = await import('../../src/core/media-manager');
     expect(() => deriveLoaderUrl(bad)).toThrow();

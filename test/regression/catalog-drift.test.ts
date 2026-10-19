@@ -1,6 +1,5 @@
-// Covers: E2E-02 / QA-05 (catalog and zod drift, catalog serverUrl example
-// lacks /v1) and QA-10 (loadKalturaCatalog always returns the default id).
-// Green since plan items 2.4 (drift), 1.2 (catalog example) and 2.11 (QA-10).
+// Covers: E2E-02 / QA-05 (the catalog and the zod schemas agree, the catalog
+// serverUrl example ends in /v1) and QA-10 (loadKalturaCatalog always returns the default id).
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import catalog from '../../src/catalog/kaltura_catalog.json';
 import { KalturaPlayerApi } from '../../src/schemas/player';
@@ -77,7 +76,7 @@ describe('QA-10: loadKalturaCatalog', () => {
     expect((await loadKalturaCatalog('https://x/c.json')).id).toBe('https://example.test/other/catalog.json');
   });
 
-  it('QA-10: the real catalog JSON yields the canonical id (control, must stay green)', async () => {
+  it('QA-10: the real catalog JSON yields the canonical id (control)', async () => {
     const { loadKalturaCatalog, KALTURA_CATALOG_ID } = await import('../../src/adapters/react/index');
     serve(catalog);
     expect((await loadKalturaCatalog('https://x/c.json')).id).toBe(KALTURA_CATALOG_ID);

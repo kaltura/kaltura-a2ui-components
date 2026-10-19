@@ -1,5 +1,9 @@
-// Live Player test against a real Kaltura account (NVP1, US region). Run: npm run e2e:live.
+// Live tests against a real Kaltura account. Run: npm run e2e:live.
 // Needs NVP1_PARTNER_ID and NVP1_ADMIN_SECRET in .env. Skipped without them. Never runs in CI.
+// Tests that use media also read NVP1_UICONF_ID, NVP1_ENTRY_ID, NVP1_PLAYLIST_ID, NVP1_CAPTIONS_ENTRY_ID
+// and NVP1_FRENCH_ASSET_ID. Analytics and the hosted widgets read NVP1_ADMIN_USER_ID. The Avatar, Genie
+// and Agents tests read KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID.
+// Each test skips when its variables are missing.
 // The page loads the real built bundle and the real Player script. A KS is minted in this process
 // and handed over with setKsProvider only. It must never appear in a URL.
 import { test as base, expect, type Page } from '@playwright/test';
@@ -8,11 +12,21 @@ import { mintKs } from './mint-ks';
 
 const partnerId = Number(process.env.NVP1_PARTNER_ID);
 const adminSecret = process.env.NVP1_ADMIN_SECRET;
-// "MediaSpace Embed Player" on the account, listed with uiConf.list.
-const UICONF_ID = 1000092;
-// Transcoded, and clips work.
-const ENTRY_ID = '1_aaaaaaaa';
+// An admin user that has a role. Analytics needs it.
+const adminUserId = process.env.NVP1_ADMIN_USER_ID;
+// A partner that has Avatar agents. Used by LIVE-16 to LIVE-21.
+const agentsPartnerId = Number(process.env.KALTURA_PARTNER_ID);
+const agentsAdminSecret = process.env.KALTURA_ADMIN_SECRET;
+const agentsUserId = process.env.KALTURA_ADMIN_USER_ID;
+const AGENTS_MANAGER = 'https://agents-manager.nvp1.ovp.kaltura.com/api/v1';
+const AVATAR_API = 'https://api.avatar.us.kaltura.ai/v1';
+// A Player uiConf of the account.
+const UICONF_ID = Number(process.env.NVP1_UICONF_ID);
+// A transcoded entry that supports clips.
+const ENTRY_ID = process.env.NVP1_ENTRY_ID ?? '';
 const CLIP = { start: 2, end: 7 };
+// A manual playlist of two ready entries.
+const PLAYLIST_ID = process.env.NVP1_PLAYLIST_ID ?? '';
 const PLAY_TIMEOUT = 45_000;
 
 interface PlayerState {
@@ -27,6 +41,7 @@ interface LiveWindow {
   __mount(tag: string, config: unknown): void;
 }
 interface LivePlayer {
+  playlist?: { items: unknown[] };
   currentTime: number;
   duration: number;
   paused: boolean;
@@ -43,7 +58,7 @@ class LivePage {
 
   constructor(
     readonly page: Page,
-    private readonly ks: string,
+    private ks: string,
   ) {
     page.context().on('request', (r) => {
       this.requests.push(r.url());
@@ -55,7 +70,9 @@ class LivePage {
       );
     });
     page.on('websocket', (ws) => this.requests.push(ws.url()));
-    page.on('console', (m) => m.type() === 'error' && this.consoleErrors.push(this.scrub(m.text())));
+    // The Analytics app can make the browser ask `https://127.0.0.1/favicon.ico`. Nothing of ours owns it
+    // and it holds no KS, so only that one URL is skipped.
+    page.on('console', (m) => m.type() === 'error' && m.location().url !== 'https://127.0.0.1/favicon.ico' && this.consoleErrors.push(this.scrub(m.text())));
     page.on('pageerror', (e) => this.consoleErrors.push(this.scrub(e.message)));
   }
 
@@ -67,6 +84,55 @@ class LivePage {
   async open(): Promise<void> {
     await this.page.goto(`${ORIGIN_A}/harness.html`);
     await this.page.evaluate((ks) => (window as unknown as LiveWindow).KalturaA2UIWebComponents.setKsProvider(() => ks), this.ks);
+  }
+
+  /** Replaces the KS in the provider with one of another user. */
+  async switchUser(userId: string): Promise<void> {
+    this.ks = await mintKs(partnerId, adminSecret ?? '', userId);
+    await this.page.evaluate((ks) => (window as unknown as LiveWindow).KalturaA2UIWebComponents.setKsProvider(() => ks), this.ks);
+  }
+
+  /**
+   * Swaps in a provider that does what a host backend does: it takes the scope request and mints a
+   * USER KS limited to it, for `userId`. The minting runs in this process. Each request is recorded.
+   * `mint` replaces the default minting (entry and playlist privileges).
+   */
+  async useScopedProvider(
+    userId = 'a2ui-live-scoped',
+    mint: (scope: Record<string, unknown>) => Promise<string> = (scope) => {
+      const privileges = [scope.entryId && `sview:${String(scope.entryId)}`, scope.playlistId && `sviewplaylist:${String(scope.playlistId)}`].filter(Boolean).join(',');
+      return mintKs(partnerId, adminSecret ?? '', userId, { type: 0, privileges });
+    },
+  ): Promise<{ widget: string; scope: Record<string, unknown> }[]> {
+    const calls: { widget: string; scope: Record<string, unknown> }[] = [];
+    await this.page.exposeFunction('__mintScoped', async (widget: string, scope: Record<string, unknown>) => {
+      calls.push({ widget, scope });
+      this.ks = await mint(scope);
+      return this.ks;
+    });
+    await this.page.evaluate(() => {
+      const w = window as unknown as LiveWindow & { __mintScoped(widget: string, scope: unknown): Promise<string> };
+      w.KalturaA2UIWebComponents.setKsProvider(((widget: string, request: { scope: unknown }) => w.__mintScoped(widget, request.scope)) as never);
+    });
+    return calls;
+  }
+
+  /** Visible text of the page, shadow roots included. */
+  pageText(): Promise<string> {
+    return this.page.evaluate(() => {
+      const read = (root: ParentNode): string =>
+        Array.from(root.querySelectorAll('*'))
+          .filter((el) => !['STYLE', 'SCRIPT'].includes(el.tagName))
+          .map((el) => (el.shadowRoot ? read(el.shadowRoot) : '') + Array.from(el.childNodes).filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join(' '))
+          .join(' ');
+      return read(document);
+    });
+  }
+
+  /** Text of the first frame from the Analytics app. */
+  analyticsText(): Promise<string> {
+    const frame = this.page.frames().find((f) => f !== this.page.mainFrame() && f.url().includes('kmc-analytics'));
+    return frame ? frame.evaluate(() => document.body.innerText).catch(() => '') : Promise.resolve('');
   }
 
   mount(tag: string, config: Record<string, unknown>): Promise<void> {
@@ -85,7 +151,7 @@ class LivePage {
 
   /**
    * Starts a paused player and tells when it has played to the end of its duration. Mutes first: a
-   * script may only autoplay muted. The `ended` flag is not used: Firefox pauses at the clip end
+   * script can only autoplay muted. The `ended` flag is not used: Firefox pauses at the clip end
    * without setting it.
    */
   async playToEnd(): Promise<boolean> {
@@ -131,7 +197,7 @@ test.skip(!partnerId || !adminSecret, SKIP_MESSAGE);
 
 /** Checks every request URL of the whole run. Headers are not checked: the Player sends the KS in the X-Kaltura-KS header. */
 function expectNoKsInUrls(live: LivePage): void {
-  expect(live.requests.length, 'the run made requests').toBeGreaterThan(5);
+  expect(live.requests.length, 'the run made requests').toBeGreaterThan(3);
   expect(live.ksLeaks()).toEqual([]);
 }
 
@@ -144,7 +210,14 @@ async function expectClipOnly(live: LivePage): Promise<void> {
   expect(live.requests.some((url) => url.includes(`/clipTo/${CLIP.end * 1000}/clipFrom/${CLIP.start * 1000}/`))).toBe(true);
 }
 
+const NEEDS_PLAYER = 'Needs NVP1_UICONF_ID and NVP1_ENTRY_ID in .env.';
+const NEEDS_PLAYLIST = 'Needs NVP1_UICONF_ID and NVP1_PLAYLIST_ID in .env.';
+const NEEDS_CAPTIONS = 'Needs NVP1_CAPTIONS_ENTRY_ID and NVP1_FRENCH_ASSET_ID in .env.';
+const hasPlayer = Boolean(UICONF_ID && ENTRY_ID);
+const hasPlaylist = Boolean(UICONF_ID && PLAYLIST_ID);
+
 test('LIVE-01: the player starts muted on its own, plays, and no URL holds the KS', async ({ live, browserName }) => {
+  test.skip(!hasPlayer, NEEDS_PLAYER);
   await live.mount('kaltura-player', { partnerId, uiconfId: UICONF_ID, entryId: ENTRY_ID, autoplay: true, muted: true });
   await expect
     .poll(async () => (await live.state())?.readyState ?? 0, { timeout: PLAY_TIMEOUT, message: 'video has data' })
@@ -160,6 +233,7 @@ test('LIVE-01: the player starts muted on its own, plays, and no URL holds the K
 });
 
 test('LIVE-02: startTime and clipTo play only the clip range', async ({ live }) => {
+  test.skip(!hasPlayer, NEEDS_PLAYER);
   await live.mount('kaltura-player', { partnerId, uiconfId: UICONF_ID, entryId: ENTRY_ID, startTime: CLIP.start, clipTo: CLIP.end, autoplay: true, muted: true });
   await expect.poll(() => live.playToEnd(), { timeout: PLAY_TIMEOUT, message: 'the clip ends' }).toBe(true);
   await expectClipOnly(live);
@@ -168,6 +242,7 @@ test('LIVE-02: startTime and clipTo play only the clip range', async ({ live }) 
 });
 
 test('LIVE-03: a flashcards clip plays only its range', async ({ live }) => {
+  test.skip(!hasPlayer, NEEDS_PLAYER);
   await live.mount('kaltura-flashcards', {
     title: 'Live deck',
     partnerId,
@@ -184,4 +259,189 @@ test('LIVE-03: a flashcards clip plays only its range', async ({ live }) => {
 test('LIVE-04: the URL check sees a KS in a query string', async ({ live }) => {
   await live.requestWithKsInQuery();
   await expect.poll(() => live.ksLeaks()).toEqual(['https://www.kaltura.com/robots.txt?<query dropped>']);
+});
+
+test('LIVE-05: a playlist loads, plays, and no URL holds the KS', async ({ live }) => {
+  test.skip(!hasPlaylist, NEEDS_PLAYLIST);
+  await live.mount('kaltura-player', { partnerId, uiconfId: UICONF_ID, playlistId: PLAYLIST_ID, autoplay: true, muted: true });
+  await expect
+    .poll(async () => (await live.state())?.currentTime ?? 0, { timeout: PLAY_TIMEOUT, message: 'currentTime advances' })
+    .toBeGreaterThan(1);
+  const items = await live.page.evaluate(() => Object.values((window as unknown as LiveWindow).KalturaPlayer.getPlayers())[0]?.playlist?.items.length);
+  expect(items).toBe(2);
+  expect(live.consoleErrors).toEqual([]);
+  expectNoKsInUrls(live);
+});
+
+// An entry with two caption assets: the first opens by default, the other is French.
+const CAPTIONS_ENTRY_ID = process.env.NVP1_CAPTIONS_ENTRY_ID ?? '';
+const FRENCH_ASSET_ID = process.env.NVP1_FRENCH_ASSET_ID ?? '';
+
+/** Calls a Kaltura API service with an admin KS. Read only. */
+async function readApi(service: string, params: Record<string, string>): Promise<Record<string, unknown>> {
+  const ks = await mintKs(partnerId, adminSecret ?? '', adminUserId ?? 'a2ui-live-test');
+  const res = await fetch(`https://www.kaltura.com/api_v3/service/${service}`, {
+    method: 'POST',
+    signal: AbortSignal.timeout(20_000),
+    body: new URLSearchParams({ format: '1', ks, ...params }),
+  });
+  return (await res.json()) as Record<string, unknown>;
+}
+
+/** The editor label of each caption asset of the entry: "<language> - <label>". */
+async function captionLabels(): Promise<{ french: string; other: string }> {
+  const list = await readApi('caption_captionasset/action/list', { 'filter[entryIdEqual]': CAPTIONS_ENTRY_ID });
+  const assets = (list.objects ?? []) as { id: string; language: string; label: string }[];
+  const label = (asset?: { language: string; label: string }) => `${asset?.language} - ${asset?.label}`;
+  return { french: label(assets.find((a) => a.id === FRENCH_ASSET_ID)), other: label(assets.find((a) => a.id !== FRENCH_ASSET_ID)) };
+}
+
+/** The text inside the editor frame, empty until the frame exists. */
+async function editorText(live: LivePage): Promise<string> {
+  const frame = live.page.frames().find((f) => f !== live.page.mainFrame());
+  return (await frame?.evaluate(() => document.body.innerText).catch(() => '')) ?? '';
+}
+
+test('LIVE-06: the captions editor opens the caption asset named by assetId', async ({ live }) => {
+  test.skip(!CAPTIONS_ENTRY_ID || !FRENCH_ASSET_ID, NEEDS_CAPTIONS);
+  const labels = await captionLabels();
+  await live.mount('kaltura-captions-editor', { partnerId, entryId: CAPTIONS_ENTRY_ID, assetId: FRENCH_ASSET_ID });
+  await expect.poll(() => editorText(live), { timeout: PLAY_TIMEOUT, message: 'the French asset opens' }).toContain(labels.french);
+  expect(live.consoleErrors).toEqual([]);
+});
+
+test('LIVE-07: without assetId the captions editor opens the first asset, not the French one', async ({ live }) => {
+  test.skip(!CAPTIONS_ENTRY_ID || !FRENCH_ASSET_ID, NEEDS_CAPTIONS);
+  const labels = await captionLabels();
+  await live.mount('kaltura-captions-editor', { partnerId, entryId: CAPTIONS_ENTRY_ID });
+  await expect.poll(() => editorText(live), { timeout: PLAY_TIMEOUT, message: 'the first asset opens' }).toContain(labels.other);
+});
+
+test('LIVE-08: analytics opens the view of a playlist', async ({ live }) => {
+  test.skip(!adminUserId || !PLAYLIST_ID, 'Needs NVP1_ADMIN_USER_ID and NVP1_PLAYLIST_ID in .env: an admin user that has a role.');
+  const playlist = await readApi('playlist/action/get', { id: PLAYLIST_ID });
+  await live.switchUser(adminUserId ?? '');
+  await live.mount('kaltura-analytics', { partnerId, playlistId: PLAYLIST_ID });
+  await expect.poll(() => live.analyticsText(), { timeout: PLAY_TIMEOUT, message: 'the playlist view shows' }).toContain(String(playlist.name));
+  expect(live.consoleErrors).toEqual([]);
+});
+
+test('LIVE-09: the provider gets the scope of a player and mints a KS limited to its entry', async ({ live }) => {
+  test.skip(!hasPlayer, NEEDS_PLAYER);
+  const calls = await live.useScopedProvider();
+  await live.mount('kaltura-player', { partnerId, uiconfId: UICONF_ID, entryId: ENTRY_ID, autoplay: true, muted: true });
+  await expect.poll(async () => (await live.state())?.currentTime ?? 0, { timeout: PLAY_TIMEOUT, message: 'currentTime advances' }).toBeGreaterThan(1);
+  expect(calls).toEqual([{ widget: 'player', scope: { region: 'nvp1', partnerId, entryId: ENTRY_ID } }]);
+  expect(live.consoleErrors).toEqual([]);
+  expectNoKsInUrls(live);
+});
+
+test('LIVE-10: the provider gets the scope of a playlist player and mints a KS limited to its playlist', async ({ live }) => {
+  test.skip(!hasPlaylist, NEEDS_PLAYLIST);
+  const calls = await live.useScopedProvider();
+  await live.mount('kaltura-player', { partnerId, uiconfId: UICONF_ID, playlistId: PLAYLIST_ID, autoplay: true, muted: true });
+  await expect.poll(async () => (await live.state())?.currentTime ?? 0, { timeout: PLAY_TIMEOUT, message: 'currentTime advances' }).toBeGreaterThan(1);
+  expect(calls).toEqual([{ widget: 'player', scope: { region: 'nvp1', partnerId, playlistId: PLAYLIST_ID } }]);
+  expect(live.consoleErrors).toEqual([]);
+  expectNoKsInUrls(live);
+});
+
+// The hosted widgets load from the real Unisphere host. Each gets a USER KS of an admin user from the
+// provider, and is found by text that only the loaded widget shows. The Agents Widget has its own test (LIVE-21).
+const HOSTED_WIDGETS: { id: string; tag: string; widget: string; props: Record<string, unknown>; scope: Record<string, unknown>; text: string }[] = [
+  // The category id is arbitrary: the widget loads with any digits.
+  { id: 'LIVE-11', tag: 'kaltura-genie-widget', widget: 'genie', props: { partnerId, uiconfId: UICONF_ID, categoryId: '1' }, scope: { partnerId, categoryId: '1' }, text: 'Ask me anything' },
+  { id: 'LIVE-12', tag: 'kaltura-media-manager', widget: 'media-manager', props: { partnerId }, scope: { partnerId }, text: 'Upload' },
+  { id: 'LIVE-13', tag: 'kaltura-content-lab', widget: 'content-lab', props: { partnerId, uiconfId: UICONF_ID, entryId: ENTRY_ID }, scope: { partnerId, entryId: ENTRY_ID }, text: 'Captions & Translations' },
+  { id: 'LIVE-14', tag: 'kaltura-vod-avatar-wc', widget: 'vod-avatar', props: { partnerId }, scope: { partnerId }, text: 'My Avatar Videos' },
+  // Chromium runs with fake camera and microphone (playwright.live.config.ts). Other browsers have none.
+  { id: 'LIVE-15', tag: 'kaltura-recorder', widget: 'recorder', props: { partnerId, uiconfId: UICONF_ID }, scope: { partnerId }, text: 'Camera Settings' },
+];
+
+for (const { id, tag, widget, props, scope, text } of HOSTED_WIDGETS) {
+  test(`${id}: ${widget} loads with the KS the provider mints for its scope`, async ({ live, browserName }) => {
+    test.skip(!adminUserId, 'Needs NVP1_ADMIN_USER_ID in .env: an admin user that has a role.');
+    test.skip(Boolean(props.uiconfId) && !UICONF_ID, 'Needs NVP1_UICONF_ID in .env.');
+    test.skip(widget === 'content-lab' && !ENTRY_ID, 'Needs NVP1_ENTRY_ID in .env.');
+    test.skip(widget === 'recorder' && browserName !== 'chromium', 'Needs the fake media devices of the Chromium project.');
+    const calls = await live.useScopedProvider(adminUserId);
+    await live.mount(tag, props);
+    await expect.poll(() => live.pageText(), { timeout: PLAY_TIMEOUT, message: `the ${widget} shows its UI` }).toContain(text);
+    expect(calls).toEqual([{ widget, scope: { region: 'nvp1', ...scope } }]);
+    // Media Manager can ask for thumbnails that some entries do not have.
+    const thumbnail404 = /status of 404/;
+    expect(live.consoleErrors.filter((e) => widget !== 'media-manager' || !thumbnail404.test(e))).toEqual([]);
+    expectNoKsInUrls(live);
+  });
+}
+
+// These tests use a USER KS of an admin user of the partner that has Avatar agents.
+const agentsAccount = Boolean(agentsPartnerId && agentsAdminSecret && agentsUserId);
+const mintAgentsKs = (privileges: string) => mintKs(agentsPartnerId, agentsAdminSecret ?? '', agentsUserId ?? '', { type: 0, privileges });
+
+/** The first agent of the partner, listed with an admin KS. The Avatar API is read only here. */
+async function firstAgentId(): Promise<string> {
+  const adminKs = await mintKs(agentsPartnerId, agentsAdminSecret ?? '', agentsUserId ?? '');
+  const res = await fetch(`${AVATAR_API}/agent/list`, { method: 'POST', headers: { authorization: `Bearer ${adminKs}`, 'content-type': 'application/json' }, body: '{}' });
+  const body = (await res.json()) as { objects?: { agentId?: string }[] };
+  const agentId = body.objects?.[0]?.agentId;
+  if (!agentId) throw new Error(`The partner has no Avatar agent (HTTP ${res.status}).`);
+  return agentId;
+}
+
+// These widgets are not part of the table above: they use a KS with a role or an agent claim.
+const AGENT_PARTNER_WIDGETS: { id: string; tag: string; widget: string; props: Record<string, unknown>; privileges: () => Promise<string>; text: string; api?: string }[] = [
+  // The KS selects the agent: the `agentid` claim is the only thing that tells the Avatar which one to start.
+  { id: 'LIVE-16', tag: 'kaltura-avatar', widget: 'avatar', props: { partnerId: agentsPartnerId }, privileges: async () => `agentid:${await firstAgentId()}`, text: 'Speak with agent', api: '/application/appInit' },
+  { id: 'LIVE-17', tag: 'kaltura-genie-widget', widget: 'genie', props: { partnerId: agentsPartnerId, uiconfId: UICONF_ID, categoryId: '1' }, privileges: async () => 'setrole:PLAYBACK_BASE_ROLE,sview:*', text: 'Ask me anything' },
+  { id: 'LIVE-18', tag: 'kaltura-vod-avatar-wc', widget: 'vod-avatar', props: { partnerId: agentsPartnerId }, privileges: async () => 'setrole:Publisher Administrator', text: 'My Avatar Videos', api: '/avatar/list' },
+];
+
+for (const { id, tag, widget, props, privileges, text, api } of AGENT_PARTNER_WIDGETS) {
+  test(`${id}: ${widget} loads with the KS the provider mints`, async ({ live }) => {
+    test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
+    test.skip(Boolean(props.uiconfId) && !UICONF_ID, 'Needs NVP1_UICONF_ID in .env.');
+    const calls = await live.useScopedProvider(agentsUserId, async () => mintAgentsKs(await privileges()));
+    // The UI shows before the service answers, so the answer is checked too.
+    const answer = api && live.page.waitForResponse((r) => r.url() === `${AVATAR_API}${api}`, { timeout: PLAY_TIMEOUT });
+    await live.mount(tag, props);
+    await expect.poll(() => live.pageText(), { timeout: PLAY_TIMEOUT, message: `the ${widget} shows its UI` }).toContain(text);
+    if (answer) expect((await answer).status()).toBe(200);
+    expect(calls).toEqual([{ widget, scope: { region: 'nvp1', partnerId: agentsPartnerId, ...(widget === 'genie' && { categoryId: '1' }) } }]);
+    expect(live.consoleErrors).toEqual([]);
+    expectNoKsInUrls(live);
+  });
+}
+
+test('LIVE-19: VOD Avatar initialView opens the new-video menu instead of the library', async ({ live }) => {
+  test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
+  await live.useScopedProvider(agentsUserId, async () => mintAgentsKs('setrole:Publisher Administrator'));
+  await live.mount('kaltura-vod-avatar-wc', { partnerId: agentsPartnerId, initialView: 'projectBuilder' });
+  await expect.poll(() => live.pageText(), { timeout: PLAY_TIMEOUT }).toContain('How would you like to start your new project?');
+  expect(live.consoleErrors).toEqual([]);
+  expectNoKsInUrls(live);
+});
+
+test('LIVE-20: VOD Avatar additionalEsearchFilters reach the entry search', async ({ live }) => {
+  test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
+  await live.useScopedProvider(agentsUserId, async () => mintAgentsKs('setrole:Publisher Administrator'));
+  const filter = { fieldName: 'name', itemType: 2, searchTerm: 'a2ui-live-filter' };
+  const search = live.page.waitForRequest((r) => r.url().includes('/service/elasticsearch_esearch/action/searchEntry'), { timeout: PLAY_TIMEOUT });
+  await live.mount('kaltura-vod-avatar-wc', { partnerId: agentsPartnerId, initialView: 'projectBuilder', additionalEsearchFilters: [filter] });
+  await live.page.getByText('Create session highlights').click({ timeout: PLAY_TIMEOUT });
+  await live.page.getByText('Choose source').first().click({ timeout: PLAY_TIMEOUT });
+  const items = (JSON.parse((await search).postData() ?? '{}') as { searchParams: { searchOperator: { searchItems: object[] } } }).searchParams.searchOperator.searchItems;
+  expect(items).toContainEqual(expect.objectContaining(filter));
+  expect(live.consoleErrors).toEqual([]);
+});
+
+test('LIVE-21: Agents Widget lists the agents of the partner', async ({ live }) => {
+  test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
+  const calls = await live.useScopedProvider(agentsUserId, async () => mintKs(agentsPartnerId, agentsAdminSecret ?? '', agentsUserId ?? ''));
+  const answer = live.page.waitForResponse((r) => r.url() === `${AGENTS_MANAGER}/agent/list`, { timeout: PLAY_TIMEOUT });
+  await live.mount('kaltura-agents-widget', { partnerId: agentsPartnerId });
+  expect((await answer).status()).toBe(200);
+  expect(calls).toEqual([{ widget: 'agents-widget', scope: { region: 'nvp1', partnerId: agentsPartnerId } }]);
+  expect(live.consoleErrors).toEqual([]);
+  expectNoKsInUrls(live);
 });

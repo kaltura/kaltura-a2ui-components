@@ -37,7 +37,7 @@ describe('CopyToClipboardImplementation', () => {
 
   it('coerces non-string args.text to string before writing', () => {
     const mockContext = {} as Parameters<typeof CopyToClipboardImplementation.execute>[1];
-    // args.text as number — schema is z.string() but execute coerces via String()
+    // args.text as number: schema is z.string() but execute coerces via String()
     CopyToClipboardImplementation.execute({ text: 42 } as unknown as { text: string }, mockContext);
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('42');
   });

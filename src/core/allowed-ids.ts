@@ -5,6 +5,7 @@ export type AllowedIds = '*' | RegExp | Entry[];
 
 let partners: Entry[] | undefined;
 let uiconfs: Entry[] | undefined;
+let regions: Entry[] | undefined;
 
 function parse(rule: AllowedIds | undefined): Entry[] | undefined {
   if (rule === undefined || rule === '*') return undefined;
@@ -38,6 +39,16 @@ export function setAllowedUiconfs(rule: AllowedIds | undefined): void {
   uiconfs = parse(rule);
 }
 
+/**
+ * Host option. Same as `setAllowedPartners`, for the `region` an agent can
+ * ask for: region codes and environment names (`setEnvironments`). Default
+ * `'*'` (all). The default region from `setRegion` is checked too.
+ * @example setAllowedRegions(['irp2']);
+ */
+export function setAllowedRegions(rule: AllowedIds | undefined): void {
+  regions = parse(rule);
+}
+
 // `search` ignores and restores `lastIndex`, so a /g or /y rule keeps no state between ids.
 const allows = (list: Entry[] | undefined, id: unknown): boolean =>
   list === undefined || list.some(entry => (entry instanceof RegExp ? String(id).search(entry) !== -1 : String(entry) === String(id)));
@@ -54,3 +65,6 @@ export function refusedIdProp(props: object, only?: object): 'partnerId' | 'uico
   if (uiconfId != null && checked('uiconfId') && !allows(uiconfs, uiconfId)) return 'uiconfId';
   return undefined;
 }
+
+/** True when the host rule allows this region code or environment name. */
+export const regionAllowed = (name: string): boolean => allows(regions, name);

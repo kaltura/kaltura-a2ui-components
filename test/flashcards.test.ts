@@ -100,7 +100,7 @@ describe('buildAllCards', () => {
     { title: 'Card Two', content: 'Content two' },
   ];
 
-  it('prepends a cover card — total count is cards.length + 1', () => {
+  it('prepends a cover card: total count is cards.length + 1', () => {
     const all = buildAllCards('My Deck', 'Summary text', cards);
     expect(all).toHaveLength(3);
   });
@@ -170,7 +170,7 @@ describe('FlashcardsCore render', () => {
       );
     });
 
-    // The cover card title should appear
+    // The cover card title appears
     expect(container.textContent).toContain('Test Deck');
     // Counter starts at "1 / 3" (cover + 2 cards)
     expect(container.textContent).toContain('1 / 3');

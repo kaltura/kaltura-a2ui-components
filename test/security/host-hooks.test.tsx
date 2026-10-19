@@ -1,4 +1,4 @@
-// Covers: plan item 3.3e (typed error states with codes, setErrorHandler and setEventHandler).
+// Covers: typed error states with codes, setErrorHandler and setEventHandler.
 // Every code is reachable, a throwing handler does not break rendering, and no
 // payload holds a prop value, a remote error text or the KS.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

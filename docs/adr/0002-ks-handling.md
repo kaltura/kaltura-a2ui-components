@@ -2,12 +2,12 @@
 
 Status: accepted (2026-10-12)
 
-Findings: SEC-05 (design), SEC-10 (accepted at first, resolved by [ADR 0008](0008-in-page-player-and-captions-editor.md)). Code: `src/core/ks.ts`. Details: [security/ks.md](../security/ks.md).
+Test IDs: SEC-05 (design), SEC-10 (accepted at first, resolved by [ADR 0008](0008-in-page-player-and-captions-editor.md)). Code: `src/core/ks.ts`. Details: [security/ks.md](../security/ks.md).
 
 ## Context
 
 - The Kaltura Session Guide (https://kaltura.md/KALTURA_SESSION_GUIDE/) says: mint the KS on the server, use a USER KS (type=0) in the browser, keep it short-lived and give it least privilege. A KS in the browser is the documented model.
-- The gap in this package was the path: the KS was a component prop, so it passed through the agent's output and the A2UI data model. An agent can read the data model and wire it into other components, for example an image URL.
+- Before 0.4 the KS was a component prop, so it passed through the agent's output and the A2UI data model. An agent can read the data model and wire it into other components, for example an image URL.
 - The player and Captions Studio guides passed the KS in the iframe URL (0.3). Analytics wants an ADMIN KS.
 
 ## Decision
@@ -21,5 +21,5 @@ Findings: SEC-05 (design), SEC-10 (accepted at first, resolved by [ADR 0008](000
 ## Consequences
 
 - The KS is out of LLM context as long as the host does not put it in the data model. Docs say so in a warning.
-- Hosts write one function and a server endpoint. Renewal is a remount. After expiry the Kaltura widget fails by itself, and this package shows no error for it.
+- Hosts write one function and a server endpoint. Renewal is a remount.
 - A chat that outlasts the KS remounts the surface to renew it: [security/ks.md](../security/ks.md#when-the-ks-expires).

@@ -1,6 +1,5 @@
-// Covers: QA-06 / SEC-15 (Radar breaks hook order, error boundary never
-// resets, data=[null] throws outside the boundary).
-// Turns green: plan item 2.6 (charts).
+// Covers: QA-06 / SEC-15 (Radar keeps hook order, the error boundary
+// resets, data=[null] is handled inside the boundary).
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';

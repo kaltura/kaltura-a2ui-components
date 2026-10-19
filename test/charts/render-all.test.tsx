@@ -1,6 +1,5 @@
 // Covers: QA-18 (chart renderers draw real shapes for every chart type).
 // ResizeObserver reports a width, so the responsive charts leave their empty state.
-// Green since plan item 2.12.
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
