@@ -46,9 +46,13 @@ An A2UI client renders only components it has registered ahead of time. There is
 | [React or A2UI client](#react-or-a2ui-client) | Your agent drives the page, for example a chat UI | `npm i` |
 | [Catalog JSON](#catalog-json) | Your tool reads a catalog by URL | None |
 
-Steps: 1. Render the widgets (pick a row). 2. [Connect your agent](docs/agent-guide.md). 3. [Set the host rules](#for-the-host).
+1. Render the widgets (pick a row).
+2. [Connect your agent](docs/agent-guide.md).
+3. [Set the host rules](#for-the-host).
 
-Some chat apps, such as Gemini Enterprise, cannot register a catalog, so they cannot show these widgets. Your agent should check which catalogs the client supports ([capability negotiation](docs/host-api.md#capability-negotiation)) and reply in plain text when it supports none of yours.
+Most widgets need a Kaltura partner ID, and many need a KS. The chart, and flashcards without video clips, need neither ([which widgets](#components)).
+
+Some chat apps cannot register a catalog, so they cannot show these widgets. Your agent should check which catalogs the client supports ([capability negotiation](docs/host-api.md#capability-negotiation)) and reply in plain text when it supports none of yours.
 
 ### Install
 
@@ -83,8 +87,13 @@ import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
 import { MessageProcessor, type A2uiMessage } from '@a2ui/web_core/v0_9';
 
 // Your server mints the KS. Agent messages never carry it.
-setKsProvider(async (widget) => {
-  const res = await fetch(`https://your-server.example.com/kaltura-session?widget=${widget}`);
+// `scope` names the data this one widget uses. Your server checks it and grants only that.
+setKsProvider(async (widget, { version, scope }) => {
+  const res = await fetch('https://your-server.example.com/kaltura-session', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ widget, version, scope }),
+  });
   return res.ok ? res.text() : undefined;
 });
 setErrorHandler((error) => console.warn('kaltura widget error:', error.code));
@@ -116,7 +125,7 @@ const surface = processor.model.getSurface('s');
 if (surface) createRoot(document.getElementById('root')!).render(createElement(A2uiSurface, { surface }));
 ```
 
-Your server mints the KS ([docs/ks-privileges.md](docs/ks-privileges.md)). Chart needs no KS, and Flashcards need one only for protected clips.
+Your server mints the KS ([docs/ks-privileges.md](docs/ks-privileges.md)). A working server-side check: [examples/ks-server/privileges.ts](examples/ks-server/privileges.ts). Chart needs no KS, and Flashcards need one only for protected clips.
 
 - The catalog id `https://kaltura.github.io/a2ui/v2/catalog.json` is a name, and the file is also served there (copy of the release asset). Pin the one from [Catalog JSON](#catalog-json). The `v1` id was the 0.3.x catalog: [docs/migration-0.4.md](docs/migration-0.4.md#catalog-v2).
 - Send `processor.getRendererCapabilities({ versions: ['v0.9'] })` to your agent as `a2uiClientCapabilities`, so it picks a catalog you registered.
