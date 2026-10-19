@@ -22,8 +22,8 @@ async function load() {
   const { GenieCore } = await import('../../src/core/genie');
   const { CaptionsEditorCore } = await import('../../src/core/captions-editor');
   const { AnalyticsCore } = await import('../../src/core/analytics');
-  const { buildThumbnailUrl } = await import('../../src/core/flashcards');
-  return { setKsProvider: ks.setKsProvider, setAllowedRegions: ids.setAllowedRegions, setRegion: region.setRegion, setEnvironments: region.setEnvironments, PlayerCore, RecorderCore, GenieCore, CaptionsEditorCore, AnalyticsCore, buildThumbnailUrl };
+  const { buildThumbnailUrl, FlashcardsCore } = await import('../../src/core/flashcards');
+  return { setKsProvider: ks.setKsProvider, setAllowedRegions: ids.setAllowedRegions, setRegion: region.setRegion, setEnvironments: region.setEnvironments, PlayerCore, RecorderCore, GenieCore, CaptionsEditorCore, AnalyticsCore, FlashcardsCore, buildThumbnailUrl };
 }
 
 let m: Awaited<ReturnType<typeof load>>;
@@ -156,6 +156,15 @@ describe('REG-02: refused before any request', () => {
   it('the error text holds no value from the prop', async () => {
     const { container } = await mount(m.PlayerCore, { ...PLAYER, ks: 'k', region: 'secret-name' });
     expect(alertOf(container)).not.toContain('secret-name');
+  });
+
+  it('a refused region blocks the whole flashcards deck, not only the clips', async () => {
+    m.setAllowedRegions(['nvp1']);
+    const provider = vi.fn<KsProvider>(() => 'ks');
+    m.setKsProvider(provider);
+    const cards = [{ title: 'a', content: 'b', clips: [{ entryId: '0_a', startTime: 0, endTime: 1 }] }];
+    const { container } = await mount(m.FlashcardsCore, { title: 'D', partnerId: 1, uiconfId: 2, cards, region: 'irp2' });
+    expect([alertOf(container), provider.mock.calls.length]).toEqual(['Failed to load flashcards: region is not allowed', 0]);
   });
 
   it('the captions editor fails closed in a region with no pinned page', async () => {

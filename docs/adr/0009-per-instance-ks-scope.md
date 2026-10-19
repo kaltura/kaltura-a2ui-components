@@ -32,11 +32,11 @@ Code today: `src/core/ks.ts`, `src/core/validate-props.ts`, `src/adapters/react/
 /** Scope per widget. Every value has passed its format check. Arrays are sorted and unique. */
 interface KsScopeByWidget {
   // Every entry below also has `region: KalturaRegion`, resolved as in section 9.
-  player: { partnerId: number; entryId: string };
+  player: { partnerId: number; entryId?: string; playlistId?: string };  // exactly one of the two ids
   flashcards: { partnerId: number; entryIds: readonly string[] };
-  'captions-editor': { partnerId: number; entryId: string };
+  'captions-editor': { partnerId: number; entryId: string; assetId?: string };
   recorder: { partnerId: number };
-  analytics: { partnerId: number; entryId?: string; reportType?: AnalyticsReportType; fromDate?: string; toDate?: string };
+  analytics: { partnerId: number; entryId?: string; categoryId?: string; playlistId?: string; virtualEventId?: string; reportType?: AnalyticsReportType; fromDate?: string; toDate?: string };
   'media-manager': { partnerId: number; contextId?: string };
   genie: { partnerId: number; categoryId?: string };
   'content-lab': { partnerId: number; entryId: string };
@@ -100,11 +100,11 @@ For an ADMIN KS (Analytics, Content Lab, Agents Widget) scope cannot narrow the 
 | Dimension | Format check in the library | Cap |
 |---|---|---|
 | `partnerId` | positive integer, plus the existing allowlist | |
-| `region` | a code from the closed region list, plus the host allowlist (section 9) | |
+| `region` | lowercase letters, digits and hyphens (`^[a-z][a-z0-9-]{0,31}$`). Whether the name is known and allowed is decided in `gateProps`, plus the host allowlist (section 9) | 32 characters |
 | `entryId`, `assetId` | `isEntryId` (caption asset ids look like entry ids) | |
 | `entryIds` | `isEntryId` each, unique, sorted | provisional 20 |
-| `categoryId`, `contextId`, `ancestorCategoryId` | digits only | 12 characters |
-| `playlistId`, `virtualEventId` | `[A-Za-z0-9_]{1,64}` (confirm per widget) | |
+| `categoryId`, `contextId`, `virtualEventId` | digits only | 12 characters |
+| `playlistId` | `isEntryId` (playlist ids look like entry ids) | |
 | `reportType` | the existing enum | |
 | `fromDate`, `toDate` | real `YYYY-MM-DD`. Both or neither. `fromDate <= toDate`. The check never throws | |
 

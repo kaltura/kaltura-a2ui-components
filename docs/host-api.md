@@ -111,6 +111,8 @@ The widget shows `Failed to load <widget>: region is not allowed` and loads noth
 - `region` and `serverUrl` name different regions
 - the widget is a Unisphere widget and the region has no Unisphere host (`sgp2`, or an environment without `unisphere`)
 
+Flashcards: a refused `region` blocks the whole deck. A refused `partnerId` or `uiconfId` disables only the clips.
+
 The error handler gets `origin-not-allowed`. The message never holds the value. To keep an agent on your regions, call `setAllowedRegions(['irp2'])` (the rule shape is the same as for [partners](#allowed-partners-and-uiconfs)). It checks the default region as well.
 
 The Captions editor works only in a built-in region that has a pinned page (`nvp1`, `irp2`, `frp2`, `cap2`, `syp2`). It fails closed in `sgp2` and in every environment, because the page runs in your origin and must match a known hash.

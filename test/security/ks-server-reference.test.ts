@@ -20,6 +20,8 @@ describe('reference KS privileges', () => {
     ['another account', make('player', { entryId: '1_abcd1234', partnerId: 8 }), 'wrong account'],
     ['another region', make('player', { entryId: '1_abcd1234', region: 'irp2' }), 'wrong region'],
     ['an entry and a playlist together', make('player', { entryId: '1_abcd1234', playlistId: '1_abcd5678' }), 'together'],
+    ['a player with no id', make('player', {}), 'bad entry id'],
+    ['a flashcard id with a slash', make('flashcards', { entryIds: ['1_abcd1234/1_wxyz9876'] }), 'bad entry id'],
     ['an unknown version', make('player', { entryId: '1_abcd1234' }, 2), 'unknown version'],
     ['an unknown scope key', make('player', { entryId: '1_abcd1234', role: 'admin' }), 'unknown scope key'],
     ['a privilege injected through an id', make('player', { entryId: '1_abcd1234,disableentitlement' }), 'bad entry id'],
