@@ -1,5 +1,4 @@
 // Covers: SEC-13 (CSV formula injection in the source data download).
-// Green since plan item 2.9.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';

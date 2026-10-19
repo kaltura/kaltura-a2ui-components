@@ -1,8 +1,8 @@
 # Tests
 
-All tests pass. Run them with `npm test`.
+Run all tests with `npm test`.
 
-- `test/security/` and `test/probes/` hold one regression test per ID in [docs/security/test-map.md](../docs/security/test-map.md).
+- `test/security/` and `test/regression/` hold one regression test per ID in [docs/security/test-map.md](../docs/security/test-map.md).
 - Name every test `ID: behaviour`, for example `SEC-06: ...`. The ID comes from the test map. The traceability test uses these titles.
 - Each file starts with a header that lists the IDs it covers.
 - Run one file: `npx vitest run test/player.test.ts`

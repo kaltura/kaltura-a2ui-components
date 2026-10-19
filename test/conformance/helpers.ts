@@ -1,4 +1,4 @@
-// Shared setup for the conformance suite (plan item 3.3c): JSON Schema
+// Shared setup for the conformance suite: JSON Schema
 // validators for the catalog and the A2UI message schemas that ship in the
 // installed @a2ui/web_core package.
 import Ajv2020 from 'ajv/dist/2020.js';

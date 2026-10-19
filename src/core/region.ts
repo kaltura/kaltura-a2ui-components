@@ -26,10 +26,8 @@ const US: KalturaHosts = {
   recorder: 'https://www.kaltura.com',
 };
 
-// Hosts follow the Kaltura firewall guide, and prefer its `.ovp` hosts. The guide lists no regional CDN
-// host and the recorder uses the US path, so the player and the recorder use the API host. KMC: the
-// guide lists `.ovp` hosts for irp2 and frp2 only. cap2 and syp2 answer on `.ovp` too. sgp2 does not
-// (HTTP 500), so it keeps the guide host `kmc.sg.kaltura.com`.
+// Hosts follow the Kaltura firewall guide, and prefer its `.ovp` hosts. The player and the recorder
+// use the API host. KMC hosts use `.ovp`, except sgp2: `kmc.sg.kaltura.com`.
 const KMC_HOST: Record<Exclude<KalturaRegion, 'nvp1'>, string> = {
   irp2: 'https://kmc.irp2.ovp.kaltura.com',
   frp2: 'https://kmc.frp2.ovp.kaltura.com',

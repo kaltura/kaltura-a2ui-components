@@ -1,5 +1,4 @@
-// Review regression tests for the Phase 1 and 1b fixes. Inputs that the earlier
-// security tests did not cover: unicode hosts, nested markup, odd types, a
+// Extra input cases that the other security tests do not cover: unicode hosts, nested markup, odd types, a
 // numeric chart annotation, a malformed clip and an alert left behind.
 import { describe, it, expect, afterAll, afterEach, beforeAll, beforeEach } from 'vitest';
 import { createElement, act } from 'react';

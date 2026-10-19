@@ -2,7 +2,7 @@
 // SEC-10 (the Flashcards clips take the KS from the provider, not from a prop).
 // The player and the flashcards clips get the KS in the player setup config. The captions editor gets it
 // as a data attribute of its iframe. Neither puts it in a URL.
-// Plan item 3.1, pulled forward: the host supplies the KS through setKsProvider.
+// The host supplies the KS through setKsProvider.
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot } from 'react-dom/client';

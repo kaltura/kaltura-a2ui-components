@@ -1,5 +1,5 @@
 // Covers: QA-18 (every web component adapter has a happy render, a hostile
-// input case and an unmount cleanup case). Green since plan item 2.12.
+// input case and an unmount cleanup case).
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { act } from 'react';
 import { CASES, installRemote, remote, resetFakes, settle, expectInert } from '../components/cases';

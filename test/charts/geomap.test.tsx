@@ -1,6 +1,5 @@
 // Covers: QA-15 / SEC-16 (GeoMap fetch pinned, ok check, abort on unmount,
 // module cache, unique gradient id, colours that are not 6-digit hex).
-// Green since plan item 2.8.
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';

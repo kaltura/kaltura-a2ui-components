@@ -1,5 +1,5 @@
 // Covers: QA-18 (every core component has a happy render, a hostile input
-// case and an unmount cleanup case). Green since plan item 2.12.
+// case and an unmount cleanup case).
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';

@@ -19,4 +19,4 @@ Run an example from a clone of this repo. `dist/` is not on `main`, so each comm
 
 Both examples use only the public API. Replace the stub agent with your own, and replace the allowlist ids with yours. See [Host API](../docs/host-api.md) and [Host integration](../docs/host-integration.md).
 
-`npm run screenshot:examples` rebuilds the image above. It plays a public entry of the Kaltura test partner, so it needs network and `NVP1_PARTNER_ID` (see the script header).
+`npm run screenshot:examples` rebuilds the image above. It plays a public entry, so it needs network and the variables `SCREENSHOT_PARTNER_ID`, `SCREENSHOT_UICONF_ID` and `SCREENSHOT_ENTRY_ID` (see the script header).

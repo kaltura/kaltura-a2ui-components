@@ -1,5 +1,4 @@
-// Covers: QA-01 / SEC-17 (web components ignore late `config`, never unmount).
-// Turns green: plan item 2.1 (defineKalturaElement helper).
+// Covers: QA-01 / SEC-17 (web components apply late `config` and unmount cleanly).
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act } from 'react';
 import { playerRemote } from '../helpers/player-remote';

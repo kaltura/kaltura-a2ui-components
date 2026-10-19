@@ -5,7 +5,7 @@
   "description": "A2UI catalog for Kaltura Experience Components: Player v7, Flashcards, Media Manager, and more. Freestanding schema with all types inlined. Lists the A2UI basic components and functions (copied from the A2UI basic catalog), the Kaltura components and the Kaltura function copyToClipboard. A surface uses one catalog, so register only this one.",
   "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json",
   "x-kaltura-adapters": {
-    "description": "Where tier-1 A2UI clients can load the renderers backing this catalog's components. Served by jsDelivr from the git tags of github.com/kaltura/kaltura-a2ui-components. Not on npm. In source, the tag and the SRI hashes are placeholders. The release workflow fills them in and commits the result only in the release commit the tag points to.",
+    "description": "Where tier-1 A2UI clients can load the renderers backing this catalog's components. Served by jsDelivr from the git tags of github.com/kaltura/kaltura-a2ui-components. Not on npm.",
     "package": "@kaltura/a2ui-react",
     "repository": "https://github.com/kaltura/kaltura-a2ui-components",
     "react": {
@@ -1056,7 +1056,7 @@
             },
             "cards": {
               "type": "array",
-              "description": "Ordered list of cards. Literal only, no data binding: to change the cards, send the component again. When the host app supplies the KS, the clips of all cards may name at most 20 different entries. More makes the whole deck fail.",
+              "description": "Ordered list of cards. Literal only, no data binding: to change the cards, send the component again. When the host app supplies the KS, the clips of all cards name at most 20 different entries. More makes the whole deck fail.",
               "items": {
                 "type": "object",
                 "properties": {

@@ -42,7 +42,7 @@ Show Kaltura media with A2UI v0.9 messages: createSurface, then updateComponents
 `;
 ```
 
-One object feeds both, so they cannot drift apart. There is no entry allowlist: the prompt asks, and a narrow KS enforces ([ks-privileges](ks-privileges.md)).
+One object feeds both, so they cannot drift apart. Scope entries with a narrow KS ([ks-privileges](ks-privileges.md)).
 
 ## 4. Send errors and events back
 
@@ -51,7 +51,7 @@ const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatal
 setErrorHandler((error) => agent.send(toClientError(error)));
 ```
 
-| Comes back | When | Agent should |
+| Comes back | When | Agent does |
 |---|---|---|
 | Action `kalturaFeedback` | A component with an `action` has an error or event | Read `context.event` and `context.code` |
 | Client `error` message | `setErrorHandler` runs | On code `invalid-props`, resend the component with fixed props |

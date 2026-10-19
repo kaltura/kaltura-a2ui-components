@@ -1,7 +1,6 @@
 // Covers: REC-01 (the script loader): SRI attributes, the integrity failure path and the
-// one shared load. The default RECORDER_SCRIPT has no hash today, because Kaltura serves
-// express-recorder.js without CORS headers (docs/adr/0005). These tests use a descriptor
-// with a hash, which is the path to switch on once the CDN allows it.
+// one shared load. The default RECORDER_SCRIPT carries no hash (docs/adr/0005). These tests
+// use a descriptor with a hash.
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { recorderRemote, loadRecorder, SCRIPT_URL } from '../helpers/recorder-remote';
 

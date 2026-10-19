@@ -24,7 +24,7 @@ sequenceDiagram
   Page-->>Agent: action or error message
 ```
 
-An A2UI client renders only components it has registered ahead of time. There is no runtime code loading. So a Kaltura Player appears only in a client that has this catalog built in.
+An A2UI client renders only components it has registered ahead of time. There is no runtime code loading. So a Kaltura Player renders only in a client that has this catalog built in.
 
 ### Words you will see
 
@@ -52,7 +52,7 @@ An A2UI client renders only components it has registered ahead of time. There is
 
 Most widgets need a Kaltura partner ID, and many need a KS. The chart, and flashcards without video clips, need neither ([which widgets](#components)).
 
-Some chat apps cannot register a catalog, so they cannot show these widgets. Your agent should check which catalogs the client supports ([capability negotiation](docs/host-api.md#capability-negotiation)) and reply in plain text when it supports none of yours.
+Some chat apps cannot register a catalog, so they cannot show these widgets. Check which catalogs the client supports ([capability negotiation](docs/host-api.md#capability-negotiation)) and reply in plain text when it supports none of yours.
 
 ### Install
 

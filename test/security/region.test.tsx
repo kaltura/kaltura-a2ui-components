@@ -14,7 +14,7 @@ import { captionsRemote } from '../helpers/captions-remote';
 
 const clip = { entryId: '0_abc', startTime: 4, endTime: 9 };
 
-// Captured before plan item 3.1c. Analytics changed on purpose with ANA-01. The player and the
+// Analytics changed on purpose with ANA-01. The player and the
 // flashcards clips use one script URL. The captions editor sends its page request to the service
 // host and gets the CDN and service hosts as data attributes.
 const US = {

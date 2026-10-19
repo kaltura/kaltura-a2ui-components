@@ -9,7 +9,7 @@ export default defineConfig({
   testIgnore: 'live/**',
   fullyParallel: true,
   retries: isCI ? 1 : 0,
-  // Cases titled '[pending ...]' wait for their fix. Run them with E2E_PENDING=1.
+  // Cases titled '[pending ...]' are skipped. Run them with E2E_PENDING=1.
   grepInvert: process.env.E2E_PENDING ? undefined : /\[pending/,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: { baseURL: ORIGIN_A, trace: 'on-first-retry' },

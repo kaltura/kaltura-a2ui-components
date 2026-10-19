@@ -1,5 +1,4 @@
 // Covers: QA-07 (Media Manager lifecycle) and SEC-18 (selection event scope).
-// Turns green: plan items 2.2 and 2.3.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act } from 'react';
 import { URL_A, URL_B, loaderUrl, gate, render, fakeWorkspaceModule, errorSpy, tick, type MountedVisual } from './harness';

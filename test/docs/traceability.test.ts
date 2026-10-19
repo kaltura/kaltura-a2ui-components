@@ -43,7 +43,7 @@ describe('QA-18: test map table', () => {
   it('QA-18: each listed test file mentions the row ID in a test title or header', () => {
     const missing = rows
       .filter(r => r.paths.length)
-      // A row may point at the sibling ID that its test carries, for example "same check as QA-02".
+      // A row can point at the sibling ID that its test carries, for example "same check as QA-02".
       .filter(r => {
         const ids = [r.id, ...(r.test.match(/\b[A-Z0-9]+-\d+\b/g) ?? [])];
         return !r.paths.some(p => ids.some(id => readFileSync(resolve(root, p), 'utf8').includes(id)));

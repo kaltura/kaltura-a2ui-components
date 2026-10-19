@@ -107,7 +107,7 @@ Element: `<kaltura-flashcards>`. Needs a KS: Only for protected entries.
 | `uiconfId` | integer |  |  | Player (uiConf) ID used to play the clips. Integer, not a string, not a binding. |
 | `title` | string | yes |  | Title of the flashcard deck. |
 | `summary` | string |  |  | Brief summary or description of the flashcard deck. |
-| `cards` | object[] | yes |  | Ordered list of cards. Literal only, no data binding: to change the cards, send the component again. When the host app supplies the KS, the clips of all cards may name at most 20 different entries. More makes the whole deck fail. |
+| `cards` | object[] | yes |  | Ordered list of cards. Literal only, no data binding: to change the cards, send the component again. When the host app supplies the KS, the clips of all cards name at most 20 different entries. More makes the whole deck fail. |
 | `region` | string |  |  | Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. Lowercase letters, digits and hyphens. A region the host app does not allow is refused. sgp2 has no Unisphere host, so Genie, Media Manager, Content Lab, Agents Widget, VOD Avatar, Avatar and Captions Editor refuse it. With serverUrl, both must name the same region. |
 
 A2UI messages, sent after `createSurface`:

@@ -1,4 +1,4 @@
-// KS provider wiring (plan 3.1 pulled forward). The host calls setKsProvider.
+// KS provider wiring. The host calls setKsProvider.
 // The agent config never carries a ks, and the KS never shows as text or in logs.
 import { test, expect, type Harness } from './fixtures/harness';
 import { ALLOWED_HOSTS } from './fixtures/constants';

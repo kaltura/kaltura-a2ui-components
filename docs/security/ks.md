@@ -17,7 +17,7 @@ The host owns the KS. The agent never sees it, writes it or asks for it.
 | 3 | A component that needs a KS checks its props, then calls the provider with its widget name and a request: the scope of that one instance ([The request](#the-request)). |
 | 4 | The component checks the value with the ks rule: a non-empty string with no control characters. |
 
-- **Order.** On the A2UI path the provider is the only source. If it returns `undefined` or `''`, or no provider is set, the component has no KS. Every call to Kaltura needs a KS, and a KS only works for its own account, so an agent cannot act on an account whose KS it does not hold.
+- **Order.** On the A2UI path the provider is the only source. If it returns `undefined` or `''`, or no provider is set, the component has no KS.
 - **Async.** The component renders nothing until its first KS arrives. When the scope changes later, it keeps showing the last props with the KS minted for them until the next KS arrives (no remount).
 - **Errors.** An invalid value, a throw or a rejected promise shows `Failed to load <widget>: Invalid ks`. The value and the error are never shown or logged.
 - **Components.** Player, Flashcards, Media Manager, Analytics, Captions Editor, Recorder, Genie, Content Lab, Agents Widget, VOD Avatar and Avatar use the provider.
@@ -82,13 +82,13 @@ Rules the component applies before it calls you:
 
 What your backend must do:
 
-- Check `partnerId` against the accounts you serve, and `entryId`, `entryIds`, `categoryId` and `contextId` against what the signed-in user may see. A scope value is a request, not a grant.
+- Check `partnerId` against the accounts you serve, and `entryId`, `entryIds`, `categoryId` and `contextId` against what the signed-in user can see. A scope value is a request, not a grant.
 - Put the scope into the KS privileges (for example `sview:<entryId>`). Per widget: [ks-privileges.md](../ks-privileges.md).
-- For a category, add `enableentitlement` and `privacycontext`. Do not mint `disableentitlement` for an end user. A tested reference that does this and fails closed: [`examples/ks-server/privileges.ts`](../../examples/ks-server/privileges.ts). The page cannot check the KS you return: it is encrypted.
+- For a category, add `enableentitlement` and `privacycontext`. Do not mint `disableentitlement` for an end user. Reference that does this and fails closed: [`examples/ks-server/privileges.ts`](../../examples/ks-server/privileges.ts).
 - Reject unknown `version` and unknown scope keys. Rate-limit the endpoint.
 - Never log or echo the returned KS.
 
-A UI-level prop that the KS cannot enforce (for example the `analytics` dates) is a hint. The KS is the only boundary.
+Analytics props (for example the dates) choose the view. Mint the KS for the role you intend.
 
 ### When the scope changes
 
@@ -112,9 +112,9 @@ Follow the Kaltura Session Guide:
 - Grant least privilege. For playback: `setrole:PLAYBACK_BASE_ROLE`, `sview:<entryId>`, `privacycontext`, `appid`. Add `iprestrict` or `actionslimit` where you can.
 - Give each widget only what its guide lists, for example Genie `setrole:PLAYBACK_BASE_ROLE` and Express Recorder `editadmintags:*`.
 - The recorder KS needs `editadmintags:*`. The Express Recorder script runs in your page, so the KS is visible to the page's JavaScript and to any other script on that page. Keep its expiry short and mint it for one user.
-- The Player, the Flashcards clips and the Captions editor keep the KS out of script and iframe URLs (player config with `useHeaderForKs: true`, `data-*` attributes). Their code runs in your page origin too, so it can read the KS like the recorder script. The Captions editor's own player requests a `playManifest` URL with the KS in its path, so the KS can reach Kaltura CDN logs and CSP reports (redact `blockedURI`, `document-uri` and console text: [Rollout](../host-integration.md#rollout)). The player version is the uiConf the customer admin picks, the recorder and editor are pinned to a version, and SRI is out of scope while all remote code comes from Kaltura ([Remote code from Kaltura](../host-integration.md#remote-code-from-kaltura)). Keep the expiry short and the privileges narrow. See [ADR 0008](../adr/0008-in-page-player-and-captions-editor.md).
+- The Player, the Flashcards clips and the Captions editor keep the KS out of script and iframe URLs (player config with `useHeaderForKs: true`, `data-*` attributes). Their code runs in your page origin too, so it can read the KS like the recorder script. Redact `blockedURI`, `document-uri` and console text in CSP reports ([Rollout](../host-integration.md#rollout)). The player version is the uiConf the customer admin picks, the recorder and editor are pinned to a version, and SRI does not apply to the remote Kaltura code ([Remote code from Kaltura](../host-integration.md#remote-code-from-kaltura)). Keep the expiry short and the privileges narrow. See [ADR 0008](../adr/0008-in-page-player-and-captions-editor.md).
 - Analytics is the exception: its guide requires an ADMIN KS (type=2). Mint it on the server with a short expiry and narrow it with `setrole` and `iprestrict`.
-- **The Analytics KS must belong to an admin user that has a role.** A KS with no role makes the app fail with "Invalid object id [0]". This is the concern of your KS provider: the component cannot check it. Pick the user with `user.list` and `isAdminEqual=1`, and use one that has `roleIds`.
+- **Mint the Analytics KS for an admin user that has a role.** Pick the user with `user.list` and `isAdminEqual=1`, and use one that has `roleIds`.
 - Analytics receives the KS in a `postMessage` to the Kaltura Analytics origin, never in the iframe URL. A message is accepted only from that origin and from our iframe. See [ADR 0005](../adr/0005-analytics-and-recorder-integration.md).
 
 ## One KS per widget
@@ -135,7 +135,7 @@ setKsProvider(widget => (widget === 'analytics' ? session.adminKs : session.user
 
 ## When the KS expires
 
-A component calls the provider when it mounts and when its scope changes. It never calls it to renew. It does not know when the KS expires. After the expiry, Kaltura rejects the calls the widget makes with that KS. The widget shows its own Kaltura message, or plays no protected media. This package shows no error for it.
+A component calls the provider when it mounts and when its scope changes. It never calls it to renew. It does not know when the KS expires.
 
 A chat can outlast a short KS. To renew, mint a new KS before the old one expires and remount the surface. The provider then runs again and returns the new KS.
 
@@ -161,4 +161,4 @@ The surface keeps its components and data model, because they live in the `Messa
 ## Keep the KS out of the A2UI data model
 
 > [!WARNING]
-> Do not put the KS in the A2UI data model. The agent can read the data model and can wire its values into other components, so a KS there is not protected. Use `setKsProvider`.
+> Do not put the KS in the A2UI data model. The agent can read the data model and wire its values into other components, so a KS there is not protected. Use `setKsProvider`.

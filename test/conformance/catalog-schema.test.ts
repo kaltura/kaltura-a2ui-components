@@ -1,4 +1,4 @@
-// Covers: CONF-01..05 (plan item 3.3c): the catalog JSON is a valid JSON Schema,
+// Covers: CONF-01..05: the catalog JSON is a valid JSON Schema,
 // fits the A2UI catalog definition that ships with @a2ui/web_core, and has the
 // same shape as the A2UI basic catalog. It lists the 18 basic components and 14
 // basic functions next to the 12 Kaltura components (ADR 0006). No finding ID: this is the conformance suite.

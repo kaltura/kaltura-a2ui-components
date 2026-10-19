@@ -54,13 +54,13 @@ Both run in your page. The KS goes in JavaScript, never in the URL of a script o
 | Widget | How it loads | Where the KS goes |
 |---|---|---|
 | Player, flashcard clips | The `embedPlaykitJs` script of the `uiconfId` from the `cdn` host ([Regions](#regions)), then `KalturaPlayer.setup` | The player config, with `useHeaderForKs: true`. Not in any URL |
-| Captions editor | The editor page (`embed.php`, pinned to a fixed version, see `src/core/captions-editor.tsx`) is fetched from the `serviceUrl` host with `integrity` into a blob URL iframe | `data-*` attributes on that iframe. The editor's own player requests a `playManifest` URL with the KS in its path ([CSP reports](host-integration.md#rollout)) |
+| Captions editor | The editor page (`embed.php`, pinned to a fixed version, see `src/core/captions-editor.tsx`) is fetched from the `serviceUrl` host with `integrity` into a blob URL iframe | `data-*` attributes on that iframe |
 
 The uiconf sets the plugins. `autoplay` and `muted` reach the player only when the prop is set, so the uiconf defaults apply otherwise.
 
 ## Allowed partners and uiconfs
 
-The agent picks `partnerId` and `uiconfId`. Both are literal integers in agent messages: a string such as `"123"` or a data binding gives `invalid-props`. A uiconf decides which player or recorder code runs in your page, with your KS. Whoever owns a uiconf can put any JavaScript in it, so the code that runs is only as trusted as the account behind the id. Set an allowlist so the agent can use only your accounts.
+The agent picks `partnerId` and `uiconfId`. Both are literal integers in agent messages: a string such as `"123"` or a data binding gives `invalid-props`. A uiconf decides which player or recorder code runs in your page, with your KS. Set an allowlist so the agent can use only your accounts.
 
 ```ts
 import { setAllowedPartners, setAllowedUiconfs } from '@kaltura/a2ui-react';
@@ -111,7 +111,7 @@ The widget shows `Failed to load <widget>: region is not allowed` and loads noth
 - `region` and `serverUrl` name different regions
 - the widget is a Unisphere widget and the region has no Unisphere host (`sgp2`, or an environment without `unisphere`), or the widget is the Agents Widget and an environment has no `agents`
 
-`serverUrl` may be the bare origin, or end in `/v1` or `/v1/`. The Unisphere loader always gets the `https://unisphere.<region>.ovp.kaltura.com/v1` form, because it reads the region from that exact URL.
+`serverUrl` can be the bare origin, or end in `/v1` or `/v1/`. The Unisphere loader always gets `<origin>/v1`. For a built-in region the origin is `https://unisphere.<region>.ovp.kaltura.com`.
 
 Flashcards: a refused `region` blocks the whole deck. A refused `partnerId` or `uiconfId` disables only the clips.
 
@@ -127,11 +127,11 @@ The Captions editor works only in a built-in region that has a pinned page (`nvp
 | kmc | `https://kmc.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` | `https://kmc.frp2.ovp.kaltura.com` | `https://kmc.cap2.ovp.kaltura.com` | `https://kmc.syp2.ovp.kaltura.com` | `https://kmc.sg.kaltura.com` | Analytics (`/apps/kmc-analytics/latest/index.html`, and the `postMessage` origin) |
 | recorder | `https://www.kaltura.com` | same as cdn | same as cdn | same as cdn | same as cdn | same as cdn | Express Recorder script (pinned to a fixed version, see `src/core/recorder-script.ts`) |
 
-Hosts follow the [Kaltura firewall guide](https://knowledge.kaltura.com/help/configuring-your-firewall-rules-to-access-kaltura-products) and use its `.ovp` hosts. For KMC, the guide lists `.ovp` hosts for `irp2` and `frp2` only. `cap2` and `syp2` answer on their `.ovp` KMC host too (not in the guide, so a firewall that follows the guide must allow it). `sgp2` keeps the guide host: its `.ovp` KMC host answers HTTP 500.
+Hosts follow the [Kaltura firewall guide](https://knowledge.kaltura.com/help/configuring-your-firewall-rules-to-access-kaltura-products) and use its `.ovp` hosts. KMC is `kmc.<region>.ovp.kaltura.com` for `irp2`, `frp2`, `cap2` and `syp2`, and `kmc.sg.kaltura.com` for `sgp2`. Add every host you use to your firewall allow-list.
 
-The Kaltura API guide lists no regional CDN host, so the player script loads from the regional API host shown in the cdn row. The recorder script loads from the recorder host. It gets the regional API host as `serviceUrl` and the cdn host as `playerUrl`.
+The player script loads from the regional API host shown in the cdn row. The recorder script loads from the recorder host. It gets the regional API host as `serviceUrl` and the cdn host as `playerUrl`.
 
-`sgp2` (Singapore) runs no microservices, so it has no Unisphere host: the Unisphere widgets (Media Manager, Genie, Content Lab, Agents, VOD Avatar, Avatar) refuse it. The other widgets work, except the Captions editor (no pinned page).
+`sgp2` (Singapore) has no Unisphere host: the Unisphere widgets (Media Manager, Genie, Content Lab, Agents, VOD Avatar, Avatar) refuse it. The other widgets work, except the Captions editor (no pinned page).
 
 ### Environments
 
@@ -151,7 +151,7 @@ setEnvironments({
 | Name | `a-z`, digits and `-`, 1 to 32 characters, starts with a letter, and is not a region code |
 | `serviceUrl` | Required. `cdn`, `vod`, `kmc` and `recorder` default to it |
 | `unisphere` | Optional. Without it the Unisphere widgets refuse the environment. It is added to the Unisphere origin allowlist |
-| `agents` | Optional. The Agents Manager host, such as `https://agents-manager.alt.ovp.kaltura.com`. Without it the Agents Widget refuses the environment |
+| `agents` | Optional. The Agents Manager host, such as `https://agents.lab.example.com`. Without it the Agents Widget refuses the environment |
 | Values | An origin only: no path, query or userinfo |
 | `http:` | Only for `localhost`, `*.localhost`, `[::1]` and private IPs. A `console.warn` says the KS travels in clear text |
 
@@ -300,7 +300,7 @@ One full action for each event:
     "widget": "avatar", "event": "avatar-disconnected" } }
 ```
 
-| Event | What the agent should do |
+| Event | Agent action |
 |---|---|
 | `error`, `invalid-props` | Fix the props in `invalidProps` and send the component again |
 | `error`, `origin-not-allowed` | Use an id the host allows. Do not retry the same id |
@@ -321,7 +321,7 @@ With `functionCall`, the function runs on the client on each error and event, an
 
 A Flashcards clip player reports as `KalturaFlashcards`, widget `flashcards`. The basic Image, Video and AudioPlayer have no `action`: only the error handler gets `url-rejected`.
 
-Known gap: the Player has no `ended` event, so the agent cannot learn that a video finished.
+The Player sends no event when a video ends.
 
 The context goes into the model's prompt. Remote error text can hold the KS or markup, so it is never sent. The Kaltura fields hold only fixed names, codes and checked entry ids: never the KS, `message`, an entry `name`, an avatar `reason` or other text from a remote service or the page.
 

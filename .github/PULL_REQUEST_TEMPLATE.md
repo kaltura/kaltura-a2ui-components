@@ -1,6 +1,6 @@
 ## What and why
 
-<!-- One or two sentences. Link the issue or finding ID. -->
+<!-- One or two sentences. Link the issue. -->
 
 ## Checks
 

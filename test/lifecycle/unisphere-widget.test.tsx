@@ -1,5 +1,4 @@
-// Covers: QA-03 (Unisphere widget reads props once and leaks the workspace).
-// Turns green: plan item 2.2 (effect deps, cancelled flag, kill on unmount).
+// Covers: QA-03 (the Unisphere widget follows prop changes and destroys the workspace).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { URL_A, URL_B, loaderUrl, gate, render, fakeLoader, errorSpy, tick } from './harness';
 

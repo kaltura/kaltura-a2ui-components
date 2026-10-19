@@ -152,7 +152,6 @@ jobs:
     if: ${{ !inputs.dry_run }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Limit this environment to main and add required reviewers (repository setting).
     environment: release
     # The only job that can write. No repo code runs here: shell, git, jq, openssl and gh only.
     permissions:
@@ -228,8 +227,6 @@ jobs:
             -m "dist/ and the stamped catalog are only in this commit. It is on no branch."
           git tag "$TAG"
           commit="$(git rev-parse HEAD)"
-          # The tag ruleset lets only admins, maintainers and this deploy key create tags (repository setting).
-          # The job token cannot. The key is a write deploy key, used for this push only.
           key="${RUNNER_TEMP}/tag-key"
           umask 077
           printf '%s\n' "$TAG_KEY" > "$key"
@@ -248,8 +245,7 @@ jobs:
           fi
       # An asset that is already on the Release is never overwritten. A re-run adds only
       # missing assets. A new Release is created as a draft. The draft is compared with the build and
-      # published last, so with immutable releases on (repository setting) it is complete and checked
-      # when it locks. A draft left by a failed run is checked and published the same way.
+      # published last. A draft left by a failed run is checked and published the same way.
       - name: Create or update the GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}

@@ -1,6 +1,10 @@
 // Renders the player, the chart and the flashcards of examples/plain-html and
-// writes docs/img/examples.png. The player plays a public entry of the Kaltura
-// test partner, so this needs network and NVP1_PARTNER_ID (no KS, no secret).
+// writes docs/img/examples.png. The player plays a public entry (no KS, no
+// secret), so this needs network and these variables:
+//   SCREENSHOT_PARTNER_ID  partner id of the account that owns the entry
+//   SCREENSHOT_UICONF_ID   player uiConf id of that partner
+//   SCREENSHOT_ENTRY_ID    public entry id, for example 0_abc12345
+//   SCREENSHOT_HOLD_AT     optional, seconds at which the player holds its frame (default 8)
 // Run after "npm run build": set -a; . ./.env; set +a; npm run screenshot:examples
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
@@ -10,13 +14,15 @@ import { chromium } from '@playwright/test';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, 'docs/img/examples.png');
-const partnerId = Number(process.env.NVP1_PARTNER_ID);
-if (!partnerId) {
-  console.error('NVP1_PARTNER_ID is missing. Load .env first.');
+const partnerId = Number(process.env.SCREENSHOT_PARTNER_ID);
+const uiconfId = Number(process.env.SCREENSHOT_UICONF_ID);
+const entryId = process.env.SCREENSHOT_ENTRY_ID;
+if (!partnerId || !uiconfId || !entryId) {
+  console.error('SCREENSHOT_PARTNER_ID, SCREENSHOT_UICONF_ID and SCREENSHOT_ENTRY_ID are required. Load .env first.');
   process.exit(1);
 }
-// A public entry of the test partner. The hero holds its frame at holdAt seconds.
-const PLAYER = { uiconfId: 1000092, entryId: '1_eeeeeeee', holdAt: 8 };
+// The hero holds the player frame at holdAt seconds.
+const PLAYER = { uiconfId, entryId, holdAt: Number(process.env.SCREENSHOT_HOLD_AT) || 8 };
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.map': 'application/json' };
 
 if (!existsSync(join(root, 'dist/kaltura-wc.js'))) {
@@ -39,7 +45,7 @@ const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ viewport: { width: 1100, height: 900 }, colorScheme: 'light' });
   await page.goto(`${origin}/examples/plain-html/index.html`);
-  // The page holds placeholder ids. Point the player at the test entry and lay the three widgets out side by side.
+  // The page holds placeholder ids. Point the player at the configured entry and lay the three widgets out side by side.
   await page.evaluate(({ partnerId, player }) => {
     window.KalturaA2UIWebComponents.setAllowedPartners([partnerId]);
     document.getElementById('player').config = { partnerId, ...player, autoplay: true, muted: true, };

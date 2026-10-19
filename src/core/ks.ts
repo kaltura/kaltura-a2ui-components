@@ -229,7 +229,7 @@ export function withKs<P extends { ks?: string }>(widget: KsWidget, Inner: Compo
           try {
             const result = (provider as unknown as (w: KsWidget, r: unknown) => unknown)(widget, request);
             // A failed provider gives `null`. It fails the ks rule, so the component shows
-            // "Invalid ks" and never the error itself, which could hold the KS.
+            // "Invalid ks" and never the error itself, which can hold the KS.
             if (isThenable(result)) Promise.resolve(result).then(settle, () => settle(null));
             else settle(result);
           } catch {

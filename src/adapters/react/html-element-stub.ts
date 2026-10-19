@@ -1,9 +1,9 @@
 // Workaround for https://github.com/a2ui-project/a2ui/issues/3158 (ADR 0007).
 // @a2ui/react 0.13.0 runs `class ReactWcHost extends HTMLElement` when it
 // loads, so importing it in Node (SSR) throws "HTMLElement is not defined".
-// Remove when @a2ui/react >= <fixed version> imports in Node.
-// test/conformance/ssr-import.test.ts (CONF-17) fails on that release. The
-// removal steps are in docs/adr/0007-ssr-html-element-stub.md.
+// Remove when a release of @a2ui/react imports in Node without it.
+// test/conformance/ssr-import.test.ts fails on that release. The removal
+// steps are in docs/adr/0007-ssr-html-element-stub.md.
 
 // Lit takes globalThis.HTMLElement as its base class when it loads, and uses
 // its own server shim only when there is none. Load it first, so it never

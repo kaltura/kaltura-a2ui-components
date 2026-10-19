@@ -1,6 +1,5 @@
 // Covers: QA-05 (the zod schemas must accept data the catalog allows and the
 // components handle), SEC-03 (ids are checked, never coerced).
-// Turns green: Phase 1b review fix for over-strict schemas. Green today.
 // Strict rules guard ids, ks, urls, serverUrl and enums. Everything else must accept data the components handle.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount } from '../helpers/render';

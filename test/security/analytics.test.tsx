@@ -165,7 +165,7 @@ describe('ANA-01: navigation and filters', () => {
 
   it.each([
     [{ categoryId: '123' }, 'category'],
-    [{ playlistId: '1_bbbbbbbb' }, 'playlist'],
+    [{ playlistId: '1_testplaylist' }, 'playlist'],
     [{ virtualEventId: '456' }, 'virtual-event'],
   ])('ANA-01: %j opens the %s view and wins over reportType', async (subject, route) => {
     expect(await afterHandshake({ partnerId: 123, reportType: 'live', ...subject })).toEqual(

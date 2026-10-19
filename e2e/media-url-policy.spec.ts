@@ -1,4 +1,4 @@
-// Covers: SEC-05 (plan item 3.1). The basic Image in buildKalturaCatalog sends
+// Covers: SEC-05. The basic Image in buildKalturaCatalog sends
 // no request to a foreign origin, also when an agent binds the KS into its url
 // with formatString. A Kaltura CDN image still loads. The same holds for an
 // image in basic Text markdown, and when the host also registers basicCatalog.
@@ -27,7 +27,7 @@ test.beforeAll(async () => {
     plugins: [
       {
         name: 'media-policy-entry',
-        // Vite may hand the lib entry over as an absolute path.
+        // Vite hands the lib entry over as an absolute path.
         resolveId: id => (id.endsWith(ENTRY) ? `\0${ENTRY}` : null),
         load: id =>
           id === `\0${ENTRY}`

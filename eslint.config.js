@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint';
 const SECURITY_RULE_LEVEL = 'error';
 const HOOKS_RULE_LEVEL = 'error';
 
-// Banned patterns (internal-review plan 6.3). Each entry is one selector.
+// Banned patterns. Each entry is one no-restricted-syntax selector.
 const DYNAMIC_IMPORT = {
   selector: "ImportExpression:not([source.type='Literal'])",
   message: 'Dynamic import() with a non-literal argument is only allowed in src/core/unisphere-loader.ts.',

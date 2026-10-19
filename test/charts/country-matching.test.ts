@@ -1,5 +1,4 @@
 // Covers: QA-14 (exact country matching, alias table, no substring fallback).
-// Green since plan item 2.7.
 import { describe, it, expect } from 'vitest';
 import { normalizeCountryCode, resolveCountryValue } from '../../src/core/charts/countryCodes';
 

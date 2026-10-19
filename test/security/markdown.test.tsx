@@ -1,5 +1,4 @@
 // Covers: SEC-05 (image part): markdown images and links from agent output.
-// Turns green: plan item 1.7 (markdown image exfil).
 import { describe, it, expect } from 'vitest';
 import { renderSafeMarkdown, sanitizeMarkdownHtml } from '../../src/core/safe-markdown';
 

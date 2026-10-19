@@ -1,7 +1,6 @@
-// Covers: SEC-04 / QA-12 (raw content rendered before sanitising, on reject,
-// no .catch), SEC-11 (bad ids never reach the clip player or the thumbnail URL),
-// SEC-12 (clip.thumbnail loaded as any URL).
-// Turns green: plan item 1.3 (flashcards). The control test is green today.
+// Covers: SEC-04 / QA-12 (content renders only after sanitising, also on reject),
+// SEC-11 (bad ids never reach the clip player or the thumbnail URL),
+// SEC-12 (clip.thumbnail is checked as a URL).
 // Technique: vi.mock('@a2ui/markdown-it') with a deferred promise, so we can
 // inspect the DOM at the "first render" moment.
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
@@ -98,7 +97,7 @@ describe('SEC-04: FlashcardsCore: renderMarkdown rejects', () => {
 });
 
 describe('SEC-04: FlashcardsCore: control (real renderMarkdown, after it resolves)', () => {
-  it('SEC-04: sanitized output has nothing unsafe (control, must stay green)', async () => {
+  it('SEC-04: sanitized output has nothing unsafe (control)', async () => {
     md.impl = null;
     const { container } = await render(PAYLOADS['img onerror']);
     await new Promise(r => setTimeout(r, 100));

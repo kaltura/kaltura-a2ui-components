@@ -26,14 +26,9 @@ export interface ExpressRecorderApi {
 }
 
 /**
- * How the script is loaded. `integrity` is an SRI hash (`sha384-...`).
- * Kaltura serves `express-recorder.js` with no `Access-Control-Allow-Origin`
- * header, so a `crossorigin` request fails and SRI cannot be used yet
- * (docs/adr/0005). Once it sends the header, set `integrity` here to the hash
- * of the pinned version below
- * (`sha384-VkTBbp92aE8w5t8L3oNuCWPla+b1pnhgEHE3qBg+6VgCuGOou14E4Dwp/ZPcDWYS`
- * for v2.2.10). The loader then adds `crossorigin="anonymous"` and reports a
- * mismatch.
+ * How the script is loaded. `integrity` is an SRI hash (`sha384-...`). When
+ * set, the loader adds `crossorigin="anonymous"` and reports a mismatch. The
+ * default sets no hash (docs/adr/0005).
  */
 export interface RecorderScript {
   integrity?: string;

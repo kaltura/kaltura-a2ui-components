@@ -24,7 +24,7 @@ import cssInjectedByJs from 'vite-plugin-css-injected-by-js';
 // adapter entry so it travels with the package (it lives in the chat-UI's
 // App.css upstream; the package must not render unstyled). BOTH builds inject
 // the CSS via JS so a single `import '@kaltura/a2ui-react'` (or one <script>)
-// ships styles too — no separate stylesheet import to forget.
+// ships styles too, with no separate stylesheet import to forget.
 
 const target = process.env.BUILD_TARGET ?? 'react';
 
@@ -41,7 +41,7 @@ export default defineConfig({
   plugins: [
     react(),
     // Fold CSS into the JS for BOTH targets so consumers get styles from a
-    // single import / <script> — no orphaned sibling stylesheet to wire up.
+    // single import / <script>, with no orphaned sibling stylesheet to wire up.
     cssInjectedByJs(),
   ],
   build: {
@@ -80,7 +80,7 @@ export default defineConfig({
           },
         }
       : {
-          // Self-contained bundle — React and all deps inlined. IIFE already
+          // Self-contained bundle. React and all deps inlined. IIFE already
           // disables code-splitting, so dynamic imports fold in automatically.
           output: { sourcemapExcludeSources: true },
         },

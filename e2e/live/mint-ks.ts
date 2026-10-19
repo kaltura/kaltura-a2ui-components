@@ -1,6 +1,6 @@
 // Mints a short-lived admin KS for the live test. Runs in the test process only: the secret and the KS
-// never reach a file, a log or an error message. NVP1 is the US region, so the host is the one in
-// src/core/region.ts (`serviceUrl`). `serviceUrl` picks another environment, such as ALT.
+// never reach a file, a log or an error message. The default host is the one in
+// src/core/region.ts (`serviceUrl`). `serviceUrl` picks another environment.
 const SERVICE_URL = 'https://www.kaltura.com';
 const EXPIRY_SECONDS = 600;
 
@@ -19,7 +19,7 @@ export async function mintKs(partnerId: number, adminSecret: string, userId = 'a
         expiry: String(EXPIRY_SECONDS),
       }),
     });
-  // The test machine reaches the API over a network that now and then times out. One retry.
+  // The request retries once after a network error.
   const res = await request().catch(request);
   const body: unknown = await res.json();
   // On failure the API returns an object with a `code`, such as START_SESSION_ERROR.

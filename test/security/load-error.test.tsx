@@ -1,5 +1,4 @@
 // Covers: SEC-06 / QA-13 (loader error text must not reach innerHTML).
-// Turns green: plan item 1.1 (shared render-load-error helper).
 // Technique: vi.mock() on the exact derived loader URL. The mock module
 // exposes a getter that throws, so the component's own `.catch` handler runs
 // with our Error (a throwing vi.mock factory would be re-wrapped by vitest).

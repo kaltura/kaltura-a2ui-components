@@ -1,4 +1,4 @@
-// Covers: CONF-06..08 (plan item 3.3c): src/catalog/kaltura_catalog.json equals
+// Covers: CONF-06..08: src/catalog/kaltura_catalog.json equals
 // what scripts/gen-catalog.mjs builds from the zod schemas in src/schemas, and
 // the places where it differs on purpose are pinned.
 //
@@ -113,7 +113,7 @@ describe('CONF-08: differences between zod and the catalog are on purpose', () =
     expect(Object.keys(generator.KEPT_FROM_CATALOG)).toEqual([]);
   });
 
-  it('CONF-08: each kept prop still differs from what zod gives (a stale entry should be removed)', () => {
+  it('CONF-08: each kept prop still differs from what zod gives (remove a stale entry)', () => {
     const strict = generator.generateCatalog(catalog, APIS, {});
     const stale = Object.keys(generator.KEPT_FROM_CATALOG).filter(key => {
       const [component, prop] = key.split('.');

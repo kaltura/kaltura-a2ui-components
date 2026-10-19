@@ -1,5 +1,5 @@
 // Covers: QA-18 (every React adapter implementation renders through a real
-// A2UI surface: happy path, hostile input, unmount cleanup). Green since plan item 2.12.
+// A2UI surface: happy path, hostile input, unmount cleanup).
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -40,7 +40,7 @@ afterEach(() => {
 
 async function surface(c: Case, props: Record<string, unknown>) {
   const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatalog]);
-  // The A2UI schema check may refuse a bad shape before anything mounts.
+  // The A2UI schema check refuses a bad shape before anything mounts.
   try {
     processor.processMessages([
       { version: 'v0.9', createSurface: { surfaceId: 's', catalogId } },

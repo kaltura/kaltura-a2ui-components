@@ -370,7 +370,7 @@ const FlashcardsView: FC<FlashcardsCoreProps> = ({
 // Bad partnerId or uiconfId only disables the clips (SEC-11), so they are not checked here.
 const SCHEMA = KalturaFlashcardsApi.schema.omit({ partnerId: true, uiconfId: true });
 
-/** One KS covers at most this many entries. A conservative cap: live tests kept 1000 ids in one `sview` value, but a KS in a `playManifest` URL path broke near 400. */
+/** One KS covers at most this many entries. */
 const MAX_KS_ENTRIES = 20;
 
 // The valid clip entries. A bad clip shows "This clip cannot be shown" and adds nothing.

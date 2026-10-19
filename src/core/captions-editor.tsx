@@ -7,13 +7,10 @@ import { resolveRegion, type KalturaHosts } from './region';
 import { KalturaFailure, ReporterContext } from './host-hooks';
 import { renderLoadError } from './render-load-error';
 
-// Serves the editor page with a <base> tag and CORS open. Pinned to v1.3.10: `latest` is an alias
-// that Kaltura moves by hand.
+// The editor page is pinned to v1.3.10.
 const EDITOR_PATH = '/apps/captionstudio/v1.3.10/embed.php';
 
-// sha384 of the v1.3.10 page and of the two files it loads. Change them with EDITOR_PATH.
-// `embed.php` writes the service host into its <base> tag, so its hash differs per host.
-// The player bundle that the editor loads from the CDN is not pinned.
+// sha384 of the v1.3.10 page, one per host. Change them with EDITOR_PATH.
 const EDITOR_PAGE_INTEGRITY: Record<string, string> = {
   'https://www.kaltura.com': 'sha384-HajZJL7XrUQ8Z7IPRBS0KXRI4J5/fQ83kcyvxaVfGoi2pKKD4sWGltXVnNjZ6bFJ',
   'https://api.irp2.ovp.kaltura.com': 'sha384-eP8a9KFBm9rMOGwCdQuqsY9OF14VdPenUszLZnAQo5Pc54X5JHWU5LeoGHVD2eyT',

@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Covers: QA-16 (README and docs match the code), plan items 3.5 and 3.3e.
+// Covers: QA-16 (README and docs match the code).
 // Text checks on the Markdown files. The code in README and examples/ is run
 // by "npm run check:examples" (needs a build), not here.
 import { describe, it, expect } from 'vitest';

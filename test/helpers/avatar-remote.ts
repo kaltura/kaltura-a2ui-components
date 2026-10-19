@@ -1,5 +1,5 @@
 // Fake Unisphere loader for the avatar: `embeds.workspace` and `apis.genieAvatar`.
-// Used by test/security/avatar.test.tsx and test/probes/avatar.test.tsx.
+// Used by test/security/avatar.test.tsx and test/regression/avatar.test.tsx.
 import { vi, expect } from 'vitest';
 
 export const SERVER_URL = 'https://unisphere.nvp1.ovp.kaltura.com/v1';

@@ -1,4 +1,4 @@
-// Covers: CONF-09..13 (plan item 3.3c): A2UI message streams run through the
+// Covers: CONF-09..13: A2UI message streams run through the
 // real MessageProcessor and A2uiSurface for all 12 components. The fixtures are
 // in fixtures/streams.json (valid) and fixtures/invalid-components.json.
 // The host supplies the KS with setKsProvider, so no stream carries one.
@@ -59,9 +59,9 @@ afterEach(() => {
 
 const process = (processor: MessageProcessor<never>, messages: Record<string, unknown>[]) => processor.processMessages(messages as never);
 
-// The fixture key `iframeSrcContains` dates from when every embed was an iframe URL. The analytics
-// widget still is one. The player has no iframe, and the captions editor sets its ids as data
-// attributes. So the facts are read where they live now, and written the way the fixtures write them.
+// The fixture key `iframeSrcContains` is a legacy name. The analytics widget is an iframe URL. The
+// player has no iframe, and the captions editor sets its ids as data attributes. The facts are read
+// where they live and written the way the fixtures write them.
 function embedFacts(): string {
   const frame = host.querySelector('iframe');
   const facts = [frame?.getAttribute('src') ?? ''];
@@ -175,7 +175,7 @@ describe('CONF-13: invalid components are rejected', () => {
       await act(async () => root.render(createElement(A2uiSurface, { surface: processor.model.getSurface('s')! as never })));
       await settle();
     } catch {
-      // The processor may refuse the shape before anything mounts. That is a pass.
+      // The processor can refuse the shape before anything mounts. That is a pass.
     }
   };
 

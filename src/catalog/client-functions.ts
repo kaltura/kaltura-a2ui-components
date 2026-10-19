@@ -37,7 +37,7 @@ export const CopyToClipboardImplementation: FunctionImplementation = createFunct
  * Replaces the basic catalog's `openUrl`. Only absolute `https:` URLs reach
  * `window.open`. The URL parser removes leading spaces, tabs and line breaks
  * and lowercases the scheme, so the check runs on the parsed protocol.
- * Relative URLs are refused because the base page may not be https.
+ * Relative URLs are refused because the base page can be non-https.
  */
 export const SafeOpenUrlImplementation: FunctionImplementation = createFunctionImplementation(
   { ...OpenUrlApi, requiresUserActivation: true },

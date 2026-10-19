@@ -1,4 +1,3 @@
-// Covers: QA-16 (the README and examples run against the built bundles).
 // Runs the README snippets and the pages in examples/ in a real browser against
 // dist/. Fails when one throws, logs a console error, loads a missing local file
 // or does not show what its "check-examples: expect" comment lists. React pages

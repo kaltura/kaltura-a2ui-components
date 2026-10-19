@@ -1,4 +1,4 @@
-// Covers: SEC-05 (a KS in agent output or the data model), plus the serverUrl example fix from 1.2.
+// Covers: SEC-05 (a KS in agent output or the data model) and the serverUrl catalog example.
 // Agents have no ks prop. The host supplies the KS with setKsProvider.
 import { describe, it, expect } from 'vitest';
 import catalog from '../../src/catalog/kaltura_catalog.json';

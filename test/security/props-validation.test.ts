@@ -1,5 +1,5 @@
-// Covers: SEC-03, SEC-07, SEC-11, SEC-12 root cause (core components trusted raw agent props).
-// Plan item 1.5: every core component checks its resolved props and shows a plain-text error.
+// Covers: SEC-03, SEC-07, SEC-11, SEC-12 (core components never trust raw agent props).
+// Every core component checks its resolved props and shows a plain-text error.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot } from 'react-dom/client';

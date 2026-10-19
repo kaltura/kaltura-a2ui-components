@@ -75,7 +75,7 @@ const FIELD_RULES: Record<string, (value: unknown) => boolean> = {
  *   from the values.
  * - `pending`: a required top-level prop is still undefined, for example a
  *   binding the host has not filled yet. The same holds when none of a
- *   one-of pair (`entryId`, `playlistId`) is set. That is not an error, the value may
+ *   one-of pair (`entryId`, `playlistId`) is set. That is not an error: the value can
  *   still arrive. An undefined value inside a prop (a clip without `startTime`)
  *   is invalid. With `strict`, a missing top-level prop is invalid too.
  */

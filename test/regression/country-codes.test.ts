@@ -1,6 +1,5 @@
-// Covers: QA-14 (country substring match: niger/Nigeria, mali/Somalia,
+// Covers: QA-14 (no country substring match: niger/Nigeria, mali/Somalia,
 // oman/Romania, sudan/South Sudan).
-// Turns green: plan item 2.7 (exact normalised names plus alias table).
 import { describe, it, expect } from 'vitest';
 import { resolveCountryValue } from '../../src/core/charts/countryCodes';
 
@@ -17,7 +16,7 @@ describe('QA-14: resolveCountryValue', () => {
     expect(resolveCountryValue(new Map([[key, 7]]), feature)).toBe(0);
   });
 
-  it('QA-14: exact ISO code still matches (control, must stay green)', () => {
+  it('QA-14: exact ISO code still matches (control)', () => {
     expect(resolveCountryValue(new Map([['ng', 7]]), 'Nigeria')).toBe(7);
   });
 });

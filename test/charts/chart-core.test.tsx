@@ -1,6 +1,5 @@
 // Covers: QA-06 / SEC-15 (remaining parts: reset on data change, table inside a
 // boundary, row cap, unique keys, non-array data).
-// Green since plan item 2.6.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
