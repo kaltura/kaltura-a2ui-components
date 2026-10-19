@@ -138,7 +138,7 @@ jobs:
           cp src/catalog/kaltura_catalog.json "${assets}/kaltura_catalog.json"
           cp dist/THIRD_PARTY_NOTICES.txt "${assets}/THIRD_PARTY_NOTICES.txt"
           node scripts/release-hashes.mjs --version "$VERSION" --out "$assets"
-          node scripts/release-notes.mjs --version "$VERSION" --hashes "${assets}/hashes.json" > "${out}/notes.md"
+          node scripts/release-notes.mjs --version "$VERSION" --hashes "${assets}/hashes.json" --summary "docs/release-notes/${VERSION}.md" > "${out}/notes.md"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release
@@ -263,7 +263,7 @@ jobs:
             done
           else
             gh release create "$TAG" "$out"/assets/* --repo "$GITHUB_REPOSITORY" --verify-tag --draft \
-              --title "$TAG" --notes-file "${out}/notes.md" --generate-notes "${flags[@]}"
+              --title "$TAG" --notes-file "${out}/notes.md" "${flags[@]}"
           fi
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir "${out}/published"
           diff -r "${out}/published" "${out}/assets"
