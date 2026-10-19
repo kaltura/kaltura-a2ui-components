@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { privilegesFor, type KsPolicy } from '../../examples/ks-server/privileges';
 
-const policy: KsPolicy = { partnerId: 7, privacyContexts: { '123': 'room' } };
+const policy: KsPolicy = { partnerId: 7, region: 'nvp1', privacyContexts: { '123': 'room' } };
 const make = (widget: string, scope: Record<string, unknown>, version: unknown = 1) => ({ widget, version, scope: { partnerId: 7, region: 'nvp1', ...scope } });
 
 describe('reference KS privileges', () => {
@@ -18,6 +18,8 @@ describe('reference KS privileges', () => {
 
   it.each([
     ['another account', make('player', { entryId: '1_abcd1234', partnerId: 8 }), 'wrong account'],
+    ['another region', make('player', { entryId: '1_abcd1234', region: 'irp2' }), 'wrong region'],
+    ['an entry and a playlist together', make('player', { entryId: '1_abcd1234', playlistId: '1_abcd5678' }), 'together'],
     ['an unknown version', make('player', { entryId: '1_abcd1234' }, 2), 'unknown version'],
     ['an unknown scope key', make('player', { entryId: '1_abcd1234', role: 'admin' }), 'unknown scope key'],
     ['a privilege injected through an id', make('player', { entryId: '1_abcd1234,disableentitlement' }), 'bad entry id'],

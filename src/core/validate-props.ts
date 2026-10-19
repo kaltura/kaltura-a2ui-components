@@ -108,6 +108,7 @@ export function checkProps(
       // An empty string is a set value here: it fails the id rule instead of waiting for a binding.
       const set = [first, second].filter(key => record[key] !== undefined);
       if (set.length === 2) bad.add(second);
+      else if (set.length === 1 && record[set[0]] === '') bad.add(set[0]);
       else if (set.length === 0 && strict) bad.add(first);
       else if (set.length === 0) pending = true;
     }
@@ -185,7 +186,7 @@ export function gateProps(
   }
   if ('region' in schema.shape) {
     try {
-      const url = typeof serverUrl === 'string' ? serverUrl : undefined;
+      const url = 'serverUrl' in schema.shape && typeof serverUrl === 'string' ? serverUrl : undefined;
       // A Unisphere widget needs a Unisphere host in its region too.
       if ('serverUrl' in schema.shape) unisphereUrl((props as { region?: string }).region, url);
       else resolveRegion((props as { region?: string }).region, url);

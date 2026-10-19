@@ -17,6 +17,8 @@ export interface KsRequestBody {
 export interface KsPolicy {
   /** The one account this server mints for. */
   partnerId: number;
+  /** The one region it mints for. The KS only works on the hosts of that region. */
+  region: string;
   /** Category id to the privacy context label of that category, from your own data. */
   privacyContexts: Readonly<Record<string, string>>;
 }
@@ -44,6 +46,7 @@ export function privilegesFor(request: KsRequestBody, policy: KsPolicy): string 
   if (version !== 1) throw new Error('unknown version');
   const scope = request.scope as Record<string, unknown> | null;
   if (typeof scope !== 'object' || scope === null || scope.partnerId !== policy.partnerId) throw new Error('wrong account');
+  if (scope.region !== policy.region) throw new Error('wrong region');
   const only = (...allowed: string[]) => {
     const extra = Object.keys(scope).filter(key => key !== 'partnerId' && key !== 'region' && !allowed.includes(key));
     if (extra.length) throw new Error(`unknown scope key: ${extra[0]}`);
@@ -51,6 +54,7 @@ export function privilegesFor(request: KsRequestBody, policy: KsPolicy): string 
   switch (widget) {
     case 'player': {
       only('entryId', 'playlistId');
+      if (scope.entryId !== undefined && scope.playlistId !== undefined) throw new Error('entryId and playlistId together');
       if (scope.playlistId !== undefined) return `${PLAYBACK},sviewplaylist:${entry(scope.playlistId)}`;
       return `${PLAYBACK},sview:${entry(scope.entryId)}`;
     }
@@ -70,7 +74,7 @@ export function privilegesFor(request: KsRequestBody, policy: KsPolicy): string 
       only('categoryId');
       const base = `${PLAYBACK},sview:*`;
       if (scope.categoryId === undefined) return base;
-      // The entitlement part is the limit. `geniecategoryid` only tells Genie which category to chat about.
+      // The entitlement part is the limit, and only for entries in a category with a privacy context. `geniecategoryid` only tells Genie which category to chat about.
       return `${base},${entitlement(policy, scope.categoryId)},geniecategoryid:${scope.categoryId as string}`;
     }
     default:

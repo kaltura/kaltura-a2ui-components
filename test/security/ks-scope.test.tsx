@@ -107,6 +107,20 @@ describe('KS-SCOPE: what the provider gets', () => {
     expect(scopes(provider)[0]).toMatchObject({ region: 'frp2' });
   });
 
+  it('a serverUrl on a widget that has none does not change the scope region', async () => {
+    const provider = vi.fn<KsProvider>(() => 'host-ks');
+    setKsProvider(provider);
+    await mount(PlayerCore, { ...PLAYER, serverUrl: 'https://unisphere.irp2.ovp.kaltura.com/v1' } as typeof PLAYER);
+    expect(scopes(provider)[0]).toMatchObject({ region: 'nvp1' });
+  });
+
+  it('a Player with an empty entryId never asks the provider', async () => {
+    const provider = vi.fn<KsProvider>(() => 'host-ks');
+    setKsProvider(provider);
+    await mount(PlayerCore, { ...PLAYER, entryId: '' });
+    expect(provider).not.toHaveBeenCalled();
+  });
+
   it('Analytics, Genie and Media Manager scopes hold their own props', async () => {
     const provider = vi.fn<KsProvider>(() => 'host-ks');
     setKsProvider(provider);

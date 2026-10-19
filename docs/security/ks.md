@@ -49,6 +49,8 @@ A provider that ignores its arguments, such as `() => ks`, still works. Use the 
 
 Plain-HTML host: the bundle exposes the same function as `KalturaA2UIWebComponents.setKsProvider`. Call it in a script right after the bundle `<script>` and before the Kaltura elements in the page.
 
+Call `setKsProvider(undefined)` to remove the provider. Widgets already on the page keep the one they started with. Only widgets that mount later see the change.
+
 ## The request
 
 The second argument says what one widget instance asks for. Every value is data the agent chose, so treat it as untrusted input.

@@ -97,7 +97,7 @@ let ksProvider: KsProvider | undefined;
 /**
  * Host option. Sets the function that supplies the KS to every component that
  * needs one, so the KS never passes through agent output or the A2UI data
- * model. Pass `undefined` to remove it. A component calls it when it mounts
+ * model. Pass `undefined` to remove it. Only widgets that mount later see the change: a mounted widget keeps the provider it started with. A component calls it when it mounts
  * and again when its scope changes (see `KsRequest`), never to renew an
  * expiring KS: remount the widget to renew it. A throw or a rejected promise
  * shows `invalid-ks`. Never call this from agent output.
@@ -192,8 +192,8 @@ export function withKs<P extends { ks?: string }>(widget: KsWidget, Inner: Compo
     const [provider] = useState(() => ksProvider);
     const checked = provider ? gateProps(gate.schema, gate.label, widget, props, strict, gate.check && (() => gate.check?.(outer) ?? [])) : undefined;
     const base = provider && checked && !checked.error && !checked.pending ? (gate.scope ? gate.scope(outer) : scopeFromProps(widget, props)) : undefined;
-    // The pre-check has passed, so the region resolves.
-    const scope = base && { ...base, region: resolveRegion(typeof props.region === 'string' ? props.region : undefined, typeof props.serverUrl === 'string' ? props.serverUrl : undefined).name };
+    // The pre-check has passed, so the region resolves. Only a widget with a `serverUrl` prop reads it, as the widget does.
+    const scope = base && { ...base, region: resolveRegion(typeof props.region === 'string' ? props.region : undefined, 'serverUrl' in gate.schema.shape && typeof props.serverUrl === 'string' ? props.serverUrl : undefined).name };
     const key = scope && JSON.stringify(scope);
     const [held, setHeld] = useState<Held>();
 

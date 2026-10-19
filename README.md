@@ -189,7 +189,7 @@ https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.4.1/src/catalog/k
 
 | Component | What it shows | Needs a KS? | Custom element |
 |---|---|---|---|
-| `KalturaPlayer` | A video player for one entry | Only for protected entries | `<kaltura-player>` |
+| `KalturaPlayer` | A video player for one entry or one manual playlist | Only for protected entries | `<kaltura-player>` |
 | `KalturaFlashcards` | Study cards, each with optional video clips | Only for protected clips | `<kaltura-flashcards>` |
 | `KalturaChart` | One of 12 chart types | No | `<kaltura-chart>` |
 | `KalturaRecorder` | Record webcam or screen and upload | Yes | `<kaltura-recorder>` |
