@@ -87,8 +87,7 @@ try {
 
   // The host installs the peers itself, as a real A2UI client does.
   // @types/react is a dev dependency of ours. A TypeScript host has it too.
-  // @a2ui/markdown-it 0.2.2 needs web_core ^0.14.0, while @a2ui/react 0.13.0 still accepts it. Pinned until upstream fixes the range.
-  install(consumer, [tarball, ...peers, '@a2ui/markdown-it@0.2.1', `@types/react@${pkg.devDependencies['@types/react']}`]);
+  install(consumer, [tarball, ...peers, `@types/react@${pkg.devDependencies['@types/react']}`]);
 
   // one copy of every shared library, so one context and one zod.
   const tree = run('npm', ['ls', '--all', '--parseable'], consumer).split('\n');
@@ -112,7 +111,7 @@ try {
     fail(`ESM entry failed to import in Node: ${String(error.stderr ?? error).split('\n').find((l) => /Error/.test(l)) ?? error}`);
   }
 
-  // Control: without the stub, @a2ui/react 0.13.0 fails in Node. If it loads,
+  // Control: without the stub, @a2ui/react 0.14.0 fails in Node. If it loads,
   // upstream fixed a2ui#3158. Remove the stub (see ADR 0007).
   try {
     run(process.execPath, ['--input-type=module', '-e', "await import('@a2ui/react/v0_9')"], consumer);
@@ -196,13 +195,13 @@ export const props: PlayerCoreProps = { partnerId: 1, uiconfId: 2, entryId: '0_a
   // names the peer, instead of a second copy of the renderer.
   let conflict = '';
   try {
-    install(join(work, 'conflict'), ['@a2ui/react@0.11.1', tarball]);
-    fail('npm installed the package next to @a2ui/react@0.11.1 without a peer conflict.');
+    install(join(work, 'conflict'), ['@a2ui/react@0.13.0', tarball]);
+    fail('npm installed the package next to @a2ui/react@0.13.0 without a peer conflict.');
   } catch (error) {
     conflict = String(error.stderr ?? error);
   }
-  if (conflict !== '' && !/ERESOLVE[\s\S]*peer @a2ui\/react@"\^0\.13/.test(conflict)) {
-    fail(`The peer conflict message does not name @a2ui/react ^0.13: ${conflict.split('\n').slice(0, 6).join(' | ')}`);
+  if (conflict !== '' && !/ERESOLVE[\s\S]*peer @a2ui\/react@"\^0\.14/.test(conflict)) {
+    fail(`The peer conflict message does not name @a2ui/react ^0.14: ${conflict.split('\n').slice(0, 6).join(' | ')}`);
   }
 } finally {
   rmSync(work, { recursive: true, force: true });

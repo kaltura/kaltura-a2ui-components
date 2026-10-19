@@ -1023,7 +1023,10 @@
             }
           },
           "required": ["component", "partnerId", "uiconfId"],
-          "oneOf": [{ "required": ["entryId"] }, { "required": ["playlistId"] }]
+          "oneOf": [
+            { "required": ["entryId"] },
+            { "required": ["playlistId"] }
+          ]
         }
       ],
       "unevaluatedProperties": false
@@ -1492,9 +1495,18 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "fieldName": { "type": "string", "description": "KalturaESearchEntryFieldName value, such as 'name'." },
-                  "itemType": { "type": "integer", "description": "KalturaESearchItemType number: 1 exactMatch, 2 partial, 3 startsWith, 4 exists, 5 range." },
-                  "searchTerm": { "type": ["string", "number"], "description": "The value to match." }
+                  "fieldName": {
+                    "type": "string",
+                    "description": "KalturaESearchEntryFieldName value, such as 'name'."
+                  },
+                  "itemType": {
+                    "type": "integer",
+                    "description": "KalturaESearchItemType number: 1 exactMatch, 2 partial, 3 startsWith, 4 exists, 5 range."
+                  },
+                  "searchTerm": {
+                    "type": ["string", "number"],
+                    "description": "The value to match."
+                  }
                 },
                 "required": ["fieldName", "itemType", "searchTerm"],
                 "additionalProperties": false
@@ -2189,10 +2201,10 @@
       "oneOf": [
         {
           "type": "array",
+          "description": "A static list of child component IDs.",
           "items": {
             "$ref": "#/$defs/ComponentId"
-          },
-          "description": "A static list of child component IDs."
+          }
         },
         {
           "type": "object",
@@ -2419,8 +2431,8 @@
       "additionalProperties": false
     },
     "Checkable": {
-      "description": "Properties for components that support client-side checks.",
       "type": "object",
+      "description": "Properties for components that support client-side checks.",
       "properties": {
         "checks": {
           "type": "array",

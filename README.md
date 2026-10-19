@@ -74,7 +74,7 @@ Gotchas:
 - **Server-side rendering.** In Node, import `@kaltura/a2ui-react` before `@a2ui/react` ([why](docs/host-integration.md#server-imports-ssr)).
 - **One pre-bundled file.** There is no tree-shaking: all 12 components load.
 - **Pin the full tag**, such as `v0.5.0`. `@latest` changes under you. Add the `integrity` value from the [Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases). Check a release: [SECURITY.md](SECURITY.md#releases).
-- **Peers:** `@a2ui/react ^0.13.0`, `@a2ui/web_core ^0.13.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`.
+- **Peers:** `@a2ui/react ^0.14.0`, `@a2ui/web_core ^0.14.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`.
 
 ### React or A2UI client
 

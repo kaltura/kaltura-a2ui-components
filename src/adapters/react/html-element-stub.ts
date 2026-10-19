@@ -1,5 +1,5 @@
 // Workaround for https://github.com/a2ui-project/a2ui/issues/3158 (ADR 0007).
-// @a2ui/react 0.13.0 runs `class ReactWcHost extends HTMLElement` when it
+// @a2ui/react 0.13 and 0.14 run `class ReactWcHost extends HTMLElement` when it
 // loads, so importing it in Node (SSR) throws "HTMLElement is not defined".
 // Remove when a release of @a2ui/react imports in Node without it.
 // test/conformance/ssr-import.test.ts fails on that release. The removal

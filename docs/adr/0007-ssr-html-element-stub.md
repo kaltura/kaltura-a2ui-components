@@ -6,7 +6,7 @@ Upstream: [a2ui-project/a2ui#3158](https://github.com/a2ui-project/a2ui/issues/3
 
 ## Context
 
-- `@a2ui/react` 0.13.0 runs `class ReactWcHost extends HTMLElement` when it loads. Node has no `HTMLElement`, so `import '@a2ui/react/v0_9'` throws `ReferenceError: HTMLElement is not defined`. Any server import of `@kaltura/a2ui-react` (SSR, tests, a Node build step) fails with it.
+- `@a2ui/react` 0.13.0 and 0.14.0 run `class ReactWcHost extends HTMLElement` when it loads. Node has no `HTMLElement`, so `import '@a2ui/react/v0_9'` throws `ReferenceError: HTMLElement is not defined`. Any server import of `@kaltura/a2ui-react` (SSR, tests, a Node build step) fails with it.
 - 0.13 moved the basic catalog to `@a2ui/web_core/v0_9/basic_catalog` as Lit elements. Lit takes `globalThis.HTMLElement` as its base class when it loads, and uses its own server shim (`@lit-labs/ssr-dom-shim`) only when there is none.
 - ESM runs every static import, external ones too, before the importing module's body. Rolldown puts inlined code after the external imports. A stub inlined into `kaltura-react.mjs` would run after `@a2ui/react` and do nothing.
 - Top-level `await` with a dynamic import would also fix the order, but older bundler targets (Vite 6 and earlier by default, older webpack) reject it.

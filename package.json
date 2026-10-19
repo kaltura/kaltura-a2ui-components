@@ -69,16 +69,16 @@
     "release:smoke": "node scripts/release-unisphere-smoke.mjs"
   },
   "peerDependencies": {
-    "@a2ui/react": "^0.13.0",
-    "@a2ui/web_core": "^0.13.0",
+    "@a2ui/react": "^0.14.0",
+    "@a2ui/web_core": "^0.14.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@a2ui/markdown-it": "^0.2.1",
-    "@a2ui/react": "^0.13.0",
-    "@a2ui/web_core": "^0.13.0",
+    "@a2ui/markdown-it": "^0.2.2",
+    "@a2ui/react": "^0.14.0",
+    "@a2ui/web_core": "^0.14.0",
     "@arethetypeswrong/cli": "^0.18.5",
     "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^10.0.1",
