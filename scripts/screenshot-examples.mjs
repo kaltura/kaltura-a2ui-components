@@ -35,6 +35,11 @@ try {
   await page.goto(`${origin}/examples/plain-html/index.html`);
   await page.waitForSelector('kaltura-chart h4.kaltura-chart-title');
   await page.waitForFunction(() => document.body.innerText.includes('The basic unit of life.'));
+  // Open the first card: the intro card is mostly empty.
+  await page.getByRole('button', { name: 'Start' }).click();
+  await page.waitForTimeout(500);
+  // The click scrolls the page. The clip below needs the top of the page.
+  await page.evaluate(() => window.scrollTo(0, 0));
   // Let the chart animation settle.
   await page.waitForTimeout(1000);
 
