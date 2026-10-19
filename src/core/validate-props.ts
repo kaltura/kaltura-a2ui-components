@@ -6,7 +6,7 @@ import { isCategoryId, isEntryId, isPositiveInt } from './ids';
 import { invalidCode, reportError, ReporterContext, type KalturaErrorCode, type KalturaWidget } from './host-hooks';
 import { refusedIdProp } from './allowed-ids';
 import { isAllowedServerUrl } from './unisphere-loader';
-import { resolveRegion, unisphereUrl } from './region';
+import { agentsUrl, resolveRegion, unisphereUrl } from './region';
 
 // Core components get resolved props, so the bindings and function calls that the
 // A2UI schemas allow must not appear. Use the schema, minus those two options.
@@ -187,9 +187,12 @@ export function gateProps(
   if ('region' in schema.shape) {
     try {
       const url = 'serverUrl' in schema.shape && typeof serverUrl === 'string' ? serverUrl : undefined;
+      const region = (props as { region?: string }).region;
       // A Unisphere widget needs a Unisphere host in its region too.
-      if ('serverUrl' in schema.shape) unisphereUrl((props as { region?: string }).region, url);
-      else resolveRegion((props as { region?: string }).region, url);
+      if ('serverUrl' in schema.shape) unisphereUrl(region, url);
+      else resolveRegion(region, url);
+      // The Agents Widget also needs an Agents Manager host.
+      if (widget === 'agents-widget') agentsUrl(region, url);
     } catch {
       return { error: createElement(LoadError, { widget, code: 'origin-not-allowed', children: `Failed to load ${label}: region is not allowed` }), pending: false };
     }

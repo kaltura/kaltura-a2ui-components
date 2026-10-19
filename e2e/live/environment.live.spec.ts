@@ -19,6 +19,7 @@ const ENVIRONMENT = {
   vod: 'https://cfvod.alt.ovp.kaltura.com',
   kmc: 'https://kmc.alt.ovp.kaltura.com',
   unisphere: 'https://unisphere.alt.ovp.kaltura.com',
+  agents: 'https://agents-manager.alt.ovp.kaltura.com',
 };
 
 interface Win {
@@ -99,3 +100,12 @@ for (const serverUrl of ['', '/', '/v1', '/v1/']) {
     expect(run.scopes).toEqual([{ widget: 'genie', scope: { partnerId, region: 'alt' } }]);
   });
 }
+
+test('ALT-04: the Agents Widget calls the agents service of the alt environment', async ({ page, run }) => {
+  const answer = page.waitForResponse((r) => r.url() === 'https://agents-manager.alt.ovp.kaltura.com/api/v1/agent/list', { timeout: TIMEOUT });
+  await page.evaluate(([c]) => (window as unknown as Win).__mount('kaltura-agents-widget', c), [{ partnerId, region: 'alt' }] as const);
+  expect((await answer).status()).toBe(200);
+  expect(run.scopes).toEqual([{ widget: 'agents-widget', scope: { partnerId, region: 'alt' } }]);
+  expect(hostsOf(run.requests).filter((host) => US_HOST.test(host))).toEqual([]);
+  expect(run.errors).toEqual([]);
+});

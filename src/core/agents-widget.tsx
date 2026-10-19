@@ -2,7 +2,7 @@ import { UnisphereWidgetCore } from './unisphere-widget';
 import { KalturaAgentsWidgetApi } from '../schemas/agents-widget';
 import { withValidatedProps } from './validate-props';
 import { withKs, withKsProp } from './ks';
-import { KALTURA_REGIONS, resolveRegion } from './region';
+import { agentsUrl, resolveRegion } from './region';
 
 export interface AgentsWidgetCoreProps {
   /** Kaltura partner (account) ID. */
@@ -16,7 +16,7 @@ export interface AgentsWidgetCoreProps {
 }
 
 function AgentsWidgetView(props: AgentsWidgetCoreProps) {
-  const { name, hosts } = resolveRegion(props.region, props.serverUrl);
+  const { hosts } = resolveRegion(props.region, props.serverUrl);
   return (
     <UnisphereWidgetCore
       partnerId={props.partnerId}
@@ -29,7 +29,7 @@ function AgentsWidgetView(props: AgentsWidgetCoreProps) {
       runtimeSettings={{
         ks: props.ks,
         pid: String(props.partnerId),
-        agentsServiceURI: KALTURA_REGIONS.some(code => code === name) ? `https://agents-manager.${name}.ovp.kaltura.com/api/v1` : hosts.serviceUrl,
+        agentsServiceURI: agentsUrl(props.region, props.serverUrl),
         kalturaServerURI: hosts.serviceUrl,
         analyticsServerURI: 'analytics.kaltura.com',
         hostAppName: 1,

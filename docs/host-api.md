@@ -109,7 +109,7 @@ The widget shows `Failed to load <widget>: region is not allowed` and loads noth
 - the name is well formed but is not a code or a registered environment (a malformed name, such as capitals or a URL, shows `Invalid region` instead)
 - `setAllowedRegions` does not allow it
 - `region` and `serverUrl` name different regions
-- the widget is a Unisphere widget and the region has no Unisphere host (`sgp2`, or an environment without `unisphere`)
+- the widget is a Unisphere widget and the region has no Unisphere host (`sgp2`, or an environment without `unisphere`), or the widget is the Agents Widget and an environment has no `agents`
 
 `serverUrl` may be the bare origin, or end in `/v1` or `/v1/`. The Unisphere loader always gets the `https://unisphere.<region>.ovp.kaltura.com/v1` form, because it reads the region from that exact URL.
 
@@ -151,6 +151,7 @@ setEnvironments({
 | Name | `a-z`, digits and `-`, 1 to 32 characters, starts with a letter, and is not a region code |
 | `serviceUrl` | Required. `cdn`, `vod`, `kmc` and `recorder` default to it |
 | `unisphere` | Optional. Without it the Unisphere widgets refuse the environment. It is added to the Unisphere origin allowlist |
+| `agents` | Optional. The Agents Manager host, such as `https://agents-manager.alt.ovp.kaltura.com`. Without it the Agents Widget refuses the environment |
 | Values | An origin only: no path, query or userinfo |
 | `http:` | Only for `localhost`, `*.localhost`, `[::1]` and private IPs. A `console.warn` says the KS travels in clear text |
 

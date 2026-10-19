@@ -20,10 +20,11 @@ async function load() {
   const { PlayerCore } = await import('../../src/core/player');
   const { RecorderCore } = await import('../../src/core/recorder');
   const { GenieCore } = await import('../../src/core/genie');
+  const { AgentsWidgetCore } = await import('../../src/core/agents-widget');
   const { CaptionsEditorCore } = await import('../../src/core/captions-editor');
   const { AnalyticsCore } = await import('../../src/core/analytics');
   const { buildThumbnailUrl, FlashcardsCore } = await import('../../src/core/flashcards');
-  return { setKsProvider: ks.setKsProvider, setAllowedRegions: ids.setAllowedRegions, setRegion: region.setRegion, setEnvironments: region.setEnvironments, PlayerCore, RecorderCore, GenieCore, CaptionsEditorCore, AnalyticsCore, FlashcardsCore, buildThumbnailUrl };
+  return { setKsProvider: ks.setKsProvider, setAllowedRegions: ids.setAllowedRegions, setRegion: region.setRegion, setEnvironments: region.setEnvironments, PlayerCore, RecorderCore, GenieCore, AgentsWidgetCore, CaptionsEditorCore, AnalyticsCore, FlashcardsCore, buildThumbnailUrl };
 }
 
 let m: Awaited<ReturnType<typeof load>>;
@@ -188,6 +189,23 @@ describe('REG-02: environments', () => {
     m.setAllowedRegions(['nvp1']);
     const { container } = await mount(m.PlayerCore, { ...PLAYER, ks: 'k', region: 'lab' });
     expect([alertOf(container), player.urls]).toEqual(['Failed to load player: region is not allowed', []]);
+  });
+
+  it('the Agents Widget needs the agents host of its environment', async () => {
+    m.setEnvironments({ lab: LAB });
+    const provider = vi.fn<KsProvider>(() => 'ks');
+    m.setKsProvider(provider);
+    const { container } = await mount(m.AgentsWidgetCore, { partnerId: 1, region: 'lab' });
+    expect([alertOf(container), provider.mock.calls.length]).toEqual(['Failed to load Kaltura AI Agents: region is not allowed', 0]);
+  });
+
+  it.each([
+    ['a built-in region', undefined, 'irp2', 'https://agents-manager.irp2.ovp.kaltura.com/api/v1'],
+    ['an environment with an agents host', { agents: 'https://agents.lab.example.com' }, 'lab', 'https://agents.lab.example.com/api/v1'],
+  ])('the agents API URL of %s ends in /api/v1', async (_name, extra, region, expected) => {
+    m.setEnvironments({ lab: { ...LAB, ...extra } });
+    const { agentsUrl } = await import('../../src/core/region');
+    expect(agentsUrl(region)).toBe(expected);
   });
 
   it('the registered Unisphere origin matches serverUrl', async () => {

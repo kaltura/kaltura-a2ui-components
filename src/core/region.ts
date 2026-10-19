@@ -81,9 +81,11 @@ export interface KalturaEnvironment {
   recorder?: string;
   /** Unisphere host. Without it the Unisphere widgets refuse this environment. */
   unisphere?: string;
+  /** Agents Manager host. Without it the Agents Widget refuses this environment. */
+  agents?: string;
 }
 
-const environments = new Map<string, { hosts: KalturaHosts; unisphere?: string }>();
+const environments = new Map<string, { hosts: KalturaHosts; unisphere?: string; agents?: string }>();
 
 const NAME = /^[a-z][a-z0-9-]{0,31}$/;
 const PRIVATE_IP = /^(?:127\.|10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)\d{1,3}\.\d{1,3}(?:\.\d{1,3})?$/;
@@ -121,7 +123,7 @@ function environmentOrigin(name: string, key: string, value: unknown): string {
  * @example setEnvironments({ local: { serviceUrl: 'http://localhost:8080', unisphere: 'http://127.0.0.1:3000' } });
  */
 export function setEnvironments(next: Record<string, KalturaEnvironment> | undefined): void {
-  const parsed = new Map<string, { hosts: KalturaHosts; unisphere?: string }>();
+  const parsed = new Map<string, { hosts: KalturaHosts; unisphere?: string; agents?: string }>();
   for (const [name, environment] of Object.entries(next ?? {})) {
     if (!NAME.test(name) || (KALTURA_REGIONS as readonly string[]).includes(name)) {
       throw new Error(`Environment name ${JSON.stringify(name)} must be lowercase letters, digits and "-", and not a region code`);
@@ -138,6 +140,7 @@ export function setEnvironments(next: Record<string, KalturaEnvironment> | undef
         recorder: origin('recorder') ?? serviceUrl,
       },
       unisphere: origin('unisphere'),
+      agents: origin('agents'),
     });
   }
   environments.clear();
@@ -153,6 +156,8 @@ export interface ResolvedRegion {
   hosts: KalturaHosts;
   /** Origin of the Unisphere host. `undefined` for an environment without one. */
   unisphere?: string;
+  /** Origin of the Agents Manager host. `undefined` for an environment without one. */
+  agents?: string;
 }
 
 /**
@@ -175,9 +180,11 @@ export function resolveRegion(prop?: string, serverUrl?: string): ResolvedRegion
   };
   if ((prop !== undefined && fromUrl !== undefined && prop !== fromUrl) || !regionAllowed(name)) return refuse();
   const environment = environments.get(name);
-  if (environment) return { name, hosts: environment.hosts, unisphere: environment.unisphere };
+  if (environment) return { name, hosts: environment.hosts, unisphere: environment.unisphere, agents: environment.agents };
   const code = KALTURA_REGIONS.find(known => known === name);
-  return code ? { name, hosts: kalturaHosts(code), unisphere: code === 'sgp2' ? undefined : `https://unisphere.${code}.ovp.kaltura.com` } : refuse();
+  return code
+    ? { name, hosts: kalturaHosts(code), unisphere: code === 'sgp2' ? undefined : `https://unisphere.${code}.ovp.kaltura.com`, agents: `https://agents-manager.${code}.ovp.kaltura.com` }
+    : refuse();
 }
 
 /**
@@ -188,4 +195,11 @@ export function unisphereUrl(prop?: string, serverUrl?: string): string {
   const { unisphere } = resolveRegion(prop, serverUrl);
   if (!unisphere) throw new KalturaFailure('origin-not-allowed', 'region has no Unisphere host');
   return `${serverUrl ? new URL(serverUrl).origin : unisphere}/v1`;
+}
+
+/** The Agents Manager API URL of one instance. Throws like `resolveRegion`, and when the region has no Agents host. */
+export function agentsUrl(prop?: string, serverUrl?: string): string {
+  const { agents } = resolveRegion(prop, serverUrl);
+  if (!agents) throw new KalturaFailure('origin-not-allowed', 'region has no Agents host');
+  return `${agents}/api/v1`;
 }
