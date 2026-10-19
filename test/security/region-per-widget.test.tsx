@@ -127,11 +127,16 @@ describe('REG-02: refused before any request', () => {
     expect([alertOf(container), player.urls]).toEqual(['Failed to load player: region is not allowed', []]);
   });
 
-  it.each(['nope', 'IRP2', 'https://evil.example', 'a'.repeat(40)])('an unknown name never reaches the provider: %j', async region => {
+  it.each([
+    ['nope', 'Failed to load player: region is not allowed'],
+    ['IRP2', 'Failed to load player: Invalid region'],
+    ['https://evil.example', 'Failed to load player: Invalid region'],
+    ['a'.repeat(40), 'Failed to load player: Invalid region'],
+  ])('an unknown name never reaches the provider: %j', async (region, message) => {
     const provider = vi.fn<KsProvider>(() => 'ks');
     m.setKsProvider(provider);
     const { container } = await mount(m.PlayerCore, { ...PLAYER, region });
-    expect([alertOf(container) !== undefined, provider.mock.calls.length, player.urls]).toEqual([true, 0, []]);
+    expect([alertOf(container), provider.mock.calls.length, player.urls]).toEqual([message, 0, []]);
   });
 
   it('a prop that disagrees with serverUrl is refused', async () => {

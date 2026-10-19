@@ -106,7 +106,7 @@ Every widget except Chart takes a `region` prop: a code from the list above, or 
 
 The widget shows `Failed to load <widget>: region is not allowed` and loads nothing (no provider call, script, request or iframe) when:
 
-- the name is not a code or a registered environment
+- the name is well formed but is not a code or a registered environment (a malformed name, such as capitals or a URL, shows `Invalid region` instead)
 - `setAllowedRegions` does not allow it
 - `region` and `serverUrl` name different regions
 - the widget is a Unisphere widget and the region has no Unisphere host (`sgp2`, or an environment without `unisphere`)

@@ -14,6 +14,8 @@ import { PlayerCore } from '../../src/core/player';
 import { FlashcardsCore } from '../../src/core/flashcards';
 import { AnalyticsCore } from '../../src/core/analytics';
 import { RecorderCore } from '../../src/core/recorder';
+import { AgentsWidgetCore } from '../../src/core/agents-widget';
+import { ContentLabCore } from '../../src/core/content-lab';
 import { GenieCore } from '../../src/core/genie';
 import { CaptionsEditorCore } from '../../src/core/captions-editor';
 import { captionsRemote } from '../helpers/captions-remote';
@@ -472,6 +474,17 @@ describe('KS-SCOPE: nothing bad reaches the provider', () => {
     setKsProvider(provider);
     const { container } = await mount(GenieCore, { partnerId: 1, uiconfId: 2, serverUrl: 'https://evil.example.com/v1' });
     expect([provider.mock.calls.length, alertOf(container)]).toEqual([0, 'Failed to load Kaltura Genie: serverUrl is not an allowed Unisphere origin (see setExtraAllowedOrigins)']);
+  });
+
+  it.each([
+    ['recorder', RecorderCore, { partnerId: 1, uiconfId: 2 }, { partnerId: 1, region: 'nvp1' }],
+    ['agents-widget', AgentsWidgetCore, { partnerId: 1, uiconfId: 2, serverUrl: SERVER_URL }, { partnerId: 1, region: 'nvp1' }],
+    ['content-lab', ContentLabCore, { partnerId: 1, uiconfId: 2, entryId: '0_a' }, { partnerId: 1, entryId: '0_a', region: 'nvp1' }],
+  ])('the %s scope holds only the keys that name data', async (_name, Core, props, scope) => {
+    const provider = vi.fn<KsProvider>(() => 'host-ks');
+    setKsProvider(provider);
+    await mount(Core as never, props);
+    expect(scopes(provider)).toEqual([scope]);
   });
 
   it('a recorder partner the host refuses gives the error and no request', async () => {
