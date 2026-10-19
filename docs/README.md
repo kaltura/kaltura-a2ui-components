@@ -23,6 +23,7 @@ New here? Start with the [README](../README.md). Then pick a table.
 | [migration-0.3.md](migration-0.3.md) | Apps on 0.2.x that use the avatar |
 | [migration-0.2.md](migration-0.2.md) | Apps on 0.1.x |
 | [migration-a2ui-0.13.md](migration-a2ui-0.13.md) | Apps that move to the A2UI 0.13 peers |
+| [migration-a2ui-0.14.md](migration-a2ui-0.14.md) | Apps that move to the A2UI 0.14 peers |
 
 ## Trust and release
 

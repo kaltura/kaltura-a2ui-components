@@ -1,6 +1,6 @@
 // @vitest-environment node
 // Covers: CONF-17 (ADR 0007): the React entry imports in Node although
-// @a2ui/react 0.13 needs HTMLElement when it loads (a2ui#3158). The stub cases
+// @a2ui/react 0.13 and 0.14 need HTMLElement when it loads (a2ui#3158). The stub cases
 // run in a fresh Node process with the installed peers: offline, and this
 // worker's globals stay clean. The entry case runs the source entry here.
 import { spawnSync } from 'node:child_process';

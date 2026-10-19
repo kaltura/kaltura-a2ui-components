@@ -3,7 +3,7 @@
 // in fixtures/streams.json (valid) and fixtures/invalid-components.json.
 // The host supplies the KS with setKsProvider, so no stream carries one.
 //
-// Peer range: package.json asks for @a2ui/web_core ^0.13.0 and @a2ui/react ^0.13.0.
+// Peer range: package.json asks for @a2ui/web_core ^0.14.0 and @a2ui/react ^0.14.0.
 // The installed versions are the lowest the range allows (CONF-14 pins that), so
 // this run is the "oldest peer" run. A newer peer needs a separate install; see CONTRIBUTING.md.
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';

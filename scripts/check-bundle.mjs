@@ -81,7 +81,7 @@ if (sources.esm !== undefined) {
     }
   }
 }
-// a2ui#3158 (ADR 0007): @a2ui/react 0.13 needs HTMLElement when it loads. The
+// a2ui#3158 (ADR 0007): @a2ui/react 0.13 and 0.14 need HTMLElement when it loads. The
 // stub file must be the ESM's first import, so it runs before every peer, and
 // it must load Lit (through the basic catalog) before it defines the stub.
 if (sources.esm !== undefined) {
