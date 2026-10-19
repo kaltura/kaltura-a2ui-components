@@ -215,6 +215,10 @@ describe('SEC-19: the release is verified on jsDelivr', () => {
   it('SEC-19: the build makes an SBOM, a dist archive, hashes and notes', () => {
     expect(['npm sbom --sbom-format cyclonedx', 'dist.tar.gz', 'release-hashes.mjs', 'release-notes.mjs'].filter(text => !releaseJobs['build']?.includes(text))).toEqual([]);
   });
+
+  it('QA-09: the notes come from docs/release-notes, not from a generated list', () => {
+    expect([releaseJobs['build']?.includes('--summary "docs/release-notes/${VERSION}.md"'), release.includes('--generate-notes')]).toEqual([true, false]);
+  });
 });
 
 describe('supply chain checks', () => {

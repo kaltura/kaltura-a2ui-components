@@ -20,7 +20,7 @@ export interface ReleaseScripts {
     checkRelease(version: string, inputs: { pkg: { version: string; private?: boolean } }): { version: string; tag: string; prerelease: boolean };
   };
   notes: {
-    releaseNotes(options: { version: string; hashes: Hashes }): string;
+    releaseNotes(options: { version: string; hashes: Hashes; summary?: string }): string;
   };
   stamp: {
     GH_REPO: string;
