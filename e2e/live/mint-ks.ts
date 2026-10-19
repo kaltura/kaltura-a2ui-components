@@ -1,12 +1,12 @@
 // Mints a short-lived admin KS for the live test. Runs in the test process only: the secret and the KS
 // never reach a file, a log or an error message. NVP1 is the US region, so the host is the one in
-// src/core/region.ts (`serviceUrl`).
+// src/core/region.ts (`serviceUrl`). `serviceUrl` picks another environment, such as ALT.
 const SERVICE_URL = 'https://www.kaltura.com';
 const EXPIRY_SECONDS = 600;
 
-export async function mintKs(partnerId: number, adminSecret: string, userId = 'a2ui-live-test', options: { type?: 0 | 2; privileges?: string } = {}): Promise<string> {
+export async function mintKs(partnerId: number, adminSecret: string, userId = 'a2ui-live-test', options: { type?: 0 | 2; privileges?: string; serviceUrl?: string } = {}): Promise<string> {
   const request = () =>
-    fetch(`${SERVICE_URL}/api_v3/service/session/action/start`, {
+    fetch(`${options.serviceUrl ?? SERVICE_URL}/api_v3/service/session/action/start`, {
       method: 'POST',
       signal: AbortSignal.timeout(15_000),
       body: new URLSearchParams({

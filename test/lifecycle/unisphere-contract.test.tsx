@@ -6,7 +6,7 @@ import { URL_A, URL_B, loaderUrl, render } from './harness';
 
 type Checks = { status: string; isAvailable: boolean };
 interface Runtime { widgetName: string; runtimeName: string; settings: Record<string, unknown>; visuals: { type: string }[] }
-let configs: { runtimes: Runtime[] }[];
+let configs: { serverUrl: string; runtimes: Runtime[] }[];
 let calls: string[];
 let listeners: Array<(checks: Checks) => void>;
 
@@ -16,7 +16,7 @@ beforeEach(() => {
   calls = [];
   listeners = [];
   vi.doMock(loaderUrl(URL_A), () => ({
-    loader: async (cfg: { runtimes: Runtime[] }) => {
+    loader: async (cfg: { serverUrl: string; runtimes: Runtime[] }) => {
       configs.push(cfg);
       return {
         kill: () => {},
@@ -155,10 +155,16 @@ describe('Unisphere runtime contract', () => {
     expect(calls).toEqual([]);
   });
 
+  it.each([URL_A.replace('/v1', ''), `${URL_A.replace('/v1', '')}/`, `${URL_A}/`])('the loader gets the /v1 form of serverUrl %s', async serverUrl => {
+    const Component = (await import('../../src/core/genie')).GenieCore as never;
+    await render(Component, { ...props, uiconfId: 2, serverUrl });
+    expect(configs[0].serverUrl).toBe(URL_A);
+  });
+
   it('agents: a private-cloud server takes the region set by setRegion', async () => {
     const privateUrl = 'https://unisphere.corp.example/v1';
     vi.doMock(loaderUrl(privateUrl), () => ({
-      loader: async (cfg: { runtimes: Runtime[] }) => {
+      loader: async (cfg: { serverUrl: string; runtimes: Runtime[] }) => {
         configs.push(cfg);
         return { kill: () => {}, getRuntimeAsync: async () => ({ openDrawer: () => {} }) };
       },
@@ -174,7 +180,7 @@ describe('Unisphere runtime contract', () => {
 describe('Unisphere widgets take every host from the region of their serverUrl', () => {
   beforeEach(() => {
     vi.doMock(loaderUrl(URL_B), () => ({
-      loader: async (cfg: { runtimes: Runtime[] }) => {
+      loader: async (cfg: { serverUrl: string; runtimes: Runtime[] }) => {
         configs.push(cfg);
         return { kill: () => {}, getRuntimeAsync: async () => ({ openDrawer: () => {} }) };
       },

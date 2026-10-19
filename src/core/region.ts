@@ -180,9 +180,12 @@ export function resolveRegion(prop?: string, serverUrl?: string): ResolvedRegion
   return code ? { name, hosts: kalturaHosts(code), unisphere: code === 'sgp2' ? undefined : `https://unisphere.${code}.ovp.kaltura.com` } : refuse();
 }
 
-/** The Unisphere URL of one instance: `serverUrl`, else the Unisphere host of its region. Throws like `resolveRegion`. */
+/**
+ * The Unisphere URL of one instance: `serverUrl`, else the Unisphere host of its region. Throws like `resolveRegion`.
+ * Always ends in `/v1`: the loader reads its region from that exact form and refuses a bare origin or a trailing slash.
+ */
 export function unisphereUrl(prop?: string, serverUrl?: string): string {
   const { unisphere } = resolveRegion(prop, serverUrl);
   if (!unisphere) throw new KalturaFailure('origin-not-allowed', 'region has no Unisphere host');
-  return serverUrl ?? `${unisphere}/v1`;
+  return `${serverUrl ? new URL(serverUrl).origin : unisphere}/v1`;
 }

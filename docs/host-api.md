@@ -111,6 +111,8 @@ The widget shows `Failed to load <widget>: region is not allowed` and loads noth
 - `region` and `serverUrl` name different regions
 - the widget is a Unisphere widget and the region has no Unisphere host (`sgp2`, or an environment without `unisphere`)
 
+`serverUrl` may be the bare origin, or end in `/v1` or `/v1/`. The Unisphere loader always gets the `https://unisphere.<region>.ovp.kaltura.com/v1` form, because it reads the region from that exact URL.
+
 Flashcards: a refused `region` blocks the whole deck. A refused `partnerId` or `uiconfId` disables only the clips.
 
 The error handler gets `origin-not-allowed`. The message never holds the value. To keep an agent on your regions, call `setAllowedRegions(['irp2'])` (the rule shape is the same as for [partners](#allowed-partners-and-uiconfs)). It checks the default region as well.
