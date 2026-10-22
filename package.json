@@ -128,7 +128,7 @@
   },
   "overrides": {
     "dompurify": "^3.4.17",
-    "markdown-it": "^14.3.1",
+    "markdown-it": "^14.3.3",
     "linkify-it": "^5.0.2"
   },
   "engines": {
