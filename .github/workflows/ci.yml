@@ -94,7 +94,8 @@ jobs:
         with:
           node-version-file: .nvmrc
       - run: npm ci --ignore-scripts
-      - run: npm audit --audit-level=high
+      # High and critical advisories fail, except the dated exceptions in the script.
+      - run: node scripts/audit-gate.mjs
       # Checks the registry signature and provenance of every installed package.
       - run: npm audit signatures
 
