@@ -129,7 +129,8 @@
   "overrides": {
     "dompurify": "^3.4.17",
     "markdown-it": "^14.3.3",
-    "linkify-it": "^5.0.2"
+    "linkify-it": "^5.0.2",
+    "minimatch": "^11.0.1"
   },
   "engines": {
     "node": ">=22.12.0"

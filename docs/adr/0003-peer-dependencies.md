@@ -28,3 +28,4 @@ Test IDs: QA-08, SEC-02. Code: `vite.config.ts`, `package.json`. Checks: `script
 - Hosts install the peers themselves. npm 7+ installs missing peers and stops with `ERESOLVE` on a conflicting version.
 - The script-tag bundle must be rebuilt when what it inlines changes. It is capped by `size-limit` (see `.size-limit.json`).
 - The conformance suite runs with `@a2ui/react` and `@a2ui/web_core` at the lowest version their ranges allow, and a test fails if the lockfile moves (`test/conformance/peers.test.ts`). `react`, `react-dom` and `zod` run at the lockfile version, with no lowest-version check.
+- Zod stays on 3.x while `@a2ui/*` needs `^3.25.76`. Zod below 4.6.6 has an open advisory (GHSA-mrhx-c7xc-m3w5, memory use on a very large array) and the fix is Zod 4 only. `scripts/audit-gate.mjs` excepts it until 2026-12-31. Move to Zod 4 when `@a2ui/*` allows it.
