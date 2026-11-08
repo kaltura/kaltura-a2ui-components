@@ -34,6 +34,7 @@ Which test covers each control ID. Test titles start with the ID. The traceabili
 | QA-06 | Radar chart, chart error boundary | test/regression/charts.test.tsx; test/charts/chart-core.test.tsx | unit tests | fixed |
 | SEC-15 | Radar chart, chart error boundary | test/regression/charts.test.tsx; test/charts/chart-core.test.tsx | unit tests | fixed |
 | SEC-26 | Core components (prop array and record size) | test/security/props-size-cap.test.ts | unit tests | fixed |
+| QA-19 | Flashcards (slide animation timer) | test/regression/flashcards-timer.test.tsx | unit tests | fixed |
 | QA-10 | React adapter (`loadKalturaCatalog`) | test/regression/catalog-drift.test.ts | unit tests | fixed |
 | QA-14 | Chart country matching | test/regression/country-codes.test.ts; test/charts/country-matching.test.ts | unit tests | fixed |
 | QA-15 | GeoMap chart | test/charts/geomap.test.tsx | unit tests | fixed |

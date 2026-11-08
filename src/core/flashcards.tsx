@@ -259,10 +259,15 @@ const FlashcardsView: FC<FlashcardsCoreProps> = ({
       if (next < 0 || next >= total) return;
       setAnimating(true);
       setCurrentIndex(next);
-      setTimeout(() => setAnimating(false), 320);
     },
     [currentIndex, total, animating],
   );
+
+  useEffect(() => {
+    if (!animating) return;
+    const timer = setTimeout(() => setAnimating(false), 320);
+    return () => clearTimeout(timer);
+  }, [animating]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
