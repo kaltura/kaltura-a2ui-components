@@ -3,6 +3,12 @@
 import { defineConfig, devices } from '@playwright/test';
 import { ORIGIN_A, PORT_A, PORT_B } from './e2e/fixtures/constants';
 
+// Node's --env-file does not expand references. Let `ALT_X=$OTHER_KEY` in .env point at another key.
+for (const [key, value] of Object.entries(process.env)) {
+  const ref = value?.match(/^\$([A-Z][A-Z0-9_]*)$/)?.[1];
+  if (ref && process.env[ref] !== undefined) process.env[key] = process.env[ref];
+}
+
 export default defineConfig({
   testDir: 'e2e/live',
   workers: 1,
