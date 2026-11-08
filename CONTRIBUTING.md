@@ -24,7 +24,7 @@ npx playwright install chromium firefox webkit   # only for e2e and check:exampl
 
 ## Live test
 
-Live tests need your own Kaltura account. Each spec header in `e2e/live/` lists the variables it reads. Put them in a gitignored `.env`. A spec skips when its variables are missing. Run `npm run e2e:live` (add `-- --project=chromium` for one browser). Live tests do not run in CI. Never commit a secret or a KS.
+Live tests need your own Kaltura account. Each spec header in `e2e/live/` lists the variables it reads. Put them in a gitignored `.env`. A value of the form `$OTHER_KEY` takes the value of that key. A spec skips when its variables are missing. Run `npm run e2e:live` (add `-- --project=chromium` for one browser). Live tests do not run in CI. Never commit a secret or a KS.
 
 The tests mint a 10 minute KS in the test process, play real content and fail if the KS shows up in any request URL.
 
