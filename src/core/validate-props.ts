@@ -34,6 +34,19 @@ function toResolved(schema: z.ZodTypeAny): z.ZodTypeAny {
   }
 }
 
+// Zod 3 builds one issue per bad element before it checks the size of an array or record
+// (GHSA-mrhx-c7xc-m3w5, fixed only in Zod 4). A few MB of agent output can cost hundreds of MB of
+// heap. So props with a longer array or record are refused before parsing. Real props are far
+// smaller (Chart shows at most 500 rows).
+const MAX_COLLECTION_LENGTH = 10_000;
+const MAX_COLLECTION_DEPTH = 8;
+
+function hasOversizedCollection(value: unknown, depth = 0): boolean {
+  if (typeof value !== 'object' || value === null || depth > MAX_COLLECTION_DEPTH) return false;
+  const items = Array.isArray(value) ? value : Object.values(value);
+  return items.length > MAX_COLLECTION_LENGTH || items.some(item => hasOversizedCollection(item, depth + 1));
+}
+
 const resolvedCache = new WeakMap<z.ZodTypeAny, z.ZodTypeAny>();
 
 function resolvedSchema(schema: z.ZodTypeAny): z.ZodTypeAny {
@@ -86,6 +99,10 @@ export function checkProps(
 ): { invalid: string[]; pending: boolean } {
   const bad = new Set<string>();
   let pending = false;
+  if (typeof props === 'object' && props !== null) {
+    const oversized = Object.entries(props).filter(([key, value]) => key in schema.shape && hasOversizedCollection(value));
+    if (oversized.length) return { invalid: oversized.map(([key]) => key).slice(0, 5), pending: false };
+  }
   const parsed = resolvedSchema(schema).safeParse(props);
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {

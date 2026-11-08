@@ -51,6 +51,7 @@ What the package does on its own:
 
 - Unisphere `serverUrl` loads only from an allowed origin ([ADR 0001](docs/adr/0001-server-url-allowlist.md)).
 - Every component validates its resolved props. A bad value shows a fixed, plain-text message. It never echoes a prop value, the KS or a remote error.
+- Props with an array or record over 10,000 items are refused before parsing. Zod 3 spends memory on every bad item before it checks size ([GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)).
 - Markdown is sanitised in Flashcards and in the basic Text. The basic Text uses the renderer you put in `MarkdownContext`, then our sanitiser. Images in markdown load only from the hosts the basic Image allows. `openUrl` opens `https:` URLs only.
 - The basic Image, Video and AudioPlayer load only Kaltura URLs and `setExtraMediaOrigins` origins. They refuse URLs with `api_v3`, `partnerservices2` or a `ks` parameter or path segment. The real control is that the KS never enters the data model.
 - The KS is not in the script or iframe URL we build for the Player, flashcard clips, recorder, Analytics or Unisphere widgets. The Player, flashcard clips, Captions editor and recorder get it in JavaScript and run in your page origin ([ADR 0008](docs/adr/0008-in-page-player-and-captions-editor.md)). Redact URLs and console text in CSP reports ([host-integration.md](docs/host-integration.md#rollout)).
