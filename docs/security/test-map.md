@@ -16,7 +16,7 @@ Which test covers each control ID. Test titles start with the ID. The traceabili
 | QA-12 | Flashcards (content rendering) | test/security/flashcards.test.tsx; e2e/hostile-input.spec.ts (case 7); e2e/error-states.spec.ts (one bad clip) | unit tests; e2e (chromium, firefox, webkit) | fixed |
 | SEC-03 | Recorder (props checked before the script loads) | test/security/recorder.test.tsx; test/security/props-validation.test.ts; test/review/hardening-review.test.tsx; e2e/hostile-input.spec.ts (cases 12, 13); e2e/error-states.spec.ts | unit tests; e2e (chromium, firefox, webkit) | fixed |
 | SEC-02 | `@a2ui/web_core` dependency, `vite.config.ts` | test/security/open-url.test.ts; test/client-functions.test.ts | unit tests; npm audit | fixed |
-| SEC-23 | Markdown and sanitiser dependencies (lockfile) | None. Checked by `npm audit --audit-level=high` in CI | npm audit; dependency review | fixed |
+| SEC-23 | Markdown and sanitiser dependencies (lockfile) | None. Checked by the CI audit gate (`npm audit`, high and critical) | npm audit; dependency review | fixed |
 | SEC-05 | Catalog, schemas, markdown (KS handling) | test/security/markdown.test.tsx; test/security/ks-binding.test.ts; test/security/ks-provider.test.tsx; test/security/ks-scope.test.tsx; test/security/a2ui-ks-source.test.tsx; test/security/media-url.test.tsx; test/conformance/docs-content.test.ts; e2e/ks-provider.spec.ts; e2e/hostile-input.spec.ts; e2e/media-url-policy.spec.ts | unit tests; e2e (chromium, firefox, webkit) | fixed |
 | SEC-07 | Captions editor (props checked before the page is fetched), Analytics (URL building) | test/security/urls.test.ts; test/security/props-validation.test.ts | unit tests | fixed |
 | SEC-11 | Player, Flashcards (props checked before the script loads) | test/security/urls.test.ts; test/security/flashcards.test.tsx; test/security/props-validation.test.ts | unit tests | fixed |
@@ -33,6 +33,7 @@ Which test covers each control ID. Test titles start with the ID. The traceabili
 | SEC-25 | Component styles (CSS tokens) | e2e/css-tokens.spec.ts (same `getComputedStyle` check as QA-02) | e2e (chromium, firefox, webkit) | fixed |
 | QA-06 | Radar chart, chart error boundary | test/regression/charts.test.tsx; test/charts/chart-core.test.tsx | unit tests | fixed |
 | SEC-15 | Radar chart, chart error boundary | test/regression/charts.test.tsx; test/charts/chart-core.test.tsx | unit tests | fixed |
+| SEC-26 | Core components (prop array and record size) | test/security/props-size-cap.test.ts | unit tests | fixed |
 | QA-10 | React adapter (`loadKalturaCatalog`) | test/regression/catalog-drift.test.ts | unit tests | fixed |
 | QA-14 | Chart country matching | test/regression/country-codes.test.ts; test/charts/country-matching.test.ts | unit tests | fixed |
 | QA-15 | GeoMap chart | test/charts/geomap.test.tsx | unit tests | fixed |
