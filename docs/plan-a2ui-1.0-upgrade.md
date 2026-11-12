@@ -408,7 +408,7 @@ Merged to `main` in PR 61. Released as `v0.7.0`.
 | # | State |
 |---|---|
 | H1 | Done: https://kaltura.github.io/kaltura-a2ui-components/ and a GIF in the README |
-| H2 | Done: [`samples/adk-agent/`](https://github.com/kaltura/a2ui/tree/main/samples/adk-agent) and `scripts/sdk-check.py` in `kaltura/a2ui` (PR 10), both run in CI |
+| H2 | Done: [`samples/adk-agent/`](https://github.com/kaltura/a2ui/tree/main/samples/adk-agent) and `scripts/sdk-check.py` in `kaltura/a2ui` (PRs 10 and 11, with an A2A server), both run in CI |
 | H3 | Open: upstream PR a2ui-project/a2ui#4208 |
 | H4 | Done: upstream Show and tell post, discussion 4207 |
 | H6 | Not started: needs a separate go for each comment |
