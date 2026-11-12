@@ -389,7 +389,7 @@ All must hold before "done":
 
 ## Status (2026-11-12)
 
-Branch `a2ui-1.0-upgrade`, uncommitted.
+Merged to `main` in PR 61. Released as `v0.7.0`.
 
 | Phase | State |
 |---|---|
@@ -399,6 +399,16 @@ Branch `a2ui-1.0-upgrade`, uncommitted.
 | 3 Tests | Done: T1 to T25 (T1, T6, T14, T15, T19, T20 are covered by `helpers.ts`, `media-url.test.tsx`, `open-url.test.ts` and the converted fixtures). T17 reads `examples/a2ui/` (12 files, one demo each) instead of a vendored copy. H5, the upstream YAML suite, is a deliberate non-goal: it tests SDK internals and uses the unreleased `@accessibility` key. T18, CONF-01 and T2 cover the catalog checks that matter here |
 | 4 e2e | `npm run e2e`: 657 passed on Chromium, Firefox and WebKit, including the demo (axe in both themes) |
 | 5 Build | `size`, `check:bundle`, `check:package`, `check:consumer`, `check:examples` green. Stamp and verify dry run clean |
-| 6 Docs | Done: README, agent guide, host API, host integration, KS, theming, troubleshooting, examples README, release notes, SECURITY, ADR 0006 update, ADR 0007 note, ADR 0010. Open: repo metadata (needs a go) |
+| 6 Docs | Done: README, agent guide, host API, host integration, KS, theming, troubleshooting, examples README, release notes, SECURITY, ADR 0006 update, ADR 0007 note, ADR 0010. Repo metadata, topics and Discussions set on both repos (2026-11-12) |
 | 7 Live | Demo app (`npm run demo`) with e2e on three browsers and axe in both themes. `npm run e2e:live`: 61 passed, 29 skipped in the default run. The 27 ENV tests (non-default region) pass on three browsers after `.env` references (`$NAME`) are expanded |
-| 8 Release | Not started. Needs a separate go |
+| 8 Release | Done 2026-11-12. `v0.7.0` is live. `verify-cdn` passes, the SHA256SUMS and attestations check out. `kaltura/a2ui` serves `v3` (PR 7) with the same bytes and CORS `*`. The demo is hosted on Pages (PR 64) |
+
+### Showcase deliverables (2026-11-12)
+
+| # | State |
+|---|---|
+| H1 | Done: https://kaltura.github.io/kaltura-a2ui-components/ and a GIF in the README |
+| H2 | Done: [`samples/adk-agent/`](https://github.com/kaltura/a2ui/tree/main/samples/adk-agent) and `scripts/sdk-check.py` in `kaltura/a2ui` (PR 10), both run in CI |
+| H3 | Open: upstream PR a2ui-project/a2ui#4208 |
+| H4 | Done: upstream Show and tell post, discussion 4207 |
+| H6 | Not started: needs a separate go for each comment |
