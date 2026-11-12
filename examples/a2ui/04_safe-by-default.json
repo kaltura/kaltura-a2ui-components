@@ -1,0 +1,97 @@
+{
+  "name": "Safe by default",
+  "description": "A Player with an id the host did not allow, and an image outside the Kaltura media policy. Each is refused before it loads, and the host sends the agent an error message. Needs no Kaltura account.",
+  "exercises": [
+    "allowlist",
+    "media URL policy",
+    "error reporting to the agent",
+    "KalturaPlayer"
+  ],
+  "messages": [
+    {
+      "version": "1.0",
+      "createSurface": {
+        "surfaceId": "safe",
+        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+      }
+    },
+    {
+      "version": "1.0",
+      "updateComponents": {
+        "surfaceId": "safe",
+        "components": [
+          {
+            "id": "root",
+            "component": "Card",
+            "child": "main"
+          },
+          {
+            "id": "main",
+            "component": "Column",
+            "children": [
+              "heading",
+              "note",
+              "player",
+              "image"
+            ]
+          },
+          {
+            "id": "heading",
+            "component": "Text",
+            "text": "## Safe by default",
+            "variant": "body"
+          },
+          {
+            "id": "note",
+            "component": "Text",
+            "text": "The agent picks ids and URLs, so the host decides what loads. This player uses a partner that is not on the allowlist, and the image is not a Kaltura URL. Both are refused, and the agent hears why.",
+            "variant": "body"
+          },
+          {
+            "id": "player",
+            "component": "KalturaPlayer",
+            "partnerId": 999,
+            "uiconfId": 7654321,
+            "entryId": "0_demo1234",
+            "action": {
+              "event": {
+                "name": "playerFeedback",
+                "context": {}
+              }
+            },
+            "accessibility": {
+              "label": "Player that the host refuses"
+            }
+          },
+          {
+            "id": "image",
+            "component": "Image",
+            "url": "http://tracker.example/pixel.png",
+            "fit": "cover",
+            "accessibility": {
+              "label": "Image that the host refuses"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "replies": {
+    "playerFeedback": [
+      {
+        "version": "1.0",
+        "updateComponents": {
+          "surfaceId": "safe",
+          "components": [
+            {
+              "id": "note",
+              "component": "Text",
+              "text": "The agent saw the error and chose to explain it instead of retrying.",
+              "variant": "body"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

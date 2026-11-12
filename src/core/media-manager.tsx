@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef, useState } from 'react';
 import { loadUnisphereModule } from './unisphere-loader';
 import { unisphereUrl } from './region';
+import { readColorMode } from './color-mode';
 import { renderLoadError } from './render-load-error';
 import { KalturaMediaManagerApi } from '../schemas/media-manager';
 import { withValidatedProps } from './validate-props';
@@ -172,7 +173,7 @@ function MediaManagerView(props: MediaManagerCoreProps) {
       if (ws) safely(() => ws.kill?.());
     };
 
-    const theme = themeProp ?? (document.documentElement.getAttribute('data-theme') as 'dark' | 'light') ?? 'dark';
+    const theme = themeProp ?? readColorMode('dark');
 
     const context = contextId ? { type: 'category', initialCategoryId: contextId } : { type: 'myMedia' };
 

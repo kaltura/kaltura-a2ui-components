@@ -1,0 +1,95 @@
+{
+  "name": "Media workspace",
+  "description": "Player, Media Manager and Genie in tabs. Needs your own Kaltura ids and a session from the host. Without them each widget shows a fixed error and reports it to the agent.",
+  "exercises": [
+    "KalturaPlayer",
+    "KalturaMediaManager",
+    "KalturaGenie",
+    "Tabs",
+    "KS provider",
+    "allowlist"
+  ],
+  "live": true,
+  "messages": [
+    {
+      "version": "1.0",
+      "createSurface": {
+        "surfaceId": "workspace",
+        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+      }
+    },
+    {
+      "version": "1.0",
+      "updateComponents": {
+        "surfaceId": "workspace",
+        "components": [
+          {
+            "id": "root",
+            "component": "Card",
+            "child": "main"
+          },
+          {
+            "id": "main",
+            "component": "Column",
+            "children": [
+              "heading",
+              "tabs"
+            ]
+          },
+          {
+            "id": "heading",
+            "component": "Text",
+            "text": "## Media workspace",
+            "variant": "body"
+          },
+          {
+            "id": "tabs",
+            "component": "Tabs",
+            "tabs": [
+              {
+                "title": "Watch",
+                "child": "player"
+              },
+              {
+                "title": "Manage",
+                "child": "manager"
+              },
+              {
+                "title": "Ask Genie",
+                "child": "genie"
+              }
+            ]
+          },
+          {
+            "id": "player",
+            "component": "KalturaPlayer",
+            "partnerId": 1234567,
+            "uiconfId": 7654321,
+            "entryId": "0_abc12345",
+            "autoplay": false,
+            "accessibility": {
+              "label": "Lecture video"
+            }
+          },
+          {
+            "id": "manager",
+            "component": "KalturaMediaManager",
+            "partnerId": 1234567,
+            "accessibility": {
+              "label": "Media library"
+            }
+          },
+          {
+            "id": "genie",
+            "component": "KalturaGenie",
+            "partnerId": 1234567,
+            "uiconfId": 7654321,
+            "accessibility": {
+              "label": "Genie chat"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

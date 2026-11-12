@@ -10,27 +10,32 @@
 //   zod     prop names and order, required list, types, enums, nesting
 //   JSON    descriptions and defaults (zod has neither, and zod .describe()
 //           would add about 5.7 kB raw to the web component bundle)
-// Everything outside components.*.allOf[n].properties and .required (header,
-// x-kaltura-adapters, component descriptions, Kaltura functions, Kaltura $defs)
-// is copied from the JSON. A new prop gets an empty description. The
-// conformance test fails until you write one.
+// Everything outside components.*.properties and .required (header,
+// metadata, instructions, component descriptions, Kaltura functions) is copied
+// from the JSON. A new prop gets an empty description. The conformance test
+// fails until you write one.
 //
 // The A2UI part comes from the installed @a2ui/web_core, so the JSON lists what
 // the renderer serves (ADR 0006):
 //   components, functions      the basic ones first, then the Kaltura ones
-//   $defs                      all of common_types.json, the basic theme, and the
-//                              basic CatalogComponentCommon as BasicComponentCommon
-//   anyComponent, anyFunction  built from the keys of components and functions
+//   $defs                      Weight from the basic catalog, plus anyComponent and
+//                              anyFunction, built from the keys of components and
+//                              functions. Other refs point at common_types.json,
+//                              which ships next to the catalog.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CATALOG_PATH = join(root, 'src/catalog/kaltura_catalog.json');
+// The catalog's relative refs resolve here, so a copy of the upstream file sits beside it.
+const COMMON_PATH = join(root, 'src/catalog/common_types.json');
+const UPSTREAM_COMMON_PATH = join(root, 'node_modules/@a2ui/web_core/src/v1_0/schemas/common_types.json');
 const DOC_PATH = join(root, 'docs/components.md');
 const FIXTURES = join(root, 'test/conformance/fixtures');
-const UPSTREAM_SCHEMAS = join(root, 'node_modules/@a2ui/web_core/src/v0_9/schemas');
-const COMMON_TYPES_ID = 'https://a2ui.org/specification/v0_9/common_types.json';
+const UPSTREAM_SCHEMAS = join(root, 'node_modules/@a2ui/web_core/src/v1_0/schemas');
+// Relative file name. A 1.0 catalog may only point at this file and local defs.
+const COMMON = 'common_types.json';
 
 /**
  * Differences between zod and the catalog that are on purpose. The conformance
@@ -40,7 +45,7 @@ export const INTENTIONAL_DIFFERENCES = [
   'zod .positive() and .nonnegative() on ids are not written to the catalog (type: integer only).',
   'zod objects strip unknown keys. The catalog sets additionalProperties: false on nested objects.',
   'z.unknown() (Flashcards clip entryId) keeps the catalog type. The component checks the value with isEntryId.',
-  'The catalog Player has a oneOf rule (entryId or playlistId) that zod does not carry. The component checks the pair.',
+  'The catalog cannot carry the Player rule "exactly one of entryId and playlistId": 1.0 forbids oneOf and anyOf at a component root. The descriptions say it and the component checks the pair.',
   'Descriptions and defaults live in the JSON only.',
 ];
 
@@ -57,7 +62,7 @@ const DYNAMIC_PROBES = [
   ['DynamicNumber', 1],
   ['DynamicBoolean', true],
 ];
-const BINDING = { path: '/a' };
+const BINDING = { '@path': '/a' };
 
 /** `DynamicString`, `DynamicNumber`, `DynamicBoolean` or undefined. */
 function dynamicKind(type) {
@@ -96,9 +101,9 @@ export function nodeFor(zodType, previous, named = false) {
   const kind = loose ? undefined : dynamicKind(type);
   let node;
   if (kind) {
-    node = { $ref: `#/$defs/${kind}` };
+    node = { $ref: `${COMMON}#/$defs/${kind}` };
   } else if (type.description?.startsWith('REF:#/$defs/Action|')) {
-    node = { $ref: '#/$defs/Action' };
+    node = { $ref: `${COMMON}#/$defs/Action` };
   } else {
     switch (type._def.typeName) {
       case 'ZodString': {
@@ -154,49 +159,29 @@ export function nodeFor(zodType, previous, named = false) {
   return inOrder(previous, node);
 }
 
-/** The basic catalog and the common types that ship in @a2ui/web_core. */
+/** The basic catalog that ships in @a2ui/web_core. Its refs are already relative. */
 export function loadUpstream() {
-  const read = path => JSON.parse(readFileSync(join(UPSTREAM_SCHEMAS, path), 'utf8'));
-  return { basic: read('catalogs/basic/catalog.json'), common: read('common_types.json') };
-}
-
-/**
- * Makes common_types refs local (`catalog.json#/...` there means the catalog in use, which
- * is this file) and points the basic common props at BasicComponentCommon.
- */
-function localRefs(node) {
-  if (Array.isArray(node)) return node.map(localRefs);
-  if (!node || typeof node !== 'object') return node;
-  return Object.fromEntries(
-    Object.entries(node).map(([key, value]) => {
-      if (key !== '$ref') return [key, localRefs(value)];
-      if (value === '#/$defs/CatalogComponentCommon') return [key, '#/$defs/BasicComponentCommon'];
-      return [key, value.replace(`${COMMON_TYPES_ID}#`, '#').replace(/^catalog\.json#/, '#')];
-    }),
-  );
+  const basic = JSON.parse(readFileSync(join(UPSTREAM_SCHEMAS, 'catalogs/basic/catalog.json'), 'utf8'));
+  return { basic };
 }
 
 /** Basic entries first, then the entries of `map` that are not basic. */
 const basicFirst = (basic, map) => ({
-  ...localRefs(basic),
+  ...structuredClone(basic),
   ...Object.fromEntries(Object.entries(map ?? {}).filter(([name]) => !(name in basic))),
 });
 
 /** The catalog with the basic components, functions and shared $defs from @a2ui/web_core. */
-function withBasic(catalog, { basic, common }) {
+function withBasic(catalog, { basic }) {
   const out = structuredClone(catalog);
   out.components = basicFirst(basic.components, out.components);
   out.functions = basicFirst(basic.functions, out.functions);
   const anyOf = group => ({ oneOf: Object.keys(out[group]).map(name => ({ $ref: `#/${group}/${name}` })) });
-  const generated = {
-    BasicComponentCommon: localRefs(basic.$defs.CatalogComponentCommon),
-    theme: localRefs(basic.$defs.theme),
-    anyComponent: anyOf('components'),
+  out.$defs = {
+    ...structuredClone(basic.$defs),
+    anyComponent: { ...anyOf('components'), discriminator: { propertyName: 'component' } },
     anyFunction: anyOf('functions'),
   };
-  const shared = localRefs(common.$defs);
-  const kaltura = Object.fromEntries(Object.entries(catalog.$defs).filter(([name]) => !(name in shared || name in generated)));
-  out.$defs = { ...shared, ...kaltura, ...generated };
   return out;
 }
 
@@ -208,16 +193,14 @@ export function generateCatalog(catalog, apis, keep = KEPT_FROM_CATALOG, upstrea
   const out = withBasic(catalog, upstream);
   for (const { name, schema } of apis) {
     const component = out.components[name];
-    if (!component) throw new Error(`${name} is not in the catalog. Add its description and allOf block first.`);
-    const part = component.allOf.find(entry => entry.properties?.component);
-    if (!part) throw new Error(`${name} has no allOf block with properties.component.`);
-    const previous = part.properties;
+    if (!component) throw new Error(`${name} is not in the catalog. Add its description and properties first.`);
+    const previous = component.properties;
     const properties = {};
     for (const [prop, child] of Object.entries(schema.shape)) {
       properties[prop] = `${name}.${prop}` in keep ? previous[prop] : nodeFor(child, previous[prop], true);
     }
-    part.properties = { component: previous.component ?? { const: name }, ...inOrder(previous, properties) };
-    part.required = ['component', ...requiredNames(schema.shape, part.required.filter(entry => entry !== 'component'))];
+    component.properties = { component: previous.component ?? { const: name }, ...inOrder(previous, properties) };
+    component.required = ['component', ...requiredNames(schema.shape, component.required.filter(entry => entry !== 'component'))];
   }
   return out;
 }
@@ -273,12 +256,12 @@ const cell = text => String(text).replaceAll('|', '\\|');
 const code = value => `\`${cell(value)}\``;
 const jsonBlock = value => `\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\``;
 
-/** Replaces `{ path }` bindings with their value from the data model. */
+/** Replaces `{ "@path" }` bindings with their value from the data model. */
 function resolveBindings(value, model) {
   if (Array.isArray(value)) return value.map(item => resolveBindings(item, model));
   if (!value || typeof value !== 'object') return value;
   const keys = Object.keys(value);
-  if (keys.length === 1 && keys[0] === 'path') return value.path.split('/').filter(Boolean).reduce((at, key) => at?.[key], model);
+  if (keys.length === 1 && keys[0] === '@path') return value['@path'].split('/').filter(Boolean).reduce((at, key) => at?.[key], model);
   return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, resolveBindings(item, model)]));
 }
 
@@ -295,13 +278,13 @@ export function configOf(stream) {
  */
 export function renderComponentsDoc(catalog, streams, chartExamples) {
   const names = Object.keys(catalog.components).filter(name => name.startsWith('Kaltura'));
-  const tags = catalog['x-kaltura-adapters'].webcomponent.customElements;
-  if (tags.length !== names.length) throw new Error('x-kaltura-adapters.webcomponent.customElements must list one tag per Kaltura component, in order.');
+  const tags = catalog.metadata.extensions.com_kaltura_adapters.webcomponent.customElements;
+  if (tags.length !== names.length) throw new Error('metadata.extensions.com_kaltura_adapters.webcomponent.customElements must list one tag per Kaltura component, in order.');
   const needsKs = name => KS_NOT_REQUIRED[name] ?? 'Yes';
 
   const sections = names.map((name, index) => {
     const tag = tags[index];
-    const part = catalog.components[name].allOf.find(entry => entry.properties?.component);
+    const part = catalog.components[name];
     const stream = streams.find(entry => entry.component === name);
     if (!stream) throw new Error(`streams.json has no stream for ${name}.`);
     const messages = stream.messages.filter(message => !message.createSurface);
@@ -350,7 +333,7 @@ export function renderComponentsDoc(catalog, streams, chartExamples) {
     '',
     'Each section has the props, an A2UI payload and the matching web component `config`.',
     '',
-    '- In A2UI, a `string`, `number` or `boolean` prop can be a data binding like `{ "path": "/title" }`. A `config` takes plain values.',
+    '- In A2UI, a `string`, `number` or `boolean` prop can be a data binding like `{ "@path": "/title" }`. A `config` takes plain values.',
     '- Every component also takes an optional `action`. It tells the agent about errors and events ([host-api.md](host-api.md)).',
     '- A2UI components have no `ks` prop. The host supplies the KS with `setKsProvider` ([host-integration.md](host-integration.md#kaltura-session-ks)).',
     '',
@@ -408,8 +391,10 @@ async function main() {
   const stale = [];
   if (JSON.stringify(next) !== JSON.stringify(current)) stale.push([CATALOG_PATH, `${formatCatalog(next)}\n`]);
   if (!existsSync(DOC_PATH) || readFileSync(DOC_PATH, 'utf8') !== doc) stale.push([DOC_PATH, doc]);
+  const common = readFileSync(UPSTREAM_COMMON_PATH, 'utf8');
+  if (!existsSync(COMMON_PATH) || readFileSync(COMMON_PATH, 'utf8') !== common) stale.push([COMMON_PATH, common]);
   if (!stale.length) {
-    console.log('Catalog and docs/components.md are up to date.');
+    console.log('Catalog, common_types.json and docs/components.md are up to date.');
     return;
   }
   const names = stale.map(([path]) => path.replace(`${root}/`, '')).join(' and ');

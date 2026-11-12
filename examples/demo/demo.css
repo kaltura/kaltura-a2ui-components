@@ -1,0 +1,65 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f6f8fb;
+  --panel: #ffffff;
+  --text: #0f1a2a;
+  --muted: #4a5a70;
+  --line: #d5dde8;
+  --accent: #0b5fd6;
+  --accent-text: #ffffff;
+  --down: #0b7a43;
+  --up: #a0410d;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0d1219; --panel: #161d27; --text: #f0f4f8; --muted: #a8b6c8; --line: #2a3646; --accent: #6aa8ff; --accent-text: #08121f; --down: #5fd49a; --up: #ffb27a;
+  }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0d1219; --panel: #161d27; --text: #f0f4f8; --muted: #a8b6c8; --line: #2a3646; --accent: #6aa8ff; --accent-text: #08121f; --down: #5fd49a; --up: #ffb27a;
+}
+:root[data-theme='light'] { color-scheme: light; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, sans-serif; }
+code, pre { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; }
+a { color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.skip { position: absolute; left: -999px; }
+.skip:focus { left: 8px; top: 8px; background: var(--panel); padding: 8px; z-index: 10; }
+.bar { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; padding: 10px 20px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.bar h1 { font-size: 18px; margin: 0; }
+.tag { margin: 0; color: var(--muted); flex: 1; }
+button, select, input { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
+button { cursor: pointer; }
+.layout { display: grid; grid-template-columns: 240px minmax(0, 1fr) 380px; gap: 16px; padding: 16px 20px; align-items: start; }
+@media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+nav ul { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+nav li button { width: 100%; text-align: left; }
+nav li button[aria-current='page'] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+nav small { color: inherit; }
+main h2 { margin: 0 0 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; }
+.chips span { border: 1px solid var(--line); border-radius: 999px; padding: 1px 10px; font-size: 12px; color: var(--muted); }
+.stage {
+  min-height: 240px;
+  /* The basic catalog default primary (#17e) is 4.28:1 with white text, below WCAG AA. Use the demo accent. */
+  --a2ui-color-primary: var(--accent);
+  --a2ui-color-on-primary: var(--accent-text);
+  --a2ui-tabs-header-color: var(--muted);
+}
+.wait { color: var(--muted); }
+aside { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+[role='tablist'] { display: flex; border-bottom: 1px solid var(--line); }
+[role='tab'] { border: 0; border-radius: 0; background: none; padding: 10px 14px; }
+[role='tab'][aria-selected='true'] { box-shadow: inset 0 -3px var(--accent); font-weight: 600; }
+[role='tabpanel'] { padding: 12px; max-height: 70vh; overflow: auto; }
+.wire { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.wire pre, [role='tabpanel'] > pre { white-space: pre-wrap; word-break: break-word; margin: 6px 0 0; }
+.wire .dir { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+.wire .down .dir { color: var(--down); }
+.wire .up .dir { color: var(--up); }
+.live { border-top: 1px solid var(--line); padding-top: 10px; }
+.live form { display: grid; gap: 8px; margin-top: 8px; }
+.live label { display: grid; gap: 2px; font-size: 13px; }
+.live small { color: var(--muted); }

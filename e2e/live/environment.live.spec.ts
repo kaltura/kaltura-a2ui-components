@@ -6,8 +6,13 @@ import { test as base, expect } from '@playwright/test';
 import { ORIGIN_A } from '../fixtures/constants';
 import { mintKs } from './mint-ks';
 
-const partnerId = Number(process.env.ALT_PARTNER_ID);
-const adminSecret = process.env.ALT_ADMIN_SECRET;
+// node --env-file does not expand variables, so .env may say ALT_PARTNER_ID=$NVQ2_PARTNER_ID_1.
+const fromEnv = (name: string) => {
+  const value = process.env[name] ?? '';
+  return value.startsWith('$') ? process.env[value.slice(1)] : value;
+};
+const partnerId = Number(fromEnv('ALT_PARTNER_ID'));
+const adminSecret = fromEnv('ALT_ADMIN_SECRET');
 const UICONF_ID = Number(process.env.ALT_UICONF_ID);
 const ENTRY_ID = process.env.ALT_ENTRY_ID ?? '';
 const TIMEOUT = 45_000;
@@ -101,7 +106,9 @@ for (const { tag, widget, props, text } of HOSTED) {
     await expect.poll(() => visibleText(page), { timeout: TIMEOUT, message: `the ${widget} shows its UI` }).toContain(text);
     expect(run.scopes).toEqual([{ widget, scope: { partnerId, region: ENV_NAME } }]);
     expect(hostsOf(run.requests).filter((host) => US_HOST.test(host))).toEqual([]);
-    expect(run.errors.filter((error) => !/status of 404/.test(error))).toEqual([]);
+    // The alt environment's Genie logs "Service 'unisphere.widget.genie.thread-id' is not registered" from
+    // inside Unisphere (seen 2026-11-12, nothing in this repo registers or reads it). Any other error fails.
+    expect(run.errors.filter((error) => !/status of 404/.test(error) && !/Service 'unisphere\.widget\.genie\.thread-id' is not registered/.test(error))).toEqual([]);
   });
 }
 

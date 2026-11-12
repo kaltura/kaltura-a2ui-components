@@ -78,7 +78,7 @@ describe('SEC-02: openUrl in the merged Kaltura catalog', () => {
     ['https://example.com/', [['https://example.com/', '_blank', 'noopener,noreferrer']]],
   ])('SEC-02: a basic Button openUrl action with %s goes through the safe openUrl', async (url, calls) => {
     const view = await renderSurface(kalturaReactCatalog, [
-      { id: 'root', component: 'Button', child: 'label', action: { functionCall: { call: 'openUrl', args: { url } } } },
+      { id: 'root', component: 'Button', child: 'label', action: { functionCall: { '@call': 'openUrl', args: { url } } } },
       { id: 'label', component: 'Text', text: 'Open' },
     ]);
     await act(async () => view.host.querySelector('button')?.click());
@@ -120,7 +120,7 @@ describe('SEC-02: client functions need a user gesture', () => {
 
   it('SEC-02: a Button copyToClipboard action still copies', async () => {
     const view = await renderSurface(kalturaReactCatalog, [
-      { id: 'root', component: 'Button', child: 'label', action: { functionCall: { call: 'copyToClipboard', args: { text: 'hello' } } } },
+      { id: 'root', component: 'Button', child: 'label', action: { functionCall: { '@call': 'copyToClipboard', args: { text: 'hello' } } } },
       { id: 'label', component: 'Text', text: 'Copy' },
     ]);
     await act(async () => view.host.querySelector('button')?.click());

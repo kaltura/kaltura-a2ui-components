@@ -1,0 +1,57 @@
+{
+  "name": "AI avatar",
+  "description": "A conversational avatar with voice and captions. The host session picks the agent. Needs your own Kaltura ids and a session from the host.",
+  "exercises": [
+    "KalturaAvatar",
+    "KS provider",
+    "allowlist"
+  ],
+  "live": true,
+  "messages": [
+    {
+      "version": "1.0",
+      "createSurface": {
+        "surfaceId": "avatar",
+        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+      }
+    },
+    {
+      "version": "1.0",
+      "updateComponents": {
+        "surfaceId": "avatar",
+        "components": [
+          {
+            "id": "root",
+            "component": "Card",
+            "child": "main"
+          },
+          {
+            "id": "main",
+            "component": "Column",
+            "children": [
+              "heading",
+              "widget"
+            ]
+          },
+          {
+            "id": "heading",
+            "component": "Text",
+            "text": "## AI avatar",
+            "variant": "body"
+          },
+          {
+            "id": "widget",
+            "component": "KalturaAvatar",
+            "partnerId": 1234567,
+            "captions": true,
+            "theme": "light",
+            "openingPhrase": "Hi, how can I help with your course?",
+            "accessibility": {
+              "label": "AI avatar"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

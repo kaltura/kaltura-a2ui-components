@@ -107,12 +107,6 @@ describe('QA-09: verifyCdn compares the served bytes with the build', () => {
     ]);
   });
 
-  it('QA-09: hashes from a build without the stub (up to v0.2.0) check only the files that build hashed', async () => {
-    const old = Object.fromEntries(Object.entries(expected.cdn).filter(([path]) => path !== 'dist/html-element-stub.mjs'));
-    files.delete(cdnPath('dist/html-element-stub.mjs'));
-    expect(await verify.verifyCdn({ ...local(), expected: old, retry })).toEqual([]);
-  });
-
   it('QA-09: a catalog that differs from the build is reported', async () => {
     files.set(cdnPath('src/catalog/kaltura_catalog.json'), readCatalogSource());
     const problems = await verify.verifyCdn({ ...local(), expected: expected.cdn, retry });
@@ -127,7 +121,7 @@ describe('QA-09: verifyCdn compares the served bytes with the build', () => {
 
   it('SEC-19: a catalog without the React integrity is reported when the build hashes are given', async () => {
     const catalog = JSON.parse(files.get(cdnPath('src/catalog/kaltura_catalog.json')) ?? '{}');
-    delete catalog['x-kaltura-adapters'].react.integrity;
+    delete catalog.metadata.extensions.com_kaltura_adapters.react.integrity;
     files.set(cdnPath('src/catalog/kaltura_catalog.json'), JSON.stringify(catalog));
     const problems = await verify.verifyCdn({ ...local(), expected: expected.cdn, retry });
     expect(problems).toEqual(expect.arrayContaining([expect.stringContaining('catalog react.integrity undefined is not the served')]));
@@ -141,18 +135,9 @@ describe('QA-09: verifyCdn compares the served bytes with the build', () => {
 
   it('SEC-19: a catalog stub URL for another tag is reported', async () => {
     const catalog = JSON.parse(files.get(cdnPath('src/catalog/kaltura_catalog.json')) ?? '{}');
-    catalog['x-kaltura-adapters'].react.stubCdn = `${stamp.cdnBase('v0.1.9')}dist/html-element-stub.mjs`;
+    catalog.metadata.extensions.com_kaltura_adapters.react.stubCdn = `${stamp.cdnBase('v0.1.9')}dist/html-element-stub.mjs`;
     files.set(cdnPath('src/catalog/kaltura_catalog.json'), JSON.stringify(catalog));
     expect(await verify.verifyCdn({ ...local(), retry })).toEqual([expect.stringContaining('catalog react.stubCdn is')]);
-  });
-
-  it('QA-09: a catalog without the stub keys (tags up to v0.3.0) still passes', async () => {
-    const catalog = JSON.parse(files.get(cdnPath('src/catalog/kaltura_catalog.json')) ?? '{}');
-    delete catalog['x-kaltura-adapters'].react.stubCdn;
-    delete catalog['x-kaltura-adapters'].react.stubIntegrity;
-    files.set(cdnPath('src/catalog/kaltura_catalog.json'), JSON.stringify(catalog));
-    const rebuilt = hashing.buildHashes({ version: TAG.slice(1), read: path => Buffer.from(files.get(cdnPath(path)) ?? '') });
-    expect(await verify.verifyCdn({ ...local(), expected: rebuilt.cdn, retry })).toEqual([]);
   });
 
   it('QA-09: catalog URLs that point at another tag are reported', async () => {
@@ -264,10 +249,10 @@ describe('QA-09: verify-cdn CLI', () => {
     expect([result.status, result.stdout, result.stderr]).toEqual([0, expect.stringContaining('no GitHub Release yet'), '']);
   });
 
-  it('QA-09: --latest exits 0 with a notice when the latest Release has no hashes.json (made before 0.2.0)', async () => {
+  it('QA-09: --latest fails when the latest Release has no hashes.json', async () => {
     release('v0.1.3', []);
     const result = await run('--latest');
-    expect([result.status, result.stdout, result.stderr]).toEqual([0, expect.stringContaining('v0.1.3 has no hashes.json asset'), '']);
+    expect([result.status, result.stderr]).toEqual([1, expect.stringContaining('v0.1.3 has no hashes.json asset')]);
   });
 
   it('QA-09: --latest checks the tag of the latest Release against its hashes.json asset', async () => {

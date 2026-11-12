@@ -12,7 +12,7 @@ import '../../src/adapters/webcomponent/global';
 describe('CONF-21: types of the web component script', () => {
   it('CONF-21: every tag the bundle defines has an element type', () => {
     expectTypeOf<(typeof KALTURA_WC_TAGS)[number]>().toExtend<keyof HTMLElementTagNameMap>();
-    expect([...KALTURA_WC_TAGS]).toEqual((loadCatalog()['x-kaltura-adapters'] as { webcomponent: { customElements: string[] } }).webcomponent.customElements);
+    expect([...KALTURA_WC_TAGS]).toEqual((loadCatalog().metadata.extensions.com_kaltura_adapters as { webcomponent: { customElements: string[] } }).webcomponent.customElements);
   });
 
   it('CONF-21: config is typed by the component props', () => {

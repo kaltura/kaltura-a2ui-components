@@ -38,7 +38,7 @@ export function stampCatalog(text, { tag, base = cdnBase(tag), wcSri, reactSri, 
     .replace('"integrity": "__WC_SRI__"', () => `"integrity": "${wcSri}"`)
     .replace('"integrity": "__REACT_SRI__"', () => `"integrity": "${reactSri}"`)
     .replace('"stubIntegrity": "__STUB_SRI__"', () => `"stubIntegrity": "${stubSri}"`);
-  const { react, webcomponent } = JSON.parse(out)['x-kaltura-adapters'];
+  const { react, webcomponent } = JSON.parse(out).metadata.extensions.com_kaltura_adapters;
   if (JSON.stringify([react, webcomponent]).includes('__')) throw new Error('A placeholder is left in the stamped adapters.');
   return out;
 }

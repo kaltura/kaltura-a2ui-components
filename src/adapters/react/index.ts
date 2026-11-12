@@ -7,9 +7,9 @@
 // Must stay the first import, so it runs before @a2ui/react loads (a2ui#3158).
 import { removeHtmlElementStub } from './html-element-stub';
 import '../../styles/components.css';
-import { Catalog } from '@a2ui/web_core/v0_9';
-import { basicCatalog } from '@a2ui/web_core/v0_9/basic_catalog';
-import type { ReactCatalogComponent, ReactComponentImplementation } from '@a2ui/react/v0_9';
+import { Catalog } from '@a2ui/web_core/v1_0';
+import { basicCatalog } from '@a2ui/web_core/catalogs/basic/v1';
+import type { ReactCatalogComponent, ReactComponentImplementation } from '@a2ui/react';
 import { kalturaPlayerReactImpl } from './player';
 import { flashcardsReactImpl } from './flashcards';
 import { mediaManagerReactImpl } from './media-manager';
@@ -32,7 +32,7 @@ removeHtmlElementStub();
  * The catalog id the agent puts in `createSurface`.
  * @example { createSurface: { surfaceId: 's1', catalogId: KALTURA_CATALOG_ID } }
  */
-export const KALTURA_CATALOG_ID = 'https://kaltura.github.io/a2ui/v2/catalog.json';
+export const KALTURA_CATALOG_ID = 'https://kaltura.github.io/a2ui/v3/catalog.json';
 
 // basicCatalog is the host's own copy (a peer), and 0.1.x told hosts to
 // register it next to ours. Guard it in place, so an agent that picks it by
@@ -70,12 +70,10 @@ export function buildKalturaCatalog(
 ): Catalog<ReactCatalogComponent> {
   return new Catalog<ReactCatalogComponent>(
     id,
-    'v0.9',
+    '1.0',
     [...guardedBasics, ...kalturaComponentImpls],
     // Later entries win, so the safe openUrl replaces the basic one.
     [...basicCatalog.functions.values(), ...kalturaClientFunctions, SafeOpenUrlImplementation],
-    // The catalog JSON theme is the basic one.
-    basicCatalog.themeSchema,
   );
 }
 

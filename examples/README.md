@@ -5,9 +5,14 @@ Run an example from a clone of this repo. `dist/` is not on `main`, so each comm
 | Example | What it shows | Command | Needs a Kaltura account |
 |---|---|---|---|
 | [plain-html](plain-html/index.html) | One `<script>`, three custom elements, a `kaltura-action` listener and an agent log | `npm run example:html` | No. The Player section fails on purpose without real ids |
+| [demo](demo/main.tsx) | The live demo: 12 recorded A2UI 1.0 conversations from [`a2ui/`](a2ui) that cover every Kaltura component, with the wire, the data model and light and dark themes | `npm run demo` | No. Widgets that need Kaltura show their error state |
 | [react](react/main.tsx) | A stub agent round trip with `MessageProcessor`: capabilities out, messages in, errors and actions back | `npm run example:react` | No. The Player is refused on purpose by the partner allowlist |
 
 ![The player, chart and flashcards from the plain HTML example](../docs/img/examples.png)
+
+## Sample messages
+
+[`a2ui/*.json`](a2ui) holds 12 conversations. Together they use every Kaltura component, and they include the form and safe-by-default cases. Each file is valid A2UI 1.0. `test/conformance/examples.test.tsx` checks that every file validates and loads, that files without a Kaltura account render, and that every component has an example. The demo plays them.
 
 ## What to look for
 

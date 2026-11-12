@@ -146,10 +146,12 @@
     "topLevelKeys": [
       "$schema",
       "$id",
+      "protocolVersion",
       "title",
       "description",
       "catalogId",
-      "x-kaltura-adapters",
+      "metadata",
+      "instructions",
       "components",
       "functions",
       "$defs"
@@ -204,25 +206,9 @@
       "copyToClipboard"
     ],
     "defs": [
-      "ComponentId",
-      "AccessibilityAttributes",
-      "ComponentCommon",
-      "ChildList",
-      "DataBinding",
-      "DynamicValue",
-      "DynamicString",
-      "DynamicNumber",
-      "DynamicBoolean",
-      "DynamicStringList",
-      "FunctionCall",
-      "CheckRule",
-      "Checkable",
-      "Action",
-      "CatalogComponentCommon",
-      "BasicComponentCommon",
-      "theme",
       "anyComponent",
-      "anyFunction"
+      "anyFunction",
+      "Weight"
     ]
   }
 }

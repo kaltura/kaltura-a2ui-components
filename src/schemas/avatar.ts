@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CommonSchemas } from '@a2ui/web_core/v0_9';
+import { CommonSchemas } from '@a2ui/web_core/v1_0';
 
 // No `ks` prop: the avatar takes its KS from the host provider only, because
 // the KS picks the agent. Except serverUrl, props are plain values, no data bindings.

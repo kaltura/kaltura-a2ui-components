@@ -49,7 +49,7 @@ describe('QA-09: real stamp script on the real catalog', () => {
   });
 
   it('SEC-19: both bundles and the stub carry the SRI of the built files', () => {
-    const { react, webcomponent } = JSON.parse(stamped)['x-kaltura-adapters'] as Record<string, Record<string, string>>;
+    const { react, webcomponent } = JSON.parse(stamped).metadata.extensions.com_kaltura_adapters as Record<string, Record<string, string>>;
     expect([react?.integrity, webcomponent?.integrity, react?.stubIntegrity]).toEqual([expected.reactSri, expected.wcSri, expected.stubSri]);
   });
 

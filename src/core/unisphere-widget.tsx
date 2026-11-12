@@ -1,6 +1,7 @@
 import { useContext, useEffect, useRef } from 'react';
 import { loadUnisphereModule } from './unisphere-loader';
 import { unisphereUrl } from './region';
+import { readColorMode } from './color-mode';
 import { renderLoadError } from './render-load-error';
 import { KalturaFailure, ReporterContext, type KalturaWidget } from './host-hooks';
 import { refusedIdProp } from './allowed-ids';
@@ -72,8 +73,7 @@ export function UnisphereWidgetCore(props: UnisphereWidgetCoreProps) {
     const id = `unisphere-${runtimeName}-${crypto.randomUUID()}`;
     container.id = id;
 
-    const theme =
-      (document.documentElement.getAttribute('data-theme') as 'dark' | 'light') || 'dark';
+    const theme = readColorMode('dark');
     const [runtimeSettings, visualSettings, extraRuntimes] = JSON.parse(settingsKey) as [
       Record<string, unknown> | undefined,
       Record<string, unknown> | undefined,

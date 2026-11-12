@@ -70,7 +70,7 @@ const colour = (block: string, prop: string) => block.match(new RegExp(`(?:^|[;\
 
 describe('SEC-06: the shared error style is readable on light and dark', () => {
   const light = rule(/(?:^|\n)\.kaltura-load-error\s*\{([^}]*)\}/);
-  const dark = rule(/\[data-theme=['"]dark['"]\]\s+\.kaltura-load-error\s*\{([^}]*)\}/);
+  const dark = rule(/:is\(\[data-theme=['"]dark['"]\],\s*\.a2ui-dark\)\s+\.kaltura-load-error\s*\{([^}]*)\}/);
 
   it('SEC-06: the style uses its own literal colours, not host tokens', () => {
     expect([colour(light, 'color'), colour(light, 'background')].every(Boolean)).toBe(true);

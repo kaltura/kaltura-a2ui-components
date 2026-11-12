@@ -49,3 +49,9 @@ CONF-17 fails when the installed `@a2ui/react` imports in Node on its own, and `
 4. Remove `dist/html-element-stub.mjs` from `package.json` `sideEffects`, `.size-limit.json`, `CDN_FILES` in `scripts/release-hashes.mjs` and the release attestation in `.github/workflows/release.yml`, and update `test/release/`.
 5. Delete the ESM-SSR-STUB rule in `scripts/check-bundle.mjs`, the control run in `scripts/check-consumer.mjs` and `test/conformance/ssr-import.test.ts`. Keep the `check-consumer` check that the ESM imports in Node.
 6. Mark this ADR superseded.
+
+## Update for A2UI 1.0
+
+- The stub loads `@a2ui/web_core/catalogs/basic/v1` first, and the bundle imports `@a2ui/react` (no `v0_9` subpath). The import order and the rest of the decision are the same.
+- On `@a2ui/react` 0.15.0 a bare `import '@a2ui/react'` in Node still throws `HTMLElement is not defined`. The stub is still needed, and `check-consumer` still runs the failing control.
+

@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
 import catalog from '../src/catalog/kaltura_catalog.json';
 
 // The published catalog is the contract tier-1 A2UI clients negotiate against.
 // These tests lock the invariants that other agents/clients depend on: the
-// canonical id, all 12 shipped components, and the x-kaltura-adapters descriptor
+// canonical id, all 12 shipped components, and the metadata.extensions.com_kaltura_adapters descriptor
 // that tells clients where to load the renderers.
 
 const ALL_COMPONENTS = [
@@ -23,7 +24,7 @@ const ALL_COMPONENTS = [
 
 describe('kaltura_catalog.json', () => {
   it('is keyed by the canonical catalog id in both $id and catalogId', () => {
-    const id = 'https://kaltura.github.io/a2ui/v2/catalog.json';
+    const id = 'https://kaltura.github.io/a2ui/v3/catalog.json';
     expect(catalog.$id).toBe(id);
     expect(catalog.catalogId).toBe(id);
   });
@@ -40,19 +41,19 @@ describe('kaltura_catalog.json', () => {
   });
 
   it('F31: KalturaPlayer partnerId and uiconfId are plain integers, like the other components', () => {
-    const props = catalog.components.KalturaPlayer.allOf[2].properties as Record<string, { type?: string }>;
+    const props = catalog.components.KalturaPlayer.properties as Record<string, { type?: string }>;
     expect([props.partnerId.type, props.uiconfId.type]).toEqual(['integer', 'integer']);
   });
 
-  it('F31: dynamic values accept a function call', () => {
-    const defs = catalog.$defs as Record<string, object>;
+  it('F31: dynamic values accept a function call (the defs live in common_types.json)', () => {
+    const defs = JSON.parse(readFileSync('node_modules/@a2ui/web_core/src/v1_0/schemas/common_types.json', 'utf8')).$defs as Record<string, object>;
     const refs = ['DynamicString', 'DynamicNumber', 'DynamicBoolean'].map(name => JSON.stringify(defs[name]).includes('"#/$defs/FunctionCall"'));
     expect(refs).toEqual([true, true, true]);
   });
 });
 
-describe('x-kaltura-adapters', () => {
-  const adapters = catalog['x-kaltura-adapters'];
+describe('metadata.extensions.com_kaltura_adapters', () => {
+  const adapters = catalog.metadata.extensions.com_kaltura_adapters;
 
   it('names the package and source repository', () => {
     expect(adapters.package).toBe('@kaltura/a2ui-react');

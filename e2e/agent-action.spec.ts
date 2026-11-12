@@ -31,8 +31,8 @@ test.beforeAll(async () => {
           id === `\0${ENTRY}`
             ? `import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { A2uiSurface } from '@a2ui/react/v0_9';
+import { MessageProcessor } from '@a2ui/web_core/v1_0';
+import { A2uiSurface } from '@a2ui/react';
 import { buildKalturaCatalog, setKsProvider } from ${JSON.stringify(adapter)};
 window.__actions = [];
 setKsProvider(() => ${JSON.stringify(KS)});
@@ -40,8 +40,8 @@ window.__render = components => {
   const catalog = buildKalturaCatalog();
   const processor = new MessageProcessor([catalog], action => void window.__actions.push(action));
   processor.processMessages([
-    { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: catalog.id } },
-    { version: 'v0.9', updateComponents: { surfaceId: 's', components } },
+    { version: '1.0', createSurface: { surfaceId: 's', catalogId: catalog.id } },
+    { version: '1.0', updateComponents: { surfaceId: 's', components } },
   ]);
   const root = document.getElementById('host').appendChild(document.createElement('div'));
   createRoot(root).render(createElement(A2uiSurface, { surface: processor.model.getSurface('s') }));

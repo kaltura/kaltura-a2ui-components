@@ -204,7 +204,7 @@ describe('KS-SCOPE: A2UI identity', () => {
       kalturaReactCatalog,
       [
         { id: 'root', component: 'Column', children: { componentId: 'item', path: '/items' } },
-        { id: 'item', component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: { path: 'entry' } },
+        { id: 'item', component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: { '@path': 'entry' } },
       ],
       { items: [{ entry: '0_a' }, { entry: '0_b' }] },
     );
@@ -219,7 +219,7 @@ describe('KS-SCOPE: A2UI identity', () => {
     setKsProvider(provider);
     const { update } = await renderSurface(
       kalturaReactCatalog,
-      [{ id: 'root', component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: { path: '/entry' } }],
+      [{ id: 'root', component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: { '@path': '/entry' } }],
       { entry: '0_a' },
     );
     await update('/entry', '0_b');

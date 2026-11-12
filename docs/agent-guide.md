@@ -5,7 +5,7 @@ The agent writes A2UI JSON and [your page renders it](../README.md#quick-start).
 ## 1. Give the model the catalog
 
 - By URL: `https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@<tag>/src/catalog/kaltura_catalog.json` (`<tag>` is the tag you pinned).
-- Inline, for agents that accept it: `processor.getRendererCapabilities({ versions: ['v0.9'], includeInlineCatalogs: true })` ([host-api](host-api.md#capability-negotiation)).
+- Inline, for agents that accept it: `processor.getRendererCapabilities({ versions: ['1.0'], includeInlineCatalogs: true })` ([host-api](host-api.md#capability-negotiation)).
 
 Send the file as it is. Its `$id` must match the catalog id the renderer registers, so do not edit or prune it.
 
@@ -15,8 +15,8 @@ A surface needs one component with the id `root`. Props for each component: [com
 
 ```json
 [
-  { "version": "v0.9", "createSurface": { "surfaceId": "s1", "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json" } },
-  { "version": "v0.9", "updateComponents": { "surfaceId": "s1", "components": [
+  { "version": "1.0", "createSurface": { "surfaceId": "s1", "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json" } },
+  { "version": "1.0", "updateComponents": { "surfaceId": "s1", "components": [
     { "id": "root", "component": "KalturaPlayer", "partnerId": 1234567, "uiconfId": 7654321, "entryId": "1_abc12345" } ] } }
 ]
 ```
@@ -29,7 +29,7 @@ const host = { partnerIds: [1234567], uiconfIds: [7654321], entryIds: ['1_abc123
 setAllowedPartners(host.partnerIds); // the package refuses other ids
 setAllowedUiconfs(host.uiconfIds);
 const systemPrompt = `
-Show Kaltura media with A2UI v0.9 messages: createSurface, then updateComponents.
+Show Kaltura media with A2UI 1.0 messages: createSurface, then updateComponents.
 - Use a catalogId from the client's supportedCatalogIds.
 - One component must have the id "root".
 - There is no ks prop. The page supplies the Kaltura Session.
@@ -47,7 +47,7 @@ One object feeds both, so they cannot drift apart. Scope entries with a narrow K
 ## 4. Send errors and events back
 
 ```ts
-const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatalog], (action) => agent.send({ version: 'v0.9', action }));
+const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatalog], (action) => agent.send({ version: '1.0', action }));
 setErrorHandler((error) => agent.send(toClientError(error)));
 ```
 

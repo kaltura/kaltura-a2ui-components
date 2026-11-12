@@ -13,8 +13,8 @@ import {
 } from '@kaltura/a2ui-react';
 import { StrictMode, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
-import { A2uiSurface } from '@a2ui/react/v0_9';
-import { MessageProcessor, type A2uiMessage } from '@a2ui/web_core/v0_9';
+import { A2uiSurface } from '@a2ui/react';
+import { MessageProcessor, type AgentToRendererMessage } from '@a2ui/web_core/v1_0';
 
 // The host mints the Kaltura Session. Messages from the agent never carry it.
 setKsProvider(() => undefined); // replace with your KS call
@@ -25,11 +25,11 @@ setAllowedPartners([1234567]);
 setAllowedUiconfs([7654321]);
 
 // Normally these messages arrive from your agent. The catalog id must match.
-const messages: A2uiMessage[] = [
-  { version: 'v0.9', createSurface: { surfaceId: 'demo', catalogId: KALTURA_CATALOG_ID } },
-  { version: 'v0.9', updateDataModel: { surfaceId: 'demo', path: '/', value: { title: 'Visits per day' } } },
+const messages: AgentToRendererMessage[] = [
+  { version: '1.0', createSurface: { surfaceId: 'demo', catalogId: KALTURA_CATALOG_ID } },
+  { version: '1.0', updateDataModel: { surfaceId: 'demo', path: '/', value: { title: 'Visits per day' } } },
   {
-    version: 'v0.9',
+    version: '1.0',
     updateComponents: {
       surfaceId: 'demo',
       components: [
@@ -38,7 +38,7 @@ const messages: A2uiMessage[] = [
           id: 'chart',
           component: 'KalturaChart',
           chartType: 'bar',
-          title: { path: '/title' },
+          title: { '@path': '/title' },
           data: [
             { day: 'Mon', visits: 12 },
             { day: 'Tue', visits: 31 },
@@ -77,23 +77,23 @@ const agent = {
     subscribers.forEach((notify) => notify());
   },
   // A real agent answers with A2UI messages that use a catalog the client offered.
-  reply: (): A2uiMessage[] => messages,
+  reply: (): AgentToRendererMessage[] => messages,
 };
 
 // Actions (Button clicks, the "action" of Kaltura components) go to the agent.
-const processor = new MessageProcessor([kalturaReactCatalog], (action) => agent.send({ version: 'v0.9', action }));
+const processor = new MessageProcessor([kalturaReactCatalog], (action) => agent.send({ version: '1.0', action }));
 
 // Widget errors go to the agent as A2UI client error messages. No error text, no KS.
 setErrorHandler((error) => agent.send(toClientError(error)));
 
 // Tell the agent which catalogs you render, then use its answer.
-agent.send({ a2uiClientCapabilities: processor.getRendererCapabilities({ versions: ['v0.9'] }) });
+agent.send({ a2uiRendererCapabilities: processor.getRendererCapabilities({ versions: ['1.0'] }) });
 try {
   processor.processMessages(agent.reply());
 } catch (error) {
   // Schema errors in the agent's messages go back, so it can fix them.
   agent.send({
-    version: 'v0.9',
+    version: '1.0',
     error: { code: 'VALIDATION_FAILED', surfaceId: 'demo', path: '/', message: error instanceof Error ? error.message : String(error) },
   });
 }

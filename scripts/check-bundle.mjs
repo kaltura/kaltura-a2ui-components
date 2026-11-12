@@ -51,7 +51,7 @@ if (sources.iife !== undefined) {
 // @a2ui/markdown-it pins dompurify 3.4.11 (advisories up to 3.4.15), so
 // externalising it would hand hosts the vulnerable copy (SEC-23).
 const peerLibraries = /node_modules\/(@a2ui\/(react|web_core)|zod)\//;
-const peerSpecifiers = ['@a2ui/react/v0_9', '@a2ui/web_core/v0_9', '@a2ui/web_core/v0_9/basic_catalog', 'zod'];
+const peerSpecifiers = ['@a2ui/react', '@a2ui/web_core/v1_0', '@a2ui/web_core/catalogs/basic/v1', 'zod'];
 const maps = {};
 for (const [kind, file] of Object.entries(bundles)) {
   const path = join(dist, `${file}.map`);
@@ -91,8 +91,8 @@ if (sources.esm !== undefined) {
   if (imports(sources.esm)[0] !== './html-element-stub.mjs') {
     fail('ESM-SSR-STUB', `dist/${bundles.esm} does not import ./html-element-stub.mjs first. @a2ui/react would load in Node without it.`);
   }
-  if (stubImports.join() !== '@a2ui/web_core/v0_9/basic_catalog') {
-    fail('ESM-SSR-STUB', `dist/html-element-stub.mjs must import only @a2ui/web_core/v0_9/basic_catalog, found [${stubImports.join(', ')}].`);
+  if (stubImports.join() !== '@a2ui/web_core/catalogs/basic/v1') {
+    fail('ESM-SSR-STUB', `dist/html-element-stub.mjs must import only @a2ui/web_core/catalogs/basic/v1, found [${stubImports.join(', ')}].`);
   }
 }
 if (maps.iife !== undefined) {

@@ -33,9 +33,9 @@ test.beforeAll(async () => {
           id === `\0${ENTRY}`
             ? `import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { basicCatalog } from '@a2ui/web_core/v0_9/basic_catalog';
-import { A2uiSurface, MarkdownContext } from '@a2ui/react/v0_9';
+import { MessageProcessor } from '@a2ui/web_core/v1_0';
+import { basicCatalog } from '@a2ui/web_core/catalogs/basic/v1';
+import { A2uiSurface, MarkdownContext } from '@a2ui/react';
 import { renderMarkdown } from '@a2ui/markdown-it';
 import { buildKalturaCatalog, setErrorHandler } from ${JSON.stringify(adapter)};
 window.__reports = [];
@@ -45,9 +45,9 @@ window.__render = (components, dataModel, pickBasic) => {
   const catalog = buildKalturaCatalog();
   const processor = new MessageProcessor(pickBasic ? [catalog, basicCatalog] : [catalog]);
   processor.processMessages([
-    { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: pickBasic ? basicCatalog.id : catalog.id } },
-    { version: 'v0.9', updateDataModel: { surfaceId: 's', path: '/', value: dataModel } },
-    { version: 'v0.9', updateComponents: { surfaceId: 's', components } },
+    { version: '1.0', createSurface: { surfaceId: 's', catalogId: pickBasic ? basicCatalog.id : catalog.id } },
+    { version: '1.0', updateDataModel: { surfaceId: 's', path: '/', value: dataModel } },
+    { version: '1.0', updateComponents: { surfaceId: 's', components } },
   ]);
   const surface = createElement(A2uiSurface, { surface: processor.model.getSurface('s') });
   const root = document.getElementById('host').appendChild(document.createElement('div'));
@@ -85,7 +85,7 @@ test('SEC-05: a basic Image sends nothing to a foreign origin, a bound KS includ
           {
             id: 'bound',
             component: 'Image',
-            url: { call: 'formatString', args: { value: `${foreignUrl}?k=\${/session/ks}` }, returnType: 'string' },
+            url: { '@call': 'formatString', args: { value: `${foreignUrl}?k=\${/session/ks}` }, returnType: 'string' },
           },
           { id: 'kaltura', component: 'Image', url: kalturaUrl },
         ],
@@ -123,7 +123,7 @@ test('SEC-05: markdown images and a host that also registers basicCatalog send n
   await page.evaluate(
     ([foreignUrl, kalturaUrl, ks]) => {
       const render = (window as unknown as { __render(c: unknown[], d: unknown, pickBasic?: boolean): void }).__render;
-      const markdown = { call: 'formatString', args: { value: `**md** ![x](${foreignUrl}?d=\${/session/ks})` }, returnType: 'string' };
+      const markdown = { '@call': 'formatString', args: { value: `**md** ![x](${foreignUrl}?d=\${/session/ks})` }, returnType: 'string' };
       const components = [
         { id: 'root', component: 'Column', children: ['text', 'image', 'kaltura'] },
         { id: 'text', component: 'Text', text: markdown },

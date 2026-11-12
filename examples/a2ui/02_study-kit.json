@@ -1,0 +1,174 @@
+{
+  "name": "Study kit",
+  "description": "Tabs with a summary, Kaltura Flashcards, and buttons that run client functions (copy to clipboard, open a link). Needs no Kaltura account.",
+  "exercises": [
+    "KalturaFlashcards",
+    "Tabs",
+    "copyToClipboard",
+    "openUrl",
+    "data binding"
+  ],
+  "messages": [
+    {
+      "version": "1.0",
+      "createSurface": {
+        "surfaceId": "study",
+        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+      }
+    },
+    {
+      "version": "1.0",
+      "updateDataModel": {
+        "surfaceId": "study",
+        "path": "/",
+        "value": {
+          "lectureTitle": "Lecture 3: The cell",
+          "summary": "Cells are the basic unit of life. This lecture covers the three parts you need for the quiz: the mitochondria, the cell membrane and the ribosome."
+        }
+      }
+    },
+    {
+      "version": "1.0",
+      "updateComponents": {
+        "surfaceId": "study",
+        "components": [
+          {
+            "id": "root",
+            "component": "Card",
+            "child": "main"
+          },
+          {
+            "id": "main",
+            "component": "Column",
+            "children": [
+              "heading",
+              "tabs"
+            ]
+          },
+          {
+            "id": "heading",
+            "component": "Text",
+            "text": {
+              "@call": "formatString",
+              "args": {
+                "value": "## ${/lectureTitle}"
+              }
+            },
+            "variant": "body"
+          },
+          {
+            "id": "tabs",
+            "component": "Tabs",
+            "tabs": [
+              {
+                "title": "Summary",
+                "child": "summary_col"
+              },
+              {
+                "title": "Flashcards",
+                "child": "cards"
+              },
+              {
+                "title": "Share",
+                "child": "share_col"
+              }
+            ]
+          },
+          {
+            "id": "summary_col",
+            "component": "Column",
+            "children": [
+              "summary_text"
+            ]
+          },
+          {
+            "id": "summary_text",
+            "component": "Text",
+            "text": {
+              "@path": "/summary"
+            },
+            "variant": "body"
+          },
+          {
+            "id": "cards",
+            "component": "KalturaFlashcards",
+            "title": "Cell biology",
+            "summary": "Three terms from the lecture.",
+            "cards": [
+              {
+                "title": "Mitochondria",
+                "subtitle": "Lecture 3, 04:12",
+                "content": "The organelle that makes most of the cell's ATP."
+              },
+              {
+                "title": "Cell membrane",
+                "subtitle": "Lecture 3, 09:40",
+                "content": "A lipid bilayer that controls what enters and leaves the cell."
+              },
+              {
+                "title": "Ribosome",
+                "subtitle": "Lecture 3, 14:05",
+                "content": "Reads mRNA and builds proteins."
+              }
+            ],
+            "accessibility": {
+              "label": "Flashcards for the cell biology lecture"
+            }
+          },
+          {
+            "id": "share_col",
+            "component": "Column",
+            "children": [
+              "share_hint",
+              "copy_btn",
+              "docs_btn"
+            ]
+          },
+          {
+            "id": "share_hint",
+            "component": "Text",
+            "text": "The buttons run in the browser. The agent cannot run them for you.",
+            "variant": "caption"
+          },
+          {
+            "id": "copy_btn",
+            "component": "Button",
+            "child": "copy_label",
+            "action": {
+              "functionCall": {
+                "@call": "copyToClipboard",
+                "args": {
+                  "text": "Cell biology study kit: mitochondria, cell membrane, ribosome."
+                }
+              }
+            }
+          },
+          {
+            "id": "copy_label",
+            "component": "Text",
+            "text": "Copy the term list"
+          },
+          {
+            "id": "docs_btn",
+            "component": "Button",
+            "child": "docs_label",
+            "variant": "borderless",
+            "action": {
+              "functionCall": {
+                "@call": "openUrl",
+                "args": {
+                  "url": "https://developer.kaltura.com"
+                }
+              }
+            }
+          },
+          {
+            "id": "docs_label",
+            "component": "Text",
+            "text": "Open the Kaltura developer site"
+          }
+        ]
+      }
+    }
+  ]
+}

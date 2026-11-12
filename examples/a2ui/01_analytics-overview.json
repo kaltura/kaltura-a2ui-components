@@ -1,0 +1,231 @@
+{
+  "name": "Analytics overview",
+  "description": "A card with a bound summary line, a chart and two buttons. A button sends an event and the agent answers with new data and a new chart. Needs no Kaltura account.",
+  "exercises": [
+    "KalturaChart",
+    "formatNumber",
+    "pluralize",
+    "formatString",
+    "data binding",
+    "event round trip",
+    "accessibility"
+  ],
+  "messages": [
+    {
+      "version": "1.0",
+      "createSurface": {
+        "surfaceId": "analytics",
+        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+      }
+    },
+    {
+      "version": "1.0",
+      "updateDataModel": {
+        "surfaceId": "analytics",
+        "path": "/",
+        "value": {
+          "total": 1708,
+          "rangeLabel": "the last 7 days"
+        }
+      }
+    },
+    {
+      "version": "1.0",
+      "updateComponents": {
+        "surfaceId": "analytics",
+        "components": [
+          {
+            "id": "root",
+            "component": "Card",
+            "child": "main"
+          },
+          {
+            "id": "main",
+            "component": "Column",
+            "children": [
+              "heading",
+              "summary",
+              "chart",
+              "ranges"
+            ]
+          },
+          {
+            "id": "heading",
+            "component": "Text",
+            "text": "## Playback this week",
+            "variant": "body"
+          },
+          {
+            "id": "summary",
+            "component": "Text",
+            "text": {
+              "@call": "formatString",
+              "args": {
+                "value": "${formatNumber(value: ${/total})} ${pluralize(value: ${/total}, one: 'play', other: 'plays')} in ${/rangeLabel}"
+              }
+            },
+            "variant": "body"
+          },
+          {
+            "id": "chart",
+            "component": "KalturaChart",
+            "chartType": "bar",
+            "title": "Plays per day",
+            "xKey": "day",
+            "yKeys": [
+              "plays"
+            ],
+            "yLabels": [
+              "Plays"
+            ],
+            "xLabel": "Day",
+            "yLabel": "Plays",
+            "data": [
+              {
+                "day": "Mon",
+                "plays": 212
+              },
+              {
+                "day": "Tue",
+                "plays": 248
+              },
+              {
+                "day": "Wed",
+                "plays": 301
+              },
+              {
+                "day": "Thu",
+                "plays": 276
+              },
+              {
+                "day": "Fri",
+                "plays": 330
+              },
+              {
+                "day": "Sat",
+                "plays": 187
+              },
+              {
+                "day": "Sun",
+                "plays": 154
+              }
+            ],
+            "height": 280,
+            "accessibility": {
+              "label": "Bar chart of plays per day for the last 7 days",
+              "description": "Plays peak on Friday at 330 and fall to 154 on Sunday."
+            }
+          },
+          {
+            "id": "ranges",
+            "component": "Row",
+            "children": [
+              "btn7",
+              "btn30"
+            ],
+            "justify": "start"
+          },
+          {
+            "id": "btn7",
+            "component": "Button",
+            "child": "btn7_label",
+            "variant": "default",
+            "action": {
+              "event": {
+                "name": "rangeChanged",
+                "context": {
+                  "days": 7
+                }
+              }
+            }
+          },
+          {
+            "id": "btn7_label",
+            "component": "Text",
+            "text": "Last 7 days"
+          },
+          {
+            "id": "btn30",
+            "component": "Button",
+            "child": "btn30_label",
+            "variant": "primary",
+            "action": {
+              "event": {
+                "name": "rangeChanged",
+                "context": {
+                  "days": 30
+                }
+              }
+            }
+          },
+          {
+            "id": "btn30_label",
+            "component": "Text",
+            "text": "Last 30 days"
+          }
+        ]
+      }
+    }
+  ],
+  "replies": {
+    "rangeChanged": [
+      {
+        "version": "1.0",
+        "updateDataModel": {
+          "surfaceId": "analytics",
+          "path": "/",
+          "value": {
+            "total": 6647,
+            "rangeLabel": "the last 30 days"
+          }
+        }
+      },
+      {
+        "version": "1.0",
+        "updateComponents": {
+          "surfaceId": "analytics",
+          "components": [
+            {
+              "id": "chart",
+              "component": "KalturaChart",
+              "chartType": "line",
+              "title": "Plays per week",
+              "xKey": "week",
+              "yKeys": [
+                "plays"
+              ],
+              "yLabels": [
+                "Plays"
+              ],
+              "xLabel": "Week",
+              "yLabel": "Plays",
+              "data": [
+                {
+                  "week": "Week 1",
+                  "plays": 1410
+                },
+                {
+                  "week": "Week 2",
+                  "plays": 1622
+                },
+                {
+                  "week": "Week 3",
+                  "plays": 1880
+                },
+                {
+                  "week": "Week 4",
+                  "plays": 1735
+                }
+              ],
+              "height": 280,
+              "accessibility": {
+                "label": "Line chart of plays per week for the last 30 days",
+                "description": "Plays rise from 1,410 in week 1 to 1,880 in week 3, then dip to 1,735."
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

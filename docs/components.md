@@ -4,7 +4,7 @@
 
 Each section has the props, an A2UI payload and the matching web component `config`.
 
-- In A2UI, a `string`, `number` or `boolean` prop can be a data binding like `{ "path": "/title" }`. A `config` takes plain values.
+- In A2UI, a `string`, `number` or `boolean` prop can be a data binding like `{ "@path": "/title" }`. A `config` takes plain values.
 - Every component also takes an optional `action`. It tells the agent about errors and events ([host-api.md](host-api.md)).
 - A2UI components have no `ks` prop. The host supplies the KS with `setKsProvider` ([host-integration.md](host-integration.md#kaltura-session-ks)).
 
@@ -49,7 +49,7 @@ A2UI messages, sent after `createSurface`:
 ```json
 [
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateDataModel": {
       "surfaceId": "s",
       "path": "/",
@@ -59,7 +59,7 @@ A2UI messages, sent after `createSurface`:
     }
   },
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateComponents": {
       "surfaceId": "s",
       "components": [
@@ -69,7 +69,7 @@ A2UI messages, sent after `createSurface`:
           "partnerId": 1,
           "uiconfId": 2,
           "entryId": {
-            "path": "/entryId"
+            "@path": "/entryId"
           },
           "autoplay": true,
           "muted": true
@@ -115,7 +115,7 @@ A2UI messages, sent after `createSurface`:
 ```json
 [
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateDataModel": {
       "surfaceId": "s",
       "path": "/",
@@ -127,7 +127,7 @@ A2UI messages, sent after `createSurface`:
     }
   },
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateComponents": {
       "surfaceId": "s",
       "components": [
@@ -135,7 +135,7 @@ A2UI messages, sent after `createSurface`:
           "id": "root",
           "component": "KalturaFlashcards",
           "title": {
-            "path": "/deck/title"
+            "@path": "/deck/title"
           },
           "cards": [
             {
@@ -177,7 +177,7 @@ Element: `<kaltura-media-manager>`. Needs a KS: Yes.
 |---|---|---|---|---|
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
 | `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused. |
-| `theme` | "dark" / "light" |  |  | UI theme mode. Default: the host page's data-theme attribute, else 'dark'. |
+| `theme` | "dark" / "light" |  |  | UI theme mode. Default: the page theme (data-theme, an a2ui-dark or a2ui-light class, then the system setting). |
 | `mode` | "select" / "manage" |  | `"select"` | Interaction mode. 'select' shows the select button. 'manage' hides it. What the user can change comes from the KS role. Default: 'select'. |
 | `multiSelect` | boolean |  | `false` | Allow picking up to 5 entries. Default: false. |
 | `contextId` | string |  |  | ID of the content scope (e.g. category ID to browse). Digits only, up to 12. |
@@ -188,7 +188,7 @@ A2UI messages, sent after `createSurface`:
 ```json
 [
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateComponents": {
       "surfaceId": "s",
       "components": [
@@ -241,7 +241,7 @@ A2UI messages, sent after `createSurface`:
 ```json
 [
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateComponents": {
       "surfaceId": "s",
       "components": [
@@ -288,7 +288,7 @@ A2UI messages, sent after `createSurface`:
 ```json
 [
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateComponents": {
       "surfaceId": "s",
       "components": [
@@ -338,7 +338,7 @@ A2UI messages, sent after `createSurface`:
 ```json
 [
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateComponents": {
       "surfaceId": "s",
       "components": [
@@ -379,7 +379,7 @@ Element: `<kaltura-avatar>`. Needs a KS: Yes.
 | `autoConnect` | boolean |  |  | Start the session as soon as the avatar loads. Default: false, the user clicks to start. |
 | `openingPhrase` | string |  |  | What the agent says first. Plain text. Default: the agent's own greeting. |
 | `captions` | boolean |  |  | Show captions of what the agent says. Default: the agent's setting. |
-| `theme` | "light" / "dark" / "studio" |  |  | Colour theme. Default: 'light' when the page has data-theme="light", otherwise 'dark'. |
+| `theme` | "light" / "dark" / "studio" |  |  | Colour theme. Default: the page theme (data-theme, an a2ui-dark or a2ui-light class, then the system setting). |
 | `region` | string |  |  | Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. Lowercase letters, digits and hyphens. A region the host app does not allow is refused. sgp2 has no Unisphere host, so Genie, Media Manager, Content Lab, Agents Widget, VOD Avatar, Avatar and Captions Editor refuse it. With serverUrl, both must name the same region. |
 
 A2UI messages, sent after `createSurface`:
@@ -387,7 +387,7 @@ A2UI messages, sent after `createSurface`:
 ```json
 [
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateComponents": {
       "surfaceId": "s",
       "components": [
@@ -435,7 +435,7 @@ A2UI messages, sent after `createSurface`:
 ```json
 [
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateComponents": {
       "surfaceId": "s",
       "components": [
@@ -484,7 +484,7 @@ A2UI messages, sent after `createSurface`:
 ```json
 [
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateComponents": {
       "surfaceId": "s",
       "components": [
@@ -533,7 +533,7 @@ A2UI messages, sent after `createSurface`:
 ```json
 [
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateComponents": {
       "surfaceId": "s",
       "components": [
@@ -580,7 +580,7 @@ A2UI messages, sent after `createSurface`:
 ```json
 [
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateComponents": {
       "surfaceId": "s",
       "components": [
@@ -651,7 +651,7 @@ A2UI messages, sent after `createSurface`:
 ```json
 [
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateDataModel": {
       "surfaceId": "s",
       "path": "/",
@@ -661,7 +661,7 @@ A2UI messages, sent after `createSurface`:
     }
   },
   {
-    "version": "v0.9",
+    "version": "1.0",
     "updateComponents": {
       "surfaceId": "s",
       "components": [
@@ -684,7 +684,7 @@ A2UI messages, sent after `createSurface`:
             "value"
           ],
           "title": {
-            "path": "/title"
+            "@path": "/title"
           }
         }
       ]

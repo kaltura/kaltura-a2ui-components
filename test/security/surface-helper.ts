@@ -1,8 +1,8 @@
 // Renders A2UI components through a real surface, with an optional data model.
 import { act, createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MessageProcessor, type ActionListener, type Catalog } from '@a2ui/web_core/v0_9';
-import { A2uiSurface, MarkdownContext, type ReactCatalogComponent } from '@a2ui/react/v0_9';
+import { MessageProcessor, type ActionListener, type Catalog } from '@a2ui/web_core/v1_0';
+import { A2uiSurface, MarkdownContext, type ReactCatalogComponent } from '@a2ui/react';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -24,9 +24,9 @@ export async function renderSurface(
 ) {
   const processor = new MessageProcessor<ReactCatalogComponent>(registered, onAction);
   processor.processMessages([
-    { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: catalog.id } },
-    ...(dataModel ? [{ version: 'v0.9', updateDataModel: { surfaceId: 's', path: '/', value: dataModel } }] : []),
-    { version: 'v0.9', updateComponents: { surfaceId: 's', components } },
+    { version: '1.0', createSurface: { surfaceId: 's', catalogId: catalog.id } },
+    ...(dataModel ? [{ version: '1.0', updateDataModel: { surfaceId: 's', path: '/', value: dataModel } }] : []),
+    { version: '1.0', updateComponents: { surfaceId: 's', components } },
   ] as never);
   const host = document.body.appendChild(document.createElement('div'));
   const root = createRoot(host);
@@ -41,7 +41,7 @@ export async function renderSurface(
     /** Sets one data model value, as an agent or host update would. */
     update: async (path: string, value: unknown) => {
       await act(async () => {
-        processor.processMessages([{ version: 'v0.9', updateDataModel: { surfaceId: 's', path, value } }] as never);
+        processor.processMessages([{ version: '1.0', updateDataModel: { surfaceId: 's', path, value } }] as never);
       });
     },
   };

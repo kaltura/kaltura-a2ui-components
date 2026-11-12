@@ -1,15 +1,18 @@
-// Covers: CONF-18. What the host sends back to the agent is valid A2UI v0.9 client-to-server JSON:
+// Covers: CONF-18. What the host sends back to the agent is valid A2UI 1.0 renderer-to-agent JSON:
 // toClientError for every error code, and one captured action for every kind of event.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act } from 'react';
-import type { ActionPayload } from '@a2ui/web_core/v0_9';
-import { newAjv, readJson, SCHEMAS_V0_9 } from './helpers';
+import type { ActionPayload } from '@a2ui/web_core/v1_0';
+import { CATALOG_REF_ID, loadCatalog, newAjv, readJson, SCHEMAS_V1_0 } from './helpers';
 import { URL_A, loaderUrl, fakeWorkspaceModule, type MountedVisual } from '../lifecycle/harness';
 import { recorderRemote, type RecorderRemote } from '../helpers/recorder-remote';
 import { avatarRemote, LOADER_URL as AVATAR_LOADER_URL } from '../helpers/avatar-remote';
 import type { KalturaErrorCode } from '../../src/core/host-hooks';
 
-const validate = newAjv(false).compile(readJson(`${SCHEMAS_V0_9}/client_to_server.json`));
+const ajv = newAjv(false);
+ajv.addSchema(readJson(`${SCHEMAS_V1_0}/common_types.json`));
+ajv.addSchema({ ...loadCatalog(), $id: CATALOG_REF_ID });
+const validate = ajv.compile(readJson(`${SCHEMAS_V1_0}/renderer_to_agent.json`));
 const ACTION = { event: { name: 'kalturaFeedback', context: { note: 'from the agent' } } };
 
 // Typed as a record, so a new code in `KalturaErrorCode` fails the compile here until it is listed.
@@ -22,7 +25,7 @@ const CODES: Record<KalturaErrorCode, true> = {
   'render-failed': true,
 };
 
-describe('CONF-18: toClientError output matches the client_to_server schema', () => {
+describe('CONF-18: toClientError output matches the renderer_to_agent schema', () => {
   it.each(Object.keys(CODES) as KalturaErrorCode[])('CONF-18: code %s', async code => {
     const { toClientError } = await import('../../src/core/host-hooks');
     const message = toClientError({ code, widget: 'player', message: 'text', surfaceId: 's' });
@@ -38,11 +41,11 @@ describe('CONF-18: toClientError output matches the client_to_server schema', ()
   it('CONF-18: the schema rejects a message with no surfaceId, so the check can fail', async () => {
     const { toClientError } = await import('../../src/core/host-hooks');
     const { surfaceId: _surfaceId, ...error } = toClientError({ code: 'invalid-props', widget: 'player', message: '' }, 's').error;
-    expect(validate({ version: 'v0.9', error })).toBe(false);
+    expect(validate({ version: '1.0', error })).toBe(false);
   });
 });
 
-describe('CONF-18: a captured action matches the client_to_server schema', () => {
+describe('CONF-18: a captured action matches the renderer_to_agent schema', () => {
   let actions: ActionPayload[];
   let remote: RecorderRemote & { restore: () => void };
 
@@ -64,7 +67,7 @@ describe('CONF-18: a captured action matches the client_to_server schema', () =>
     await renderSurface(adapter.buildKalturaCatalog(), components, undefined, { onAction: action => void actions.push(action) });
   }
 
-  const check = () => expect(actions.map(action => [validate({ version: 'v0.9', action }), validate.errors])).toEqual([[true, null]]);
+  const check = () => expect(actions.map(action => [validate({ version: '1.0', action }), validate.errors])).toEqual([[true, null]]);
 
   it('CONF-18: error', async () => {
     await surface([{ id: 'root', component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: 'bad id', action: ACTION }]);

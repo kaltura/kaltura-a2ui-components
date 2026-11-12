@@ -48,7 +48,7 @@ const BANNED_EVERYWHERE = [
 
 export default defineConfig([
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**', '.audit/**', 'e2e/test-results/**', 'test-results/**', 'playwright-report/**'],
+    ignores: ['dist/**', 'dist-demo/**', 'node_modules/**', 'coverage/**', '.audit/**', 'e2e/test-results/**', 'test-results/**', 'playwright-report/**'],
   },
   js.configs.recommended,
   tseslint.configs.recommended,

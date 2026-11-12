@@ -19,7 +19,7 @@ const ALL_COMPONENTS = [
 
 describe('scaffold', () => {
   it('exposes the Kaltura catalog id', () => {
-    expect(KALTURA_CATALOG_ID).toBe('https://kaltura.github.io/a2ui/v2/catalog.json');
+    expect(KALTURA_CATALOG_ID).toBe('https://kaltura.github.io/a2ui/v3/catalog.json');
   });
 
   it('ships all 12 experience components', () => {

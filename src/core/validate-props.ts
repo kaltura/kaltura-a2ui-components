@@ -1,7 +1,7 @@
 import { createContext, createElement, useContext, useEffect } from 'react';
 import type { ComponentType, FC, ReactElement } from 'react';
 import { z } from 'zod';
-import { CommonSchemas } from '@a2ui/web_core/v0_9';
+import { CommonSchemas } from '@a2ui/web_core/v1_0';
 import { isCategoryId, isEntryId, isPositiveInt } from './ids';
 import { invalidCode, reportError, ReporterContext, type KalturaErrorCode, type KalturaWidget } from './host-hooks';
 import { refusedIdProp } from './allowed-ids';

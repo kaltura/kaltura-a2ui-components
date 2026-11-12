@@ -1,6 +1,6 @@
 {
   "name": "@kaltura/a2ui-react",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "private": true,
   "description": "Kaltura Experience Components for A2UI: Player, Flashcards, Media Manager, Recorder, Captions Editor, Analytics, Genie, Content Lab, Avatar, VOD Avatar, Agents Widget and Chart. A React catalog for A2UI clients and a self-contained web component bundle for plain HTML pages.",
   "license": "Apache-2.0",
@@ -38,7 +38,7 @@
   "module": "./dist/kaltura-react.mjs",
   "types": "./dist/types/adapters/react/index.d.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit && tsc --noEmit -p examples",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p examples && tsc --noEmit -p e2e",
     "build": "npm run build:react && npm run build:wc && npm run build:types && npm run build:notices",
     "build:react": "BUILD_TARGET=react vite build",
     "build:wc": "BUILD_TARGET=webcomponent vite build",
@@ -57,6 +57,8 @@
     "check:examples": "node scripts/check-examples.mjs",
     "example:html": "npm run build && vite --config examples/plain-html/vite.config.ts --open /examples/plain-html/",
     "example:react": "npm run build && vite --config examples/react/vite.config.ts --open",
+    "demo": "npm run build && vite --config examples/demo/vite.config.ts --open",
+    "demo:build": "npm run build && vite build --config examples/demo/vite.config.ts",
     "screenshot:examples": "node scripts/screenshot-examples.mjs",
     "gen:catalog": "node scripts/gen-catalog.mjs",
     "test:conformance": "vitest run test/conformance",
@@ -69,16 +71,16 @@
     "release:smoke": "node scripts/release-unisphere-smoke.mjs"
   },
   "peerDependencies": {
-    "@a2ui/react": "^0.14.0",
-    "@a2ui/web_core": "^0.14.0",
+    "@a2ui/react": "^0.15.0",
+    "@a2ui/web_core": "^0.15.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@a2ui/markdown-it": "^0.2.2",
-    "@a2ui/react": "^0.14.0",
-    "@a2ui/web_core": "^0.14.0",
+    "@a2ui/react": "^0.15.0",
+    "@a2ui/web_core": "^0.15.0",
     "@arethetypeswrong/cli": "^0.18.5",
     "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
@@ -130,7 +132,10 @@
     "dompurify": "^3.4.17",
     "markdown-it": "^14.3.3",
     "linkify-it": "^5.0.2",
-    "minimatch": "^11.0.1"
+    "minimatch": "^11.0.1",
+    "@a2ui/markdown-it": {
+      "@a2ui/web_core": "$@a2ui/web_core"
+    }
   },
   "engines": {
     "node": ">=22.12.0"

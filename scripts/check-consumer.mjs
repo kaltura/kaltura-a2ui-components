@@ -81,7 +81,13 @@ try {
   const peers = Object.entries(pkg.peerDependencies).map(([name, range]) => `${name}@${range}`);
   const install = (dir, args) => {
     run('mkdir', ['-p', dir], work);
-    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'consumer', private: true, type: 'module' }));
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({
+        name: 'consumer',
+        private: true,
+        type: 'module',
+        // @a2ui/markdown-it 0.2.2 still peers @a2ui/web_core ^0.14. A host on 0.15 needs this until it publishes a 0.15 range.
+        overrides: { '@a2ui/markdown-it': { '@a2ui/web_core': '$@a2ui/web_core' } },
+      }));
     return run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', ...args], dir);
   };
 
@@ -101,20 +107,20 @@ try {
     for (const name of ['kalturaReactCatalog', 'setKsProvider', 'setExtraAllowedOrigins']) {
       if (m[name] === undefined) throw new Error('missing export ' + name);
     }
-    const { Catalog } = await import('@a2ui/web_core/v0_9');
+    const { Catalog } = await import('@a2ui/web_core/v1_0');
     if (!(m.kalturaReactCatalog instanceof Catalog)) throw new Error('catalog is not an instance of the host Catalog');
     if (typeof HTMLElement !== 'undefined') throw new Error('the HTMLElement stub is still defined after the import');
-    await import('@a2ui/react/v0_9');`;
+    await import('@a2ui/react');`;
   try {
     run(process.execPath, ['--input-type=module', '-e', esmProbe], consumer);
   } catch (error) {
     fail(`ESM entry failed to import in Node: ${String(error.stderr ?? error).split('\n').find((l) => /Error/.test(l)) ?? error}`);
   }
 
-  // Control: without the stub, @a2ui/react 0.14.0 fails in Node. If it loads,
+  // Control: without the stub, @a2ui/react 0.15.0 fails in Node. If it loads,
   // upstream fixed a2ui#3158. Remove the stub (see ADR 0007).
   try {
-    run(process.execPath, ['--input-type=module', '-e', "await import('@a2ui/react/v0_9')"], consumer);
+    run(process.execPath, ['--input-type=module', '-e', "await import('@a2ui/react')"], consumer);
     console.warn('NOTE @a2ui/react imports in plain Node without the stub. a2ui#3158 is fixed. Remove src/adapters/react/html-element-stub.ts (ADR 0007).');
   } catch (error) {
     if (!/HTMLElement is not defined/.test(String(error.stderr))) {
@@ -132,7 +138,7 @@ try {
     errors.push(String(error));
   }
   for (const message of errors) fail(`Web component entry threw on a bare page: ${message}`);
-  for (const tag of catalog['x-kaltura-adapters'].webcomponent.customElements) {
+  for (const tag of catalog.metadata.extensions.com_kaltura_adapters.webcomponent.customElements) {
     if (!dom.window.customElements.get(tag)) fail(`Web component entry did not register <${tag}>.`);
   }
   dom.window.close();
@@ -145,7 +151,7 @@ try {
 setKsProvider((widget) => (widget === 'player' ? 'ks' : undefined));
 setErrorHandler((error) => {
   const message = toClientError(error);
-  const version: 'v0.9' = message.version;
+  const version: '1.0' = message.version;
   const code: string = message.error.code;
   console.log(version, code);
 });
@@ -195,13 +201,13 @@ export const props: PlayerCoreProps = { partnerId: 1, uiconfId: 2, entryId: '0_a
   // names the peer, instead of a second copy of the renderer.
   let conflict = '';
   try {
-    install(join(work, 'conflict'), ['@a2ui/react@0.13.0', tarball]);
-    fail('npm installed the package next to @a2ui/react@0.13.0 without a peer conflict.');
+    install(join(work, 'conflict'), ['@a2ui/react@0.14.0', tarball]);
+    fail('npm installed the package next to @a2ui/react@0.14.0 without a peer conflict.');
   } catch (error) {
     conflict = String(error.stderr ?? error);
   }
-  if (conflict !== '' && !/ERESOLVE[\s\S]*peer @a2ui\/react@"\^0\.14/.test(conflict)) {
-    fail(`The peer conflict message does not name @a2ui/react ^0.14: ${conflict.split('\n').slice(0, 6).join(' | ')}`);
+  if (conflict !== '' && !/ERESOLVE[\s\S]*peer @a2ui\/react@"\^0\.15/.test(conflict)) {
+    fail(`The peer conflict message does not name @a2ui/react ^0.15: ${conflict.split('\n').slice(0, 6).join(' | ')}`);
   }
 } finally {
   rmSync(work, { recursive: true, force: true });
