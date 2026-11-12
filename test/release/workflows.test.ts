@@ -48,8 +48,13 @@ describe('SEC-09: workflow files', () => {
     expect(text).not.toMatch(/NPM_TOKEN|NODE_AUTH_TOKEN|registry-url/);
   });
 
-  it.each(all.filter(([name]) => name !== 'release.yml'))('SEC-09: %s has no OIDC token and no write permission', (_name, text) => {
+  it.each(all.filter(([name]) => name !== 'release.yml' && name !== 'pages.yml'))('SEC-09: %s has no OIDC token and no write permission', (_name, text) => {
     expect(text).not.toMatch(/id-token: write|contents: write/);
+  });
+
+  it('SEC-09: pages.yml has no contents write, and only its deploy job has the OIDC token that Pages needs', () => {
+    const pages = jobs(workflows['pages.yml'] ?? '');
+    expect([/contents: write/.test(workflows['pages.yml'] ?? ''), Object.keys(pages).filter(id => /id-token: write/.test(pages[id] ?? ''))]).toEqual([false, ['deploy']]);
   });
 });
 

@@ -7,11 +7,13 @@ The agent sends JSON, your page renders the real widget.
 
 Built for A2UI 1.0 (`@a2ui/web_core` and `@a2ui/react` 0.15.x).
 
+**[Try the live demo](https://kaltura.github.io/kaltura-a2ui-components/)**: 12 recorded agent conversations, the wire messages and light and dark themes. No account needed.
+
 [![ci](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/ci.yml/badge.svg)](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/ci.yml)
 [![e2e](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/e2e.yml/badge.svg)](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/e2e.yml)
 [![licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-blue.svg)](LICENSE)
 
-![A Kaltura player, a bar chart and flashcards rendered by the Kaltura custom elements](docs/img/examples.png)
+![The live demo plays an analytics card, a study kit, a search form and the safe-by-default case, then switches to the dark theme](docs/img/demo.gif)
 
 ## How it works
 
