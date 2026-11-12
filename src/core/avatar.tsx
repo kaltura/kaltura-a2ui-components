@@ -2,6 +2,7 @@ import { createElement, useContext, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { z } from 'zod';
 import { loadUnisphereModule } from './unisphere-loader';
+import { readColorMode } from './color-mode';
 import { renderLoadError } from './render-load-error';
 import { KalturaFailure, emitEvent, ReporterContext } from './host-hooks';
 import { regionOf, unisphereUrl } from './region';
@@ -22,7 +23,7 @@ export interface AvatarCoreProps {
   openingPhrase?: string;
   /** Show captions of what the avatar says. */
   captions?: boolean;
-  /** Default: `light` when the page has `data-theme="light"`, else `dark`. */
+  /** Default: the page theme (`data-theme`, an `a2ui-dark` or `a2ui-light` class, then the system setting). */
   theme?: 'light' | 'dark' | 'studio';
 }
 
@@ -78,7 +79,7 @@ const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
     const settings = {
       ...(openingPhrase ? { openingPhrase } : {}),
       ...(captions === undefined ? {} : { captions: { enable: captions } }),
-      theme: { type: theme ?? (document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark') },
+      theme: { type: theme ?? readColorMode('dark') },
     };
 
     loadUnisphereModule<EmbedsModule>(serverUrl)

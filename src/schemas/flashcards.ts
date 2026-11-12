@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CommonSchemas } from '@a2ui/web_core/v0_9';
+import { CommonSchemas } from '@a2ui/web_core/v1_0';
 
 const ClipSchema = z.object({
   // Not checked here, so one bad clip cannot fail the deck. ClipPlayer checks

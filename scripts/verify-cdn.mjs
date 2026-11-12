@@ -2,7 +2,7 @@
 //   node scripts/verify-cdn.mjs --tag v0.2.0 --hashes hashes.json --attempts 20   (release)
 //   node scripts/verify-cdn.mjs --latest                                           (nightly)
 // --latest reads the latest GitHub Release and its hashes.json asset. With no Release,
-// or a Release without hashes.json (made before 0.2.0), it prints a notice and exits 0.
+// it prints a notice and exits 0. A Release without hashes.json is an error.
 // With hashes: the bytes on jsDelivr must equal the build's hashes. Without: the
 // served catalog must match the served bundles. Any mismatch exits 1.
 // Why retries: jsDelivr can take a few minutes to see a new tag. --delay-ms between tries.
@@ -58,8 +58,7 @@ export async function resolveLatest({ apiUrl = 'https://api.github.com', repo = 
 export async function verifyCdn({ base, catalogBase = base, expected, retry }) {
   const problems = [];
   const seen = {};
-  // With build hashes, check the files that build hashed. Tags up to v0.2.0 have no stub file.
-  for (const path of CDN_FILES.filter(file => !expected || file in expected)) {
+  for (const path of CDN_FILES) {
     try {
       const { bytes, headers } = await getWithRetry(`${base}${path}`, retry);
       seen[path] = { bytes, sri: sri(bytes) };
@@ -72,18 +71,16 @@ export async function verifyCdn({ base, catalogBase = base, expected, retry }) {
     }
   }
   if (seen[CATALOG]) {
-    const { react, webcomponent } = JSON.parse(seen[CATALOG].bytes.toString('utf8'))['x-kaltura-adapters'];
+    const { react, webcomponent } = JSON.parse(seen[CATALOG].bytes.toString('utf8')).metadata.extensions.com_kaltura_adapters;
     if (react.cdn !== `${catalogBase}dist/kaltura-react.mjs`) problems.push(`catalog react.cdn is ${react.cdn}`);
     if (webcomponent.cdn !== `${catalogBase}dist/kaltura-wc.js`) problems.push(`catalog webcomponent.cdn is ${webcomponent.cdn}`);
     const wc = seen['dist/kaltura-wc.js'];
     if (wc && webcomponent.integrity !== wc.sri) problems.push(`catalog webcomponent.integrity ${webcomponent.integrity} is not the served ${wc.sri}`);
     const bundle = seen['dist/kaltura-react.mjs'];
-    // A release (expected given) must carry the React SRI. Tags before 0.2.0 do not have the key.
-    // Catalogs of tags up to v0.3.0 have no stub keys, so check them only where present.
     const stub = seen['dist/html-element-stub.mjs'];
-    if (react.stubCdn !== undefined && react.stubCdn !== `${catalogBase}dist/html-element-stub.mjs`) problems.push(`catalog react.stubCdn is ${react.stubCdn}`);
-    if (stub && react.stubIntegrity !== undefined && react.stubIntegrity !== stub.sri) problems.push(`catalog react.stubIntegrity ${react.stubIntegrity} is not the served ${stub.sri}`);
-    if (bundle && (expected || react.integrity !== undefined) && react.integrity !== bundle.sri) problems.push(`catalog react.integrity ${react.integrity} is not the served ${bundle.sri}`);
+    if (react.stubCdn !== `${catalogBase}dist/html-element-stub.mjs`) problems.push(`catalog react.stubCdn is ${react.stubCdn}`);
+    if (stub && react.stubIntegrity !== stub.sri) problems.push(`catalog react.stubIntegrity ${react.stubIntegrity} is not the served ${stub.sri}`);
+    if (bundle && react.integrity !== bundle.sri) problems.push(`catalog react.integrity ${react.integrity} is not the served ${bundle.sri}`);
   }
   return problems;
 }
@@ -113,7 +110,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     if (values.latest) {
       const latest = await resolveLatest({ apiUrl: values['api-url'], token: process.env.GH_TOKEN || undefined });
       if (!latest) notice(`${GH_REPO} has no GitHub Release yet, so there is no tag to check. Nothing was checked.`);
-      if (!latest.hashesUrl) notice(`The latest Release ${latest.tag} has no hashes.json asset (made before 0.2.0). Nothing was checked.`);
+      if (!latest.hashesUrl) throw new Error(`The latest Release ${latest.tag} has no hashes.json asset.`);
       tag = latest.tag;
       hashes = JSON.parse((await getWithRetry(latest.hashesUrl, retry)).bytes.toString('utf8'));
     }

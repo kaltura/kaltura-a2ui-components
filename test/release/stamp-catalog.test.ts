@@ -16,7 +16,7 @@ const WC_SRI = 'sha384-wc';
 const REACT_SRI = 'sha384-react';
 const STUB_SRI = 'sha384-stub';
 const options = { tag: TAG, wcSri: WC_SRI, reactSri: REACT_SRI, stubSri: STUB_SRI };
-const adapters = (text: string) => JSON.parse(text)['x-kaltura-adapters'] as { react: Record<string, string>; webcomponent: Record<string, string> };
+const adapters = (text: string) => JSON.parse(text).metadata.extensions.com_kaltura_adapters as { react: Record<string, string>; webcomponent: Record<string, string> };
 
 describe('SEC-19: SRI helper', () => {
   it('SEC-19: sha384 of "abc" matches the published test vector', () => {
@@ -72,8 +72,8 @@ describe('QA-09: stampCatalog on the real catalog source', () => {
     const after = JSON.parse(stamped);
     for (const catalog of [before, after]) {
       for (const key of ['cdn', 'integrity', 'install', 'stubCdn', 'stubIntegrity']) {
-        delete catalog['x-kaltura-adapters'].react[key];
-        delete catalog['x-kaltura-adapters'].webcomponent[key];
+        delete catalog.metadata.extensions.com_kaltura_adapters.react[key];
+        delete catalog.metadata.extensions.com_kaltura_adapters.webcomponent[key];
       }
     }
     expect(after).toEqual(before);

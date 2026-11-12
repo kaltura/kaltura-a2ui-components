@@ -125,7 +125,7 @@ The provider gets the widget name (`KsWidget`), so each widget can get its own l
 |---|---|
 | `'analytics'` | ADMIN KS (type=2), short expiry |
 | `'player'`, `'flashcards'`, `'captions-editor'`, `'recorder'`, `'media-manager'`, `'genie'`, `'content-lab'`, `'agents-widget'`, `'vod-avatar'` | USER KS (type=0) with only the privileges that widget needs |
-| `'avatar'` | KS that selects the avatar agent (see [migration-0.3.md](../migration-0.3.md)) |
+| `'avatar'` | KS that selects the avatar agent |
 
 ```ts
 setKsProvider(widget => (widget === 'analytics' ? session.adminKs : session.userKs));
@@ -141,7 +141,7 @@ A chat can outlast a short KS. To renew, mint a new KS before the old one expire
 
 ```tsx
 import { useEffect, useState } from 'react';
-import { A2uiSurface } from '@a2ui/react/v0_9';
+import { A2uiSurface } from '@a2ui/react';
 
 function Surface({ surface, refreshKs }: { surface: Parameters<typeof A2uiSurface>[0]['surface']; refreshKs: () => Promise<void> }) {
   const [epoch, setEpoch] = useState(0);

@@ -48,8 +48,8 @@ describe('CONF-20: docs/components.md', () => {
   });
 
   it('CONF-20: has one chart example for every chartType', () => {
-    const part = catalog.components.KalturaChart.allOf[2] as unknown as { properties: { chartType: { enum: string[] } } };
-    expect(examples.map(example => example.chartType).sort()).toEqual([...part.properties.chartType.enum].sort());
+    const { chartType } = catalog.components.KalturaChart.properties as unknown as { chartType: { enum: string[] } };
+    expect(examples.map(example => example.chartType).sort()).toEqual([...chartType.enum].sort());
   });
 });
 
@@ -100,7 +100,7 @@ describe('CONF-20: the KS column', () => {
   });
 
   it.each(kalturaNames(catalog))('CONF-20: %s without a KS', async name => {
-    const tag = (catalog['x-kaltura-adapters'] as { webcomponent: { customElements: string[] } }).webcomponent.customElements[kalturaNames(catalog).indexOf(name)];
+    const tag = (catalog.metadata.extensions.com_kaltura_adapters as { webcomponent: { customElements: string[] } }).webcomponent.customElements[kalturaNames(catalog).indexOf(name)];
     const stream = streams.find(entry => entry.component === name) as Stream;
     const el = document.createElement(tag) as HTMLElement & { config: unknown };
     el.config = generator.configOf(stream);

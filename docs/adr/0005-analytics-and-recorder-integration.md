@@ -43,7 +43,7 @@ The guide says to accept messages from `kmc.kaltura.com` only. It does not docum
 
 - The ADMIN KS is no longer in the iframe URL, history, logs or `Referer`.
 - The KS must belong to an admin user that has a role. The host KS provider owns this (docs/security/ks.md).
-- Breaking for hosts: the `ks` prop, `buildAnalyticsUrl(args)` and the old URL are gone. See docs/migration-0.4.md.
+- The `ks` prop and `buildAnalyticsUrl(args)` do not exist. The KS comes from the provider only.
 - `setKsProvider` is read once at mount, so a host renews the KS by remounting the widget ([security/ks.md](../security/ks.md#when-the-ks-expires)).
 - Regional KMC hosts come from `region.ts` (see [Regions](../host-api.md#regions)).
 

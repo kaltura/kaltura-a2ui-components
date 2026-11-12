@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CommonSchemas } from '@a2ui/web_core/v0_9';
+import { CommonSchemas } from '@a2ui/web_core/v1_0';
 
 // Colors reach SVG paint attributes, so `url(...)` and other CSS functions must not pass.
 const COLOR = /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([\d\s.,%/a-z-]*\)|var\(--[\w-]+\)|[a-z]{3,30})$/i;

@@ -1,0 +1,55 @@
+{
+  "name": "VOD avatar studio",
+  "description": "The avatar video studio, opened on the video library. Needs your own Kaltura ids and a session from the host.",
+  "exercises": [
+    "KalturaVodAvatar",
+    "KS provider",
+    "allowlist"
+  ],
+  "live": true,
+  "messages": [
+    {
+      "version": "1.0",
+      "createSurface": {
+        "surfaceId": "vod-avatar",
+        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+      }
+    },
+    {
+      "version": "1.0",
+      "updateComponents": {
+        "surfaceId": "vod-avatar",
+        "components": [
+          {
+            "id": "root",
+            "component": "Card",
+            "child": "main"
+          },
+          {
+            "id": "main",
+            "component": "Column",
+            "children": [
+              "heading",
+              "widget"
+            ]
+          },
+          {
+            "id": "heading",
+            "component": "Text",
+            "text": "## VOD avatar studio",
+            "variant": "body"
+          },
+          {
+            "id": "widget",
+            "component": "KalturaVodAvatar",
+            "partnerId": 1234567,
+            "initialView": "videoLibrary",
+            "accessibility": {
+              "label": "VOD avatar studio"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

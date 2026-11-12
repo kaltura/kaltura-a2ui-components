@@ -32,11 +32,11 @@ const ALL_APIS = {
 };
 
 type Prop = { description?: string };
-type Component = { allOf: Array<{ properties?: Record<string, Prop>; required?: string[] }> };
+type Component = { properties?: Record<string, Prop>; required?: string[] };
 
 function catalogProps(name: string): Record<string, Prop> {
   const component = (catalog.components as unknown as Record<string, Component>)[name];
-  return Object.assign({}, ...component.allOf.map(part => part.properties ?? {}));
+  return component.properties ?? {};
 }
 
 const withProp = (prop: string) =>

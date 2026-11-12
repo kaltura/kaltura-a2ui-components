@@ -49,7 +49,7 @@
 }
 
 /* The design-system dark look, for hosts that mark the page dark but define no tokens. */
-[data-theme='dark'] :where(
+:is([data-theme='dark'], .a2ui-dark) :where(
   .kaltura-player-container,
   .flashcard-carousel,
   .kaltura-media-manager-container,
@@ -90,7 +90,7 @@
   overflow-wrap: anywhere;
 }
 
-[data-theme='dark'] .kaltura-load-error {
+:is([data-theme='dark'], .a2ui-dark) .kaltura-load-error {
   border-color: #ff8a80;
   background: #3b1512;
   color: #ffd9d4;
@@ -395,48 +395,48 @@
   border-radius: 0 0 var(--kaltura-roundness-3) var(--kaltura-roundness-3);
 }
 
-[data-theme="dark"] .kaltura-media-manager-widget div:not(:has(> img)):not(:has(> video)):not(:has(> canvas)),
-[data-theme="dark"] .kaltura-media-manager-widget header,
-[data-theme="dark"] .kaltura-media-manager-widget nav,
-[data-theme="dark"] .kaltura-media-manager-widget section {
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget div:not(:has(> img)):not(:has(> video)):not(:has(> canvas)),
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget header,
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget nav,
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget section {
   background-color: var(--kaltura-surface-card) !important;
   color: var(--kaltura-page-text-secondary) !important;
 }
-[data-theme="dark"] .kaltura-media-manager-widget td:first-child div {
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget td:first-child div {
   background-color: transparent !important;
 }
-[data-theme="dark"] .kaltura-media-manager-widget .MuiPaper-root,
-[data-theme="dark"] .kaltura-media-manager-widget .MuiTableContainer-root {
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget .MuiPaper-root,
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget .MuiTableContainer-root {
   background-color: var(--kaltura-surface-card) !important;
 }
-[data-theme="dark"] .kaltura-media-manager-widget .MuiButtonBase-root {
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget .MuiButtonBase-root {
   background-color: var(--kaltura-surface-elevated) !important;
   color: var(--kaltura-page-text) !important;
 }
-[data-theme="dark"] .kaltura-media-manager-widget .MuiInputBase-root,
-[data-theme="dark"] .kaltura-media-manager-widget .MuiSelect-select,
-[data-theme="dark"] .kaltura-media-manager-widget input,
-[data-theme="dark"] .kaltura-media-manager-widget select {
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget .MuiInputBase-root,
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget .MuiSelect-select,
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget input,
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget select {
   background-color: var(--kaltura-surface-elevated) !important;
   color: var(--kaltura-page-text) !important;
   border-color: var(--input-border) !important;
 }
-[data-theme="dark"] .kaltura-media-manager-widget .MuiOutlinedInput-notchedOutline {
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget .MuiOutlinedInput-notchedOutline {
   border-color: var(--input-border) !important;
 }
-[data-theme="dark"] .kaltura-media-manager-widget .MuiTableCell-root {
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget .MuiTableCell-root {
   color: var(--kaltura-page-text-secondary) !important;
   border-color: var(--kaltura-border-color) !important;
 }
-[data-theme="dark"] .kaltura-media-manager-widget .MuiTableCell-head {
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget .MuiTableCell-head {
   background-color: var(--surface-paper) !important;
   color: var(--kaltura-page-text-muted) !important;
 }
-[data-theme="dark"] .kaltura-media-manager-widget .MuiSvgIcon-root,
-[data-theme="dark"] .kaltura-media-manager-widget svg {
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget .MuiSvgIcon-root,
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget svg {
   color: var(--kaltura-page-text-muted) !important;
 }
-[data-theme="dark"] .kaltura-media-manager-widget a {
+:is([data-theme="dark"], .a2ui-dark) .kaltura-media-manager-widget a {
   color: #58a6ff !important;
 }
 
@@ -742,7 +742,7 @@
   backdrop-filter: blur(8px);
 }
 
-[data-theme='dark'] :is(.visx-tooltip, .chart-tooltip) {
+:is([data-theme='dark'], .a2ui-dark) :is(.visx-tooltip, .chart-tooltip) {
   color-scheme: dark;
 }
 

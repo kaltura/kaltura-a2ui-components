@@ -3,8 +3,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
+import { MessageProcessor } from '@a2ui/web_core/v1_0';
+import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react';
 import { mount } from '../helpers/render';
 import { playerRemote } from '../helpers/player-remote';
 import { captionsRemote } from '../helpers/captions-remote';
@@ -123,14 +123,14 @@ const BAD: Array<[string, Record<string, unknown>, string]> = [
   ['player', { ...base, uiconfId: 2, entryId: '0_abc', partnerId: '1/../x' }, 'partnerId'],
   ['player', { ...base, uiconfId: 1.5, entryId: '0_abc' }, 'uiconfId'],
   ['player', { ...base, uiconfId: 2, entryId: '0_abc', partnerId: '123' }, 'partnerId'],
-  ['player', { ...base, uiconfId: 2, entryId: '0_abc', partnerId: { path: '/pid' } }, 'partnerId'],
-  ['player', { ...base, uiconfId: { path: '/uiconf' }, entryId: '0_abc' }, 'uiconfId'],
+  ['player', { ...base, uiconfId: 2, entryId: '0_abc', partnerId: { '@path': '/pid' } }, 'partnerId'],
+  ['player', { ...base, uiconfId: { '@path': '/uiconf' }, entryId: '0_abc' }, 'uiconfId'],
   ['player', { ...base, uiconfId: 2, entryId: 'a/b' }, 'entryId'],
-  ['player', { ...base, uiconfId: 2, entryId: { path: '/not/resolved' } }, 'entryId'],
+  ['player', { ...base, uiconfId: 2, entryId: { '@path': '/not/resolved' } }, 'entryId'],
   ['player', { ...base, uiconfId: 2, entryId: '0_abc', ks: 'a\nb' }, 'ks'],
   ['player', { ...base, uiconfId: 2, entryId: '0_abc', autoplay: 'yes' }, 'autoplay'],
   ['flashcards', { title: 'D', cards: 'not an array' }, 'cards'],
-  ['flashcards', { title: 'D', cards: [], ks: { path: '/x' } }, 'ks'],
+  ['flashcards', { title: 'D', cards: [], ks: { '@path': '/x' } }, 'ks'],
   ['Media Manager', { ...unisphere, partnerId: -1 }, 'partnerId'],
   ['Media Manager', { ...unisphere, mode: 'admin' }, 'mode'],
   ['Media Manager', { ...unisphere, theme: 'neon' }, 'theme'],
@@ -325,8 +325,8 @@ describe('SEC-03: resolved props never carry bindings or function calls', () => 
     const schema = entry.api.schema;
     // A literal passes where a binding does not. Leave the prop unset first, so the base stays valid.
     expect(checkProps(schema, entry.valid).invalid).toEqual([]);
-    expect(checkProps(schema, { ...entry.valid, [key]: { path: '/x' } }).invalid).toContain(key);
-    expect(checkProps(schema, { ...entry.valid, [key]: { call: 'now', args: {} } }).invalid).toContain(key);
+    expect(checkProps(schema, { ...entry.valid, [key]: { '@path': '/x' } }).invalid).toContain(key);
+    expect(checkProps(schema, { ...entry.valid, [key]: { '@call': 'now', args: {} } }).invalid).toContain(key);
   });
 });
 
@@ -337,7 +337,7 @@ describe('SEC-11: clip ids are checked per clip, not by the deck schema', () => 
     uiconfId: 2,
     cards: [{ title: 'C', content: 'x', clips: entryIds.map(entryId => ({ entryId, startTime: 0, endTime: 1 })) }],
   });
-  const ids = ['a/b', '../x', '1_a?x=1', 'a b', '1_a\n', '', '0'.repeat(65), 7, null, { path: '/x' }, undefined];
+  const ids = ['a/b', '../x', '1_a?x=1', 'a b', '1_a\n', '', '0'.repeat(65), 7, null, { '@path': '/x' }, undefined];
 
   it.each(ids.map(id => [id] as const))('SEC-11: the deck schema does not reject clip entryId %j', id => {
     expect(checkProps(KalturaFlashcardsApi.schema.omit({ partnerId: true, uiconfId: true }), deck([id]))).toEqual({ invalid: [], pending: false });
@@ -356,9 +356,9 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
   async function startSurface(component: Record<string, unknown>, data: Record<string, unknown>) {
     const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatalog]);
     processor.processMessages([
-      { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
-      { version: 'v0.9', updateDataModel: { surfaceId: 's', path: '/', value: data } },
-      { version: 'v0.9', updateComponents: { surfaceId: 's', components: [{ id: 'root', ...component }] } },
+      { version: '1.0', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
+      { version: '1.0', updateDataModel: { surfaceId: 's', path: '/', value: data } },
+      { version: '1.0', updateComponents: { surfaceId: 's', components: [{ id: 'root', ...component }] } },
     ] as never);
     const surface = processor.model.getSurface('s');
     const container = document.createElement('div');
@@ -380,7 +380,7 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
 
   it('SEC-03: the provider KS reaches the player, and a bound ks from the agent is ignored', async () => {
     await renderSurface(
-      { component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: '0_abc', ks: { path: '/session/ks' } },
+      { component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: '0_abc', ks: { '@path': '/session/ks' } },
       { session: { ks: 'ks-from-agent' } },
     );
     await player.ready();
@@ -389,7 +389,7 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
 
   it('SEC-03: an unset optional binding does not fail the component', async () => {
     const container = await renderSurface(
-      { component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: '0_abc', entryName: { path: '/missing' } },
+      { component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, entryId: '0_abc', entryName: { '@path': '/missing' } },
       {},
     );
     expect(container.querySelector('.kaltura-load-error')).toBeNull();
@@ -397,17 +397,17 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
 
   it('SEC-03: a required binding with no data yields nothing, no error and no widget', async () => {
     const container = await renderSurface(
-      { component: 'KalturaCaptionsEditor', partnerId: 1, entryId: { path: '/entry' } },
+      { component: 'KalturaCaptionsEditor', partnerId: 1, entryId: { '@path': '/entry' } },
       {},
     );
     expect([container.querySelectorAll('iframe, [role="alert"]').length, container.textContent]).toEqual([0, '']);
   });
 
   it('SEC-03: the widget appears when the bound data arrives later', async () => {
-    const { container, processor } = await startSurface({ component: 'KalturaCaptionsEditor', partnerId: 1, entryId: { path: '/entry' } }, {});
+    const { container, processor } = await startSurface({ component: 'KalturaCaptionsEditor', partnerId: 1, entryId: { '@path': '/entry' } }, {});
     await act(async () => {
       processor.processMessages([
-        { version: 'v0.9', updateDataModel: { surfaceId: 's', path: '/entry', value: '0_abc' } },
+        { version: '1.0', updateDataModel: { surfaceId: 's', path: '/entry', value: '0_abc' } },
       ] as never);
     });
     await captions.ready();
@@ -423,7 +423,7 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
 
   it('SEC-03: a hostile entryId arriving through the data model is refused', async () => {
     const container = await renderSurface(
-      { component: 'KalturaCaptionsEditor', partnerId: 1, entryId: { path: '/entry' } },
+      { component: 'KalturaCaptionsEditor', partnerId: 1, entryId: { '@path': '/entry' } },
       { entry: '1_abc&serviceurl=https://evil.example' },
     );
     expect([container.querySelectorAll('iframe').length, container.textContent]).toEqual([0, 'Failed to load captions editor: Invalid entryId']);
@@ -433,8 +433,8 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
     const container = await renderSurface(
       {
         component: 'KalturaFlashcards',
-        title: { path: '/title' },
-        cards: [{ title: { path: '/title' }, content: 'x', clips: [{ entryId: '0_abc', startTime: 0, endTime: 1 }] }],
+        title: { '@path': '/title' },
+        cards: [{ title: { '@path': '/title' }, content: 'x', clips: [{ entryId: '0_abc', startTime: 0, endTime: 1 }] }],
       },
       { title: 'Deck' },
     );

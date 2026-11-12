@@ -43,7 +43,7 @@ describe('QA-16: docs name real things', () => {
   });
 
   it.each(DOCS)('QA-16: %s uses only custom element tags that exist', path => {
-    const tags = new Set((loadCatalog()['x-kaltura-adapters'] as { webcomponent: { customElements: string[] } }).webcomponent.customElements);
+    const tags = new Set((loadCatalog().metadata.extensions.com_kaltura_adapters as { webcomponent: { customElements: string[] } }).webcomponent.customElements);
     const used = [...prose(path).matchAll(/<(kaltura-[a-z-]+)/g)].map(match => match[1] ?? '');
     expect(used.filter(tag => !tags.has(tag))).toEqual([]);
   });

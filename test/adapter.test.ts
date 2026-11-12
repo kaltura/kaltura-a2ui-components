@@ -8,7 +8,7 @@ import {
   kalturaComponentImpls,
   kalturaClientFunctions,
 } from '../src/adapters/react/index';
-import { basicCatalog } from '@a2ui/web_core/v0_9/basic_catalog';
+import { basicCatalog } from '@a2ui/web_core/catalogs/basic/v1';
 
 const ALL_COMPONENTS = [
   'KalturaPlayer',
@@ -75,15 +75,16 @@ describe('kaltura_catalog.json matches what the renderer serves (F9)', () => {
   });
 
   it('F9: the function names are the same', () => {
-    expect([...kalturaReactCatalog.functions.keys()].sort()).toEqual(Object.keys(json.functions).sort());
+    // `@index` is a system function from common_types.json, not a catalog function.
+    expect([...kalturaReactCatalog.functions.keys()].filter(name => !name.startsWith('@')).sort()).toEqual(Object.keys(json.functions).sort());
   });
 
   it('F9: the catalog id is the same', () => {
     expect(kalturaReactCatalog.id).toBe(json.catalogId);
   });
 
-  it('F30: the theme schema is the basic one, as in the JSON', () => {
-    expect(kalturaReactCatalog.themeSchema).toBe(basicCatalog.themeSchema);
+  it('F30: the catalog has no theme schema (1.0 catalogs carry none)', () => {
+    expect(kalturaReactCatalog.themeSchema).toBeUndefined();
   });
 });
 

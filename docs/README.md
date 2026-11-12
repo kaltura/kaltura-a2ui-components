@@ -13,17 +13,15 @@ New here? Start with the [README](../README.md). Then pick a table.
 | [ks-privileges.md](ks-privileges.md) | Backend developers who mint the Kaltura Session (KS) |
 | [security/ks.md](security/ks.md) | Backend and security reviewers: the rules for handling the KS |
 | [troubleshooting.md](troubleshooting.md) | Anyone who sees an error |
+| [../examples/README.md](../examples/README.md) | Anyone who wants to see it run: the live demo and the sample messages |
 
-## Upgrade
+## Theme and roadmap
 
 | File | For |
 |---|---|
-| [migration-0.4.md](migration-0.4.md) | Apps on 0.3.x |
-| [migration-0.5.md](migration-0.5.md) | Apps on 0.4.x |
-| [migration-0.3.md](migration-0.3.md) | Apps on 0.2.x that use the avatar |
-| [migration-0.2.md](migration-0.2.md) | Apps on 0.1.x |
-| [migration-a2ui-0.13.md](migration-a2ui-0.13.md) | Apps that move to the A2UI 0.13 peers |
-| [migration-a2ui-0.14.md](migration-a2ui-0.14.md) | Apps that move to the A2UI 0.14 peers |
+| [theming.md](theming.md) | Light and dark rules and the Chart colour tokens |
+| [roadmap.md](roadmap.md) | Anyone who asks what comes next |
+| [plan-a2ui-1.0-upgrade.md](plan-a2ui-1.0-upgrade.md) | Maintainers: the plan and status of the A2UI 1.0 work |
 
 ## Trust and release
 

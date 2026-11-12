@@ -236,26 +236,22 @@ Give a Kaltura component an `action` prop and its errors and events go to the ag
 Three paths reach the agent. `agent.send` is your transport.
 
 ```ts
-import { MessageProcessor, type A2uiMessage } from '@a2ui/web_core/v0_9';
+import { MessageProcessor, type AgentToRendererMessage } from '@a2ui/web_core/v1_0';
 import { kalturaReactCatalog, setErrorHandler, toClientError } from '@kaltura/a2ui-react';
 
 // Actions of components with an `action` prop: the second argument.
-const processor = new MessageProcessor([kalturaReactCatalog], action => agent.send({ version: 'v0.9', action }));
+const processor = new MessageProcessor([kalturaReactCatalog], action => agent.send({ version: '1.0', action }));
 // Rule errors (bad id, id not allowed, load failed).
 setErrorHandler(error => agent.send(toClientError(error)));
-// Schema errors (wrong type, unknown prop) throw from processMessages.
-function onAgentMessages(messages: A2uiMessage[], surfaceId: string) {
-  try {
-    processor.processMessages(messages);
-  } catch (error) {
-    agent.send({ version: 'v0.9', error: { code: 'VALIDATION_FAILED', surfaceId, path: '/', message: (error as Error).message } });
-  }
+// Schema errors (wrong type, unknown prop) come back from processMessagesWithErrors.
+function onAgentMessages(messages: AgentToRendererMessage[]) {
+  for (const error of processor.processMessagesWithErrors(messages)) agent.send(error);
 }
 ```
 
 | Error kind | Where it shows up |
 |---|---|
-| Schema (wrong type, unknown prop, unknown catalog) | `processMessages` throws. Nothing renders |
+| Schema (wrong type, unknown prop, unknown catalog) | `processMessagesWithErrors` skips that message and returns an error message for it. The other messages still run. `processMessages` throws on the first one |
 | Rule (bad id value, id not allowed, load failed, URL refused) | The component renders an error state. `setErrorHandler` runs and the `action` is sent |
 
 A component with an `action` prop reports a rule error on both paths. Forward one of them, or the agent gets the error twice. The `action` carries the agent's own context. The error handler covers components with no `action`.
@@ -335,11 +331,11 @@ document.addEventListener('kaltura-action', event => agent.send(event.detail));
 
 ### Client error messages
 
-`toClientError(error, surfaceId?)` turns a `KalturaError` into an A2UI v0.9 client `error` message. It is in both bundles and has no side effects.
+`toClientError(error, surfaceId?)` turns a `KalturaError` into an A2UI 1.0 `error` message (renderer to agent). It is in both bundles and has no side effects.
 
 ```ts
 setErrorHandler(error => agent.send(toClientError(error)));
-// { version: 'v0.9', error: { code: 'invalid-props', widget: 'player', surfaceId: 's', message: 'Kaltura player error: invalid-props' } }
+// { version: '1.0', error: { code: 'invalid-props', widget: 'player', surfaceId: 's', message: 'Kaltura player error: invalid-props' } }
 ```
 
 `message` is built from the code and the widget, never from `error.message`. `surfaceId` defaults to `error.surfaceId`, then `''`.
@@ -353,11 +349,13 @@ The Kaltura catalog replaces the basic `openUrl` and `copyToClipboard`.
 | `openUrl` | Runs only after a user gesture, such as a click. Opens only absolute `https:` URLs. Anything else (a relative URL, `javascript:`, `http:`) is blocked with a console warning |
 | `copyToClipboard` | Runs only after a user gesture. It copies the agent's text without a preview, so treat it as agent output |
 
+Both are `rendererOnly`. An agent cannot run them with `callRendererFunction`.
+
 The agent and the error handler get no signal when a call is blocked.
 
 ## Capability negotiation
 
-An agent that offers catalog choices needs to know which catalogs your client renders. Ask the `MessageProcessor` and send the result in the `a2uiClientCapabilities` field of your request to the agent (A2UI v0.9 [client capabilities](https://a2ui.org/specification/v0_9/client_capabilities.json)).
+An agent that offers catalog choices needs to know which catalogs your client renders. Ask the `MessageProcessor` and send the result in the `a2uiRendererCapabilities` field of your request to the agent (A2UI 1.0 renderer capabilities, keyed by protocol version).
 
 One round trip:
 
@@ -367,20 +365,20 @@ const processor = new MessageProcessor([kalturaReactCatalog]);
 // 1. Client to agent.
 agent.send({
   message: userText,
-  a2uiClientCapabilities: processor.getRendererCapabilities({ versions: ['v0.9'] }),
+  a2uiRendererCapabilities: processor.getRendererCapabilities({ versions: ['1.0'] }),
 });
 ```
 
 The field holds the ids of the catalogs you registered:
 
 ```json
-{ "v0.9": { "supportedCatalogIds": ["https://kaltura.github.io/a2ui/v2/catalog.json"] } }
+{ "1.0": { "supportedCatalogIds": ["https://kaltura.github.io/a2ui/v3/catalog.json"] } }
 ```
 
 The agent answers with a `createSurface` that names one of them:
 
 ```json
-{ "version": "v0.9", "createSurface": { "surfaceId": "s", "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json" } }
+{ "version": "1.0", "createSurface": { "surfaceId": "s", "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json" } }
 ```
 
 - An id you did not register makes `processMessages` throw (`Catalog not found`).

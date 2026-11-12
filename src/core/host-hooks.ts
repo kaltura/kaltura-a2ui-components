@@ -134,14 +134,14 @@ export function emitEvent(event: KalturaEvent, { surfaceId, send }: KalturaRepor
   });
 }
 
-/** The A2UI v0.9 client `error` message that `toClientError` returns. */
+/** The A2UI 1.0 client `error` message that `toClientError` returns. */
 export interface KalturaClientError {
-  version: 'v0.9';
+  version: '1.0';
   error: { code: KalturaErrorCode; widget: KalturaWidget; surfaceId: string; message: string };
 }
 
 /**
- * An A2UI v0.9 client `error` message for the agent. Its message is the
+ * An A2UI 1.0 client `error` message for the agent. Its message is the
  * widget, the code and `invalidProps`, never `message`. Pass `surfaceId` when
  * the error has none.
  * @example setErrorHandler(error => sendToAgent(toClientError(error)));
@@ -149,7 +149,7 @@ export interface KalturaClientError {
 export function toClientError(error: KalturaError, surfaceId = error.surfaceId ?? ''): KalturaClientError {
   const { code, widget, invalidProps } = error;
   const props = invalidProps?.length ? ` (${invalidProps.join(', ')})` : '';
-  return { version: 'v0.9', error: { code, widget, surfaceId, message: `Kaltura ${widget} error: ${code}${props}` } };
+  return { version: '1.0', error: { code, widget, surfaceId, message: `Kaltura ${widget} error: ${code}${props}` } };
 }
 
 /** `invalid-ks` when the KS is one of the bad props. */

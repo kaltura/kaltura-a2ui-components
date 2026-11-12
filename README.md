@@ -5,6 +5,8 @@ The agent sends JSON, your page renders the real widget.
 
 [A2UI](https://a2ui.org) is the open protocol that lets an agent describe a UI as JSON. This package is the Kaltura catalog for it.
 
+Built for A2UI 1.0 (`@a2ui/web_core` and `@a2ui/react` 0.15.x).
+
 [![ci](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/ci.yml/badge.svg)](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/ci.yml)
 [![e2e](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/e2e.yml/badge.svg)](https://github.com/kaltura/kaltura-a2ui-components/actions/workflows/e2e.yml)
 [![licence: Apache-2.0](https://img.shields.io/badge/licence-Apache--2.0-blue.svg)](LICENSE)
@@ -59,7 +61,7 @@ Some chat apps cannot register a catalog, so they cannot show these widgets. Che
 For the React or A2UI path only. There is no npm package: a package on npm with this name is not ours. Install from the git tag. The tag holds the built `dist/`, so nothing builds on install.
 
 ```bash
-npm i github:kaltura/kaltura-a2ui-components#v0.6.1 @a2ui/react @a2ui/web_core zod@3 react react-dom
+npm i github:kaltura/kaltura-a2ui-components#v0.7.0 @a2ui/react @a2ui/web_core zod@3 react react-dom
 ```
 
 zod 4 is not supported. Add this to your `package.json` too ([why](docs/host-integration.md#dompurify-override)):
@@ -73,8 +75,8 @@ Gotchas:
 - **ESM only.** There is no `require`. Entries: `@kaltura/a2ui-react`, `@kaltura/a2ui-react/webcomponent` (script bundle) and `@kaltura/a2ui-react/catalog` (the catalog JSON).
 - **Server-side rendering.** In Node, import `@kaltura/a2ui-react` before `@a2ui/react` ([why](docs/host-integration.md#server-imports-ssr)).
 - **One pre-bundled file.** There is no tree-shaking: all 12 components load.
-- **Pin the full tag**, such as `v0.6.1`. `@latest` changes under you. Add the `integrity` value from the [Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases). Check a release: [SECURITY.md](SECURITY.md#releases).
-- **Peers:** `@a2ui/react ^0.14.0`, `@a2ui/web_core ^0.14.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`.
+- **Pin the full tag**, such as `v0.7.0`. `@latest` changes under you. Add the `integrity` value from the [Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases). Check a release: [SECURITY.md](SECURITY.md#releases).
+- **Peers:** `@a2ui/react ^0.15.0`, `@a2ui/web_core ^0.15.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`.
 
 ### React or A2UI client
 
@@ -83,8 +85,8 @@ Gotchas:
 import { KALTURA_CATALOG_ID, kalturaReactCatalog, setErrorHandler, setKsProvider } from '@kaltura/a2ui-react'; // before @a2ui/react
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
-import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
-import { MessageProcessor, type A2uiMessage } from '@a2ui/web_core/v0_9';
+import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react';
+import { MessageProcessor, type AgentToRendererMessage } from '@a2ui/web_core/v1_0';
 
 // Your server mints the KS. Agent messages never carry it.
 // `scope` names the data this one widget uses. Your server checks it and grants only that.
@@ -99,10 +101,10 @@ setKsProvider(async (widget, { version, scope }) => {
 setErrorHandler((error) => console.warn('kaltura widget error:', error.code));
 
 // Normally these messages arrive from your agent.
-const messages: A2uiMessage[] = [
-  { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
+const messages: AgentToRendererMessage[] = [
+  { version: '1.0', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
   {
-    version: 'v0.9',
+    version: '1.0',
     updateComponents: {
       surfaceId: 's',
       components: [
@@ -127,11 +129,11 @@ if (surface) createRoot(document.getElementById('root')!).render(createElement(A
 
 Your server mints the KS ([docs/ks-privileges.md](docs/ks-privileges.md)). A working server-side check: [examples/ks-server/privileges.ts](examples/ks-server/privileges.ts). Chart needs no KS, and Flashcards need one only for protected clips.
 
-- The catalog id `https://kaltura.github.io/a2ui/v2/catalog.json` is a name, and the file is also served there (copy of the release asset). Pin the one from [Catalog JSON](#catalog-json). The `v1` id was the 0.3.x catalog: [docs/migration-0.4.md](docs/migration-0.4.md#catalog-v2).
-- Send `processor.getRendererCapabilities({ versions: ['v0.9'] })` to your agent as `a2uiClientCapabilities`, so it picks a catalog you registered.
+- The catalog id `https://kaltura.github.io/a2ui/v3/catalog.json` is a name, and the file is also served there (copy of the release asset). Pin the one from [Catalog JSON](#catalog-json). `v3` is the A2UI 1.0 catalog.
+- Send `processor.getRendererCapabilities({ versions: ['1.0'] })` to your agent as `a2uiRendererCapabilities`, so it picks a catalog you registered.
 - `buildKalturaCatalog(id?)` builds the same catalog under another id. `loadKalturaCatalog(url)` fetches a catalog JSON and keys it by its `catalogId`.
 
-A full page: [examples/react](examples/react). Next, [connect your agent](docs/agent-guide.md).
+A full page: [examples/react](examples/react). To see all 12 components with their messages, run the demo: `npm run demo` ([examples/demo](examples/demo)). Next, [connect your agent](docs/agent-guide.md).
 
 ### Plain HTML
 
@@ -139,7 +141,7 @@ Custom elements are for pages without an A2UI client. For agent-driven pages use
 
 <!-- check-examples: expect kaltura-chart h4.kaltura-chart-title; text:Cell -->
 ```html
-<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.6.1/dist/kaltura-wc.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.7.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
 
 <kaltura-chart id="chart"></kaltura-chart>
 <kaltura-flashcards id="cards"></kaltura-flashcards>
@@ -166,7 +168,7 @@ This block needs a real Kaltura account, so `check:examples` skips it.
 
 <!-- check-examples: skip -->
 ```html
-<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.6.1/dist/kaltura-wc.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.7.0/dist/kaltura-wc.js" crossorigin="anonymous"></script>
 
 <kaltura-player id="player"></kaltura-player>
 
@@ -182,7 +184,7 @@ See it run, from a clone of this repo: `npm run example:html` ([examples/README.
 For A2UI tooling that reads a catalog by URL:
 
 ```
-https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.6.1/src/catalog/kaltura_catalog.json
+https://cdn.jsdelivr.net/gh/kaltura/kaltura-a2ui-components@v0.7.0/src/catalog/kaltura_catalog.json
 ```
 
 ## Components
@@ -220,7 +222,7 @@ More: [docs/host-integration.md](docs/host-integration.md) and [docs/host-api.md
 
 | Need | Start here |
 |---|---|
-| Upgrading | [docs/README.md#upgrade](docs/README.md#upgrade) |
+| Roadmap | [docs/roadmap.md](docs/roadmap.md) |
 | All docs | [docs/README.md](docs/README.md) |
 | Develop or contribute | [CONTRIBUTING.md](CONTRIBUTING.md) |
 

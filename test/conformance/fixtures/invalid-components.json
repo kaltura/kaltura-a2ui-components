@@ -7,7 +7,8 @@
         "uiconfId": 2,
         "entryId": "0_abc",
         "playlistId": "1_abc"
-      }
+      },
+      "catalogAccepts": true
     },
     {
       "why": "playlistId is a number",
@@ -22,7 +23,8 @@
       "props": {
         "partnerId": 1,
         "uiconfId": 2
-      }
+      },
+      "catalogAccepts": true
     },
     {
       "why": "partnerId is a string",
@@ -249,7 +251,9 @@
         "partnerId": 1,
         "serverUrl": "https://unisphere.nvp1.ovp.kaltura.com/v1",
         "avatarId": "a",
-        "customTheme": { "background": "url(https://evil.example/x)" }
+        "customTheme": {
+          "background": "url(https://evil.example/x)"
+        }
       },
       "stripped": true,
       "leak": "evil.example"

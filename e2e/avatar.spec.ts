@@ -29,16 +29,24 @@ async function mountAvatar(h: Harness, config: Record<string, unknown> = {}, ks:
 }
 
 test.describe('SEC-08: the avatar loads through the Unisphere loader', () => {
+  // No data-theme and no a2ui class: the system setting decides (D18). Headless browsers prefer light.
   test('SEC-08: the provider KS goes to embeds.workspace and no script tag is added', async ({ harness: h }) => {
     await mountAvatar(h);
     await expect.poll(() => log(h)).toEqual(['workspace', 'contained']);
     const scripts = await h.page.evaluate(() => [...document.scripts].map((s) => s.getAttribute('src')).filter(Boolean));
     expect([await h.embedsConfigs(), await h.providerWidgets(), scripts, h.requests.filter((u) => OLD_HOST.test(u))]).toEqual([
-      [{ env: 'nvp1', session: { ks: HOST_KS, partnerId: 1234567 }, apis: [{ name: 'genieAvatar', settings: { theme: { type: 'dark' } } }] }],
+      [{ env: 'nvp1', session: { ks: HOST_KS, partnerId: 1234567 }, apis: [{ name: 'genieAvatar', settings: { theme: { type: 'light' } } }] }],
       ['avatar'],
       ['/dist/kaltura-wc.js'],
       [],
     ]);
+  });
+
+  test('D18: a system that prefers dark gives the avatar the dark theme', async ({ harness: h }) => {
+    await h.page.emulateMedia({ colorScheme: 'dark' });
+    await mountAvatar(h);
+    await expect.poll(() => log(h)).toEqual(['workspace', 'contained']);
+    expect(await h.embedsConfigs()).toMatchObject([{ apis: [{ settings: { theme: { type: 'dark' } } }] }]);
   });
 
   // The web component treats a missing required prop as invalid, so it shows the error.

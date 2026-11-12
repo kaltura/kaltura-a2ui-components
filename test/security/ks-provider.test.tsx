@@ -6,8 +6,8 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot } from 'react-dom/client';
-import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
+import { MessageProcessor } from '@a2ui/web_core/v1_0';
+import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react';
 import { afterQuietPeriod, mount } from '../helpers/render';
 import { playerRemote } from '../helpers/player-remote';
 import { captionsRemote } from '../helpers/captions-remote';
@@ -137,8 +137,8 @@ describe('SEC-05: setKsProvider supplies the KS', () => {
     setKsProvider(() => HOST_KS);
     const processor = new MessageProcessor<ReactCatalogComponent>([kalturaReactCatalog]);
     processor.processMessages([
-      { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
-      { version: 'v0.9', updateComponents: { surfaceId: 's', components: [{ id: 'root', component: 'KalturaCaptionsEditor', partnerId: 1, entryId: '0_abc' }] } },
+      { version: '1.0', createSurface: { surfaceId: 's', catalogId: KALTURA_CATALOG_ID } },
+      { version: '1.0', updateComponents: { surfaceId: 's', components: [{ id: 'root', component: 'KalturaCaptionsEditor', partnerId: 1, entryId: '0_abc' }] } },
     ] as never);
     const container = document.createElement('div');
     document.body.appendChild(container);

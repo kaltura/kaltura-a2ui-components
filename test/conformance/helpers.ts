@@ -8,19 +8,26 @@ import { resolve } from 'node:path';
 const root = process.cwd();
 export const readJson = <T = unknown>(path: string): T => JSON.parse(readFileSync(resolve(root, path), 'utf8')) as T;
 
-export const SCHEMAS_V0_9 = 'node_modules/@a2ui/web_core/src/v0_9/schemas';
 export const SCHEMAS_V1_0 = 'node_modules/@a2ui/web_core/src/v1_0/schemas';
 
 /** `$id` the shipped message schemas use to point at "the catalog". */
-export const CATALOG_REF_ID = 'https://a2ui.org/specification/v0_9/catalog.json';
+export const CATALOG_REF_ID = 'https://a2ui.org/specification/v1_0/catalog.json';
 
 export interface CatalogJson {
   $id: string;
   catalogId: string;
-  components: Record<string, { allOf: { $ref?: string; properties?: Record<string, { const?: string }> }[]; unevaluatedProperties?: boolean }>;
-  functions: Record<string, unknown>;
+  protocolVersion: string;
+  instructions: string;
+  components: Record<string, { type: string; description: string; properties: Record<string, { $ref?: string; const?: string; description?: string }>; required: string[] }>;
+  functions: Record<string, { returnType?: string; allowedCallers?: string; requiresUserActivation?: boolean; properties: Record<string, { const?: string }> }>;
   $defs: Record<string, unknown> & { anyComponent: { oneOf: { $ref: string }[] }; anyFunction: { oneOf: { $ref: string }[] } };
-  'x-kaltura-adapters': Record<string, unknown>;
+  metadata: { extensions: { com_kaltura_adapters: KalturaAdapters } };
+  [key: string]: unknown;
+}
+
+export interface KalturaAdapters {
+  react: Record<string, string> & { exports: string[] };
+  webcomponent: Record<string, string> & { customElements: string[] };
   [key: string]: unknown;
 }
 
@@ -42,27 +49,37 @@ const AjvClass = ((Ajv2020 as unknown as { default?: typeof Ajv2020 }).default ?
  */
 export function newAjv(strict = true) {
   const ajv = new AjvClass({ strict, strictRequired: false, strictTypes: false, validateFormats: false, allErrors: true, allowUnionTypes: true });
-  if (strict) for (const keyword of ['catalogId', 'components', 'functions', 'x-kaltura-adapters']) ajv.addKeyword(keyword);
+  if (strict) for (const keyword of ['catalogId', 'protocolVersion', 'components', 'functions', 'metadata', 'instructions', 'returnType', 'allowedCallers', 'requiresUserActivation']) ajv.addKeyword(keyword);
   return ajv;
 }
 
 /**
- * Ajv with the shipped v0.9 message schemas, where "catalog.json" is the Kaltura
- * catalog. Returns a validator for a list of server-to-client messages.
+ * Ajv with the shipped 1.0 message schemas, where "catalog.json" is the Kaltura
+ * catalog. Returns a validator for a list of agent-to-renderer messages.
  */
 export function messageListValidator() {
   const ajv = newAjv(false);
-  ajv.addSchema(readJson(`${SCHEMAS_V0_9}/common_types.json`));
-  ajv.addSchema(readJson(`${SCHEMAS_V0_9}/server_to_client.json`));
+  ajv.addSchema(readJson(`${SCHEMAS_V1_0}/common_types.json`));
+  ajv.addSchema(readJson(`${SCHEMAS_V1_0}/agent_to_renderer.json`));
   ajv.addSchema({ ...loadCatalog(), $id: CATALOG_REF_ID });
-  return ajv.compile(readJson(`${SCHEMAS_V0_9}/server_to_client_list.json`));
+  return ajv.compile(readJson(`${SCHEMAS_V1_0}/agent_to_renderer_list.json`));
 }
 
-/** Validator for one component object of the Kaltura catalog (`#/components/<name>`). */
+/**
+ * Validator for one component as it appears in `updateComponents`: the catalog
+ * definition plus `ComponentCommon`, closed with `unevaluatedProperties: false`
+ * like the message envelope (`agent_to_renderer.json`, `Component`). The catalog
+ * itself leaves components open.
+ */
 export function componentValidator(name: string) {
   const ajv = newAjv();
-  ajv.addSchema(loadCatalog());
-  const validate = ajv.getSchema(`${loadCatalog().$id}#/components/${name}`);
-  if (!validate) throw new Error(`No catalog component ${name}`);
+  const catalog = loadCatalog();
+  const common = readJson<object>(`${SCHEMAS_V1_0}/common_types.json`);
+  ajv.addSchema({ ...common, $id: new URL('common_types.json', catalog.$id).href });
+  ajv.addSchema(catalog);
+  const validate = ajv.compile({
+    allOf: [{ $ref: `${new URL('common_types.json', catalog.$id).href}#/$defs/ComponentCommon` }, { $ref: `${catalog.$id}#/components/${name}` }],
+    unevaluatedProperties: false,
+  });
   return validate;
 }

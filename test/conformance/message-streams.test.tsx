@@ -3,14 +3,14 @@
 // in fixtures/streams.json (valid) and fixtures/invalid-components.json.
 // The host supplies the KS with setKsProvider, so no stream carries one.
 //
-// Peer range: package.json asks for @a2ui/web_core ^0.14.0 and @a2ui/react ^0.14.0.
+// Peer range: package.json asks for @a2ui/web_core ^0.15.0 and @a2ui/react ^0.15.0.
 // The installed versions are the lowest the range allows (CONF-14 pins that), so
 // this run is the "oldest peer" run. A newer peer needs a separate install; see CONTRIBUTING.md.
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { A2uiSurface } from '@a2ui/react/v0_9';
+import { MessageProcessor } from '@a2ui/web_core/v1_0';
+import { A2uiSurface } from '@a2ui/react';
 import { installRemote, remote, resetFakes, settle, fakes } from '../components/cases';
 import { setKsProvider } from '../../src/core/ks';
 import { afterQuietPeriod } from '../helpers/render';
@@ -32,7 +32,7 @@ interface Stream {
   after?: { messages: Record<string, unknown>[]; expect: Expect };
 }
 const STREAMS = streamsJson as unknown as Stream[];
-const INVALID = readJson<Record<string, { why: string; props: Record<string, unknown>; stripped?: boolean; leak?: string }[]>>('test/conformance/fixtures/invalid-components.json');
+const INVALID = readJson<Record<string, { why: string; props: Record<string, unknown>; stripped?: boolean; leak?: string; catalogAccepts?: boolean }[]>>('test/conformance/fixtures/invalid-components.json');
 
 let adapter: typeof import('../../src/adapters/react/index');
 let root: Root;
@@ -119,7 +119,7 @@ describe('CONF-10: the processor accepts every stream', () => {
 
   it.each(STREAMS.map(stream => [stream.component, stream] as const))('CONF-10: %s surface goes away with deleteSurface', (_name, stream) => {
     const processor = new MessageProcessor([adapter.kalturaReactCatalog] as never);
-    process(processor as never, [...stream.messages, { version: 'v0.9', deleteSurface: { surfaceId: 's' } }]);
+    process(processor as never, [...stream.messages, { version: '1.0', deleteSurface: { surfaceId: 's' } }]);
     expect(processor.model.getSurface('s')).toBeUndefined();
   });
 });
@@ -169,8 +169,8 @@ describe('CONF-13: invalid components are rejected', () => {
     const processor = new MessageProcessor([adapter.kalturaReactCatalog] as never);
     try {
       process(processor as never, [
-        { version: 'v0.9', createSurface: { surfaceId: 's', catalogId: adapter.KALTURA_CATALOG_ID } },
-        { version: 'v0.9', updateComponents: { surfaceId: 's', components: [{ id: 'root', component, ...props }] } },
+        { version: '1.0', createSurface: { surfaceId: 's', catalogId: adapter.KALTURA_CATALOG_ID } },
+        { version: '1.0', updateComponents: { surfaceId: 's', components: [{ id: 'root', component, ...props }] } },
       ]);
       await act(async () => root.render(createElement(A2uiSurface, { surface: processor.model.getSurface('s')! as never })));
       await settle();
@@ -190,8 +190,13 @@ describe('CONF-13: invalid components are rejected', () => {
     expect(componentValidator('KalturaPlayer')({ id: 'root', component: 'KalturaPlayer', partnerId: 1, uiconfId: 2, ...ids })).toBe(true);
   });
 
-  it.each(cases)('CONF-13: the catalog schema rejects %s: %s', (component, _why, item) => {
+  // `catalogAccepts`: the rule needs a root oneOf, which a 1.0 catalog cannot have. The widget refuses it at runtime (next tests).
+  it.each(cases.filter(([, , item]) => !item.catalogAccepts))('CONF-13: the catalog schema rejects %s: %s', (component, _why, item) => {
     expect(componentValidator(component)({ id: 'root', component, ...item.props })).toBe(false);
+  });
+
+  it.each(cases.filter(([, , item]) => item.catalogAccepts))('CONF-13: the catalog schema cannot express %s: %s, so it accepts it', (component, _why, item) => {
+    expect(componentValidator(component)({ id: 'root', component, ...item.props })).toBe(true);
   });
 
   // The runtime zod schemas drop unknown props, so the widget still mounts. The prop must not reach the page.

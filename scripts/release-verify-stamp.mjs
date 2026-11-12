@@ -14,7 +14,7 @@ export function checkStamped(text, { tag, base = cdnBase(tag), wcSri, reactSri, 
   const problems = [];
   const placeholders = [...new Set(text.match(/__[A-Z][A-Z0-9_]*__/g) ?? [])];
   if (placeholders.length > 0) problems.push(`placeholder left in the catalog: ${placeholders.join(', ')}`);
-  const { react, webcomponent } = JSON.parse(text)['x-kaltura-adapters'];
+  const { react, webcomponent } = JSON.parse(text).metadata.extensions.com_kaltura_adapters;
   const expected = [
     ['react.cdn', react.cdn, `${base}dist/kaltura-react.mjs`],
     ['react.integrity', react.integrity, reactSri],

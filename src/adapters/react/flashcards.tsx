@@ -1,4 +1,4 @@
-import { createComponentImplementation } from '@a2ui/react/v0_9';
+import { createComponentImplementation } from '@a2ui/react';
 import { AgentAction } from './agent-action';
 import { KalturaFlashcardsApi } from '../../schemas/flashcards';
 import { FlashcardsCore, type FlashcardsCoreProps } from '../../core/flashcards';

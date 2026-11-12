@@ -1,4 +1,4 @@
-import { createComponentImplementation } from '@a2ui/react/v0_9';
+import { createComponentImplementation } from '@a2ui/react';
 import { AgentAction } from './agent-action';
 import { KalturaChartApi } from '../../schemas/chart';
 import { ChartCore, type ChartCoreProps } from '../../core/chart';

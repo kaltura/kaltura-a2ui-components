@@ -1,0 +1,58 @@
+{
+  "name": "Recorder",
+  "description": "Record webcam, audio or screen in the browser. The recording becomes a new entry. Needs your own Kaltura ids and a session from the host.",
+  "exercises": [
+    "KalturaRecorder",
+    "KS provider",
+    "allowlist"
+  ],
+  "live": true,
+  "messages": [
+    {
+      "version": "1.0",
+      "createSurface": {
+        "surfaceId": "recorder",
+        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+      }
+    },
+    {
+      "version": "1.0",
+      "updateComponents": {
+        "surfaceId": "recorder",
+        "components": [
+          {
+            "id": "root",
+            "component": "Card",
+            "child": "main"
+          },
+          {
+            "id": "main",
+            "component": "Column",
+            "children": [
+              "heading",
+              "widget"
+            ]
+          },
+          {
+            "id": "heading",
+            "component": "Text",
+            "text": "## Recorder",
+            "variant": "body"
+          },
+          {
+            "id": "widget",
+            "component": "KalturaRecorder",
+            "partnerId": 1234567,
+            "uiconfId": 7654321,
+            "entryName": "Weekly update",
+            "allowScreenShare": true,
+            "maxRecordingTime": 300,
+            "accessibility": {
+              "label": "Recorder"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

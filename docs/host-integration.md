@@ -132,7 +132,7 @@ const processor = new MessageProcessor([kalturaReactCatalog]);
 
 - `kalturaReactCatalog` already holds the basic components. Do not register `basicCatalog` next to it. The agent picks a catalog by id in `createSurface`.
 - Importing the package guards the shared `basicCatalog` in place, so an agent that picks it still gets the [media URL check](#media-urls) and the markdown filter. Validate props in a catalog you build yourself from the raw basic components, or from a second copy of `@a2ui/web_core`.
-- To keep the basic catalog id for older agents, register `buildKalturaCatalog(basicCatalog.id)` in its place. `basicCatalog` comes from `@a2ui/web_core/v0_9/basic_catalog`, not `@a2ui/react`.
+- If your agents already name the basic catalog id, register `buildKalturaCatalog(basicCatalog.id)` in its place. `basicCatalog` comes from `@a2ui/web_core/catalogs/basic/v1`, not `@a2ui/react`.
 
 ## Server imports (SSR)
 
@@ -140,12 +140,12 @@ const processor = new MessageProcessor([kalturaReactCatalog]);
 
 ```ts
 import { kalturaReactCatalog } from '@kaltura/a2ui-react'; // first
-import { A2uiSurface } from '@a2ui/react/v0_9';
+import { A2uiSurface } from '@a2ui/react';
 ```
 
 This makes the import work. It does not make surfaces render on the server: `A2uiSurface` renders in the browser only. Browsers and jsdom need no import order.
 
-If you load `kaltura-react.mjs` from jsDelivr with an import map and `integrity`, pin `dist/html-element-stub.mjs` too. The bundle imports it. The catalog `x-kaltura-adapters.react` gives `stubCdn` and `stubIntegrity` for it, next to `cdn` and `integrity` (0.4.0 and later). For older releases, take the hash from the Release's `hashes.json`.
+If you load `kaltura-react.mjs` from jsDelivr with an import map and `integrity`, pin `dist/html-element-stub.mjs` too. The bundle imports it. The catalog `metadata.extensions.com_kaltura_adapters.react` gives `stubCdn` and `stubIntegrity` for it, next to `cdn` and `integrity` (0.4.0 and later). For older releases, take the hash from the Release's `hashes.json`.
 
 ## DOMPurify override
 
@@ -176,8 +176,8 @@ The components read page tokens, so they match your design system. A token you d
 | `--page-text-muted` | Muted text | `currentColor` | `#909090` |
 
 - The `--kaltura-*` names in the CSS are internal copies of these tokens. Set the tokens above, not the `--kaltura-*` names.
-- `data-theme="dark"` on `<html>` (or any ancestor) changes the defaults in the last column. A token you set always wins.
-- The Media Manager takes `theme` (`dark` or `light`). Without it, it reads `data-theme` on `<html>` and falls back to dark. In dark mode it also reads `--input-border` and `--surface-paper` (no default) and `--accent` (default `#006efa`).
+- `data-theme="dark"` on `<html>` (or any ancestor), or an `a2ui-dark` class on an ancestor, changes the defaults in the last column. A token you set always wins. Which look the widgets pick, and the Chart tokens: [theming.md](theming.md).
+- The Media Manager takes `theme` (`dark` or `light`). Without it, it follows the order in [theming.md](theming.md). In dark mode it also reads `--input-border` and `--surface-paper` (no default) and `--accent` (default `#006efa`).
 - Load errors (`.kaltura-load-error`) have their own colors with a dark pair. Tokens do not change them.
 
 ## Content Security Policy

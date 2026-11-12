@@ -19,3 +19,8 @@ blob-report/
 .env
 .env.*
 !.env.example
+
+# Local audit notes. Never commit.
+SECF-*
+.audit/
+dist-demo/

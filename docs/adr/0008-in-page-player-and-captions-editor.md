@@ -49,7 +49,7 @@ The editor has no script loader. It reads its settings from `data-*` attributes 
 
 **No player sandbox (SEC-14)**
 
-- There is no player iframe left to sandbox. The player sandbox option and the three URL builders for the Player, the clips and the Captions editor are removed (breaking, 0.4.0). The list is in [migration-0.4.md](../migration-0.4.md#player-flashcards-and-captions-editor).
+- There is no player iframe left to sandbox. The player sandbox option and the three URL builders for the Player, the clips and the Captions editor do not exist.
 - A host that needs isolation does it itself: embed the component in a page on a separate origin, or use a CSP.
 
 **Versions and SRI**

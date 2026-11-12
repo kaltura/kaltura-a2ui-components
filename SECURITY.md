@@ -4,8 +4,8 @@
 
 | Version | Supported |
 |---|---|
-| 0.4.x | Yes |
-| 0.3.x and older | No. Upgrade with [docs/migration-0.4.md](docs/migration-0.4.md) |
+| 0.7.x | Yes |
+| Older | No |
 
 Fixes ship in a new patch release of the latest minor. A released tag never changes.
 
@@ -77,5 +77,4 @@ Verify a release before you use it:
 - Pin the full tag (`@<tag>`) in the jsDelivr URL and set the `integrity` value from the Release notes, with `crossorigin="anonymous"`.
 - Check a downloaded file with `gh attestation verify <file> --repo kaltura/kaltura-a2ui-components --signer-workflow kaltura/kaltura-a2ui-components/.github/workflows/release.yml`.
 - Check the Release assets with `sha256sum --check SHA256SUMS` (macOS: `shasum -a 256 --check SHA256SUMS`).
-- `kaltura-react.mjs` imports `html-element-stub.mjs` ([ADR 0007](docs/adr/0007-ssr-html-element-stub.md)). Pin that file too. The catalog `x-kaltura-adapters.react` has `integrity` and `stubIntegrity` for both.
-- Use `v0.2.0` or later.
+- `kaltura-react.mjs` imports `html-element-stub.mjs` ([ADR 0007](docs/adr/0007-ssr-html-element-stub.md)). Pin that file too. The catalog `metadata.extensions.com_kaltura_adapters.react` has `integrity` and `stubIntegrity` for both.

@@ -128,7 +128,7 @@ describe('SEC-03: invalidProps with hostile prop shapes', () => {
   it.each([
     { ...ok, ks: 'a\u0000b' },
     { ...ok, ks: ['k'] },
-    { ...ok, entryId: { path: '/x' } },
+    { ...ok, entryId: { '@path': '/x' } },
     { ...ok, partnerId: '1' },
   ])('SEC-03: player rejects %j', props => {
     expect(checkProps(withKsProp(KalturaPlayerApi.schema, false), props).invalid.length).toBeGreaterThan(0);

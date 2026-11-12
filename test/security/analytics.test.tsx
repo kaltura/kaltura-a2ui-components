@@ -130,7 +130,7 @@ describe('ANA-01: init', () => {
   });
 
   it('ANA-01: the schema and the catalog have no ks prop', () => {
-    const props = (catalog.components.KalturaAnalytics.allOf as Array<{ properties?: Record<string, unknown> }>).flatMap(part => Object.keys(part.properties ?? {}));
+    const props = Object.keys(catalog.components.KalturaAnalytics.properties);
     expect(['ks' in KalturaAnalyticsApi.schema.shape, props.includes('ks')]).toEqual([false, false]);
   });
 

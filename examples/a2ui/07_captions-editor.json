@@ -1,0 +1,55 @@
+{
+  "name": "Captions editor",
+  "description": "Edit the captions of one entry. Needs your own Kaltura ids and a session from the host.",
+  "exercises": [
+    "KalturaCaptionsEditor",
+    "KS provider",
+    "allowlist"
+  ],
+  "live": true,
+  "messages": [
+    {
+      "version": "1.0",
+      "createSurface": {
+        "surfaceId": "captions",
+        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+      }
+    },
+    {
+      "version": "1.0",
+      "updateComponents": {
+        "surfaceId": "captions",
+        "components": [
+          {
+            "id": "root",
+            "component": "Card",
+            "child": "main"
+          },
+          {
+            "id": "main",
+            "component": "Column",
+            "children": [
+              "heading",
+              "widget"
+            ]
+          },
+          {
+            "id": "heading",
+            "component": "Text",
+            "text": "## Captions editor",
+            "variant": "body"
+          },
+          {
+            "id": "widget",
+            "component": "KalturaCaptionsEditor",
+            "partnerId": 1234567,
+            "entryId": "0_abc12345",
+            "accessibility": {
+              "label": "Captions editor"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

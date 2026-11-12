@@ -1,0 +1,176 @@
+{
+  "name": "Search form",
+  "description": "A form with two-way bound inputs. The button sends the typed values with the event, and the agent answers with a list built from a template. Needs no Kaltura account.",
+  "exercises": [
+    "TextField",
+    "ChoicePicker",
+    "List template",
+    "two-way binding",
+    "action context"
+  ],
+  "messages": [
+    {
+      "version": "1.0",
+      "createSurface": {
+        "surfaceId": "search",
+        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+      }
+    },
+    {
+      "version": "1.0",
+      "updateDataModel": {
+        "surfaceId": "search",
+        "path": "/",
+        "value": {
+          "query": "cells",
+          "mediaType": "video",
+          "results": []
+        }
+      }
+    },
+    {
+      "version": "1.0",
+      "updateComponents": {
+        "surfaceId": "search",
+        "components": [
+          {
+            "id": "root",
+            "component": "Card",
+            "child": "main"
+          },
+          {
+            "id": "main",
+            "component": "Column",
+            "children": [
+              "heading",
+              "query",
+              "type",
+              "go",
+              "results"
+            ]
+          },
+          {
+            "id": "heading",
+            "component": "Text",
+            "text": "## Search your library",
+            "variant": "body"
+          },
+          {
+            "id": "query",
+            "component": "TextField",
+            "label": "Search for",
+            "value": {
+              "@path": "/query"
+            }
+          },
+          {
+            "id": "type",
+            "component": "ChoicePicker",
+            "options": [
+              {
+                "label": "Video",
+                "value": "video"
+              },
+              {
+                "label": "Audio",
+                "value": "audio"
+              },
+              {
+                "label": "Any",
+                "value": "any"
+              }
+            ],
+            "value": {
+              "@path": "/mediaType"
+            },
+            "variant": "mutuallyExclusive",
+            "displayStyle": "chips"
+          },
+          {
+            "id": "go",
+            "component": "Button",
+            "child": "go_label",
+            "variant": "primary",
+            "action": {
+              "event": {
+                "name": "search",
+                "context": {
+                  "query": {
+                    "@path": "/query"
+                  },
+                  "mediaType": {
+                    "@path": "/mediaType"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "go_label",
+            "component": "Text",
+            "text": "Search"
+          },
+          {
+            "id": "results",
+            "component": "List",
+            "children": {
+              "path": "/results",
+              "componentId": "result_row"
+            }
+          },
+          {
+            "id": "result_row",
+            "component": "Row",
+            "children": [
+              "result_title",
+              "result_length"
+            ],
+            "align": "center"
+          },
+          {
+            "id": "result_title",
+            "component": "Text",
+            "text": {
+              "@path": "title"
+            },
+            "variant": "body",
+            "weight": 1
+          },
+          {
+            "id": "result_length",
+            "component": "Text",
+            "text": {
+              "@path": "length"
+            },
+            "variant": "caption"
+          }
+        ]
+      }
+    }
+  ],
+  "replies": {
+    "search": [
+      {
+        "version": "1.0",
+        "updateDataModel": {
+          "surfaceId": "search",
+          "path": "/results",
+          "value": [
+            {
+              "title": "Welcome to the course",
+              "length": "04:12"
+            },
+            {
+              "title": "Lecture 1: Cells",
+              "length": "48:30"
+            },
+            {
+              "title": "Lab safety briefing",
+              "length": "09:05"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -30,11 +30,10 @@ const APIS = [
   KalturaChartApi,
 ];
 
-type CatalogComponent = { allOf: { properties?: Record<string, unknown> }[] };
+type CatalogComponent = { properties: Record<string, unknown> };
 const catalogKeys = (name: string): string[] => {
   const component = (catalog.components as unknown as Record<string, CatalogComponent>)[name];
-  const own = component.allOf.find(part => part.properties?.component);
-  return Object.keys(own?.properties ?? {}).filter(k => k !== 'component');
+  return Object.keys(component.properties).filter(k => k !== 'component');
 };
 
 describe('QA-05: zod schema and catalog list the same props', () => {
@@ -44,7 +43,7 @@ describe('QA-05: zod schema and catalog list the same props', () => {
 
   it('QA-05: the Media Manager mode default matches the core default (select)', () => {
     const component = (catalog.components as unknown as Record<string, CatalogComponent>).KalturaMediaManager;
-    const props = Object.assign({}, ...component.allOf.map(part => part.properties ?? {})) as Record<string, { default?: string }>;
+    const props = component.properties as Record<string, { default?: string }>;
     expect(props.mode.default).toBe('select');
   });
 

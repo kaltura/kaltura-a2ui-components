@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CommonSchemas } from '@a2ui/web_core/v0_9';
+import { CommonSchemas } from '@a2ui/web_core/v1_0';
 
 /** Dashboard views `reportType` can name. Each one is `/analytics/<name>` in the Analytics app. */
 export const ANALYTICS_REPORT_TYPES = [

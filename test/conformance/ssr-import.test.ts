@@ -1,6 +1,6 @@
 // @vitest-environment node
 // Covers: CONF-17 (ADR 0007): the React entry imports in Node although
-// @a2ui/react 0.13 and 0.14 need HTMLElement when it loads (a2ui#3158). The stub cases
+// @a2ui/react 0.13 to 0.15 need HTMLElement when it loads (a2ui#3158). The stub cases
 // run in a fresh Node process with the installed peers: offline, and this
 // worker's globals stay clean. The entry case runs the source entry here.
 import { spawnSync } from 'node:child_process';
@@ -17,7 +17,7 @@ function node(code: string) {
 
 describe('CONF-17: the HTMLElement stub for a2ui#3158', () => {
   it('CONF-17: @a2ui/react alone still fails in Node, so the stub is still needed', () => {
-    const { err } = node("await import('@a2ui/react/v0_9')");
+    const { err } = node("await import('@a2ui/react')");
     expect(err, 'a2ui#3158 is fixed in the installed @a2ui/react. Remove the stub: see ADR 0007.').toMatch(/HTMLElement is not defined/);
   });
 
@@ -25,7 +25,7 @@ describe('CONF-17: the HTMLElement stub for a2ui#3158', () => {
     const { out, err } = node(`
       const { removeHtmlElementStub } = await import(${JSON.stringify(STUB)});
       const during = typeof HTMLElement;
-      const renderer = await import('@a2ui/react/v0_9');
+      const renderer = await import('@a2ui/react');
       removeHtmlElementStub();
       console.log(JSON.stringify([during, 'A2uiSurface' in renderer, typeof HTMLElement]));`);
     expect(out, err).toBe('["function",true,"undefined"]');

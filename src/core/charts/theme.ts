@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
 import { buildChartTheme } from '@visx/xychart';
+import { readColorMode } from '../color-mode';
+
+// The host sets these tokens to restyle the chart. The old values are the fallback.
+const SURFACE = (fallback: string) => `var(--a2ui-color-surface, ${fallback})`;
+const ON_SURFACE = (fallback: string) => `var(--a2ui-color-on-surface, ${fallback})`;
+const BORDER = (fallback: string) => `var(--a2ui-color-border, ${fallback})`;
 
 export const CHART_COLORS = [
   '#006EFA', '#00C9A7', '#FF6B6B', '#845EC2',
@@ -8,23 +14,23 @@ export const CHART_COLORS = [
 ];
 
 export const kalturaLightTheme = buildChartTheme({
-  backgroundColor: '#ffffff',
+  backgroundColor: SURFACE('#ffffff'),
   colors: CHART_COLORS,
   gridColor: '#e8e8e8',
   gridColorDark: '#d0d0d0',
   tickLength: 4,
-  svgLabelSmall: { fill: '#555555', fontSize: 11, fontFamily: 'Lato, sans-serif' },
-  svgLabelBig: { fill: '#333333', fontSize: 13, fontFamily: 'Lato, sans-serif' },
+  svgLabelSmall: { fill: ON_SURFACE('#555555'), fontSize: 11, fontFamily: 'Lato, sans-serif' },
+  svgLabelBig: { fill: ON_SURFACE('#333333'), fontSize: 13, fontFamily: 'Lato, sans-serif' },
 });
 
 export const kalturaDarkTheme = buildChartTheme({
-  backgroundColor: '#1c2128',
+  backgroundColor: SURFACE('#1c2128'),
   colors: CHART_COLORS,
   gridColor: '#3a3a5c',
   gridColorDark: '#2a2a4c',
   tickLength: 4,
-  svgLabelSmall: { fill: '#c8d1db', fontSize: 11, fontFamily: 'Lato, sans-serif' },
-  svgLabelBig: { fill: '#f0f4f8', fontSize: 13, fontFamily: 'Lato, sans-serif' },
+  svgLabelSmall: { fill: ON_SURFACE('#c8d1db'), fontSize: 11, fontFamily: 'Lato, sans-serif' },
+  svgLabelBig: { fill: ON_SURFACE('#f0f4f8'), fontSize: 13, fontFamily: 'Lato, sans-serif' },
 });
 
 export interface ThemeColors {
@@ -42,10 +48,10 @@ export interface ThemeColors {
 
 const lightColors: ThemeColors = {
   isDark: false,
-  surface: '#ffffff',
+  surface: SURFACE('#ffffff'),
   surfaceElevated: '#f0f4f8',
-  border: 'rgba(15, 26, 42, 0.1)',
-  text: '#0f1a2a',
+  border: BORDER('rgba(15, 26, 42, 0.1)'),
+  text: ON_SURFACE('#0f1a2a'),
   textSecondary: '#374b60',
   textMuted: '#566b80',
   emptyFill: '#edf2f7',
@@ -55,10 +61,10 @@ const lightColors: ThemeColors = {
 
 const darkColors: ThemeColors = {
   isDark: true,
-  surface: '#1c2128',
+  surface: SURFACE('#1c2128'),
   surfaceElevated: '#242c38',
-  border: 'rgba(139, 163, 189, 0.14)',
-  text: '#f0f4f8',
+  border: BORDER('rgba(139, 163, 189, 0.14)'),
+  text: ON_SURFACE('#f0f4f8'),
   textSecondary: '#c8d1db',
   textMuted: '#8b9bb0',
   emptyFill: '#242c38',
@@ -67,18 +73,22 @@ const darkColors: ThemeColors = {
 };
 
 function useIsDark() {
-  const [isDark, setIsDark] = useState(() =>
-    typeof document !== 'undefined' &&
-    document.documentElement.getAttribute('data-theme') === 'dark'
-  );
+  const read = () => typeof document !== 'undefined' && readColorMode('light') === 'dark';
+  const [isDark, setIsDark] = useState(read);
 
   useEffect(() => {
-    const el = document.documentElement;
-    const observer = new MutationObserver(() => {
-      setIsDark(el.getAttribute('data-theme') === 'dark');
-    });
-    observer.observe(el, { attributes: true, attributeFilter: ['data-theme'] });
-    return () => observer.disconnect();
+    const update = () => setIsDark(read());
+    const observer = new MutationObserver(update);
+    const options = { attributes: true, attributeFilter: ['data-theme', 'class'] };
+    observer.observe(document.documentElement, options);
+    observer.observe(document.body, options);
+    const query = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : undefined;
+    query?.addEventListener('change', update);
+    update();
+    return () => {
+      observer.disconnect();
+      query?.removeEventListener('change', update);
+    };
   }, []);
 
   return isDark;

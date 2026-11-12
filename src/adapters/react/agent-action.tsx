@@ -1,11 +1,36 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react';
-import type { ComponentContext } from '@a2ui/web_core/v0_9';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { ComponentContext } from '@a2ui/web_core/v1_0';
 import { ReporterContext, type KalturaReporter } from '../../core/host-hooks';
 import { KsIdentityContext, KsPropContext } from '../../core/ks';
 
 interface RawAction {
   event?: { name: string; context?: Record<string, unknown> };
   functionCall?: unknown;
+}
+
+interface RawAccessibility {
+  label?: unknown;
+  description?: unknown;
+  live?: 'off' | 'polite' | 'assertive';
+  hidden?: unknown;
+}
+type DynamicKey = 'label' | 'description' | 'hidden';
+const DYNAMIC_KEYS: DynamicKey[] = ['label', 'description', 'hidden'];
+
+/** The component's `accessibility` values, kept current as the data model changes. */
+function useAccessibility(context: ComponentContext): Partial<Record<DynamicKey, unknown>> & Pick<RawAccessibility, 'live'> {
+  const raw = context.componentModel.properties.accessibility as RawAccessibility | undefined;
+  const key = JSON.stringify(raw ?? null);
+  const [values, setValues] = useState<Partial<Record<DynamicKey, unknown>>>({});
+  useEffect(() => {
+    const keys = DYNAMIC_KEYS.filter(name => raw?.[name] !== undefined);
+    const subscriptions = keys.map(name => context.dataContext.subscribeDynamicValue(raw?.[name], value => setValues(previous => ({ ...previous, [name]: value }))));
+    setValues(Object.fromEntries(keys.map((name, index) => [name, subscriptions[index].value])));
+    return () => subscriptions.forEach(subscription => subscription.unsubscribe());
+    // `key` stands for `raw`, which is a new object on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, context.dataContext]);
+  return { ...values, live: raw?.live };
 }
 
 /**
@@ -35,11 +60,23 @@ export function AgentAction({ context, action, children }: { context: ComponentC
   const { id: componentId } = context.componentModel;
   const { path: dataPath } = context.dataContext;
   const identity = useMemo(() => ({ surfaceId, componentId, dataPath }), [surfaceId, componentId, dataPath]);
+  const { label, description, live, hidden } = useAccessibility(context);
+  // The wrapper is always there, so a changing `accessibility` never restarts the widget.
+  // `display: contents` keeps it out of the layout.
   return (
-    <ReporterContext.Provider value={reporter}>
-      <KsPropContext.Provider value={false}>
-        <KsIdentityContext.Provider value={identity}>{children}</KsIdentityContext.Provider>
-      </KsPropContext.Provider>
-    </ReporterContext.Provider>
+    <div
+      role={label ? 'group' : undefined}
+      aria-label={label ? String(label) : undefined}
+      aria-description={description ? String(description) : undefined}
+      aria-live={live}
+      aria-hidden={hidden === true ? true : undefined}
+      style={{ display: 'contents' }}
+    >
+      <ReporterContext.Provider value={reporter}>
+        <KsPropContext.Provider value={false}>
+          <KsIdentityContext.Provider value={identity}>{children}</KsIdentityContext.Provider>
+        </KsPropContext.Provider>
+      </ReporterContext.Provider>
+    </div>
   );
 }

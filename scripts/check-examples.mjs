@@ -99,6 +99,8 @@ const pages = [];
 pages.push({ name: 'examples/plain-html', path: '/examples/plain-html/index.html', expect: expectFromFile(join(root, 'examples/plain-html/index.html')) });
 await buildApp(join(root, 'examples/react'), join(work, 'example-react'));
 pages.push({ name: 'examples/react', path: '/node_modules/.cache/check-examples/example-react/index.html', expect: expectFromFile(join(root, 'examples/react/index.html')) });
+await buildApp(join(root, 'examples/demo'), join(work, 'example-demo'));
+pages.push({ name: 'examples/demo', path: '/node_modules/.cache/check-examples/example-demo/index.html', expect: expectFromFile(join(root, 'examples/demo/index.html')) });
 
 // 2. README snippets
 const blocks = readmeBlocks();

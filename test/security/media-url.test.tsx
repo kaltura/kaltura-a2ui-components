@@ -11,7 +11,7 @@ import {
   type KalturaError,
 } from '../../src/adapters/react/index';
 import { isAllowedMediaUrl } from '../../src/core/media-url';
-import { basicCatalog } from '@a2ui/web_core/v0_9/basic_catalog';
+import { basicCatalog } from '@a2ui/web_core/catalogs/basic/v1';
 import { renderMarkdown } from '@a2ui/markdown-it';
 import { renderSurface, type SurfaceOptions } from './surface-helper';
 
@@ -79,24 +79,24 @@ describe.each(MEDIA)('SEC-05: basic %s url', (component, tag, widget) => {
   });
 
   it(`SEC-05: ${component} with a bound ks in formatString loads nothing`, async () => {
-    const url = { call: 'formatString', args: { value: `${FOREIGN}?k=\${/session/ks}` }, returnType: 'string' };
+    const url = { '@call': 'formatString', args: { value: `${FOREIGN}?k=\${/session/ks}` }, returnType: 'string' };
     const { host } = await show(component, url, { session: { ks: KS } });
     expect([host.querySelector(tag), host.innerHTML.includes(KS)]).toEqual([null, false]);
   });
 
   it(`SEC-05: ${component} with a bound ks into a Kaltura host loads nothing`, async () => {
-    const url = { call: 'formatString', args: { value: `${KALTURA_IMG}?ks=\${/session/ks}` }, returnType: 'string' };
+    const url = { '@call': 'formatString', args: { value: `${KALTURA_IMG}?ks=\${/session/ks}` }, returnType: 'string' };
     const { host } = await show(component, url, { session: { ks: KS } });
     expect([host.querySelector(tag), host.innerHTML.includes(KS)]).toEqual([null, false]);
   });
 
   it(`SEC-05: ${component} with a url bound to the data model is checked`, async () => {
-    const { host } = await show(component, { path: '/media/url' }, { media: { url: FOREIGN } });
+    const { host } = await show(component, { '@path': '/media/url' }, { media: { url: FOREIGN } });
     expect(host.querySelector(tag)).toBeNull();
   });
 
   it(`SEC-05: ${component} checks the url again when the data model changes`, async () => {
-    const view = await show(component, { path: '/media/url' }, { media: { url: KALTURA_IMG } });
+    const view = await show(component, { '@path': '/media/url' }, { media: { url: KALTURA_IMG } });
     await view.update('/media/url', FOREIGN);
     expect(view.host.querySelector(tag)).toBeNull();
   });
@@ -131,12 +131,34 @@ describe.each(MEDIA)('SEC-05: basic %s url', (component, tag, widget) => {
   });
 });
 
-// The 0.13 Video element renders `poster=${props.posterUrl}`, but the v0.9
-// schema has no posterUrl. If this fails, the guard must check posterUrl too.
+// The 1.0 Video element renders `poster=${posterUrl}`, so the guard checks it like `url`.
 describe('SEC-05: basic Video posterUrl', () => {
-  it('SEC-05: the v0.9 schema refuses posterUrl, so the unguarded poster cannot load', async () => {
-    const view = renderSurface(buildKalturaCatalog(), [{ id: 'root', component: 'Video', url: KALTURA_IMG, posterUrl: FOREIGN }]);
-    await expect(view).rejects.toThrow(/posterUrl/);
+  const showVideo = async (posterUrl: unknown) => {
+    const view = await renderSurface(buildKalturaCatalog(), [{ id: 'root', component: 'Video', url: KALTURA_IMG, posterUrl }]);
+    mounted.push(view);
+    return view;
+  };
+
+  it('SEC-05: a Kaltura CDN poster renders', async () => {
+    const { host } = await showVideo(KALTURA_IMG);
+    expect(sources(host)).toContain(KALTURA_IMG);
+  });
+
+  it('SEC-05: a foreign poster renders nothing', async () => {
+    const { host } = await showVideo(FOREIGN);
+    expect(host.querySelector('video')).toBeNull();
+  });
+
+  it('SEC-05: a poster with a KS renders nothing and leaks no KS', async () => {
+    const { host } = await showVideo(`${KALTURA_IMG}?ks=${KS}`);
+    expect([host.querySelector('video'), host.innerHTML.includes(KS)]).toEqual([null, false]);
+  });
+
+  it('SEC-05: a foreign poster is reported as url-rejected', async () => {
+    const seen: KalturaError[] = [];
+    setErrorHandler(error => seen.push(error));
+    await showVideo(FOREIGN);
+    expect(seen.map(e => [e.code, e.widget])).toEqual([['url-rejected', 'video']]);
   });
 });
 
@@ -203,7 +225,7 @@ describe('SEC-05: a host that also registers basicCatalog', () => {
 });
 
 describe('SEC-05: basic Text markdown through the host renderer', () => {
-  const bound = (value: string) => ({ call: 'formatString', args: { value }, returnType: 'string' });
+  const bound = (value: string) => ({ '@call': 'formatString', args: { value }, returnType: 'string' });
   const text = (value: unknown, catalog = kalturaReactCatalog, options: SurfaceOptions = {}) =>
     renderSurface(catalog, [{ id: 'root', component: 'Text', text: value }], { session: { ks: KS } }, { markdown: renderMarkdown, ...options }).then(view => {
       mounted.push(view);

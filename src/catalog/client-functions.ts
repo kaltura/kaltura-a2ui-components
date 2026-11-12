@@ -7,8 +7,8 @@
  */
 
 import { z } from 'zod';
-import { createFunctionImplementation, type FunctionImplementation } from '@a2ui/web_core/v0_9';
-import { OpenUrlApi } from '@a2ui/web_core/v0_9/basic_catalog';
+import { createFunctionImplementation, type FunctionImplementation } from '@a2ui/web_core/v1_0';
+import { OpenUrlApi } from '@a2ui/web_core/catalogs/basic/v1';
 
 /**
  * Copies the given text to the clipboard via the async Clipboard API.
@@ -19,7 +19,8 @@ export const CopyToClipboardImplementation: FunctionImplementation = createFunct
   {
     name: 'copyToClipboard',
     returnType: 'void' as const,
-    // Text and other passive props cannot run it. Only a gesture can.
+    // Text and other passive props cannot run it. Only a gesture can. Agents cannot call it.
+    allowedCallers: 'rendererOnly' as const,
     requiresUserActivation: true,
     schema: z.object({
       text: z.string().describe('The text to copy to the clipboard'),
@@ -40,7 +41,7 @@ export const CopyToClipboardImplementation: FunctionImplementation = createFunct
  * Relative URLs are refused because the base page can be non-https.
  */
 export const SafeOpenUrlImplementation: FunctionImplementation = createFunctionImplementation(
-  { ...OpenUrlApi, requiresUserActivation: true },
+  { ...OpenUrlApi, allowedCallers: 'rendererOnly', requiresUserActivation: true },
   (args) => {
     let url: URL | undefined;
     try {

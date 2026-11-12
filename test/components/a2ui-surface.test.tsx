@@ -3,8 +3,8 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createElement, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { MessageProcessor } from '@a2ui/web_core/v0_9';
-import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react/v0_9';
+import { MessageProcessor } from '@a2ui/web_core/v1_0';
+import { A2uiSurface, type ReactCatalogComponent } from '@a2ui/react';
 import { setKsProvider } from '../../src/core/ks';
 import { CASES, installRemote, remote, resetFakes, settle, expectInert, type Case } from './cases';
 
@@ -43,8 +43,8 @@ async function surface(c: Case, props: Record<string, unknown>) {
   // The A2UI schema check refuses a bad shape before anything mounts.
   try {
     processor.processMessages([
-      { version: 'v0.9', createSurface: { surfaceId: 's', catalogId } },
-      { version: 'v0.9', updateComponents: { surfaceId: 's', components: [{ id: 'root', component: c.component, ...props }] } },
+      { version: '1.0', createSurface: { surfaceId: 's', catalogId } },
+      { version: '1.0', updateComponents: { surfaceId: 's', components: [{ id: 'root', component: c.component, ...props }] } },
     ] as never);
   } catch (e) {
     return (e as Error).name;

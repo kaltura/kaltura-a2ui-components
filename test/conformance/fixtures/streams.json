@@ -4,14 +4,14 @@
     "description": "Bound entry id, then the data model changes.",
     "messages": [
       {
-        "version": "v0.9",
+        "version": "1.0",
         "createSurface": {
           "surfaceId": "s",
-          "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json"
+          "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateDataModel": {
           "surfaceId": "s",
           "path": "/",
@@ -21,7 +21,7 @@
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateComponents": {
           "surfaceId": "s",
           "components": [
@@ -31,7 +31,7 @@
               "partnerId": 1,
               "uiconfId": 2,
               "entryId": {
-                "path": "/entryId"
+                "@path": "/entryId"
               },
               "autoplay": true,
               "muted": true
@@ -49,7 +49,7 @@
     "after": {
       "messages": [
         {
-          "version": "v0.9",
+          "version": "1.0",
           "updateDataModel": {
             "surfaceId": "s",
             "path": "/entryId",
@@ -69,14 +69,14 @@
     "description": "Bound deck title, then the data model changes.",
     "messages": [
       {
-        "version": "v0.9",
+        "version": "1.0",
         "createSurface": {
           "surfaceId": "s",
-          "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json"
+          "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateDataModel": {
           "surfaceId": "s",
           "path": "/",
@@ -88,7 +88,7 @@
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateComponents": {
           "surfaceId": "s",
           "components": [
@@ -96,7 +96,7 @@
               "id": "root",
               "component": "KalturaFlashcards",
               "title": {
-                "path": "/deck/title"
+                "@path": "/deck/title"
               },
               "cards": [
                 {
@@ -118,7 +118,7 @@
     "after": {
       "messages": [
         {
-          "version": "v0.9",
+          "version": "1.0",
           "updateDataModel": {
             "surfaceId": "s",
             "path": "/deck/title",
@@ -138,14 +138,14 @@
     "description": "Unisphere workspace on the default server.",
     "messages": [
       {
-        "version": "v0.9",
+        "version": "1.0",
         "createSurface": {
           "surfaceId": "s",
-          "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json"
+          "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateComponents": {
           "surfaceId": "s",
           "components": [
@@ -169,14 +169,14 @@
     "description": "Analytics iframe.",
     "messages": [
       {
-        "version": "v0.9",
+        "version": "1.0",
         "createSurface": {
           "surfaceId": "s",
-          "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json"
+          "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateComponents": {
           "surfaceId": "s",
           "components": [
@@ -201,14 +201,14 @@
     "description": "Captions editor container. The iframe is added after the editor page is fetched.",
     "messages": [
       {
-        "version": "v0.9",
+        "version": "1.0",
         "createSurface": {
           "surfaceId": "s",
-          "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json"
+          "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateComponents": {
           "surfaceId": "s",
           "components": [
@@ -231,14 +231,14 @@
     "description": "Recorder container for the Express Recorder script.",
     "messages": [
       {
-        "version": "v0.9",
+        "version": "1.0",
         "createSurface": {
           "surfaceId": "s",
-          "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json"
+          "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateComponents": {
           "surfaceId": "s",
           "components": [
@@ -261,14 +261,14 @@
     "description": "Avatar on the default server.",
     "messages": [
       {
-        "version": "v0.9",
+        "version": "1.0",
         "createSurface": {
           "surfaceId": "s",
-          "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json"
+          "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateComponents": {
           "surfaceId": "s",
           "components": [
@@ -291,14 +291,14 @@
     "description": "Genie on the default server.",
     "messages": [
       {
-        "version": "v0.9",
+        "version": "1.0",
         "createSurface": {
           "surfaceId": "s",
-          "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json"
+          "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateComponents": {
           "surfaceId": "s",
           "components": [
@@ -322,14 +322,14 @@
     "description": "Content Lab on the default server.",
     "messages": [
       {
-        "version": "v0.9",
+        "version": "1.0",
         "createSurface": {
           "surfaceId": "s",
-          "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json"
+          "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateComponents": {
           "surfaceId": "s",
           "components": [
@@ -354,14 +354,14 @@
     "description": "Agents widget on the default server.",
     "messages": [
       {
-        "version": "v0.9",
+        "version": "1.0",
         "createSurface": {
           "surfaceId": "s",
-          "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json"
+          "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateComponents": {
           "surfaceId": "s",
           "components": [
@@ -384,14 +384,14 @@
     "description": "VOD Avatar on the default server.",
     "messages": [
       {
-        "version": "v0.9",
+        "version": "1.0",
         "createSurface": {
           "surfaceId": "s",
-          "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json"
+          "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateComponents": {
           "surfaceId": "s",
           "components": [
@@ -414,14 +414,14 @@
     "description": "Bound chart title, then the data model changes.",
     "messages": [
       {
-        "version": "v0.9",
+        "version": "1.0",
         "createSurface": {
           "surfaceId": "s",
-          "catalogId": "https://kaltura.github.io/a2ui/v2/catalog.json"
+          "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateDataModel": {
           "surfaceId": "s",
           "path": "/",
@@ -431,7 +431,7 @@
         }
       },
       {
-        "version": "v0.9",
+        "version": "1.0",
         "updateComponents": {
           "surfaceId": "s",
           "components": [
@@ -454,7 +454,7 @@
                 "value"
               ],
               "title": {
-                "path": "/title"
+                "@path": "/title"
               }
             }
           ]
@@ -470,7 +470,7 @@
     "after": {
       "messages": [
         {
-          "version": "v0.9",
+          "version": "1.0",
           "updateDataModel": {
             "surfaceId": "s",
             "path": "/title",
