@@ -206,6 +206,7 @@ jobs:
             ${{ runner.temp }}/release/assets/dist.tar.gz
             ${{ runner.temp }}/release/assets/sbom.cdx.json
             ${{ runner.temp }}/release/assets/hashes.json
+            ${{ runner.temp }}/release/assets/common_types.json
             ${{ runner.temp }}/release/assets/SHA256SUMS
       # Same inputs give the same commit, so a re-run finds its own tag and skips the push.
       # Pushes the tag only, never main and never forced.
