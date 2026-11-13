@@ -41,7 +41,7 @@
       }
     ],
     "expect": {
-      "selector": ".kaltura-player-container [role=\"region\"]",
+      "selector": ".kaltura-a2ui-player [role=\"region\"]",
       "textContains": [
         "0_abc"
       ]
