@@ -413,3 +413,4 @@ Merged to `main` in PR 61. Released as `v0.7.0`.
 | H4 | Done: upstream Show and tell post, discussion 4207 |
 | H6 | Drafted 2026-11-12: needs the owner's go to post |
 | 0.7.1 | Released 2026-11-12. Attests `common_types.json`. The v3 catalog on `kaltura.github.io/a2ui` is the 0.7.1 asset |
+| 0.7.2 | Released 2026-11-12. Fixes three accessibility bugs a real-model run found (flashcards controls, Slider name, error tokens). The v3 catalog on `kaltura.github.io/a2ui` is the 0.7.2 asset |
