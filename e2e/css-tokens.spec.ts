@@ -51,7 +51,7 @@ async function resolved(h: Harness) {
       return Object.fromEntries(keys.map((k) => [k, cs.getPropertyValue(k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`))]));
     };
     return {
-      container: pick('.kaltura-player-container', ['backgroundColor', 'borderTopColor', 'borderTopLeftRadius']),
+      container: pick('.kaltura-a2ui-player', ['backgroundColor', 'borderTopColor', 'borderTopLeftRadius']),
       label: pick('.kaltura-player-label', ['backgroundColor', 'color', 'borderTopColor']),
       title: pick('.player-title', ['color']),
       desc: pick('.player-desc', ['color']),

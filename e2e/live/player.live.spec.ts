@@ -6,6 +6,7 @@
 // Each test skips when its variables are missing.
 // The page loads the real built bundle and the real Player script. A KS is minted in this process
 // and handed over with setKsProvider only. It must never appear in a URL.
+import AxeBuilder from '@axe-core/playwright';
 import { test as base, expect, type Page } from '@playwright/test';
 import { ORIGIN_A } from '../fixtures/constants';
 import { mintKs } from './mint-ks';
@@ -230,6 +231,19 @@ test('LIVE-01: the player starts muted on its own, plays, and no URL holds the K
   expectNoKsInUrls(live);
   // Playwright's WebKit shows no X-Kaltura-KS header on the manifest requests, so it is checked on the other two.
   if (browserName !== 'webkit') await expect.poll(() => live.headerRequests, { message: 'the KS went out in a header' }).toBeGreaterThan(0);
+});
+
+test('LIVE-22: the wrapper keeps its own look while the Player plays, and the title stays readable', async ({ live }) => {
+  test.skip(!hasPlayer, NEEDS_PLAYER);
+  await live.mount('kaltura-player', { partnerId, uiconfId: UICONF_ID, entryId: ENTRY_ID, autoplay: true, muted: true });
+  await expect.poll(async () => (await live.state())?.currentTime ?? 0, { timeout: PLAY_TIMEOUT, message: 'currentTime advances' }).toBeGreaterThan(1);
+  // The Player styles its own `.kaltura-player-container`. Our wrapper must not share that class name.
+  const wrapper = live.page.locator('.kaltura-a2ui-player');
+  await expect(wrapper).toHaveCount(1);
+  await expect(live.page.locator('.kaltura-player-container')).not.toHaveCount(0);
+  expect(await wrapper.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+  const results = await new AxeBuilder({ page: live.page }).include('.kaltura-a2ui-player').withRules(['color-contrast']).analyze();
+  expect(results.violations.map((v) => v.id)).toEqual([]);
 });
 
 test('LIVE-02: startTime and clipTo play only the clip range', async ({ live }) => {

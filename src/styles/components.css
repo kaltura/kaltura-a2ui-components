@@ -20,7 +20,7 @@
  */
 
 :where(
-  .kaltura-player-container,
+  .kaltura-a2ui-player,
   .flashcard-carousel,
   .kaltura-media-manager-container,
   .kaltura-analytics-container,
@@ -50,7 +50,7 @@
 
 /* The design-system dark look, for hosts that mark the page dark but define no tokens. */
 :is([data-theme='dark'], .a2ui-dark) :where(
-  .kaltura-player-container,
+  .kaltura-a2ui-player,
   .flashcard-carousel,
   .kaltura-media-manager-container,
   .kaltura-analytics-container,
@@ -97,7 +97,7 @@
 }
 
 /* ─── Kaltura Player ─── */
-.kaltura-player-container {
+.kaltura-a2ui-player {
   margin: 12px 0;
   border-radius: var(--kaltura-roundness-2);
   overflow: hidden;
@@ -105,7 +105,7 @@
   border: 1px solid var(--kaltura-border-color);
 }
 
-.kaltura-player-container iframe {
+.kaltura-a2ui-player iframe {
   width: 100%;
   aspect-ratio: 16/9;
   border: 0;

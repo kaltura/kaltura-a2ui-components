@@ -164,7 +164,7 @@ const PlayerView: FC<PlayerCoreProps> = (props) => {
   const description = props.entryDescription?.slice(0, MAX_LABEL_LENGTH).trim() ?? '';
 
   return (
-    <div className="kaltura-player-container">
+    <div className="kaltura-a2ui-player">
       <PlayerEmbed
         partnerId={props.partnerId}
         uiconfId={props.uiconfId}
