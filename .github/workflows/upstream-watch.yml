@@ -1,0 +1,55 @@
+name: upstream-watch
+
+# Weekly. Checks if upstream shipped what our workarounds wait for (npm and the a2ui-project/a2ui
+# issues). When a row is ready, it opens one issue, or updates the open one. It never changes code.
+# Run it by hand: node scripts/check-upstream.mjs
+
+on:
+  schedule:
+    - cron: '41 5 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: upstream-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    name: check upstream
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write # open or update the one "Upstream is ready" issue
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - id: check
+        run: node scripts/check-upstream.mjs | tee "${RUNNER_TEMP}/upstream.md"
+      - name: Open or update the issue
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          title="Upstream is ready: remove a workaround"
+          {
+            echo "Rows marked **yes** mean upstream shipped what we wait for. Follow the Then column, run the full matrix, then close this issue."
+            echo
+            cat "${RUNNER_TEMP}/upstream.md"
+          } > "${RUNNER_TEMP}/body.md"
+          number="$(gh issue list --state open --search "in:title \"${title}\"" --json number --jq '.[0].number // empty')"
+          if [ -n "${number}" ]; then
+            gh issue edit "${number}" --body-file "${RUNNER_TEMP}/body.md"
+          else
+            gh issue create --title "${title}" --body-file "${RUNNER_TEMP}/body.md"
+          fi

@@ -52,6 +52,7 @@ Which test covers each control ID. Test titles start with the ID. The traceabili
 | QA-11 | `package.json` exports, license file | test/package/contract.test.ts; `check:package` (publint, attw) | unit tests; bundle and package checks | fixed |
 | SEC-19 | Release workflow (SRI coverage) | test/release/stamp-catalog.test.ts; test/release/stamped-catalog.test.ts; test/release/verify-cdn.test.ts; test/release/release-notes.test.ts; test/release/unisphere-smoke.test.ts; test/release/workflows.test.ts; scripts/verify-cdn.mjs; scripts/release-verify-stamp.mjs; scripts/release-unisphere-smoke.mjs | unit tests; release commit, tag and GitHub Release; jsDelivr matches the build; live smoke | fixed |
 | QA-16 | `README.md`, docs | test/conformance/docs-content.test.ts; scripts/check-examples.mjs | unit tests; bundle and package checks (`check:examples`) | fixed |
+| QA-20 | Upstream watch (`check:upstream`, weekly workflow) | test/release/check-upstream.test.ts; scripts/check-upstream.mjs | unit tests | fixed |
 | QA-18 | Test coverage (all components) | test/components/core.test.tsx; test/components/a2ui-surface.test.tsx; test/webcomponent/adapters.test.tsx; test/charts/render-all.test.tsx; test/docs/traceability.test.ts | unit tests | fixed |
 | UX-01 | Flashcards (layout CSS: `box-sizing`) | e2e/error-states.spec.ts (`UX-01: flashcard clip thumbnails are not covered on a plain page`) | e2e (chromium, firefox, webkit) | fixed |
 
