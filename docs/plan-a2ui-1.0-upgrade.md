@@ -120,7 +120,7 @@ Each gate has a check command and a decision for both outcomes.
 | G7 upstream tools | **Run 2026-11-12** in throwaway Docker containers, upstream `main` at `8bf644a`: `validate.py` passed; `a2ui lint --fatal-warnings` passed on our catalog (and fails on a broken copy); our 27 example messages pass the upstream `agent_to_renderer.json` schema once `accessibility` is renamed `@accessibility` (F1). Rerun before the listing PR | Run in a throwaway CI job in `kaltura/a2ui`, pinned to a commit SHA | Paste output in the listing PR | Fix the catalog, rerun |
 | G8 live suites | `e2e:live` not run in the spike (needs the live account) | `npm run e2e:live` on a quiet machine (Phase 7) | Release | Do not release |
 
-Run G1, G2 and G5 at the start of each phase and before the tag.
+Run G1, G2 and G5 at the start of each phase and before the tag. `npm run check:upstream` covers G1, G2, the SSR issue and zod 4 in one table. The `upstream-watch` workflow runs it weekly.
 
 ## Security
 

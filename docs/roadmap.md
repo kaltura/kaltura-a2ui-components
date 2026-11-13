@@ -1,6 +1,6 @@
 # Roadmap
 
-Where the project goes after 0.7.0. Each item waits for an upstream change. Details and reasons are in [the 1.0 plan](plan-a2ui-1.0-upgrade.md#follow-ups).
+Where the project goes after 0.7.0. Each item waits for an upstream change. Details and reasons are in [the 1.0 plan](plan-a2ui-1.0-upgrade.md#follow-ups). `npm run check:upstream` shows which of them upstream has shipped. A weekly workflow runs it and opens an issue when a row is ready.
 
 | # | Work | Waits for |
 |---|---|---|

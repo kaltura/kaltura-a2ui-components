@@ -66,10 +66,10 @@ For the React or A2UI path only. There is no npm package: a package on npm with 
 npm i github:kaltura/kaltura-a2ui-components#v0.7.3 @a2ui/react @a2ui/web_core zod@3 react react-dom
 ```
 
-zod 4 is not supported. Add this to your `package.json` too ([why](docs/host-integration.md#dompurify-override)):
+zod 4 is not supported. Add this to your `package.json` too ([why](docs/host-integration.md#dompurify-override)). It swaps `@a2ui/markdown-it` for [our patched copy](https://github.com/kaltura/a2ui-markdown-it), which fixes the `web_core` peer error in `npm ls` and the old `dompurify`:
 
 ```json
-{ "overrides": { "dompurify": "^3.4.17" } }
+{ "overrides": { "@a2ui/markdown-it": "github:kaltura/a2ui-markdown-it#v0.2.2-kaltura.1" } }
 ```
 
 Gotchas:

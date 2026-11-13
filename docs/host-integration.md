@@ -149,7 +149,13 @@ If you load `kaltura-react.mjs` from jsDelivr with an import map and `integrity`
 
 ## DOMPurify override
 
-`@a2ui/react` depends on `@a2ui/markdown-it`, which pins an older `dompurify` (3.4.11). Your install gets it through `@a2ui/react`, with or without this package. Our ESM bundle carries its own copy (3.4.17). Your app uses yours, for example in the markdown renderer you pass to `MarkdownContext`. Override it in `package.json`, to the range this repo uses:
+`@a2ui/react` depends on `@a2ui/markdown-it`, which pins an older `dompurify` (3.4.11). Your install gets it through `@a2ui/react`, with or without this package. Our ESM bundle carries its own copy (3.4.17). Your app uses yours, for example in the markdown renderer you pass to `MarkdownContext`. The same package also peers `@a2ui/web_core ^0.14.0`, so `npm ls` shows an error with `web_core` 0.15. Use [our patched copy](https://github.com/kaltura/a2ui-markdown-it). It has the same code with both fixed. Remove the entry when upstream ships ([#4059](https://github.com/a2ui-project/a2ui/issues/4059)):
+
+```json
+{ "overrides": { "@a2ui/markdown-it": "github:kaltura/a2ui-markdown-it#v0.2.2-kaltura.1" } }
+```
+
+To fix only `dompurify`, override that instead:
 
 ```json
 { "overrides": { "dompurify": "^3.4.17" } }
