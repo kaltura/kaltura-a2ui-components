@@ -9,15 +9,16 @@
   --accent-text: #ffffff;
   --down: #0b7a43;
   --up: #a0410d;
+  --error: #b3261e;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #0d1219; --panel: #161d27; --text: #f0f4f8; --muted: #a8b6c8; --line: #2a3646; --accent: #6aa8ff; --accent-text: #08121f; --down: #5fd49a; --up: #ffb27a;
+    --bg: #0d1219; --panel: #161d27; --text: #f0f4f8; --muted: #a8b6c8; --line: #2a3646; --accent: #6aa8ff; --accent-text: #08121f; --down: #5fd49a; --up: #ffb27a; --error: #ff8a80;
   }
 }
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0d1219; --panel: #161d27; --text: #f0f4f8; --muted: #a8b6c8; --line: #2a3646; --accent: #6aa8ff; --accent-text: #08121f; --down: #5fd49a; --up: #ffb27a;
+  --bg: #0d1219; --panel: #161d27; --text: #f0f4f8; --muted: #a8b6c8; --line: #2a3646; --accent: #6aa8ff; --accent-text: #08121f; --down: #5fd49a; --up: #ffb27a; --error: #ff8a80;
 }
 :root[data-theme='light'] { color-scheme: light; }
 * { box-sizing: border-box; }
@@ -47,6 +48,12 @@ main h2 { margin: 0 0 4px; }
   --a2ui-color-primary: var(--accent);
   --a2ui-color-on-primary: var(--accent-text);
   --a2ui-tabs-header-color: var(--muted);
+  /* The basic default error colour is pure red: 3.54:1 on light and 4.35:1 on dark. */
+  --a2ui-textfield-color-error: var(--error);
+  --a2ui-checkbox-color-error: var(--error);
+  --a2ui-slider-color-error: var(--error);
+  /* The basic Slider is 100% wide with a 16px side margin, so it spills out of its card. */
+  --a2ui-slider-margin: 8px 0;
 }
 .wait { color: var(--muted); }
 aside { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }

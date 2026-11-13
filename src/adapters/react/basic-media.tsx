@@ -47,6 +47,13 @@ function guardedElement(name: string, Base: BasicElement): BasicElement {
     // The 1.0 TextField renders a <label> that is not tied to its input. Tie them so screen readers name the field.
     updated(changed: unknown) {
       super.updated?.(changed);
+      if (name === 'Slider') {
+        // The 1.0 Slider shows its label in a <span> that no one points to, so the range input has no name.
+        const text = this.querySelector('.a2ui-slider-label');
+        const range = this.querySelector('input');
+        if (text && range) range.setAttribute('aria-labelledby', (text.id ||= `kaltura-a2ui-slider-label-${++fieldCount}`));
+        return;
+      }
       if (name !== 'TextField') return;
       const label = this.querySelector('label');
       const field = this.querySelector('input, textarea');
@@ -79,12 +86,12 @@ function guardedElement(name: string, Base: BasicElement): BasicElement {
 /**
  * Wraps a basic Image, Video or AudioPlayer so its `url` (and a Video `posterUrl`) loads only from a
  * Kaltura host or a `setExtraMediaOrigins` origin, a basic Text so its
- * markdown shows only Kaltura images (SEC-05), and a basic TextField so its
+ * markdown shows only Kaltura images (SEC-05), and a basic TextField or Slider so its
  * label names its input. Other components pass through.
  * A guarded element gets the tag `kaltura-<basic tag>`, because one class
  * cannot be defined under two tags.
  */
 export function guardBasic(base: WebComponentImplementation): WebComponentImplementation {
-  if (base.name !== 'Text' && base.name !== 'TextField' && !Object.hasOwn(MEDIA_WIDGETS, base.name)) return base;
+  if (base.name !== 'Text' && base.name !== 'TextField' && base.name !== 'Slider' && !Object.hasOwn(MEDIA_WIDGETS, base.name)) return base;
   return { ...base, tagName: `kaltura-${base.tagName}`, element: guardedElement(base.name, base.element as BasicElement) };
 }

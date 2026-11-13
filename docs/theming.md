@@ -31,7 +31,13 @@ The A2UI basic components (Button, Tabs, TextField and others) read their own to
   --a2ui-color-primary: #0b5fd6;
   --a2ui-color-on-primary: #ffffff;
   --a2ui-tabs-header-color: #4a5a70;
+  --a2ui-textfield-color-error: #b3261e;
+  --a2ui-checkbox-color-error: #b3261e;
+  --a2ui-slider-color-error: #b3261e;
+  --a2ui-slider-margin: 8px 0;
 }
 ```
+
+The default error colour is pure red: 3.54:1 on a light card and 4.35:1 on a dark one. The default Slider margin is 16px on every side, so the 100% wide slider spills out of its card. Use a dark red on light pages and a light red (for example `#ff8a80`) on dark ones.
 
 The [live demo](../examples/demo) sets these and passes axe in both themes.

@@ -1,4 +1,4 @@
-// Covers: the basic TextField label names its input. The 1.0 element renders a
+// Covers: the basic TextField label and Slider label name their input. The 1.0 element renders a
 // <label> with no `for`, so a screen reader announces an unnamed field (axe: label, critical).
 import { describe, it, expect, afterEach } from 'vitest';
 import { act } from 'react';
@@ -43,5 +43,16 @@ describe('TextField label', () => {
     await act(async () => new Promise(r => setTimeout(r, 20)));
     const ids = [...view.host.querySelectorAll('input')].map(i => i.id);
     expect([ids.length, new Set(ids).size]).toEqual([2, 2]);
+  });
+});
+
+describe('Slider label', () => {
+  it('names the range input with the label text', async () => {
+    const view = await renderSurface(kalturaReactCatalog, [{ id: 'root', component: 'Slider', label: 'Rating', min: 1, max: 5, value: 3 }]);
+    mounted.push(view);
+    await act(async () => new Promise(r => setTimeout(r, 20)));
+    const text = view.host.querySelector('.a2ui-slider-label');
+    const range = view.host.querySelector('input');
+    expect([text?.id !== '', range?.getAttribute('aria-labelledby') === text?.id]).toEqual([true, true]);
   });
 });

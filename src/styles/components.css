@@ -312,10 +312,10 @@
   position: absolute;
   right: 0;
   padding: 8px 20px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(128, 128, 128, 0.15);
+  border: 1px solid var(--kaltura-border-color);
   border-radius: var(--kaltura-roundness-1);
-  color: #FFFFFF;
+  color: var(--kaltura-page-text);
   font-family: var(--kaltura-font-family);
   font-size: 0.875rem;
   font-weight: 700;
@@ -324,7 +324,7 @@
 }
 
 .flashcard-action-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(128, 128, 128, 0.25);
 }
 
 .flashcard-action-btn:active {
@@ -351,14 +351,14 @@
   height: 28px;
   background: none;
   border: none;
-  color: #FFFFFF;
+  color: var(--kaltura-page-text);
   cursor: pointer;
   border-radius: var(--kaltura-roundness-1);
   transition: background 200ms ease-in-out;
 }
 
 .flashcard-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(128, 128, 128, 0.15);
 }
 
 .flashcard-nav-btn:disabled {
@@ -374,7 +374,7 @@
 .flashcard-counter {
   font-family: var(--kaltura-font-family);
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--kaltura-page-text-secondary);
   min-width: 40px;
   text-align: center;
 }
