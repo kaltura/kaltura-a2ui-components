@@ -92,6 +92,19 @@ test('study kit: tabs switch and the flashcards render', async ({ page }) => {
   await expect(page.getByTestId('stage').getByText('Mitochondria').first()).toBeVisible();
 });
 
+for (const theme of ['light', 'dark']) {
+  // The deck sits in a closed tab, so the per-example axe run above never sees its controls.
+  test(`study kit: the open flashcards have no serious axe violation in the ${theme} theme`, async ({ page }) => {
+    await open(page, '02_study-kit');
+    await page.getByLabel('Theme').selectOption(theme);
+    await page.getByTestId('stage').getByRole('button', { name: 'Flashcards' }).click();
+    await expect(page.getByTestId('stage').getByText('Mitochondria').first()).toBeVisible();
+    await page.waitForTimeout(400);
+    const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();
+    expect(violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([]);
+  });
+}
+
 test('safe by default: the host refuses the player, and the agent gets an error', async ({ page }) => {
   await open(page, '04_safe-by-default');
   await expect(page.getByTestId('stage')).toContainText('partnerId is not allowed');
