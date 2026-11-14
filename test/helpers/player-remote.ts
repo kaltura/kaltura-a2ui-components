@@ -90,7 +90,7 @@ const api: PlayerApi = {
       ...(remote.setup === 'no-load-media'
         ? {}
         : {
-            loadMedia: (info: { entryId: string }, options?: { seekFrom?: number; clipTo?: number }) => {
+            loadMedia: (info: { entryId: string }, options?: { startTime?: number; seekFrom?: number; clipTo?: number }) => {
               remote.log.push('loadMedia');
               entry.loads.push({ info, options });
               if (remote.setup === 'load-throws') throw new Error(`load failed ${String(config.provider.ks)}`);

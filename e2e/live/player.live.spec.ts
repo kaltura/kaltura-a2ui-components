@@ -246,11 +246,27 @@ test('LIVE-22: the wrapper keeps its own look while the Player plays, and the ti
   expect(results.violations.map((v) => v.id)).toEqual([]);
 });
 
-test('LIVE-02: startTime and clipTo play only the clip range', async ({ live }) => {
+test('LIVE-02: startTime seeks on load and clipTo ends playback', async ({ live }) => {
   test.skip(!hasPlayer, NEEDS_PLAYER);
   await live.mount('kaltura-player', { partnerId, uiconfId: UICONF_ID, entryId: ENTRY_ID, startTime: CLIP.start, clipTo: CLIP.end, autoplay: true, muted: true });
   await expect.poll(() => live.playToEnd(), { timeout: PLAY_TIMEOUT, message: 'the clip ends' }).toBe(true);
+  const state = await live.state();
+  expect([state?.duration, state?.currentTime].map((t) => (t ?? 0) > CLIP.end - 1 && (t ?? 0) <= CLIP.end + 0.5)).toEqual([true, true]);
+  expect(live.requests.some((url) => url.includes(`/clipTo/${CLIP.end * 1000}/`))).toBe(true);
+  expect(live.requests.some((url) => url.includes('/clipFrom/'))).toBe(false);
+  expect(live.consoleErrors).toEqual([]);
+  expectNoKsInUrls(live);
+});
+
+test('LIVE-02b: clipFrom and clipTo cut the stream and the timeline runs from 0 to the clip length', async ({ live }) => {
+  test.skip(!hasPlayer, NEEDS_PLAYER);
+  await live.mount('kaltura-player', { partnerId, uiconfId: UICONF_ID, entryId: ENTRY_ID, clipFrom: CLIP.start, clipTo: CLIP.end, autoplay: true, muted: true });
+  await expect.poll(() => live.playToEnd(), { timeout: PLAY_TIMEOUT, message: 'the clip ends' }).toBe(true);
   await expectClipOnly(live);
+  const length = CLIP.end - CLIP.start;
+  const bar = live.page.locator('[role="slider"][aria-valuemax]').first();
+  expect(await bar.getAttribute('aria-valuemin')).toBe('0');
+  expect(Math.abs(Number(await bar.getAttribute('aria-valuemax')) - length)).toBeLessThanOrEqual(1);
   expect(live.consoleErrors).toEqual([]);
   expectNoKsInUrls(live);
 });

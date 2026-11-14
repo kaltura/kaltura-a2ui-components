@@ -20,7 +20,7 @@ Both use `PlayerEmbed`.
 
 1. The loader adds `<cdn>/p/{pid}/embedPlaykitJs/partner_id/{pid}/uiconf_id/{uiconf}` as a `<script>`. `<cdn>` is the region host (`kalturaHosts().cdn`).
 2. `KalturaPlayer.setup({ targetId, provider: { partnerId, uiConfId, ks, useHeaderForKs: true }, playback })` builds the player.
-3. `player.loadMedia({ entryId }, { seekFrom, clipTo })` starts the entry.
+3. `player.loadMedia({ entryId }, { startTime, seekFrom, clipTo })` starts the entry. `startTime` seeks on load. `seekFrom` and `clipTo` cut the stream, so the timeline starts at 0. The catalog calls `seekFrom` `clipFrom`. Flashcards clips use `seekFrom` and `clipTo`.
 
 `useHeaderForKs: true` sends the KS in a request header, so no request URL holds it.
 
