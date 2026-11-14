@@ -85,14 +85,19 @@ describe('PlayerCore loadMedia', () => {
     expect(remote.created[0].loads).toEqual([{ info: { entryId: '1_abc123' }, options: {} }]);
   });
 
-  it('rounds startTime and clipTo to whole seconds for seekFrom and clipTo', async () => {
+  it('rounds startTime and clipTo to whole seconds', async () => {
     await render({ ...BASE_PROPS, startTime: 12.7, clipTo: 99.3 });
-    expect(remote.created[0].loads[0].options).toEqual({ seekFrom: 13, clipTo: 99 });
+    expect(remote.created[0].loads[0].options).toEqual({ startTime: 13, clipTo: 99 });
+  });
+
+  it('rounds clipFrom to whole seconds for seekFrom', async () => {
+    await render({ ...BASE_PROPS, clipFrom: 2.4, clipTo: 6 });
+    expect(remote.created[0].loads[0].options).toEqual({ seekFrom: 2, clipTo: 6 });
   });
 
   it('keeps a startTime of 0', async () => {
     await render({ ...BASE_PROPS, startTime: 0 });
-    expect(remote.created[0].loads[0].options).toEqual({ seekFrom: 0 });
+    expect(remote.created[0].loads[0].options).toEqual({ startTime: 0 });
   });
 
   it('shows the entry id and name, and the description as plain text', async () => {

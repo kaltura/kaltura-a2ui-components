@@ -12,6 +12,7 @@ export const KalturaPlayerApi = {
     autoplay: CommonSchemas.DynamicBoolean.optional(),
     muted: CommonSchemas.DynamicBoolean.optional(),
     startTime: CommonSchemas.DynamicNumber.optional(),
+    clipFrom: CommonSchemas.DynamicNumber.optional(),
     clipTo: CommonSchemas.DynamicNumber.optional(),
     aspectRatio: CommonSchemas.DynamicString.optional(),
     entryName: CommonSchemas.DynamicString.optional(),

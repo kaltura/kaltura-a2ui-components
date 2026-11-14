@@ -112,7 +112,7 @@ A host UI that lets a user approve a wider scope shows the real ids, not the age
 
 | Widget | Reads | Host decides |
 |---|---|---|
-| Player | `entryId` or `playlistId` (exactly one). `playlistId` is a manual playlist. `startTime` and `clipTo` do not apply to a playlist | View rights for the entry or playlist |
+| Player | `entryId` or `playlistId` (exactly one). `playlistId` is a manual playlist. `startTime`, `clipFrom` and `clipTo` do not apply to a playlist | View rights for the entry or playlist |
 | Flashcards | `entryIds`, from `cards[].clips[].entryId`. A bad id is dropped from the scope and its clip shows "This clip cannot be shown". More than 20 valid ids gives `invalid-props` on `cards`. No valid id, no `partnerId` or no `uiconfId`: no request | View rights for each entry |
 | Captions editor | `entryId`, optional `assetId` (opens that caption asset) | Whether the user may edit captions of the entry. The KS needs a lifetime for the whole editing session |
 | Recorder | `partnerId` only. The recorder creates the entry | Whether the user may record. Later widgets for the new entry make their own request |

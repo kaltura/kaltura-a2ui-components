@@ -856,7 +856,7 @@
         },
         "playlistId": {
           "$ref": "common_types.json#/$defs/DynamicString",
-          "description": "Manual playlist to play, a string like '1_abc123'. Set exactly one of entryId and playlistId. startTime and clipTo do not apply to a playlist."
+          "description": "Manual playlist to play, a string like '1_abc123'. Set exactly one of entryId and playlistId. startTime, clipFrom and clipTo do not apply to a playlist."
         },
         "autoplay": {
           "$ref": "common_types.json#/$defs/DynamicBoolean",
@@ -870,11 +870,15 @@
         },
         "startTime": {
           "$ref": "common_types.json#/$defs/DynamicNumber",
-          "description": "Seek to this position (seconds) on load."
+          "description": "Start playback at this position (seconds). The whole entry stays available and the timeline shows its full length. Use it for 'start at 30 seconds'. With clipFrom, it counts from the clip start."
+        },
+        "clipFrom": {
+          "$ref": "common_types.json#/$defs/DynamicNumber",
+          "description": "Cut the video so it starts at this position (seconds). The timeline starts at 0 and ends at the clip length. Use it with clipTo to show only a segment, such as the part a flashcard came from. Works only for entries with an HLS or DASH stream."
         },
         "clipTo": {
           "$ref": "common_types.json#/$defs/DynamicNumber",
-          "description": "Stop playback at this position (seconds)."
+          "description": "Cut the video so it ends at this position (seconds). The timeline ends there, or at the clip length when clipFrom is set."
         },
         "aspectRatio": {
           "$ref": "common_types.json#/$defs/DynamicString",
@@ -948,11 +952,11 @@
                     },
                     "startTime": {
                       "type": "number",
-                      "description": "Clip start time in seconds."
+                      "description": "Clip start time in seconds. The player plays only the segment, and its timeline runs from 0 to the clip length. A progressive-only entry (no HLS or DASH stream) is cut at the end only."
                     },
                     "endTime": {
                       "type": "number",
-                      "description": "Clip end time in seconds."
+                      "description": "Clip end time in seconds. Use the segment of the video the card came from."
                     },
                     "title": { "type": "string", "description": "Optional clip title." },
                     "thumbnail": {

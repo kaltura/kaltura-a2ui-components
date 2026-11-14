@@ -34,11 +34,12 @@ Element: `<kaltura-player>`. Needs a KS: Only for protected entries.
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
 | `uiconfId` | integer | yes |  | Player (uiConf) ID. Integer, not a string, not a binding. |
 | `entryId` | string |  |  | Entry to play, a string like '0_abc123'. Set exactly one of entryId and playlistId. |
-| `playlistId` | string |  |  | Manual playlist to play, a string like '1_abc123'. Set exactly one of entryId and playlistId. startTime and clipTo do not apply to a playlist. |
+| `playlistId` | string |  |  | Manual playlist to play, a string like '1_abc123'. Set exactly one of entryId and playlistId. startTime, clipFrom and clipTo do not apply to a playlist. |
 | `autoplay` | boolean |  | `false` | Auto-start playback. Requires muted=true per browser policy. Default: false. |
 | `muted` | boolean |  | `false` | Start muted. Must be true when autoplay is true. Default: false. |
-| `startTime` | number |  |  | Seek to this position (seconds) on load. |
-| `clipTo` | number |  |  | Stop playback at this position (seconds). |
+| `startTime` | number |  |  | Start playback at this position (seconds). The whole entry stays available and the timeline shows its full length. Use it for 'start at 30 seconds'. With clipFrom, it counts from the clip start. |
+| `clipFrom` | number |  |  | Cut the video so it starts at this position (seconds). The timeline starts at 0 and ends at the clip length. Use it with clipTo to show only a segment, such as the part a flashcard came from. Works only for entries with an HLS or DASH stream. |
+| `clipTo` | number |  |  | Cut the video so it ends at this position (seconds). The timeline ends there, or at the clip length when clipFrom is set. |
 | `aspectRatio` | string |  | `"16/9"` | Container aspect ratio (e.g. '16/9', '4/3'). Default: '16/9'. |
 | `entryName` | string |  |  | Optional entry name shown in the player title. |
 | `entryDescription` | string |  |  | Optional entry description shown under the player. HTML tags are stripped. |

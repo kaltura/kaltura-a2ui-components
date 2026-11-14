@@ -16,7 +16,7 @@ export interface PlayerCoreProps {
   uiconfId: number;
   /** Entry to play, such as `0_abc123`. Set this or `playlistId`, not both. */
   entryId?: string;
-  /** Manual playlist to play, such as `1_abc123`. Set this or `entryId`, not both. `startTime` and `clipTo` do not apply. */
+  /** Manual playlist to play, such as `1_abc123`. Set this or `entryId`, not both. `startTime`, `clipFrom` and `clipTo` do not apply. */
   playlistId?: string;
   /** Region code or host-registered environment. Default: the `setRegion` value. */
   region?: string;
@@ -26,9 +26,11 @@ export interface PlayerCoreProps {
   autoplay?: boolean;
   /** Start muted. */
   muted?: boolean;
-  /** Seek to this second on load. */
+  /** Seek to this second on load. The timeline still covers the whole entry. */
   startTime?: number;
-  /** Stop playback at this second. */
+  /** Cut the video to start at this second. The timeline then starts at 0. Needs an HLS or DASH stream. */
+  clipFrom?: number;
+  /** Cut the video to end at this second. The timeline then ends here, or at the clip length with `clipFrom`. */
   clipTo?: number;
   /** Container ratio such as `16/9` (default) or `4/3`. */
   aspectRatio?: string;
@@ -47,6 +49,9 @@ export interface PlayerEmbedProps {
   ks?: string;
   autoplay?: boolean;
   muted?: boolean;
+  /** Seek to this position (seconds) after load. The whole entry stays playable. */
+  startTime?: number;
+  /** Clip parameters in seconds. They cut the stream, so the timeline starts at `seekFrom`. */
   seekFrom?: number;
   clipTo?: number;
   title: string;
@@ -75,7 +80,7 @@ const invalidProp = (p: Pick<PlayerEmbedProps, 'partnerId' | 'uiconfId' | 'entry
  * there is no iframe sandbox (docs/adr/0008).
  */
 export function PlayerEmbed(props: PlayerEmbedProps) {
-  const { partnerId, uiconfId, entryId, playlistId, region, ks, autoplay, muted, seekFrom, clipTo, widget } = props;
+  const { partnerId, uiconfId, entryId, playlistId, region, ks, autoplay, muted, startTime, seekFrom, clipTo, widget } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const invalid = invalidProp(props);
   const refused = invalid ? undefined : refusedIdProp(props);
@@ -122,6 +127,7 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
         return player.loadMedia?.(
           { entryId: entryId ?? '' },
           {
+            ...(startTime !== undefined ? { startTime: Math.round(startTime) } : {}),
             ...(seekFrom !== undefined ? { seekFrom: Math.round(seekFrom) } : {}),
             ...(clipTo !== undefined ? { clipTo: Math.round(clipTo) } : {}),
           },
@@ -145,7 +151,7 @@ export function PlayerEmbed(props: PlayerEmbedProps) {
       destroy();
       container.replaceChildren();
     };
-  }, [partnerId, uiconfId, entryId, playlistId, region, ks, autoplay, muted, seekFrom, clipTo, widget, invalid, refused, reporter]);
+  }, [partnerId, uiconfId, entryId, playlistId, region, ks, autoplay, muted, startTime, seekFrom, clipTo, widget, invalid, refused, reporter]);
 
   if (invalid) return <LoadError widget={widget}>{`Failed to load player: Invalid ${invalid}`}</LoadError>;
   if (refused) return <LoadError widget={widget} code="origin-not-allowed">{`Failed to load player: ${refused} is not allowed`}</LoadError>;
@@ -174,7 +180,8 @@ const PlayerView: FC<PlayerCoreProps> = (props) => {
         ks={props.ks}
         autoplay={props.autoplay}
         muted={props.muted}
-        seekFrom={props.startTime}
+        startTime={props.startTime}
+        seekFrom={props.clipFrom}
         clipTo={props.clipTo}
         title="Kaltura Player v7"
         widget="player"
