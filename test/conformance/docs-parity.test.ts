@@ -36,7 +36,6 @@ describe('CONF-15: URL builders against the Kaltura guides', () => {
 
 describe('CONF-15: Unisphere widget and runtime names against the guide', () => {
   const FILES: Record<string, string> = {
-    KalturaGenie: 'src/core/genie.tsx',
     KalturaContentLab: 'src/core/content-lab.tsx',
     KalturaAgentsWidget: 'src/core/agents-widget.tsx',
     KalturaVodAvatar: 'src/core/vod-avatar.tsx',

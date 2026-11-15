@@ -107,10 +107,14 @@ Each widget sends only the settings its runtime takes. Every widget needs `partn
 
 | Widget | Also needs | Notes |
 |---|---|---|
-| Genie | `uiconfId` | Player uiConf for answers with video |
+| Genie | nothing | `categoryId` scopes the content. `uiconfId` and `language` are accepted and ignored |
 | Content Lab | `uiconfId`, `entryId` | Opens the drawer on that entry. It also loads the `ai-consent` runtime |
 | Agents | nothing | Opens its drawer on load |
 | VOD Avatar | nothing | None |
+
+**One editor at a time.** Content Lab, Agents and VOD Avatar open over the page, so only one is open. A new one closes the open one, and the latest request always wins. They share one Unisphere workspace, so the first editor on a page fixes the account and region for the others. Reload the page to switch account or region.
+
+**Genie and Avatar** use the Unisphere embeds API. Each copy gets its own workspace, so they can share a page with an editor and with each other.
 
 ## Media URLs
 

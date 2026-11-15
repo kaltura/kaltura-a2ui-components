@@ -81,8 +81,27 @@ test.describe('F1: Media Manager workspace config', () => {
 test.describe('QA-03: Unisphere widget config', () => {
   test('QA-03: the loader config has no hard-coded appVersion', async ({ harness: h }) => {
     await h.open();
-    await h.mount('kaltura-genie-widget', { partnerId: 1234567, uiconfId: 2, ks: 'e2e-ks', serverUrl: SERVER_URL });
+    await h.mount('kaltura-agents-widget', { partnerId: 1234567, ks: 'e2e-ks', serverUrl: SERVER_URL });
     await h.page.waitForFunction(() => (window as unknown as { __loaderCfgs?: unknown[] }).__loaderCfgs?.length);
     expect(await h.loaderConfigs()).toEqual([expect.not.objectContaining({ appVersion: expect.anything() })]);
+  });
+});
+
+test.describe('Editors: the latest request wins', () => {
+  test('a second editor closes the first and both use the shared default workspace', async ({ harness: h }) => {
+    await h.open();
+    const config = { partnerId: 1234567, ks: 'e2e-ks', serverUrl: SERVER_URL };
+    await h.mount('kaltura-agents-widget', config);
+    await expect(h.page.locator('#host [id^="unisphere-"]')).toHaveText('manager');
+    await h.mount('kaltura-content-lab', { ...config, uiconfId: 2, entryId: '0_abc123' });
+    await expect(h.page.locator('#host [id^="unisphere-"]').nth(1)).toHaveText('application');
+    const state = await h.page.evaluate(() => ({
+      texts: [...document.querySelectorAll('#host [id^="unisphere-"]')].map((el) => el.textContent),
+      cfgs: (window as unknown as { __loaderCfgs: { appId: string; workspaceName?: string }[] }).__loaderCfgs,
+      options: (window as unknown as { __loaderOptions: unknown[] }).__loaderOptions,
+    }));
+    expect(state.texts[0]).toBe('');
+    expect([new Set(state.cfgs.map((c) => c.appId)).size, state.cfgs.some((c) => 'workspaceName' in c || 'workspace' in c)]).toEqual([1, false]);
+    expect(state.options).toEqual(Array(2).fill({ existsConflictStrategy: 'proxy' }));
   });
 });

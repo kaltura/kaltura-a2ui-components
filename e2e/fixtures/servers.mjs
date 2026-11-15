@@ -29,16 +29,32 @@ const MODULES = {
   codeload: `${pushPwned('loader-module-code-ran')}
 export const loader = async () => { throw new Error('stub'); };
 export const createWorkspace = async () => { throw new Error('stub'); };`,
-  ok: `export const loader = async (cfg) => {
+  ok: `export const loader = async (cfg, options) => {
   (window.__loaderCalls = window.__loaderCalls || []).push(cfg.serverUrl);
   (window.__loaderCfgs = window.__loaderCfgs || []).push(cfg);
+  (window.__loaderOptions = window.__loaderOptions || []).push(options);
+  const sessions = (window.__sessions = window.__sessions || []);
+  const loads = (window.__loads = window.__loads || []);
+  const visuals = (window.__editorVisuals = window.__editorVisuals || []);
   return {
     kill() {},
-    getRuntimeAsync: async () => ({
-      openDrawer() {},
-      openApplication() {},
-      partnerChecks: { onChanges: (listener) => listener({ status: 'loaded', isAvailable: true }) },
-    }),
+    session: { setData: (update) => sessions.push(update()) },
+    loadRuntime: async (widgetName, runtimeName, settings) => {
+      loads.push({ widgetName, runtimeName, settings });
+      return {
+        runtime: {
+          openDrawer() {},
+          openApplication() {},
+          partnerChecks: { onChanges: (listener) => listener({ status: 'loaded', isAvailable: true }) },
+          mountVisual: (visual) => {
+            visuals.push(visual);
+            const el = visual.target.type === 'element' ? document.getElementById(visual.target.elementId) : null;
+            if (el) el.append(Object.assign(document.createElement('div'), { textContent: runtimeName }));
+            return { unsubscribe: () => el?.replaceChildren() };
+          },
+        },
+      };
+    },
   };
 };
 export const createWorkspace = async (cfg) => {
@@ -52,6 +68,12 @@ export const embeds = {
     log.push('workspace');
     return {
       apis: {
+        genieChat: {
+          contained: (p) => {
+            log.push(document.getElementById(p.elementId) ? 'chat-contained' : 'chat-no-element');
+            return { remove: () => log.push('chat-remove') };
+          },
+        },
         genieAvatar: {
           contained: (p) => {
             log.push(document.getElementById(p.elementId) ? 'contained' : 'contained-no-element');

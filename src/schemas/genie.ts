@@ -7,7 +7,7 @@ export const KalturaGenieApi = {
     partnerId: z.number().int().positive(),
     region: z.string().optional(),
     serverUrl: CommonSchemas.DynamicString.optional(),
-    uiconfId: z.number().int().positive(),
+    uiconfId: z.number().int().positive().optional(),
     categoryId: CommonSchemas.DynamicString.optional(),
     language: CommonSchemas.DynamicString.optional(),
     action: CommonSchemas.Action.optional(),

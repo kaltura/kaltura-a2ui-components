@@ -314,7 +314,7 @@
       }
     ],
     "expect": {
-      "selector": "div[id^=\"unisphere-\"]"
+      "selector": "div[id^=\"kaltura-genie-\"]"
     }
   },
   {

@@ -232,7 +232,7 @@ Element: `<kaltura-analytics>`. Needs a KS: Yes.
 | `categoryId` | string |  |  | Optional category ID (digits only, up to 12). Shows the analytics of that category. Wins over reportType. |
 | `playlistId` | string |  |  | Optional playlist ID. Shows the analytics of that playlist. Wins over reportType. |
 | `virtualEventId` | string |  |  | Optional virtual event ID (digits only, up to 12). Shows the analytics of that virtual event. Wins over reportType. |
-| `reportType` | string |  |  | Dashboard view to show when there is no entryId, categoryId, playlistId or virtualEventId. One of engagement, content-interactions, technology, geo-location, contributors, overview, publisher, enduser or live. Default: engagement. |
+| `reportType` | string |  |  | Dashboard view for the whole account. It is ignored when entryId, categoryId, playlistId or virtualEventId is set, so leave those out to switch views. One of: engagement (plays, watch time, drop-off), content-interactions (clicks, hotspots, polls, calls to action), technology (devices, browsers, operating systems), geo-location (countries and regions), contributors (who uploads), overview (account summary, storage, bandwidth and usage), publisher, enduser or live (live streaming). Default: engagement. |
 | `fromDate` | string |  |  | Start of the date range, as YYYY-MM-DD. Needs toDate. Default range: the last 30 days. |
 | `toDate` | string |  |  | End of the date range, as YYYY-MM-DD. Needs fromDate. |
 | `region` | string |  |  | Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. Lowercase letters, digits and hyphens. A region the host app does not allow is refused. sgp2 has no Unisphere host, so Genie, Media Manager, Content Lab, Agents Widget, VOD Avatar, Avatar and Captions Editor refuse it. With serverUrl, both must name the same region. |
@@ -427,8 +427,8 @@ Element: `<kaltura-genie-widget>`. Needs a KS: Yes.
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
 | `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused. |
 | `categoryId` | string |  |  | Optional category ID (digits only, up to 12) to scope the Genie content context. |
-| `language` | string |  |  | UI language code. Default: 'en'. |
-| `uiconfId` | integer | yes |  | Player (uiConf) ID. Genie needs it to start. Integer, not a string, not a binding. |
+| `language` | string |  |  | Optional and ignored. Genie follows its own language setting. |
+| `uiconfId` | integer |  |  | Optional and ignored. Genie no longer needs a player ID. Integer, not a string, not a binding. |
 | `region` | string |  |  | Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. Lowercase letters, digits and hyphens. A region the host app does not allow is refused. sgp2 has no Unisphere host, so Genie, Media Manager, Content Lab, Agents Widget, VOD Avatar, Avatar and Captions Editor refuse it. With serverUrl, both must name the same region. |
 
 A2UI messages, sent after `createSurface`:

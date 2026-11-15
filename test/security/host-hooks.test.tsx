@@ -57,7 +57,7 @@ const CASES: Record<string, () => Promise<Record<string, unknown>>> = {
   },
   'load-failed': async () => {
     loaderModule({
-      get loader() {
+      get embeds() {
         throw new Error(`remote said ${HOSTILE} ${KS}`);
       },
     });
@@ -143,7 +143,7 @@ describe('3.3e: setErrorHandler gets a typed error for each error state', () => 
   it('3.3e: a remote load error is reported without its text', async () => {
     await hooks();
     await CASES['load-failed']();
-    expect(errors).toEqual([{ code: 'load-failed', widget: 'genie', message: 'Failed to load Kaltura Genie' }]);
+    expect(errors).toEqual([{ code: 'load-failed', widget: 'genie', message: 'Failed to load Kaltura Genie: Genie could not start' }]);
   });
 
   it('3.3e: a throwing error handler does not break the error state', async () => {

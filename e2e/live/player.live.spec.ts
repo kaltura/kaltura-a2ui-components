@@ -475,3 +475,46 @@ test('LIVE-21: Agents Widget lists the agents of the partner', async ({ live }) 
   expect(live.consoleErrors).toEqual([]);
   expectNoKsInUrls(live);
 });
+
+// Editors cover the page, so one is open at a time and the latest request wins. Genie uses the embeds API and shares a page with an editor.
+const countOf = (text: string, part: string): number => text.split(part).length - 1;
+const filled = (live: { page: { evaluate: <T>(fn: () => T) => Promise<T> } }) =>
+  live.page.evaluate(() => [...document.querySelectorAll('[id^="unisphere-manager-"]')].map((el) => el.childElementCount > 0));
+
+test('LIVE-24: a second Agents widget replaces the first and loads its agent list', async ({ live }) => {
+  test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
+  await live.useScopedProvider(agentsUserId, async () => mintAgentsKs('setrole:Publisher Administrator,sview:*'));
+  await live.mount('kaltura-agents-widget', { partnerId: agentsPartnerId });
+  await expect.poll(async () => (await filled(live))[0], { timeout: PLAY_TIMEOUT, message: 'the first widget renders' }).toBe(true);
+  await live.mount('kaltura-agents-widget', { partnerId: agentsPartnerId });
+  await expect.poll(() => filled(live), { timeout: PLAY_TIMEOUT, message: 'only the latest widget renders' }).toEqual([false, true]);
+  expect(live.consoleErrors).toEqual([]);
+  expectNoKsInUrls(live);
+});
+
+test('LIVE-25: Genie and the Agents widget share one page', async ({ live }) => {
+  test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
+  await live.useScopedProvider(agentsUserId, async () => mintAgentsKs('setrole:Publisher Administrator,sview:*'));
+  const agentsList = live.page.waitForResponse((r) => r.url() === `${AGENTS_MANAGER}/agent/list`, { timeout: PLAY_TIMEOUT });
+  await live.mount('kaltura-genie-widget', { partnerId: agentsPartnerId, categoryId: '1' });
+  await live.mount('kaltura-agents-widget', { partnerId: agentsPartnerId });
+  await expect.poll(async () => countOf(await live.pageText(), 'Ask me anything'), { timeout: PLAY_TIMEOUT, message: 'Genie shows its UI' }).toBeGreaterThanOrEqual(1);
+  expect((await agentsList).status()).toBe(200);
+  expect(live.consoleErrors).toEqual([]);
+});
+
+test('LIVE-26: editors replace each other, and the latest request is the one that works', async ({ live }) => {
+  test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
+  await live.useScopedProvider(agentsUserId, async () => mintAgentsKs('setrole:Publisher Administrator,sview:*'));
+  const shows = (text: string) => expect.poll(() => live.pageText(), { timeout: PLAY_TIMEOUT, message: `the page shows "${text}"` });
+  await live.mount('kaltura-vod-avatar-wc', { partnerId: agentsPartnerId });
+  await shows('My Avatar Videos').toContain('My Avatar Videos');
+  await live.mount('kaltura-agents-widget', { partnerId: agentsPartnerId });
+  await shows('Agentic Workflows').toContain('Agentic Workflows');
+  expect(await live.pageText()).not.toContain('My Avatar Videos');
+  await live.mount('kaltura-vod-avatar-wc', { partnerId: agentsPartnerId });
+  await shows('My Avatar Videos').toContain('My Avatar Videos');
+  expect(await live.pageText()).not.toContain('Agentic Workflows');
+  expect(live.consoleErrors).toEqual([]);
+  expectNoKsInUrls(live);
+});

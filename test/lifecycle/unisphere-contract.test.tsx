@@ -2,32 +2,25 @@
 // without an error. Names, settings and visual types below follow
 // https://unisphere.nvp1.ovp.kaltura.com/v1/runtime.json.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { URL_A, URL_B, loaderUrl, render } from './harness';
+import { URL_A, URL_B, loaderUrl, render, fakeLoader, type LoadedRuntime, type MountedVisual } from './harness';
 
 type Checks = { status: string; isAvailable: boolean };
-interface Runtime { widgetName: string; runtimeName: string; settings: Record<string, unknown>; visuals: { type: string }[] }
-let configs: { serverUrl: string; runtimes: Runtime[] }[];
+let configs: Record<string, unknown>[];
 let calls: string[];
 let listeners: Array<(checks: Checks) => void>;
+let loads: LoadedRuntime[];
+let visuals: MountedVisual[];
+
+const fake = () => fakeLoader({ log: [], configs, loads, visuals, listeners, calls });
 
 beforeEach(() => {
   vi.resetModules();
   configs = [];
   calls = [];
   listeners = [];
-  vi.doMock(loaderUrl(URL_A), () => ({
-    loader: async (cfg: { serverUrl: string; runtimes: Runtime[] }) => {
-      configs.push(cfg);
-      return {
-        kill: () => {},
-        getRuntimeAsync: async () => ({
-          openDrawer: () => calls.push('openDrawer'),
-          openApplication: (options: unknown) => calls.push(`openApplication ${JSON.stringify(options)}`),
-          partnerChecks: { onChanges: (listener: (checks: Checks) => void) => listeners.push(listener) },
-        }),
-      };
-    },
-  }));
+  loads = [];
+  visuals = [];
+  vi.doMock(loaderUrl(URL_A), fake);
 });
 afterEach(() => {
   document.body.innerHTML = '';
@@ -35,26 +28,17 @@ afterEach(() => {
 });
 
 const props = { partnerId: 1234567, ks: 'ks-1', serverUrl: URL_A };
+/** The first runtime the widget loaded, with the visual it mounted. */
 const runtimeOf = async (module: string, name: string, extra: Record<string, unknown>) => {
   const Component = ((await import(/* @vite-ignore */ module)) as Record<string, never>)[name];
   await render(Component, { ...props, ...extra });
-  return configs[0].runtimes[0];
+  return { ...loads[0], visual: visuals[0] };
 };
 
 describe('Unisphere runtime contract', () => {
-  it('genie: application runtime, page visual, string pid and uiConfId', async () => {
-    const runtime = await runtimeOf('../../src/core/genie', 'GenieCore', { uiconfId: 7654321 });
-    expect([runtime.widgetName, runtime.runtimeName, runtime.visuals[0].type, runtime.settings]).toEqual([
-      'unisphere.widget.genie',
-      'application',
-      'page',
-      { ks: 'ks-1', pid: '1234567', uiConfId: '7654321', kalturaServerURI: 'https://cdnapisec.kaltura.com', language: 'en' },
-    ]);
-  });
-
   it('vod avatar: vod-avatars studio runtime, numeric partnerId, no extra settings', async () => {
     const runtime = await runtimeOf('../../src/core/vod-avatar', 'VodAvatarCore', { entryId: '0_abc' });
-    expect([runtime.widgetName, runtime.runtimeName, runtime.visuals[0].type, runtime.settings]).toEqual([
+    expect([runtime.widgetName, runtime.runtimeName, runtime.visual.type, runtime.settings]).toEqual([
       'unisphere.widget.vod-avatars',
       'studio',
       'application',
@@ -70,7 +54,7 @@ describe('Unisphere runtime contract', () => {
 
   it('agents: manager runtime, drawer visual, regional service URL', async () => {
     const runtime = await runtimeOf('../../src/core/agents-widget', 'AgentsWidgetCore', {});
-    expect([runtime.widgetName, runtime.runtimeName, runtime.visuals[0].type, runtime.settings]).toEqual([
+    expect([runtime.widgetName, runtime.runtimeName, runtime.visual.type, runtime.settings]).toEqual([
       'unisphere.widget.agents',
       'manager',
       'drawer',
@@ -92,7 +76,7 @@ describe('Unisphere runtime contract', () => {
 
   it('content lab: application runtime, drawer visual, schema version 1', async () => {
     const runtime = await runtimeOf('../../src/core/content-lab', 'ContentLabCore', { uiconfId: 7654321, entryId: '0_testentry' });
-    expect([runtime.widgetName, runtime.runtimeName, runtime.visuals[0].type, runtime.settings]).toEqual([
+    expect([runtime.widgetName, runtime.runtimeName, runtime.visual.type, runtime.settings]).toEqual([
       'unisphere.widget.content-lab',
       'application',
       'drawer',
@@ -112,11 +96,11 @@ describe('Unisphere runtime contract', () => {
 
   it('content lab: ai-consent runtime, announcement visual on the body', async () => {
     await runtimeOf('../../src/core/content-lab', 'ContentLabCore', { uiconfId: 7654321, entryId: '0_testentry' });
-    const { widgetName, runtimeName, visuals, settings } = configs[0].runtimes[1] as Runtime & { visuals: { target: unknown }[] };
-    expect([widgetName, runtimeName, visuals, settings]).toEqual([
+    const { widgetName, runtimeName, settings } = loads[1];
+    expect([widgetName, runtimeName, visuals[1], settings]).toEqual([
       'unisphere.widget.content-lab',
       'ai-consent',
-      [{ type: 'announcement', target: { target: 'body' }, settings: {} }],
+      { type: 'announcement', target: { type: 'body' }, settings: {} },
       {
         _schemaVersion: '1',
         ks: 'ks-1',
@@ -156,45 +140,34 @@ describe('Unisphere runtime contract', () => {
   });
 
   it.each([URL_A.replace('/v1', ''), `${URL_A.replace('/v1', '')}/`, `${URL_A}/`])('the loader gets the /v1 form of serverUrl %s', async serverUrl => {
-    const Component = (await import('../../src/core/genie')).GenieCore as never;
-    await render(Component, { ...props, uiconfId: 2, serverUrl });
+    const Component = (await import('../../src/core/vod-avatar')).VodAvatarCore as never;
+    await render(Component, { ...props, serverUrl });
     expect(configs[0].serverUrl).toBe(URL_A);
   });
 
   it('agents: a private-cloud server takes the region set by setRegion', async () => {
     const privateUrl = 'https://unisphere.corp.example/v1';
-    vi.doMock(loaderUrl(privateUrl), () => ({
-      loader: async (cfg: { serverUrl: string; runtimes: Runtime[] }) => {
-        configs.push(cfg);
-        return { kill: () => {}, getRuntimeAsync: async () => ({ openDrawer: () => {} }) };
-      },
-    }));
+    vi.doMock(loaderUrl(privateUrl), fake);
     (await import('../../src/core/unisphere-loader')).setExtraAllowedOrigins(['https://unisphere.corp.example']);
     (await import('../../src/core/region')).setRegion('irp2');
     const Component = (await import('../../src/core/agents-widget')).AgentsWidgetCore as never;
     await render(Component, { ...props, serverUrl: privateUrl });
-    expect(configs[0].runtimes[0].settings.agentsServiceURI).toBe('https://agents-manager.irp2.ovp.kaltura.com/api/v1');
+    expect(loads[0].settings.agentsServiceURI).toBe('https://agents-manager.irp2.ovp.kaltura.com/api/v1');
   });
 });
 
 describe('Unisphere widgets take every host from the region of their serverUrl', () => {
   beforeEach(() => {
-    vi.doMock(loaderUrl(URL_B), () => ({
-      loader: async (cfg: { serverUrl: string; runtimes: Runtime[] }) => {
-        configs.push(cfg);
-        return { kill: () => {}, getRuntimeAsync: async () => ({ openDrawer: () => {} }) };
-      },
-    }));
+    vi.doMock(loaderUrl(URL_B), fake);
   });
 
   it.each([
-    ['../../src/core/genie', 'GenieCore', { uiconfId: 7654321 }, 'https://api.irp2.ovp.kaltura.com'],
     ['../../src/core/vod-avatar', 'VodAvatarCore', { entryId: '0_abc' }, 'https://api.irp2.ovp.kaltura.com'],
     ['../../src/core/content-lab', 'ContentLabCore', { uiconfId: 7654321, entryId: '0_testentry' }, 'https://api.irp2.ovp.kaltura.com'],
     ['../../src/core/agents-widget', 'AgentsWidgetCore', {}, 'https://api.irp2.ovp.kaltura.com'],
   ])('%s: kalturaServerURI follows an irp2 serverUrl while the default region is nvp1', async (module, name, extra, host) => {
     const Component = ((await import(/* @vite-ignore */ module)) as Record<string, never>)[name];
     await render(Component, { ...props, ...extra, serverUrl: URL_B });
-    expect(configs[0].runtimes[0].settings.kalturaServerURI).toBe(host);
+    expect(loads[0].settings.kalturaServerURI).toBe(host);
   });
 });

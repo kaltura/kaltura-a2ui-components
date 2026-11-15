@@ -41,20 +41,67 @@ export async function render(component: unknown, props: Record<string, unknown>)
   };
 }
 
-/** Fake `loader` module. `log` records every call in order. */
-export function fakeLoader(opts: { wait?: Promise<void>; log: string[]; configs: Record<string, unknown>[] }) {
+export interface LoadedRuntime { widgetName: string; runtimeName: string; settings: Record<string, unknown> }
+export interface MountedVisual { type: string; target: unknown; settings: Record<string, unknown> }
+
+/**
+ * Fake `loader` module for the editors. Like the live default workspace, `loader` with `proxy`
+ * hands every call the same workspace, and the visuals live in runtimes it loads.
+ * `log` records the calls in order: `loader n`, `mount n`, `unmount n`.
+ */
+export function fakeLoader(opts: {
+  /** Holds every `loader` call. */
+  wait?: Promise<void>;
+  /** Holds `loader` call n (1 based). */
+  waits?: Record<number, Promise<void>>;
+  /** Holds every `loadRuntime` call. */
+  waitLoad?: Promise<void>;
+  log: string[];
+  configs: Record<string, unknown>[];
+  options?: unknown[];
+  loads?: LoadedRuntime[];
+  visuals?: MountedVisual[];
+  sessions?: unknown[];
+  /** The visual fails to mount, as the runtime reports it. */
+  failMount?: unknown;
+  /** Calls the visual listeners, as the runtime does on `partnerChecks.onChanges`. */
+  listeners?: Array<(checks: { status: string; isAvailable: boolean }) => void>;
+  calls?: string[];
+}) {
+  let mounts = 0;
+  const workspace = {
+    session: { setData: (update: () => unknown) => opts.sessions?.push(update()) },
+    loadRuntime: async (widgetName: string, runtimeName: string, settings: Record<string, unknown>) => {
+      opts.loads?.push({ widgetName, runtimeName, settings });
+      await opts.waitLoad;
+      return {
+        runtime: {
+          openDrawer: () => opts.calls?.push('openDrawer'),
+          openApplication: (options: unknown) => opts.calls?.push(`openApplication ${JSON.stringify(options)}`),
+          partnerChecks: { onChanges: (listener: (checks: { status: string; isAvailable: boolean }) => void) => opts.listeners?.push(listener) },
+          mountVisual: (visual: MountedVisual) => {
+            mounts += 1;
+            const n = mounts;
+            opts.log.push(`mount ${n}`);
+            opts.visuals?.push(visual);
+            return { id: `visual-${n}`, failureReason: opts.failMount, unsubscribe: () => opts.log.push(`unmount ${n}`) };
+          },
+        },
+      };
+    },
+  };
   return {
-    loader: async (cfg: Record<string, unknown>) => {
+    loader: async (cfg: Record<string, unknown>, options?: unknown) => {
       opts.configs.push(cfg);
+      opts.options?.push(options);
       const n = opts.configs.length;
       opts.log.push(`loader ${n}`);
       await opts.wait;
-      return { kill: () => opts.log.push(`kill ${n}`) };
+      await opts.waits?.[n];
+      return workspace;
     },
   };
 }
-
-export interface MountedVisual { type: string; target: string; settings: Record<string, unknown> }
 
 /** Fake `createWorkspace` module. Captures the visuals so a test can click a row. */
 export function fakeWorkspaceModule(opts: {

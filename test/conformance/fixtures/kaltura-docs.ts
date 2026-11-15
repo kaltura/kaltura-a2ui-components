@@ -52,14 +52,6 @@ export interface WidgetRow {
 
 export const WIDGET_ROWS: WidgetRow[] = [
   {
-    component: 'KalturaGenie',
-    guide: 'https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/ (Available widgets)',
-    guideWidget: 'unisphere.widget.genie',
-    guideRuntimes: ['application', 'chat', 'avatar', 'flashcards-tool', 'followups-tool', 'sources-tool'],
-    oursWidget: 'unisphere.widget.genie',
-    oursRuntime: 'application',
-  },
-  {
     component: 'KalturaMediaManager',
     guide: 'https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/ (Available widgets)',
     guideWidget: 'unisphere.widget.media-manager',
