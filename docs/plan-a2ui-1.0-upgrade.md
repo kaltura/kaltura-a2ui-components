@@ -411,7 +411,7 @@ Merged to `main` in PR 61. Released as `v0.7.0`.
 | H2 | Done: [`samples/adk-agent/`](https://github.com/kaltura/a2ui/tree/main/samples/adk-agent) and `scripts/sdk-check.py` in `kaltura/a2ui` (PRs 10 and 11, with an A2A server), both run in CI |
 | H3 | Open: upstream PR a2ui-project/a2ui#4208 |
 | H4 | Done: upstream Show and tell post, discussion 4207 |
-| H6 | Drafted 2026-11-12: needs the owner's go to post |
+| H6 | Done 2026-11-12: status comments posted on #3197, #3158, #4059 and #3812. Nothing new upstream since (checked 2026-11-15) |
 | 0.7.1 | Released 2026-11-12. Attests `common_types.json`. The v3 catalog on `kaltura.github.io/a2ui` is the 0.7.1 asset |
 | 0.7.2 | Released 2026-11-12. Fixes three accessibility bugs a real-model run found (flashcards controls, Slider name, error tokens). The v3 catalog on `kaltura.github.io/a2ui` is the 0.7.2 asset |
 | 0.7.3 | Released 2026-11-13. Renames the player wrapper class to `kaltura-a2ui-player`: the Kaltura Player styles `kaltura-player-container`, which turned our wrapper black once a video played. Found by a live run with the Haiku 5.5 demo. The v3 catalog on `kaltura.github.io/a2ui` is the 0.7.3 asset |
