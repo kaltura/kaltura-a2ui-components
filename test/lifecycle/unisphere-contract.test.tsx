@@ -105,6 +105,7 @@ describe('Unisphere runtime contract', () => {
         _schemaVersion: '1',
         ks: 'ks-1',
         pid: '1234567',
+        uiconfId: '7654321',
         hostApp: 'kaltura-a2ui-components',
         kaltura: { analyticsServerURI: 'analytics.kaltura.com', hostAppName: 0, hostAppVersion: 'unknown' },
       },

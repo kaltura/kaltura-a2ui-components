@@ -427,7 +427,7 @@ Element: `<kaltura-genie-widget>`. Needs a KS: Yes.
 | `partnerId` | integer | yes |  | Kaltura partner (account) ID. Integer, not a string, not a binding. |
 | `serverUrl` | string |  |  | Optional. Leave it out to use the Unisphere host of the app's region. Otherwise a Kaltura Unisphere URL (e.g. 'https://unisphere.nvp1.ovp.kaltura.com/v1'). Only Kaltura hosts are accepted (regions nvp1, irp2, frp2, cap2, syp2). Other hosts are refused. |
 | `categoryId` | string |  |  | Optional category ID (digits only, up to 12) to scope the Genie content context. |
-| `language` | string |  |  | Optional and ignored. Genie follows its own language setting. |
+| `language` | string |  |  | UI language code, for example 'de'. Default: English. |
 | `uiconfId` | integer |  |  | Optional and ignored. Genie no longer needs a player ID. Integer, not a string, not a binding. |
 | `region` | string |  |  | Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. Lowercase letters, digits and hyphens. A region the host app does not allow is refused. sgp2 has no Unisphere host, so Genie, Media Manager, Content Lab, Agents Widget, VOD Avatar, Avatar and Captions Editor refuse it. With serverUrl, both must name the same region. |
 

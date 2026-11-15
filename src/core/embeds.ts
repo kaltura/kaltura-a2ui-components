@@ -17,7 +17,7 @@ interface EmbedsModule {
 export async function createEmbedsWorkspace(
   serverUrl: string,
   isCancelled: () => boolean,
-  config: { apis: { name: string; settings: unknown }[]; session: { ks: string; partnerId: number } },
+  config: { apis: { name: string; settings: unknown }[]; session: { ks: string; partnerId: number }; ui?: { language: string } },
 ): Promise<EmbedsWorkspace | null> {
   const { embeds } = await loadUnisphereModule<EmbedsModule>(serverUrl);
   if (isCancelled()) return null;

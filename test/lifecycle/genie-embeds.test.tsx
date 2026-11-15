@@ -86,10 +86,16 @@ describe('Genie on the embeds API', () => {
     expect((configs[0].apis as { settings: unknown }[])[0].settings).toEqual({ theme: expect.anything(), context: { type: 'category', id: '123' } });
   });
 
-  it('accepts a page that still sends language, and ignores it', async () => {
+  it('sends language as the embeds UI language', async () => {
     const Genie = await genie();
     await render(Genie, { ...base, language: 'fr' });
-    expect(JSON.stringify(configs[0])).not.toContain('language');
+    expect(configs[0].ui).toEqual({ language: 'fr' });
+  });
+
+  it('sends no ui option without a language', async () => {
+    const Genie = await genie();
+    await render(Genie, base);
+    expect(configs[0]).not.toHaveProperty('ui');
   });
 
   it('accepts a page that still sends uiconfId, and ignores it', async () => {
