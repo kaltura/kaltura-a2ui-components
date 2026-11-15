@@ -32,7 +32,15 @@ vi.mock('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js', () => (
   loader: async () => {
     calls.loader++;
     return {
-      kill() {},
+      session: { setData() {} },
+      loadRuntime: async () => ({
+        runtime: {
+          openDrawer() {},
+          openApplication() {},
+          partnerChecks: { onChanges: (listener: (checks: unknown) => void) => listener({ status: 'loaded', isAvailable: true }) },
+          mountVisual: () => ({ id: 'visual-1', unsubscribe() {} }),
+        },
+      }),
       getRuntimeAsync: async () => ({
         openDrawer() {},
         openApplication() {},
@@ -112,9 +120,15 @@ describe('SEC-03: valid props still render every component', () => {
   });
 
   it('SEC-03: valid Unisphere props reach the loader', async () => {
-    const entry = byLabel('Kaltura Genie');
+    const entry = byLabel('Kaltura Content Lab');
     await mount(await entry.load(), entry.valid);
     expect(calls.loader).toBe(1);
+  });
+
+  it('SEC-03: valid Genie props reach the embeds API', async () => {
+    const entry = byLabel('Kaltura Genie');
+    await mount(await entry.load(), entry.valid);
+    expect(calls.embeds).toBe(1);
   });
 });
 
@@ -441,9 +455,9 @@ describe('SEC-03: real A2UI pipeline, bound values resolve before the check', ()
     expect([container.querySelector('.kaltura-load-error'), container.textContent]).toEqual([null, expect.stringContaining('Deck')]);
   });
 
-  it('SEC-03: a Genie widget with a provider KS reaches the loader', async () => {
+  it('SEC-03: a Genie widget with a provider KS reaches the embeds API', async () => {
     await renderSurface({ component: 'KalturaGenie', partnerId: 1, uiconfId: 2, serverUrl: SERVER_URL }, {});
-    expect(calls.loader).toBe(1);
+    expect(calls.embeds).toBe(1);
   });
 });
 

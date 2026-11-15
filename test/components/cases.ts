@@ -21,15 +21,19 @@ export const PAYLOAD = '<img src=x onerror="window.__pwned=1">';
 /** What the fake Unisphere remote did, and how it should fail. */
 export const remote = { log: [] as string[], failWith: null as string | null };
 
+const runtime = () => ({
+  openDrawer: () => {},
+  openApplication: () => {},
+  partnerChecks: { onChanges: (listener: (checks: unknown) => void) => listener({ status: 'loaded', isAvailable: true }) },
+  mountVisual: () => ({ id: 'visual-1', unsubscribe: () => remote.log.push('unmount visual') }),
+  unmountVisual: () => remote.log.push('unmount visual'),
+});
+
 const workspace = (name: string) => ({
   kill: () => remote.log.push(`kill ${name}`),
-  getRuntimeAsync: async () => ({
-    openDrawer: () => {},
-    openApplication: () => {},
-    partnerChecks: { onChanges: (listener: (checks: unknown) => void) => listener({ status: 'loaded', isAvailable: true }) },
-    mountVisual: async () => ({ id: 'visual-1' }),
-    unmountVisual: () => remote.log.push('unmount visual'),
-  }),
+  session: { setData: () => {} },
+  loadRuntime: async () => ({ runtime: runtime() }),
+  getRuntimeAsync: async () => runtime(),
 });
 
 /** Fake module served for the allowed Unisphere loader URL. Call before importing a core. */
@@ -45,7 +49,7 @@ export function installRemote(): void {
       remote.log.push('create');
       return workspace('workspace');
     },
-    // The avatar uses the embeds API.
+    // The avatar and Genie use the embeds API.
     embeds: {
       workspace: async () => {
         if (remote.failWith !== null) throw new Error(remote.failWith);
@@ -53,6 +57,12 @@ export function installRemote(): void {
         return {
           apis: {
             genieAvatar: {
+              contained: () => {
+                remote.log.push('contained');
+                return { remove: () => remote.log.push('remove') };
+              },
+            },
+            genieChat: {
               contained: () => {
                 remote.log.push('contained');
                 return { remove: () => remote.log.push('remove') };
@@ -155,9 +165,10 @@ const widget = (
   remoteFailure: true,
   happy: el => expect(el.querySelector('div[id^="unisphere-"]')).not.toBeNull(),
   effect: () => expect(remote.log).toEqual([kind === 'loader' ? 'loader' : 'create']),
+  // The editors share the default workspace, so closing one only removes its visual.
   afterUnmount: () =>
     expect(remote.log).toEqual(
-      kind === 'loader' ? ['loader', 'kill loader'] : ['create', 'unmount visual', 'kill workspace'],
+      kind === 'loader' ? ['loader', 'unmount visual'] : ['create', 'unmount visual', 'kill workspace'],
     ),
 });
 
@@ -233,8 +244,20 @@ export const CASES: Case[] = [
     effect: () => expect(remote.log).toEqual(['embeds workspace', 'contained']),
     afterUnmount: () => expect(remote.log).toEqual(['embeds workspace', 'contained', 'remove', 'destroy']),
   },
-  widget('genie', 'kaltura-genie-widget', 'KalturaGenie', async () => (await import('../../src/core/genie')).GenieCore as ComponentType<never>, { uiconfId: 2 }),
-  widget('content lab', 'kaltura-content-lab', 'KalturaContentLab', async () => (await import('../../src/core/content-lab')).ContentLabCore as ComponentType<never>, { uiconfId: 2, entryId: '0_abc' }),
+  {
+    ...widget('genie', 'kaltura-genie-widget', 'KalturaGenie', async () => (await import('../../src/core/genie')).GenieCore as ComponentType<never>),
+    // Remote error text is replaced by fixed text, like the avatar.
+    remoteFailure: false,
+    clearsWrapper: true,
+    happy: el => expect(el.querySelector('div[id^="kaltura-genie-"]')).not.toBeNull(),
+    effect: () => expect(remote.log).toEqual(['embeds workspace', 'contained']),
+    afterUnmount: () => expect(remote.log).toEqual(['embeds workspace', 'contained', 'remove', 'destroy']),
+  },
+  {
+    ...widget('content lab', 'kaltura-content-lab', 'KalturaContentLab', async () => (await import('../../src/core/content-lab')).ContentLabCore as ComponentType<never>, { uiconfId: 2, entryId: '0_abc' }),
+    // The editor and its consent runtime each mount a visual.
+    afterUnmount: () => expect(remote.log).toEqual(['loader', 'unmount visual', 'unmount visual']),
+  },
   widget('agents widget', 'kaltura-agents-widget', 'KalturaAgentsWidget', async () => (await import('../../src/core/agents-widget')).AgentsWidgetCore as ComponentType<never>),
   widget('vod avatar', 'kaltura-vod-avatar-wc', 'KalturaVodAvatar', async () => (await import('../../src/core/vod-avatar')).VodAvatarCore as ComponentType<never>, { entryId: '0_abc' }),
   {

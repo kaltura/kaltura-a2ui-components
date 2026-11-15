@@ -77,8 +77,8 @@ test.describe('provider supplies the KS, config has none', () => {
       await h.setKsProvider('sync', KS);
       await h.mount(tag, unisphereConfig);
       await h.settle();
-      // Media Manager calls createWorkspace. The other widgets call loader.
-      const received = JSON.stringify([...(await h.loaderConfigs()), ...(await h.workspaceConfigs())]);
+      // Media Manager calls createWorkspace, Genie calls embeds.workspace. The other widgets call loader.
+      const received = JSON.stringify([...(await h.loaderConfigs()), ...(await h.workspaceConfigs()), ...(await h.embedsConfigs())]);
       expect(received).toContain(KS);
       expect(h.loaderRequests()).toEqual([`${ALLOWED_HOSTS[0]}/v1/loader/index.esm.js`]);
       await expectNoKsInTextOrLogs(h);

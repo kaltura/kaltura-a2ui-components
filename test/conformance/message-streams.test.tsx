@@ -143,7 +143,7 @@ describe('CONF-11: every stream renders its widget through A2uiSurface', () => {
   );
 
   it('CONF-12: the Unisphere widgets start the fake remote once per stream', async () => {
-    const unisphere = STREAMS.filter(stream => stream.expect.selector?.includes('unisphere-'));
+    const unisphere = STREAMS.filter(stream => /unisphere-|kaltura-genie-/.test(stream.expect.selector ?? ''));
     expect(unisphere.map(stream => stream.component)).toEqual([
       'KalturaMediaManager',
       'KalturaGenie',
@@ -155,7 +155,7 @@ describe('CONF-11: every stream renders its widget through A2uiSurface', () => {
     for (const stream of unisphere) {
       remote.log = [];
       await mount(stream.messages);
-      starts.push(remote.log.filter(entry => entry === 'loader' || entry === 'create').length);
+      starts.push(remote.log.filter(entry => entry === 'loader' || entry === 'create' || entry === 'embeds workspace').length);
       act(() => root.unmount());
       root = createRoot(host);
     }

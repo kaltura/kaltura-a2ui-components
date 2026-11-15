@@ -261,9 +261,10 @@
   ],
   "KalturaGenie": [
     {
-      "why": "missing uiconfId",
+      "why": "language is a number",
       "props": {
-        "partnerId": 1
+        "partnerId": 1,
+        "language": 5
       }
     },
     {

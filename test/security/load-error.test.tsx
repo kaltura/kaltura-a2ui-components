@@ -9,7 +9,7 @@ const state = vi.hoisted(() => ({ thrown: undefined as unknown }));
 
 vi.mock('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js', () => {
   const m: Record<string, unknown> = {};
-  for (const k of ['createWorkspace', 'loader']) {
+  for (const k of ['createWorkspace', 'loader', 'embeds']) {
     Object.defineProperty(m, k, {
       enumerable: true,
       get() {
@@ -54,7 +54,7 @@ async function components() {
 }
 
 describe('SEC-06: loader error message must be rendered as text, not HTML', () => {
-  it.each(['MediaManagerCore', 'GenieCore', 'ContentLabCore', 'VodAvatarCore', 'AgentsWidgetCore'])(
+  it.each(['MediaManagerCore', 'ContentLabCore', 'VodAvatarCore', 'AgentsWidgetCore'])(
     'SEC-06: %s: Error.message with <img onerror> creates no element and is logged',
     async name => {
       state.thrown = new Error(PAYLOAD_MSG);
@@ -67,7 +67,7 @@ describe('SEC-06: loader error message must be rendered as text, not HTML', () =
     },
   );
 
-  it.each(['MediaManagerCore', 'GenieCore'])(
+  it.each(['MediaManagerCore'])(
     'SEC-06: %s: non-Error rejection (string) with markup creates no element',
     async name => {
       state.thrown = PAYLOAD_MSG; // `.message` is undefined -> String(err) branch
@@ -78,6 +78,14 @@ describe('SEC-06: loader error message must be rendered as text, not HTML', () =
       expect([container.textContent?.includes('<img'), String(logged.mock.calls.flat().at(-1)).includes(PAYLOAD_MSG)]).toEqual([false, true]);
     },
   );
+
+  it.each([new Error(PAYLOAD_MSG), PAYLOAD_MSG])('SEC-06: GenieCore: remote error %# shows fixed text and is not logged', async thrown => {
+    state.thrown = thrown;
+    const list = await components();
+    const [, Comp, props] = list.find(([n]) => n === 'GenieCore')!;
+    const { container } = await mount(Comp, { ...props });
+    expect([findUnsafe(container), container.textContent, logged.mock.calls.flat().map(String).join().includes(PAYLOAD_MSG)]).toEqual([[], 'Failed to load Kaltura Genie: Genie could not start', false]);
+  });
 
   it('SEC-06: MediaManagerCore: <script> in message creates no <script> element', async () => {
     state.thrown = new Error('<script>window.__pwned=1</script>');

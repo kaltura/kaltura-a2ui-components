@@ -87,8 +87,8 @@ A refused id loads nothing: no script, request or iframe. The component shows `F
 
 | Checked | Components |
 |---|---|
-| `partnerId` and `uiconfId` | Player, Flashcards clips, Recorder, Captions editor, Genie, Content Lab |
-| `partnerId` | Analytics, Media Manager, Avatar, Agents, VOD Avatar, `UnisphereWidgetCore`, Flashcards thumbnails |
+| `partnerId` and `uiconfId` | Player, Flashcards clips, Recorder, Captions editor, Content Lab |
+| `partnerId` | Analytics, Media Manager, Genie, Avatar, Agents, VOD Avatar, `UnisphereWidgetCore`, Flashcards thumbnails |
 
 A refused Flashcards `partnerId` or `uiconfId` affects the clips only. The cards still render. A bad id that fails the usual prop checks still gives `invalid-props`.
 

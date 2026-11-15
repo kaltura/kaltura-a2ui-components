@@ -85,8 +85,9 @@ test.describe('QA-02: CSS tokens', () => {
 // The Unisphere containers keep the class names `kaltura-kaltura-<widget>-container`
 // from the old runtime names. Hosts style them, so they must not change.
 const SERVER_URL = `${ALLOWED_HOSTS[0]}/v1`;
-const UNISPHERE: [tag: string, selector: string][] = [
-  ['kaltura-genie-widget', '.kaltura-kaltura-genie-container'],
+const UNISPHERE: [tag: string, selector: string][] = [['kaltura-genie-widget', '.kaltura-kaltura-genie-container']];
+// These open over the page, so their empty container has no box.
+const OVERLAY: [tag: string, selector: string][] = [
   ['kaltura-content-lab', '.kaltura-kaltura-content-lab-container'],
   ['kaltura-agents-widget', '.kaltura-kaltura-agents-container'],
   ['kaltura-vod-avatar-wc', '.kaltura-kaltura-vod-avatar-container'],
@@ -132,6 +133,12 @@ test.describe('QA-02: Unisphere containers', () => {
         borderTopWidth: '1px',
         borderTopLeftRadius: '17px',
       });
+    });
+  }
+
+  for (const [tag, selector] of OVERLAY) {
+    test(`QA-02: ${selector} has no border box, because it opens over the page`, async ({ harness: h }) => {
+      expect(await container(h, tag, selector)).toMatchObject({ borderTopWidth: '0px' });
     });
   }
 

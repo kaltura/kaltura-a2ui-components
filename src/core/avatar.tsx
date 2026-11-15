@@ -1,11 +1,11 @@
 import { createElement, useContext, useEffect, useRef } from 'react';
 import type { FC } from 'react';
 import { z } from 'zod';
-import { loadUnisphereModule } from './unisphere-loader';
+import { createEmbedsWorkspace, destroyEmbedsWorkspace, teardownSteps } from './embeds';
 import { readColorMode } from './color-mode';
 import { renderLoadError } from './render-load-error';
 import { KalturaFailure, emitEvent, ReporterContext } from './host-hooks';
-import { regionOf, unisphereUrl } from './region';
+import { unisphereUrl } from './region';
 import { KalturaAvatarApi } from '../schemas/avatar';
 import { withValidatedProps } from './validate-props';
 import { withKs } from './ks';
@@ -34,16 +34,6 @@ interface GenieAvatarApi {
   contained?: (params: { elementId: string; autoConnect: boolean }) => { remove?: () => void } | undefined;
   disconnectData?: { onChanges?: (listener: (data: { reason?: unknown } | null) => void) => unknown };
 }
-interface EmbedsWorkspace {
-  apis?: { genieAvatar?: GenieAvatarApi };
-  destroy?: () => void;
-  // The live loader spells it this way.
-  destory?: () => void;
-}
-interface EmbedsModule {
-  embeds?: { workspace?: (config: unknown) => Promise<EmbedsWorkspace> };
-}
-
 /** Disconnect reasons are PascalCase names. Anything else is not passed on. */
 const safeReason = (reason: unknown) => (typeof reason === 'string' && /^[A-Za-z]{1,64}$/.test(reason) ? reason : 'UnknownReason');
 
@@ -56,16 +46,7 @@ const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
     const container = containerRef.current;
     if (!container) return;
     let cancelled = false;
-    // Teardown steps of the remote embed, run newest first. A throwing remote must not break React's unmount.
-    const teardown: Array<() => void> = [];
-    const stop = () =>
-      teardown.splice(0).reverse().forEach(step => {
-        try {
-          step();
-        } catch {
-          // The embed is gone either way.
-        }
-      });
+    const teardown = teardownSteps();
     container.replaceChildren();
     let serverUrl: string;
     try {
@@ -82,30 +63,23 @@ const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
       theme: { type: theme ?? readColorMode('dark') },
     };
 
-    loadUnisphereModule<EmbedsModule>(serverUrl)
-      .then(async ({ embeds }) => {
-        if (cancelled) return;
-        if (typeof embeds?.workspace !== 'function') throw new KalturaFailure('load-failed', 'Unisphere embeds API is missing');
-        const region = regionOf(serverUrl);
-        const workspace = await embeds.workspace({
-          ...(region ? { env: region } : {}),
-          session: { ks, partnerId },
-          apis: [{ name: 'genieAvatar', settings }],
-        });
-        teardown.push(() => (workspace.destroy ?? workspace.destory)?.call(workspace));
+    createEmbedsWorkspace(serverUrl, () => cancelled, { session: { ks, partnerId }, apis: [{ name: 'genieAvatar', settings }] })
+      .then(workspace => {
+        if (!workspace) return;
+        teardown.add(() => destroyEmbedsWorkspace(workspace));
         // The effect was cleaned up while the workspace loaded: nobody else will destroy it.
-        if (cancelled) return stop();
-        const avatar = workspace.apis?.genieAvatar;
+        if (cancelled) return teardown.run();
+        const avatar = workspace.apis?.genieAvatar as GenieAvatarApi | undefined;
         if (typeof avatar?.contained !== 'function') throw new KalturaFailure('load-failed', 'Avatar embed is missing');
         const embed = avatar.contained({ elementId: id, autoConnect: autoConnect === true });
-        teardown.push(() => embed?.remove?.());
+        teardown.add(() => embed?.remove?.());
         const off = avatar.disconnectData?.onChanges?.(data => {
           if (data && !cancelled) emitEvent({ type: 'avatar-disconnected', widget: 'avatar', detail: { reason: safeReason(data.reason), instanceId: id } }, reporter);
         });
-        teardown.push(() => (typeof off === 'function' ? off() : (off as { unsubscribe?: () => void } | undefined)?.unsubscribe?.()));
+        teardown.add(() => (typeof off === 'function' ? off() : (off as { unsubscribe?: () => void } | undefined)?.unsubscribe?.()));
       })
       .catch(err => {
-        stop();
+        teardown.run();
         if (cancelled) return;
         // Remote error text can hold the KS or markup. Show fixed text only.
         renderLoadError(container, LABEL, err instanceof KalturaFailure ? err : new KalturaFailure('load-failed', 'Avatar could not start'), 'avatar', reporter);
@@ -113,7 +87,7 @@ const AvatarView: FC<AvatarCoreProps & { ks: string }> = props => {
 
     return () => {
       cancelled = true;
-      stop();
+      teardown.run();
       container.replaceChildren();
     };
   }, [partnerId, ks, region, serverUrlProp, autoConnect, openingPhrase, captions, theme, reporter]);
