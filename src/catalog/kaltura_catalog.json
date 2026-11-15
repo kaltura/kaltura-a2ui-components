@@ -1196,7 +1196,7 @@
         },
         "language": {
           "$ref": "common_types.json#/$defs/DynamicString",
-          "description": "Optional and ignored. Genie follows its own language setting."
+          "description": "UI language code, for example 'de'. Default: English."
         },
         "uiconfId": {
           "type": "integer",

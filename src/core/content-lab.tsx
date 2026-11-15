@@ -69,6 +69,8 @@ function ContentLabView(props: ContentLabCoreProps) {
             _schemaVersion: '1',
             ks: props.ks,
             pid: String(props.partnerId),
+            // Content Lab 1.45.2 made the runtime reject settings without it.
+            uiconfId: String(props.uiconfId),
             hostApp: 'kaltura-a2ui-components',
             // The runtime rejects an empty version, and the package has no version constant.
             kaltura: { analyticsServerURI: 'analytics.kaltura.com', hostAppName: 0, hostAppVersion: 'unknown' },

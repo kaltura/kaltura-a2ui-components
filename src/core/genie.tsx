@@ -22,7 +22,7 @@ export interface GenieCoreProps {
   uiconfId?: number;
   /** Category that scopes the Genie content. */
   categoryId?: string;
-  /** Optional and ignored. The embeds API has no language setting. */
+  /** UI language code, for example `de`. Default: English. */
   language?: string;
 }
 
@@ -35,7 +35,7 @@ interface GenieChatApi {
 
 function GenieView(props: GenieCoreProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { partnerId, ks, region, serverUrl: serverUrlProp, categoryId } = props;
+  const { partnerId, ks, region, serverUrl: serverUrlProp, categoryId, language } = props;
   const reporter = useContext(ReporterContext);
 
   useEffect(() => {
@@ -62,6 +62,7 @@ function GenieView(props: GenieCoreProps) {
 
     createEmbedsWorkspace(serverUrl, () => cancelled, {
       session: { ks, partnerId },
+      ...(language ? { ui: { language } } : {}),
       apis: [{ name: 'genieChat', settings: { theme: { type: theme }, ...(categoryId ? { context: { type: 'category', id: categoryId } } : {}) } }],
     })
       .then(workspace => {
@@ -86,7 +87,7 @@ function GenieView(props: GenieCoreProps) {
       teardown.run();
       container.replaceChildren();
     };
-  }, [partnerId, ks, region, serverUrlProp, categoryId, reporter]);
+  }, [partnerId, ks, region, serverUrlProp, categoryId, language, reporter]);
 
   return <div ref={containerRef} className="kaltura-kaltura-genie-container" style={{ width: '100%', minHeight: '500px' }} />;
 }

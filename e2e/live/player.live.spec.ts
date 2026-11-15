@@ -73,7 +73,10 @@ class LivePage {
     page.on('websocket', (ws) => this.requests.push(ws.url()));
     // The Analytics app can make the browser ask `https://127.0.0.1/favicon.ico`. Nothing of ours owns it
     // and it holds no KS, so only that one URL is skipped.
-    page.on('console', (m) => m.type() === 'error' && m.location().url !== 'https://127.0.0.1/favicon.ico' && this.consoleErrors.push(this.scrub(m.text())));
+    // Genie logs "Service 'unisphere.widget.genie.thread-id' is not registered" from inside Unisphere. Seen on the
+    // alt environment on 2026-11-12 and on nvp1 on 2026-11-15. Nothing in this repo registers or reads it, and Genie works.
+    const unisphereNoise = /Service 'unisphere\.widget\.genie\.thread-id' is not registered/;
+    page.on('console', (m) => m.type() === 'error' && m.location().url !== 'https://127.0.0.1/favicon.ico' && !unisphereNoise.test(m.text()) && this.consoleErrors.push(this.scrub(m.text())));
     page.on('pageerror', (e) => this.consoleErrors.push(this.scrub(e.message)));
   }
 
@@ -500,6 +503,14 @@ test('LIVE-25: Genie and the Agents widget share one page', async ({ live }) => 
   await live.mount('kaltura-agents-widget', { partnerId: agentsPartnerId });
   await expect.poll(async () => countOf(await live.pageText(), 'Ask me anything'), { timeout: PLAY_TIMEOUT, message: 'Genie shows its UI' }).toBeGreaterThanOrEqual(1);
   expect((await agentsList).status()).toBe(200);
+  expect(live.consoleErrors).toEqual([]);
+});
+
+test('LIVE-27: Genie shows its UI in the language prop', async ({ live }) => {
+  test.skip(!agentsAccount, 'Needs KALTURA_PARTNER_ID, KALTURA_ADMIN_SECRET and KALTURA_ADMIN_USER_ID in .env.');
+  await live.useScopedProvider(agentsUserId, async () => mintAgentsKs('setrole:Publisher Administrator,sview:*'));
+  await live.mount('kaltura-genie-widget', { partnerId: agentsPartnerId, language: 'de' });
+  await expect.poll(() => live.pageText(), { timeout: PLAY_TIMEOUT, message: 'Genie shows German' }).toContain('Frag mich alles');
   expect(live.consoleErrors).toEqual([]);
 });
 

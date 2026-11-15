@@ -107,7 +107,7 @@ Each widget sends only the settings its runtime takes. Every widget needs `partn
 
 | Widget | Also needs | Notes |
 |---|---|---|
-| Genie | nothing | `categoryId` scopes the content. `uiconfId` and `language` are accepted and ignored |
+| Genie | nothing | `categoryId` scopes the content. `language` sets the UI language. `uiconfId` is accepted and ignored |
 | Content Lab | `uiconfId`, `entryId` | Opens the drawer on that entry. It also loads the `ai-consent` runtime |
 | Agents | nothing | Opens its drawer on load |
 | VOD Avatar | nothing | None |
