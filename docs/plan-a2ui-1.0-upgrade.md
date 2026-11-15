@@ -411,9 +411,10 @@ Merged to `main` in PR 61. Released as `v0.7.0`.
 | H2 | Done: [`samples/adk-agent/`](https://github.com/kaltura/a2ui/tree/main/samples/adk-agent) and `scripts/sdk-check.py` in `kaltura/a2ui` (PRs 10 and 11, with an A2A server), both run in CI |
 | H3 | Open: upstream PR a2ui-project/a2ui#4208 |
 | H4 | Done: upstream Show and tell post, discussion 4207 |
-| H6 | Drafted 2026-11-12: needs the owner's go to post |
+| H6 | Done 2026-11-12: status comments posted on #3197, #3158, #4059 and #3812. Nothing new upstream since (checked 2026-11-15) |
 | 0.7.1 | Released 2026-11-12. Attests `common_types.json`. The v3 catalog on `kaltura.github.io/a2ui` is the 0.7.1 asset |
 | 0.7.2 | Released 2026-11-12. Fixes three accessibility bugs a real-model run found (flashcards controls, Slider name, error tokens). The v3 catalog on `kaltura.github.io/a2ui` is the 0.7.2 asset |
 | 0.7.3 | Released 2026-11-13. Renames the player wrapper class to `kaltura-a2ui-player`: the Kaltura Player styles `kaltura-player-container`, which turned our wrapper black once a video played. Found by a live run with the Haiku 5.5 demo. The v3 catalog on `kaltura.github.io/a2ui` is the 0.7.3 asset |
 | 0.7.4 | Released 2026-11-14. Player `startTime` now seeks on load (it was sent as the clip parameter `seekFrom`, which single-flavor entries ignore). New `clipFrom` prop cuts a segment, so the timeline runs 0 to the clip length (needs an HLS or DASH stream). Found by a live run with the Haiku 5.5 demo. The v3 catalog on `kaltura.github.io/a2ui` is the 0.7.4 asset |
 | 0.7.5 | Released 2026-11-15. Genie runs on the Unisphere embeds API (own workspace, `env` from the Unisphere host, `uiconfId` and `language` ignored). Content Lab, Agents widget and VOD Avatar are latest-wins: a new editor closes the open one. Drawer widgets lose the empty box. The v3 catalog on `kaltura.github.io/a2ui` is the 0.7.5 asset |
+| 0.7.6 | Released 2026-11-15. Content Lab sends `uiconfId` to the `ai-consent` runtime, which Content Lab 1.45.2 now requires (unisphere-content-lab#159). Genie sends `language` again, as `ui.language`. The v3 catalog on `kaltura.github.io/a2ui` is the 0.7.6 asset |
