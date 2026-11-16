@@ -1,6 +1,6 @@
 # 0005. Analytics and recorder integration
 
-Status: accepted and implemented. The Recorder script is pinned by path.
+Status: accepted and implemented. The REC-01 part is superseded by [ADR 0011](0011-recorder-in-iframe.md) (0.8.0): the recorder is now a Unisphere frame, not the script below. The REC-01 text is kept as history.
 
 Test IDs: ANA-01, REC-01. Sources are at the end.
 

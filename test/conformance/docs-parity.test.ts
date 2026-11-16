@@ -69,9 +69,9 @@ describe('CONF-15: Unisphere widget and runtime names against the guide', () => 
 });
 
 describe('CONF-15: the Recorder', () => {
-  it('CONF-15: it loads the express-recorder.js script from the host page like the guide, and no divergence is listed', () => {
-    const text = source('src/core/recorder-script.ts');
-    expect([text.includes('/apps/expressrecorder/v2.2.10/express-recorder.js'), source('src/core/recorder.tsx').includes('extwidget'), 'KalturaRecorder:integration' in DOCUMENTED_DIFFERENCES]).toEqual([true, false, false]);
+  it('CONF-15: it frames the pinned recorder-assets loader page and sends the KS by postMessage, never in a URL', () => {
+    const text = source('src/core/recorder.tsx');
+    expect([text.includes('/recorder-assets/${RECORDER_LOADER_VERSION}/assets/loader/loader.html'), text.includes("messageType: 'loadRecorder'"), /[?&]ks=/.test(text)]).toEqual([true, true, false]);
   });
 });
 

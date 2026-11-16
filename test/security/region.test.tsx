@@ -1,6 +1,6 @@
 // Covers: REG-01 (hard-coded US hosts). setRegion maps every host per region.
 // The default (nvp1) hosts are the same as before setRegion existed.
-// The guide lists no regional CDN host: the player and the recorder use the regional web host.
+// The guide lists no regional CDN host: the player uses the regional web host.
 // The KMC uses the kmc host the guide lists.
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { setRegion, type KalturaRegion } from '../../src/adapters/react/index';
@@ -8,7 +8,6 @@ import { playerScriptUrl } from '../../src/core/player-script';
 import { buildThumbnailUrl } from '../../src/core/flashcards';
 import { CaptionsEditorCore } from '../../src/core/captions-editor';
 import { buildAnalyticsUrl } from '../../src/core/analytics';
-import { recorderScriptUrl } from '../../src/core/recorder-script';
 import { mount } from '../helpers/render';
 import { captionsRemote } from '../helpers/captions-remote';
 
@@ -26,7 +25,6 @@ const US = {
     serviceurl: 'https://www.kaltura.com',
   },
   analytics: 'https://kmc.kaltura.com/apps/kmc-analytics/latest/index.html',
-  recorder: 'https://www.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js',
 };
 
 let captions: ReturnType<typeof captionsRemote>;
@@ -50,11 +48,10 @@ async function urls() {
       serviceurl: iframe.getAttribute('data-serviceurl'),
     },
     analytics: buildAnalyticsUrl(),
-    recorder: recorderScriptUrl(),
   };
 }
 
-// api, vod and kmc: kaltura.md API Getting Started §4. web: the regional API host (player, recorder).
+// api, vod and kmc: kaltura.md API Getting Started §4. web: the regional API host (player).
 const REGIONAL: Record<Exclude<KalturaRegion, 'nvp1' | 'sgp2'>, { api: string; vod: string; web: string; kmc: string }> = {
   irp2: { api: 'https://api.irp2.ovp.kaltura.com', vod: 'https://cfvod.irp2.ovp.kaltura.com', web: 'https://api.irp2.ovp.kaltura.com', kmc: 'https://kmc.irp2.ovp.kaltura.com' },
   frp2: { api: 'https://api.frp2.ovp.kaltura.com', vod: 'https://cfvod.frp2.ovp.kaltura.com', web: 'https://api.frp2.ovp.kaltura.com', kmc: 'https://kmc.frp2.ovp.kaltura.com' },
@@ -91,7 +88,6 @@ describe('REG-01: setRegion', () => {
         serviceurl: hosts.api,
       },
       analytics: US.analytics.replace('https://kmc.kaltura.com', hosts.kmc),
-      recorder: US.recorder.replace('https://www.kaltura.com', hosts.web),
     });
   });
 
@@ -101,12 +97,10 @@ describe('REG-01: setRegion', () => {
       playerScriptUrl(1, 2),
       buildThumbnailUrl(clip, 1),
       buildAnalyticsUrl(),
-      recorderScriptUrl(),
     ]).toEqual([
       'https://api.sgp2.ovp.kaltura.com/p/1/embedPlaykitJs/partner_id/1/uiconf_id/2',
       'https://cfvod.sgp2.ovp.kaltura.com/p/1/thumbnail/entry_id/0_abc/width/200/vid_sec/5',
       'https://kmc.sg.kaltura.com/apps/kmc-analytics/latest/index.html',
-      'https://api.sgp2.ovp.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js',
     ]);
   });
 

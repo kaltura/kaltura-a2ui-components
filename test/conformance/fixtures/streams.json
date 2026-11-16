@@ -228,7 +228,7 @@
   },
   {
     "component": "KalturaRecorder",
-    "description": "Recorder container for the Express Recorder script.",
+    "description": "Recorder frame of the Unisphere loader page.",
     "messages": [
       {
         "version": "1.0",
@@ -253,7 +253,7 @@
       }
     ],
     "expect": {
-      "selector": "div[id^=\"kaltura-recorder-\"]"
+      "selector": ".kaltura-recorder-container iframe[title=\"Kaltura recorder\"]"
     }
   },
   {

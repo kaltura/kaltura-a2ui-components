@@ -1,4 +1,4 @@
-// Covers: SEC-14 (iframes granted camera, microphone and display-capture).
+// Covers: SEC-14 (iframes granted camera, microphone and display-capture). Only the recorder frame gets them.
 // The table below is a snapshot of `allow` and `sandbox` per iframe component. Any change
 // to a permission fails here and shows up in review. The player and the flashcards clips
 // build no iframe (docs/adr/0008).
@@ -106,8 +106,10 @@ describe('SEC-14: iframe permissions', () => {
     expect([container.querySelectorAll('iframe').length, container.querySelectorAll('.fake-player-ui').length]).toEqual([0, 1]);
   });
 
-  it('REC-01: the recorder creates no iframe of its own: the Express Recorder script builds its UI in our container', async () => {
-    const { container } = await mount(RecorderCore, { partnerId: 1, uiconfId: 2, ks: 'k' });
-    expect(container.querySelectorAll('iframe').length).toBe(0);
+  it('REC-01: the recorder frame is the only one that gets capture permissions, and it has a sandbox', async () => {
+    expect(await iframeOf(RecorderCore, { partnerId: 1, uiconfId: 2, ks: 'k' })).toEqual({
+      allow: 'camera; microphone; display-capture; fullscreen',
+      sandbox: 'allow-scripts allow-same-origin allow-downloads',
+    });
   });
 });

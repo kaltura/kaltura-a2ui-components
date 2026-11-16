@@ -1,4 +1,4 @@
-import { test as base, expect, type ConsoleMessage, type Page, type Request } from '@playwright/test';
+import { test as base, expect, type ConsoleMessage, type Frame, type Page, type Request } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -17,8 +17,8 @@ interface KsWindow {
 }
 
 const KALTURA_HOST = /^https?:\/\/[^/]*\.kaltura\.com\//;
-const RECORDER_PATH = '/apps/expressrecorder/v2.2.10/express-recorder.js';
-const RECORDER_STUB = readFileSync(resolve(process.cwd(), 'e2e/fixtures/express-recorder-stub.js'), 'utf8');
+const RECORDER_LOADER = /^\/v1\/static\/applications\/recorder\/recorder-assets\/[\d.]+\/assets\/loader\/loader\.html$/;
+const RECORDER_STUB = readFileSync(resolve(process.cwd(), 'e2e/fixtures/recorder-loader-stub.html'), 'utf8');
 const PLAYER_SCRIPT_PATH = /^\/p\/\d+\/embedPlaykitJs\//;
 const PLAYER_STUB = readFileSync(resolve(process.cwd(), 'e2e/fixtures/kaltura-player-stub.js'), 'utf8');
 const EDITOR_DIR = '/apps/captionstudio/v1.3.10/';
@@ -39,8 +39,8 @@ export class Harness {
   readonly consoleText: string[] = [];
   /** What stubbed *.kaltura.com hosts serve. Real Kaltura hosts are never contacted. */
   kalturaMode: LoaderMode = 'ok';
-  /** What the stubbed recorder script URL does: serve the stub, fail, or serve a script with no API. */
-  recorderMode: 'ok' | 'fail' | 'no-api' = 'ok';
+  /** What the stubbed recorder loader page does: answer `recorderInit`, stay silent, or fail to load. */
+  recorderMode: 'ok' | 'silent' | 'fail' = 'ok';
   /** What the stubbed Kaltura Player script URL does: serve the stub, fail, or serve a script with no API. */
   playerMode: 'ok' | 'fail' | 'no-api' = 'ok';
 
@@ -68,16 +68,15 @@ export class Harness {
       });
     });
     await this.page.route(
-      (url) => url.pathname === RECORDER_PATH && KALTURA_HOST.test(url.href),
-      (route) =>
-        this.recorderMode === 'fail'
-          ? route.abort()
-          : route.fulfill({
-              status: 200,
-              contentType: 'text/javascript',
-              headers: { 'Access-Control-Allow-Origin': '*' },
-              body: this.recorderMode === 'ok' ? RECORDER_STUB : '/* no recorder API */',
-            }),
+      (url) => RECORDER_LOADER.test(url.pathname) && KALTURA_HOST.test(url.href),
+      (route) => {
+        if (this.recorderMode === 'fail') return route.abort();
+        return route.fulfill({
+          status: 200,
+          contentType: 'text/html',
+          body: RECORDER_STUB.replace('__SILENT__', String(this.recorderMode === 'silent')),
+        });
+      },
     );
     await this.page.route(
       (url) => PLAYER_SCRIPT_PATH.test(url.pathname) && KALTURA_HOST.test(url.href),
@@ -176,6 +175,28 @@ export class Harness {
     const base = origin === 'A' ? ORIGIN_A : ORIGIN_B;
     const res = await this.page.request.get(`${base}/__log?token=${this.token}`);
     return (await res.json()) as LogEntry[];
+  }
+
+  /** The recorder frames of the page, oldest first. */
+  recorderFrames(): Frame[] {
+    return this.page.frames().filter((frame) => RECORDER_LOADER.test(new URL(frame.url() || 'about:blank').pathname));
+  }
+
+  /** What each recorder frame got from the host: the `loadRecorder` payloads (`config` and `env`). */
+  async recorderLoads(): Promise<Array<{ config: Record<string, unknown>; env: unknown }>> {
+    const loads: Array<{ config: Record<string, unknown>; env: unknown }> = [];
+    for (const frame of this.recorderFrames()) {
+      const received = await frame.evaluate(() => (window as unknown as { __received: Array<{ messageType: string; payload: never }> }).__received).catch(() => []);
+      loads.push(...received.filter((message) => message.messageType === 'loadRecorder').map((message) => message.payload));
+    }
+    return loads;
+  }
+
+  /** Sends a message to the host as the latest recorder frame does. */
+  recorderSays(message: unknown): Promise<void> {
+    const frame = this.recorderFrames().at(-1);
+    if (!frame) throw new Error('no recorder frame');
+    return frame.evaluate((data) => parent.postMessage(data, '*'), message);
   }
 
   /** Page requests that look like a Unisphere loader fetch. */

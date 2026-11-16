@@ -15,7 +15,7 @@ Test IDs: SEC-05 (design), SEC-10 (accepted at first, resolved by [ADR 0008](000
 - The host supplies the KS with `setKsProvider(widget => ks)`. The provider gets the widget name, so it can return a different least-privilege KS per widget.
 - The schemas and the catalog have no `ks` prop (removed in 0.4). The provider is the only source on the A2UI path, so an agent cannot set the KS.
 - The component never mints, stores, logs or renews a KS. A bad value or a failed provider shows `Invalid ks` and never the value.
-- The KS in iframe URLs (SEC-10) was accepted at first, because the guides use it. 0.4 removes it for every widget: Analytics sends it by `postMessage`, the Recorder, Player, Flashcards and Captions editor take it in JavaScript ([ADR 0005](0005-analytics-and-recorder-integration.md), [ADR 0008](0008-in-page-player-and-captions-editor.md)). Keep the expiry short, because that code runs in the page origin.
+- The KS in iframe URLs (SEC-10) was accepted at first, because the guides use it. 0.4 removes it for every widget: Analytics and (from 0.8.0) the Recorder get it by `postMessage` in cross-origin frames. Player, Flashcards and Captions editor take it in JavaScript ([ADR 0005](0005-analytics-and-recorder-integration.md), [ADR 0008](0008-in-page-player-and-captions-editor.md), [ADR 0011](0011-recorder-in-iframe.md)). Keep the expiry short, because that code runs in the page origin.
 - The basic `Image`, `Video` and `AudioPlayer` refuse a URL with `api_v3`, `partnerservices2` or a `ks` parameter or path segment (see `docs/host-api.md`). The real control is that the KS never enters the data model.
 
 ## Consequences

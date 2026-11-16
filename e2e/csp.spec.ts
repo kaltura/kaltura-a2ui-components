@@ -1,5 +1,5 @@
 // The Content Security Policy recommended in docs/host-integration.md: the web
-// component bundle, a chart, flashcards, the Player script, the recorder script and the captions editor
+// component bundle, a chart, flashcards, the Player script, the recorder frame and the captions editor
 // run under it with no violation. A data: media element and a blob: worker are allowed. A script, a media
 // URL and a worker script from elsewhere are blocked. The region table in the same file matches
 // src/core/region.ts.
@@ -42,7 +42,7 @@ recorder.config = { partnerId: 1, uiconfId: 2 };
 document.body.appendChild(recorder);
 `;
 
-const RECORDER_STUB = readFileSync(resolve(process.cwd(), 'e2e/fixtures/express-recorder-stub.js'), 'utf8');
+const RECORDER_STUB = readFileSync(resolve(process.cwd(), 'e2e/fixtures/recorder-loader-stub.html'), 'utf8').replace('__SILENT__', 'false');
 const PLAYER_STUB = readFileSync(resolve(process.cwd(), 'e2e/fixtures/kaltura-player-stub.js'), 'utf8');
 
 const EDITOR_PAGE = `<!doctype html><html lang="en"><body>
@@ -166,12 +166,14 @@ test('CSP: the avatar runs under the recommended policy and never contacts the o
   expect([await violations(page), requests.filter((url) => url.includes('static.avatar')), POLICY.includes('static.avatar')]).toEqual([[], [], false]);
 });
 
-test('CSP: the recorder script loads from the Kaltura host and runs under the recommended policy', async ({ page }) => {
-  await page.route('https://www.kaltura.com/apps/expressrecorder/*/express-recorder.js', (route) =>
-    route.fulfill({ status: 200, contentType: 'text/javascript', body: RECORDER_STUB }),
+test('CSP: the recorder frame loads from the Unisphere host and runs under the recommended policy', async ({ page }) => {
+  await page.route('https://unisphere.nvp1.ovp.kaltura.com/v1/static/applications/recorder/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/html', body: RECORDER_STUB }),
   );
   await page.goto(`${ORIGIN}/recorder`);
-  await expect(page.locator('kaltura-recorder .stub-recorder-ui')).toHaveCount(1);
+  const frame = page.locator('kaltura-recorder iframe[title="Kaltura recorder"]');
+  await expect(frame).toHaveCount(1);
+  await expect.poll(() => page.frames().some((candidate) => candidate.url().includes('/recorder-assets/'))).toBe(true);
   expect(await violations(page)).toEqual([]);
 });
 
@@ -205,7 +207,7 @@ test('the region table in docs/host-integration.md matches src/core/region.ts', 
   const code = KALTURA_REGIONS.map((region) => {
     setRegion(region);
     const hosts = kalturaHosts();
-    return [region, hosts.serviceUrl, hosts.cdn, hosts.recorder, hosts.vod, hosts.kmc];
+    return [region, hosts.serviceUrl, hosts.cdn, hosts.vod, hosts.kmc];
   });
   setRegion('nvp1');
   expect(table).toEqual(code);

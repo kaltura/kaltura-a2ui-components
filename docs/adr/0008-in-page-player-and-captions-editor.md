@@ -7,7 +7,7 @@ Test IDs: SEC-10, SEC-14. Code: `src/core/player-script.ts`, `src/core/player.ts
 ## Context
 
 - Before, the Player, the Flashcards clips and the Captions editor were iframes with the KS in the URL (`ks=` or in the query). A KS in a URL reaches browser history, server and proxy logs, `Referer` headers and screenshots. A host cannot prevent that.
-- Analytics ([ADR 0005](0005-analytics-and-recorder-integration.md)) sends the KS by `postMessage`. The Recorder takes it in the script options. The Unisphere widgets take it in the workspace config. Only these three were left.
+- Analytics ([ADR 0005](0005-analytics-and-recorder-integration.md)) sends the KS by `postMessage`. The Recorder took it in the script options (since 0.8.0 it uses a `postMessage` to its frame, see [ADR 0011](0011-recorder-in-iframe.md)). The Unisphere widgets take it in the workspace config. Only these three were left.
 - The Kaltura guides document the iframe embeds with the KS in the URL. They offer no `postMessage` channel for these embeds.
 
 ## Decision
@@ -47,7 +47,7 @@ The editor has no script loader. It reads its settings from `data-*` attributes 
 
 **Cost: Kaltura code runs in the page origin**
 
-- The Player bundle and the Captions editor page can read the KS and your page. This is the same trade-off as the Express Recorder (ADR 0005) and the Unisphere widgets. The risk moved from URL exposure to script from Kaltura hosts.
+- The Player bundle and the Captions editor page can read the KS and your page. This is the same trade-off as the Unisphere widgets. The risk moved from URL exposure to script from Kaltura hosts.
 - The Captions editor iframe has `allow-same-origin` and `allow-scripts` in its `sandbox`. That is not a security boundary.
 - Use a short-lived USER KS with least privilege ([security/ks.md](../security/ks.md)).
 

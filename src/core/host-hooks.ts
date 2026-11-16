@@ -47,10 +47,14 @@ export type KalturaEvent = { surfaceId?: string } & (
       detail: { reason: string; instanceId: string };
     }
   | {
-      /** The recorder finished an upload. `entryId` is present when the recorder gave a valid one. */
+      /** The recorder finished an upload. `entryId` is the main entry. `entries` is there for a screen plus camera take. */
       type: 'recorder-upload-ended';
       widget: 'recorder';
-      detail: { entryId?: string; instanceId: string };
+      detail: {
+        entryId?: string;
+        entries?: Array<{ entryId: string; source: 'camera' | 'screen'; role: 'primary' | 'secondary' }>;
+        instanceId: string;
+      };
     }
 );
 
@@ -129,7 +133,9 @@ export function emitEvent(event: KalturaEvent, { surfaceId, send }: KalturaRepor
   safely(() => {
     const { entryId, entries } = event.detail as { entryId?: unknown; entries?: Array<{ entryId: unknown }> };
     // The Media Manager selects 5 entries at most.
-    const ids = entries ? { entryIds: entries.map(entry => entry.entryId).filter(isId).slice(0, 5) } : isId(entryId) ? { entryId } : {};
+    // The recorder also sends the main entry, first.
+    const main = event.widget === 'recorder' && isId(entryId) ? { entryId } : {};
+    const ids = entries ? { ...main, entryIds: entries.map(entry => entry.entryId).filter(isId).slice(0, 5) } : isId(entryId) ? { entryId } : {};
     send?.({ widget: event.widget, event: event.type, ...ids });
   });
 }

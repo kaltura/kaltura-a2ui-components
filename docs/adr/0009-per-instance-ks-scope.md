@@ -140,12 +140,12 @@ Every widget except Chart takes an optional `region` prop. The Unisphere widgets
 | Host limit | `setAllowedRegions(rule)`, same rule shape as `setAllowedPartners`. It applies to the default region too. Default: every known code and every registered environment |
 | Unknown name | `origin-not-allowed` with fixed text. The provider, a script, a fetch and an iframe are never reached |
 | In the request | `scope.region` holds the resolved code or environment name. The library has no partner-to-region map, so your backend checks that the partner lives in that region |
-| Hosts | The library computes API, CDN, VOD, KMC and recorder hosts per instance from the resolved region |
+| Hosts | The library computes API, CDN, VOD and KMC hosts per instance from the resolved region |
 | Capabilities | The library does not gate widgets by region |
 | EU | `irp2` is the EU region |
 | `sgp2` | API `api.sgp2.ovp.kaltura.com`, VOD `cfvod.sgp2.ovp.kaltura.com`, KMC `kmc.sg.kaltura.com`. It has no Unisphere host, so the Unisphere widgets refuse it |
 | Captions editor | The editor page runs in the host origin. It loads only if its hash matches a pinned value for the region host. The pinned hosts are `nvp1`, `irp2`, `frp2`, `cap2` and `syp2`. It fails closed in `sgp2` and in every environment |
-| Where checked | `gateProps` in `src/core/validate-props.ts`, before the provider. The Recorder without a provider is checked when it builds the script URL |
+| Where checked | `gateProps` in `src/core/validate-props.ts`, before the provider. The Recorder without a provider is checked when it loads the frame |
 
 #### Environments
 
@@ -160,7 +160,7 @@ setEnvironments({
 | Key | Rule |
 |---|---|
 | `serviceUrl` | Required |
-| `cdn`, `vod`, `kmc`, `recorder` | Optional. Default to `serviceUrl` |
+| `cdn`, `vod`, `kmc` | Optional. Default to `serviceUrl` |
 | `unisphere` | Needed by the Unisphere widgets. Also joins the Unisphere origin allowlist |
 | `agents` | Needed by the Agents Widget. The widget calls `<agents>/api/v1` |
 | Values | Origins only. `http:` is allowed for `localhost` and private IPs only, with a console warning |

@@ -1,16 +1,13 @@
-// REC-01: `<kaltura-recorder>` loads the Express Recorder script in a real browser.
-// The script is the stub in e2e/fixtures/express-recorder-stub.js, served for the
-// real Kaltura URL by Harness.open(). The host supplies the KS with setKsProvider.
+// REC-01: `<kaltura-recorder>` frames the Unisphere recorder loader page in a real browser.
+// The page is the stub in e2e/fixtures/recorder-loader-stub.html, served for the real Unisphere URL
+// by Harness.open(). The host supplies the KS with setKsProvider.
 import { test, expect, type Harness } from './fixtures/harness';
 
 const KS = 'E2E_RECORDER_KS_marker_91c2';
-const SCRIPT_URL = 'https://www.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js';
+const FRAME_URL = /^https:\/\/unisphere\.nvp1\.ovp\.kaltura\.com\/v1\/static\/applications\/recorder\/recorder-assets\/[\d.]+\/assets\/loader\/loader\.html\?parentOrigin=/;
 const CONFIG = { partnerId: 1234567, uiconfId: 7654321 };
 
 interface RecorderWindow {
-  __recorderCreates?: Array<{ id: string; options: Record<string, unknown> }>;
-  __recorderLog?: string[];
-  __recorderEmit(type: string, detail?: unknown): void;
   __events?: unknown[];
   __errors2?: unknown[];
   KalturaA2UIWebComponents: {
@@ -18,10 +15,6 @@ interface RecorderWindow {
     setErrorHandler(handler: (error: unknown) => void): void;
   };
 }
-
-const creates = (h: Harness) => h.page.evaluate(() => (window as unknown as RecorderWindow).__recorderCreates ?? []);
-const log = (h: Harness) => h.page.evaluate(() => (window as unknown as RecorderWindow).__recorderLog ?? []);
-const scriptRequests = (h: Harness) => h.requests.filter((url) => url === SCRIPT_URL);
 
 async function start(h: Harness, config: Record<string, unknown> = CONFIG) {
   await h.open();
@@ -38,135 +31,141 @@ async function start(h: Harness, config: Record<string, unknown> = CONFIG) {
 
 const events = (h: Harness) => h.page.evaluate(() => (window as unknown as RecorderWindow).__events ?? []);
 const errors = (h: Harness) => h.page.evaluate(() => (window as unknown as RecorderWindow).__errors2 ?? []);
+const frames = (h: Harness) => h.page.locator('#host iframe[title="Kaltura recorder"]');
+const ready = async (h: Harness) => expect.poll(async () => (await h.recorderLoads()).length).toBe(1);
 
-test.describe('REC-01: the script and the create call', () => {
-  test('REC-01: one script from the fixed Kaltura URL, the provider KS in the create options, no iframe', async ({ harness: h }) => {
+test.describe('REC-01: the frame and the loadRecorder message', () => {
+  test('REC-01: one frame of the pinned loader page, the KS only in the postMessage', async ({ harness: h }) => {
     await start(h);
-    await expect.poll(async () => (await creates(h)).length).toBe(1);
-    const [created] = await creates(h);
+    await ready(h);
+    const [load] = await h.recorderLoads();
     expect([
-      scriptRequests(h),
-      created.options,
-      await h.page.locator(`#host #${created.id} .stub-recorder-ui`).count(),
-      await h.page.locator('#host iframe').count(),
+      await frames(h).count(),
+      await frames(h).getAttribute('src'),
+      await frames(h).getAttribute('allow'),
+      await frames(h).getAttribute('sandbox'),
+      load,
       await h.providerWidgets(),
     ]).toEqual([
-      [SCRIPT_URL],
-      {
-        ks: KS,
-        serviceUrl: 'https://www.kaltura.com',
-        playerUrl: 'https://cdnapisec.kaltura.com',
-        partnerId: 1234567,
-        uiConfId: 7654321,
-        app: 'a2ui',
-      },
       1,
-      0,
+      expect.stringMatching(FRAME_URL),
+      'camera; microphone; display-capture; fullscreen',
+      'allow-scripts allow-same-origin allow-downloads',
+      {
+        env: 'nvp1',
+        config: {
+          ks: KS,
+          serviceUrl: 'https://www.kaltura.com',
+          playerUrl: 'https://cdnapisec.kaltura.com',
+          partnerId: 1234567,
+          uiConfId: 7654321,
+          recorderConfig: { saveMode: 'kaltura' },
+        },
+      },
       ['recorder'],
     ]);
   });
 
-  test('REC-01: two recorders and a remount load the script once', async ({ harness: h }) => {
+  test('REC-01: the KS is not in the DOM, the frame URL, the events or the console', async ({ harness: h }) => {
     await start(h);
-    await h.mount('kaltura-recorder', CONFIG);
-    await expect.poll(async () => (await creates(h)).length).toBe(2);
-    await h.page.evaluate(() => document.querySelector('kaltura-recorder')?.remove());
-    await h.mount('kaltura-recorder', CONFIG);
-    await expect.poll(async () => (await creates(h)).length).toBe(3);
-    expect([scriptRequests(h).length, await h.page.locator('script[src*="express-recorder"]').count()]).toEqual([1, 1]);
-  });
-
-  test('REC-01: the KS is not in the DOM, the script URL, the events or the console', async ({ harness: h }) => {
-    await start(h);
-    await expect.poll(async () => (await creates(h)).length).toBe(1);
-    await h.page.evaluate(() => (window as unknown as RecorderWindow).__recorderEmit('error', { code: 'X', message: 'bad' }));
-    const everywhere = JSON.stringify([
-      await h.page.content(),
-      h.requests,
-      await events(h),
-      await errors(h),
-      h.consoleText,
-      h.pageErrors,
-    ]);
+    await ready(h);
+    await h.recorderSays({ messageType: 'uploadComplete', payload: JSON.stringify({ entryId: '1_abc12345', source: 'camera' }) });
+    await expect.poll(async () => (await events(h)).length).toBe(1);
+    const everywhere = JSON.stringify([await h.page.content(), h.requests, await events(h), await errors(h), h.consoleText, h.pageErrors]);
     expect(everywhere).not.toContain(KS);
   });
 
   test('REC-01: the optional props reach the recorder', async ({ harness: h }) => {
-    await start(h, { ...CONFIG, entryName: 'Interview', allowVideo: false, maxRecordingTime: 120 });
-    await expect.poll(async () => (await creates(h)).length).toBe(1);
-    expect((await creates(h))[0].options).toMatchObject({ entryName: 'Interview', allowVideo: false, maxRecordingTime: 120 });
+    await start(h, { ...CONFIG, entryName: 'Interview', allowVideo: false, maxRecordingTime: 120, orientation: 'portrait', prompterText: 'Hello' });
+    await ready(h);
+    expect((await h.recorderLoads())[0].config).toMatchObject({
+      entryName: 'Interview',
+      allowVideo: false,
+      maxRecordingTime: 120,
+      recorderConfig: { saveMode: 'kaltura', orientation: 'portrait', prompterText: 'Hello' },
+    });
   });
 });
 
 test.describe('REC-01: lifecycle', () => {
-  test('REC-01: removing the element destroys the recorder and empties it', async ({ harness: h }) => {
+  test('REC-01: removing the element removes the frame', async ({ harness: h }) => {
     await start(h);
-    await expect.poll(() => log(h)).toEqual(['create']);
+    await ready(h);
     await h.page.evaluate(() => document.querySelector('kaltura-recorder')?.remove());
-    await expect.poll(() => log(h)).toEqual(['create', 'destroy']);
-    await expect(h.page.locator('.stub-recorder-ui')).toHaveCount(0);
+    await expect(frames(h)).toHaveCount(0);
   });
 
-  test('REC-01: moving the element keeps one live recorder', async ({ harness: h }) => {
+  test('REC-01: moving the element keeps one frame', async ({ harness: h }) => {
     await start(h);
-    await expect.poll(() => log(h)).toEqual(['create']);
+    await ready(h);
     await h.page.evaluate(() => {
       const el = document.querySelector('kaltura-recorder') as HTMLElement;
       document.body.append(el);
     });
     await h.settle();
-    const live = (await log(h)).filter((entry) => entry === 'create').length - (await log(h)).filter((entry) => entry === 'destroy').length;
-    expect([live, await h.page.locator('.stub-recorder-ui').count()]).toEqual([1, 1]);
+    expect(await h.page.locator('kaltura-recorder iframe[title="Kaltura recorder"]').count()).toBe(1);
   });
 });
 
-test.describe('REC-01: events and errors', () => {
-  test('REC-01: mediaUploadEnded reaches setEventHandler with the entry id', async ({ harness: h }) => {
+test.describe('REC-01: messages from the frame', () => {
+  test('REC-01: uploadComplete reaches setEventHandler with the entry id', async ({ harness: h }) => {
     await start(h);
-    await expect.poll(async () => (await creates(h)).length).toBe(1);
-    const [created] = await creates(h);
-    await h.page.evaluate(() => (window as unknown as RecorderWindow).__recorderEmit('mediaUploadEnded', { entryId: '1_abc12345' }));
+    await ready(h);
+    await h.recorderSays({ messageType: 'uploadComplete', payload: JSON.stringify({ entryId: '1_abc12345', source: 'camera' }) });
+    await expect.poll(async () => (await events(h)).length).toBe(1);
     expect(await events(h)).toEqual([
-      { type: 'recorder-upload-ended', widget: 'recorder', detail: { entryId: '1_abc12345', instanceId: created.id } },
+      { type: 'recorder-upload-ended', widget: 'recorder', detail: { entryId: '1_abc12345', instanceId: expect.stringMatching(/^kaltura-recorder-/) } },
     ]);
   });
 
-  test('REC-01: a remote error becomes a generic code and its text is dropped', async ({ harness: h }) => {
+  test('REC-01: a message with a bad entry id is dropped and other messages are ignored', async ({ harness: h }) => {
     await start(h);
-    await expect.poll(async () => (await creates(h)).length).toBe(1);
-    await h.page.evaluate(() =>
-      (window as unknown as RecorderWindow).__recorderEmit('error', { code: 'NO_MEDIA_DEVICES', message: 'remote <b>text</b>' }),
-    );
-    expect([await errors(h), await h.hostText()]).toEqual([
-      [{ code: 'render-failed', widget: 'recorder', message: 'Recorder error' }],
-      'stub recorder',
-    ]);
+    await ready(h);
+    await h.recorderSays({ messageType: 'uploadComplete', payload: JSON.stringify({ entryId: '<img src=x>' }) });
+    await h.recorderSays({ messageType: 'recordingStarted' });
+    await h.recorderSays({ messageType: 'cameraBlob', payload: 'x' });
+    await h.settle();
+    expect([await events(h), await errors(h)]).toEqual([[], []]);
+  });
+
+  test('REC-01: orientationChanged reshapes the frame', async ({ harness: h }) => {
+    await start(h);
+    await ready(h);
+    const ratio = () => frames(h).evaluate((frame) => (frame as HTMLElement).style.aspectRatio);
+    expect(await ratio()).toBe('800 / 480');
+    await h.recorderSays({ messageType: 'orientationChanged', payload: { orientation: 'portrait' } });
+    await expect.poll(ratio).toBe('480 / 800');
   });
 });
 
 test.describe('REC-01: failures show fixed text', () => {
-  for (const [mode, text] of [
-    ['fail', 'Recorder script failed to load'],
-    ['no-api', 'Recorder API is missing'],
-  ] as const) {
-    test(`REC-01: script ${mode} shows an alert and reports load-failed`, async ({ harness: h }) => {
-      h.recorderMode = mode;
-      await start(h);
-      await expect(h.page.locator('#host [role=alert]')).toHaveText(`Failed to load recorder: ${text}`);
-      expect([await errors(h), await h.page.locator('#host iframe').count()]).toEqual([
-        [{ code: 'load-failed', widget: 'recorder', message: `Failed to load recorder: ${text}` }],
-        0,
-      ]);
-      expect(JSON.stringify([await h.page.content(), h.consoleText])).not.toContain(KS);
-    });
-  }
+  test('REC-01: no recorderInit in 15 s shows an alert and reports load-failed', async ({ harness: h }) => {
+    h.recorderMode = 'silent';
+    await h.page.clock.install();
+    await start(h);
+    await expect(frames(h)).toHaveCount(1);
+    await h.page.clock.fastForward(16_000);
+    await expect(h.page.locator('#host [role=alert]')).toHaveText('Failed to load recorder: Recorder could not start');
+    expect([await errors(h), await frames(h).count()]).toEqual([
+      [{ code: 'load-failed', widget: 'recorder', message: 'Failed to load recorder: Recorder could not start' }],
+      0,
+    ]);
+    expect(JSON.stringify([await h.page.content(), h.consoleText])).not.toContain(KS);
+  });
 
-  test('REC-01: bad props load no script', async ({ harness: h }) => {
+  test('REC-01: bad props load no frame', async ({ harness: h }) => {
     await start(h, { partnerId: -1, uiconfId: 7654321 });
     await h.settle();
-    expect([scriptRequests(h), await h.page.locator('#host [role=alert]').allTextContents()]).toEqual([
-      [],
+    expect([await frames(h).count(), await h.page.locator('#host [role=alert]').allTextContents()]).toEqual([
+      0,
       ['Failed to load recorder: Invalid partnerId'],
     ]);
+  });
+
+  test('REC-01: a region with no Unisphere host loads no frame', async ({ harness: h }) => {
+    await start(h, { ...CONFIG, region: 'sgp2' });
+    await h.settle();
+    expect(await frames(h).count()).toBe(0);
+    await expect(h.page.locator('#host [role=alert]')).toContainText('Failed to load recorder');
   });
 });

@@ -227,8 +227,8 @@ export const CASES: Case[] = [
     invalid: { partnerId: -1, uiconfId: 2, ks: 'ks-1' },
     hostile: { partnerId: 1, uiconfId: 2, ks: PAYLOAD },
     clearsWrapper: true,
-    // The script never loads here (jsdom fetches nothing): the container is ready for it.
-    happy: el => expect(el.querySelector('.kaltura-recorder-container')?.id).toMatch(/^kaltura-recorder-/),
+    // jsdom loads no frame: the frame is there, waiting for the loader page.
+    happy: el => expect(el.querySelector('.kaltura-recorder-container iframe[title="Kaltura recorder"]')).not.toBeNull(),
   },
   {
     name: 'avatar',

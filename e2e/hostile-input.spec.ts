@@ -116,10 +116,8 @@ test.describe('case 5: allowlist control', () => {
   }
 });
 
-test.describe('case 12 and 13: recorder script', () => {
+test.describe('case 12 and 13: recorder frame', () => {
   const srcdoc = "1\" srcdoc=\"<script>parent.__pwned.push('srcdoc')<\\/script>";
-  const created = (h: Harness) =>
-    h.page.evaluate(() => (window as unknown as { __recorderCreates?: unknown[] }).__recorderCreates ?? []);
   const hostileIds: Record<string, Record<string, unknown>> = {
     'partnerId with srcdoc': { partnerId: srcdoc, uiconfId: 7654321 },
     'partnerId with onload': { partnerId: '1" onload="window.__pwned.push(\'onload\')', uiconfId: 7654321 },
@@ -134,7 +132,7 @@ test.describe('case 12 and 13: recorder script', () => {
       await h.mount('kaltura-recorder', { ks: 'DUMMY_KS_NOT_REAL', ...ids });
       await h.settle();
       expect([
-        await created(h),
+        await h.recorderLoads(),
         await h.page.locator('#host iframe, #host img').count(),
         await h.page.locator('#host [role=alert]').allTextContents(),
         await h.pwned(),
@@ -142,12 +140,12 @@ test.describe('case 12 and 13: recorder script', () => {
     });
   }
 
-  test('a ks with markup stays in the create options and adds no element', async ({ harness: h }) => {
+  test('a ks with markup stays in the loadRecorder message and adds no element', async ({ harness: h }) => {
     const ks = `"><img src=x onerror="window.__pwned.push('ks')">`;
     await h.open();
     await h.mount('kaltura-recorder', { partnerId: 1234567, uiconfId: 7654321, ks });
-    await expect.poll(async () => (await created(h)).length).toBe(1);
-    expect([await h.page.locator('#host img').count(), await h.hostText(), await h.pwned()]).toEqual([0, 'stub recorder', []]);
+    await expect.poll(async () => (await h.recorderLoads()).length).toBe(1);
+    expect([await h.page.locator('#host img').count(), await h.hostText(), await h.pwned()]).toEqual([0, '', []]);
   });
 });
 

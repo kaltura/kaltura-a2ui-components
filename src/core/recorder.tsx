@@ -4,20 +4,20 @@ import { renderLoadError } from './render-load-error';
 import { KalturaRecorderApi } from '../schemas/recorder';
 import { checkProps, invalidText, StrictPendingContext, topLevelProps } from './validate-props';
 import { withKs, withKsProp } from './ks';
-import { emitEvent, invalidCode, KalturaFailure, reportError, ReporterContext } from './host-hooks';
-import { resolveRegion } from './region';
+import { emitEvent, invalidCode, KalturaFailure, ReporterContext } from './host-hooks';
+import { regionOf, resolveRegion, unisphereUrl } from './region';
+import { isAllowedServerUrl } from './unisphere-loader';
 import { isEntryId } from './ids';
 import { refusedIdProp } from './allowed-ids';
-import { loadRecorderScript, type ExpressRecorderHandle } from './recorder-script';
 
 export interface RecorderCoreProps {
   /** Kaltura partner (account) ID. */
   partnerId: number;
   /** Kaltura Session. The host KS provider is used first. */
   ks: string;
-  /** Region code or host-registered environment name. Default: the host region. */
+  /** Region code. Default: the host region. A region without a Unisphere host is refused. */
   region?: string;
-  /** Player (uiConf) ID that loads the recorded entry. */
+  /** Player (uiConf) ID that plays the recording back. */
   uiconfId: number;
   /** Name of the new entry. */
   entryName?: string;
@@ -29,109 +29,152 @@ export interface RecorderCoreProps {
   allowScreenShare?: boolean;
   /** Longest recording in seconds. At most 86400. */
   maxRecordingTime?: number;
+  /** Fixes the capture orientation and the frame shape. */
+  orientation?: 'portrait' | 'landscape';
+  /** A script that opens in the teleprompter. */
+  prompterText?: string;
 }
 
 const RUNTIME_SCHEMA = withKsProp(KalturaRecorderApi.schema);
 
-const detailOf = (event: unknown): { entryId?: unknown } => (event as { detail?: object } | null)?.detail ?? {};
+/** Pinned loader page of the `recorder-assets` build. Bump it with a release. */
+const RECORDER_LOADER_VERSION = '1.0.6';
+const LOAD_TIMEOUT_MS = 15_000;
+// The recorder page sizes itself from the frame, so the host sets the shape.
+const SHAPE = {
+  landscape: { aspectRatio: '800 / 480', maxWidth: '800px' },
+  portrait: { aspectRatio: '480 / 800', maxWidth: '480px' },
+} as const;
+type Orientation = keyof typeof SHAPE;
+
+const asOrientation = (value: unknown): Orientation | undefined => (value === 'portrait' || value === 'landscape' ? value : undefined);
+
+interface UploadedEntry {
+  entryId: string;
+  source: 'camera' | 'screen';
+  role: 'primary' | 'secondary';
+}
+
+/**
+ * The `uploadComplete` payload is a JSON string. One loader build sends
+ * `{ entries: [...] }` and an older one sends one entry per message, so both are read.
+ * Only fixed words and valid ids are kept.
+ */
+function uploadedEntries(payload: unknown): UploadedEntry[] {
+  let data: unknown;
+  try {
+    data = typeof payload === 'string' ? JSON.parse(payload) : undefined;
+  } catch {
+    return [];
+  }
+  const list = (data as { entries?: unknown } | null)?.entries;
+  const items = Array.isArray(list) ? list : data && typeof data === 'object' ? [data] : [];
+  return items.flatMap((item: { entryId?: unknown; source?: unknown; role?: unknown } | null): UploadedEntry[] =>
+    item && isEntryId(item.entryId)
+      ? [{ entryId: item.entryId, source: item.source === 'screen' ? 'screen' : 'camera', role: item.role === 'secondary' ? 'secondary' : 'primary' }]
+      : [],
+  );
+}
 
 const RecorderView: FC<RecorderCoreProps> = (props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const strict = useContext(StrictPendingContext);
   const reporter = useContext(ReporterContext);
-  const { partnerId, ks, region, uiconfId, entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime } = props;
+  const { partnerId, ks, region, uiconfId, entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime, orientation, prompterText } = props;
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     // The error goes inside the container, so the shared wrapper is not used here.
-    const optional = { entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime };
+    const optional = { entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime, orientation, prompterText };
     const { invalid, pending } = checkProps(RUNTIME_SCHEMA, { partnerId, ks, region, uiconfId, ...optional }, strict);
-    if (invalid.length) {
-      renderLoadError(container, 'recorder', new KalturaFailure(invalidCode(invalid), invalidText(invalid), topLevelProps(RUNTIME_SCHEMA, invalid)), 'recorder', reporter);
+    const fail = (failure: KalturaFailure) => {
+      renderLoadError(container, 'recorder', failure, 'recorder', reporter);
       return () => {
         container.replaceChildren();
       };
-    }
+    };
+    if (invalid.length) return fail(new KalturaFailure(invalidCode(invalid), invalidText(invalid), topLevelProps(RUNTIME_SCHEMA, invalid)));
     if (pending) return;
     const refused = refusedIdProp({ partnerId, uiconfId });
-    if (refused) {
-      renderLoadError(container, 'recorder', new KalturaFailure('origin-not-allowed', `${refused} is not allowed`), 'recorder', reporter);
-      return () => {
-        container.replaceChildren();
-      };
+    if (refused) return fail(new KalturaFailure('origin-not-allowed', `${refused} is not allowed`));
+
+    // The loader page builds its Unisphere host from a region code, so a custom environment cannot use it.
+    let origin: string;
+    let env: string | undefined;
+    let hosts;
+    try {
+      hosts = resolveRegion(region).hosts;
+      origin = new URL(unisphereUrl(region)).origin;
+      env = isAllowedServerUrl(origin) ? regionOf(origin) : undefined;
+    } catch (err) {
+      return fail(err instanceof KalturaFailure ? err : new KalturaFailure('origin-not-allowed', 'region is not allowed'));
     }
+    if (!env) return fail(new KalturaFailure('origin-not-allowed', 'region has no Unisphere host'));
 
-    let cancelled = false;
-    let recorder: ExpressRecorderHandle | undefined;
-    // The script finds its container by id and builds its own UI inside it.
     const id = `kaltura-recorder-${crypto.randomUUID()}`;
-    container.id = id;
+    const frame = document.createElement('iframe');
+    frame.src = `${origin}/v1/static/applications/recorder/recorder-assets/${RECORDER_LOADER_VERSION}/assets/loader/loader.html?parentOrigin=${encodeURIComponent(window.location.origin)}`;
+    frame.title = 'Kaltura recorder';
+    frame.allow = 'camera; microphone; display-capture; fullscreen';
+    frame.referrerPolicy = 'strict-origin';
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-downloads');
+    const shape = (value: Orientation) => {
+      frame.style.cssText = `display:block;width:100%;border:0;aspect-ratio:${SHAPE[value].aspectRatio};max-width:${SHAPE[value].maxWidth}`;
+    };
+    shape(orientation ?? 'landscape');
+    container.replaceChildren(frame);
 
-    // A throwing remote must not break React's unmount.
-    const destroy = () => {
-      try {
-        recorder?.destroy?.();
-      } catch {
-        // The recorder is gone either way.
-      }
-      recorder = undefined;
+    // The KS goes only to the pinned Unisphere origin and only to our own frame.
+    const config = {
+      ks,
+      serviceUrl: hosts.serviceUrl,
+      playerUrl: hosts.cdn,
+      partnerId,
+      uiConfId: uiconfId,
+      // JSON drops the props that are undefined.
+      ...JSON.parse(JSON.stringify({ entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime })),
+      recorderConfig: { saveMode: 'kaltura', ...JSON.parse(JSON.stringify({ orientation, prompterText })) },
     };
 
-    loadRecorderScript(undefined, region)
-      .then(api => {
-        if (cancelled) return;
-        const { hosts } = resolveRegion(region);
-        recorder = api.create(id, {
-          ks,
-          // The script adds /api_v3 itself.
-          serviceUrl: hosts.serviceUrl,
-          playerUrl: hosts.cdn,
-          partnerId,
-          uiConfId: uiconfId,
-          app: 'a2ui',
-          // JSON drops the props that are undefined.
-          ...JSON.parse(JSON.stringify(optional)),
-        });
-        const instance = recorder?.instance;
-        if (!instance?.addEventListener) throw new Error();
-        // The recorder cannot remove a listener reliably, so late events are dropped here.
-        instance.addEventListener('mediaUploadEnded', event => {
-          if (cancelled) return;
-          const { entryId } = detailOf(event);
-          emitEvent({
-            type: 'recorder-upload-ended',
-            widget: 'recorder',
-            detail: { ...(isEntryId(entryId) ? { entryId } : {}), instanceId: id },
-          }, reporter);
-        });
-        // Remote error text can hold the KS or markup. Never report it.
-        instance.addEventListener('error', () => {
-          if (cancelled) return;
-          reportError('render-failed', 'recorder', 'Recorder error', reporter);
-        });
-      })
-      .catch(err => {
-        if (cancelled) return;
-        // The recorder may have started before the failure. Stop it before the error replaces its UI.
-        destroy();
-        renderLoadError(container, 'recorder', err instanceof KalturaFailure ? err : new KalturaFailure('load-failed', 'Recorder could not start'), 'recorder', reporter);
-      });
+    let ready = false;
+    const timer = setTimeout(() => {
+      if (!ready) fail(new KalturaFailure('load-failed', 'Recorder could not start'));
+    }, LOAD_TIMEOUT_MS);
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== origin || event.source !== frame.contentWindow) return;
+      const data = event.data as { messageType?: unknown; payload?: unknown } | null;
+      if (data === null || typeof data !== 'object') return;
+      if (data.messageType === 'recorderInit') {
+        ready = true;
+        clearTimeout(timer);
+        frame.contentWindow?.postMessage({ messageType: 'loadRecorder', payload: { config, env } }, origin);
+      } else if (data.messageType === 'orientationChanged') {
+        const next = asOrientation((data.payload as { orientation?: unknown } | null)?.orientation);
+        if (next) shape(next);
+      } else if (data.messageType === 'uploadComplete') {
+        const entries = uploadedEntries(data.payload);
+        const primary = entries.find(entry => entry.role === 'primary') ?? entries[0];
+        if (!primary) return;
+        emitEvent({
+          type: 'recorder-upload-ended',
+          widget: 'recorder',
+          detail: { entryId: primary.entryId, ...(entries.length > 1 ? { entries } : {}), instanceId: id },
+        }, reporter);
+      }
+      // Every other message is ignored, including the `cameraBlob` and `screenBlob` fields.
+    };
+    window.addEventListener('message', onMessage);
 
     return () => {
-      cancelled = true;
-      destroy();
+      clearTimeout(timer);
+      window.removeEventListener('message', onMessage);
       container.replaceChildren();
     };
-  }, [partnerId, ks, region, uiconfId, entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime, strict, reporter]);
+  }, [partnerId, ks, region, uiconfId, entryName, allowVideo, allowAudio, allowScreenShare, maxRecordingTime, orientation, prompterText, strict, reporter]);
 
-  return (
-    <div
-      ref={containerRef}
-      className="kaltura-recorder-container"
-      style={{ aspectRatio: '16/9' }}
-    />
-  );
+  return <div ref={containerRef} className="kaltura-recorder-container" />;
 };
 
 export const RecorderCore = withKs('recorder', RecorderView, { schema: KalturaRecorderApi.schema, label: 'recorder' });

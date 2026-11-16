@@ -14,8 +14,6 @@ export interface KalturaHosts {
   vod: string;
   /** KMC analytics app. */
   kmc: string;
-  /** Recorder iframe host. */
-  recorder: string;
 }
 
 const US: KalturaHosts = {
@@ -23,11 +21,10 @@ const US: KalturaHosts = {
   cdn: 'https://cdnapisec.kaltura.com',
   vod: 'https://cfvod.kaltura.com',
   kmc: 'https://kmc.kaltura.com',
-  recorder: 'https://www.kaltura.com',
 };
 
-// Hosts follow the Kaltura firewall guide, and prefer its `.ovp` hosts. The player and the recorder
-// use the API host. KMC hosts use `.ovp`, except sgp2: `kmc.sg.kaltura.com`.
+// Hosts follow the Kaltura firewall guide, and prefer its `.ovp` hosts. The player
+// uses the API host. KMC hosts use `.ovp`, except sgp2: `kmc.sg.kaltura.com`.
 const KMC_HOST: Record<Exclude<KalturaRegion, 'nvp1'>, string> = {
   irp2: 'https://kmc.irp2.ovp.kaltura.com',
   frp2: 'https://kmc.frp2.ovp.kaltura.com',
@@ -62,7 +59,7 @@ export const currentRegion = (): KalturaRegion => region;
 export function kalturaHosts(code: KalturaRegion = region): KalturaHosts {
   if (code === 'nvp1') return US;
   const api = `https://api.${code}.ovp.kaltura.com`;
-  return { serviceUrl: api, cdn: api, vod: `https://cfvod.${code}.ovp.kaltura.com`, kmc: KMC_HOST[code], recorder: api };
+  return { serviceUrl: api, cdn: api, vod: `https://cfvod.${code}.ovp.kaltura.com`, kmc: KMC_HOST[code] };
 }
 
 /**
@@ -76,7 +73,6 @@ export interface KalturaEnvironment {
   cdn?: string;
   vod?: string;
   kmc?: string;
-  recorder?: string;
   /** Unisphere host. Without it the Unisphere widgets refuse this environment. */
   unisphere?: string;
   /** Agents Manager host. Without it the Agents Widget refuses this environment. */
@@ -135,7 +131,6 @@ export function setEnvironments(next: Record<string, KalturaEnvironment> | undef
         cdn: origin('cdn') ?? serviceUrl,
         vod: origin('vod') ?? serviceUrl,
         kmc: origin('kmc') ?? serviceUrl,
-        recorder: origin('recorder') ?? serviceUrl,
       },
       unisphere: origin('unisphere'),
       agents: origin('agents'),
