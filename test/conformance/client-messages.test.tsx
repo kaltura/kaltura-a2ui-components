@@ -5,7 +5,7 @@ import { act } from 'react';
 import type { ActionPayload } from '@a2ui/web_core/v1_0';
 import { CATALOG_REF_ID, loadCatalog, newAjv, readJson, SCHEMAS_V1_0 } from './helpers';
 import { URL_A, loaderUrl, fakeWorkspaceModule, type MountedVisual } from '../lifecycle/harness';
-import { recorderRemote, type RecorderRemote } from '../helpers/recorder-remote';
+import { recorderFrame, type RecorderFrame } from '../helpers/recorder-frame';
 import { avatarRemote, LOADER_URL as AVATAR_LOADER_URL } from '../helpers/avatar-remote';
 import type { KalturaErrorCode } from '../../src/core/host-hooks';
 
@@ -47,12 +47,12 @@ describe('CONF-18: toClientError output matches the renderer_to_agent schema', (
 
 describe('CONF-18: a captured action matches the renderer_to_agent schema', () => {
   let actions: ActionPayload[];
-  let remote: RecorderRemote & { restore: () => void };
+  let remote: RecorderFrame;
 
   beforeEach(() => {
     vi.resetModules();
     actions = [];
-    remote = recorderRemote();
+    remote = recorderFrame();
   });
   afterEach(() => {
     remote.restore();
@@ -77,7 +77,7 @@ describe('CONF-18: a captured action matches the renderer_to_agent schema', () =
   it('CONF-18: recorder-upload-ended', async () => {
     await surface([{ id: 'root', component: 'KalturaRecorder', partnerId: 1, uiconfId: 2, action: ACTION }]);
     await remote.ready();
-    act(() => remote.emit('mediaUploadEnded', { entryId: '0_abc123' }));
+    act(() => remote.uploaded({ entryId: '0_abc123', source: 'camera' }));
     check();
   });
 

@@ -1,0 +1,15 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Recorder loader stub</title>
+<p class="stub-recorder-ui">stub recorder</p>
+<script>
+  // Stand-in for the Unisphere recorder loader page (recorder-assets/<version>/assets/loader/loader.html).
+  // Like the real page: it tells its parent `recorderInit`, then keeps what the parent posts back.
+  window.__received = [];
+  var parentOrigin = new URLSearchParams(location.search).get('parentOrigin');
+  addEventListener('message', function (event) {
+    if (event.source === parent && event.origin === parentOrigin) window.__received.push(event.data);
+  });
+  // The harness replaces the placeholder: the 'silent' mode never says it is ready.
+  if (!__SILENT__) parent.postMessage({ messageType: 'recorderInit' }, parentOrigin);
+</script>

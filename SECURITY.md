@@ -37,7 +37,7 @@ Agent output is untrusted input. Every A2UI message and every prop value can be 
 | Host app | The Kaltura Session (KS), the `serverUrl` allowlist, the region, the media URL list, the CSP, which catalog is registered | Puts the KS in agent output or the data model. Adds an origin it does not trust to run code in its page |
 | Agent | Component types and props, within the schema | Sets the KS, an origin, a region or a handler. It cannot: those are host functions, not props |
 | This package | Validating every prop before use, rendering errors as plain text, blocking unlisted origins and URLs | Mints, stores, logs or renews a KS |
-| Kaltura services | The Analytics page in its iframe, the Player script, the Captions editor page, the Express Recorder script and the Unisphere modules. All but Analytics run in your page origin | |
+| Kaltura services | The Analytics page in its iframe, the Player script, the Captions editor page, the Express Recorder frame and the Unisphere modules. The Player, Captions editor and Unisphere modules run in your page origin. Analytics and the recorder run in cross-origin frames | |
 
 The host controls are in [docs/host-integration.md](docs/host-integration.md):
 
@@ -54,9 +54,9 @@ What the package does on its own:
 - Props with an array or record over 10,000 items are refused before parsing. Zod 3 spends memory on every bad item before it checks size ([GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5)).
 - Markdown is sanitised in Flashcards and in the basic Text. The basic Text uses the renderer you put in `MarkdownContext`, then our sanitiser. Images in markdown load only from the hosts the basic Image allows. `openUrl` opens `https:` URLs only.
 - The basic Image, Video and AudioPlayer load only Kaltura URLs and `setExtraMediaOrigins` origins. They refuse URLs with `api_v3`, `partnerservices2` or a `ks` parameter or path segment. The real control is that the KS never enters the data model.
-- The KS is not in the script or iframe URL we build for the Player, flashcard clips, recorder, Analytics or Unisphere widgets. The Player, flashcard clips, Captions editor and recorder get it in JavaScript and run in your page origin ([ADR 0008](docs/adr/0008-in-page-player-and-captions-editor.md)). Redact URLs and console text in CSP reports ([host-integration.md](docs/host-integration.md#rollout)).
+- The KS is not in the script or iframe URL we build for the Player, flashcard clips, recorder, Analytics or Unisphere widgets. The Player, flashcard clips and Captions editor get it in JavaScript and run in your page origin. The recorder gets it by `postMessage` in a cross-origin frame ([ADR 0011](docs/adr/0011-recorder-in-iframe.md)) ([ADR 0008](docs/adr/0008-in-page-player-and-captions-editor.md)). Redact URLs and console text in CSP reports ([host-integration.md](docs/host-integration.md#rollout)).
 - Remote Kaltura code is pinned where Kaltura allows it. Versions, integrity and what you trust: [host-integration.md](docs/host-integration.md#remote-code-from-kaltura).
-- The Captions editor frame is a same-origin blob frame, so your page's Permissions-Policy decides what it can use. Send `camera=(), microphone=(), display-capture=()` to block them. The recorder is a script in your page. It asks the browser for camera and microphone itself.
+- The Captions editor frame is a same-origin blob frame, so your page's Permissions-Policy decides what it can use. Send `camera=(), microphone=(), display-capture=()` to block them. The recorder frame has `allow="camera; microphone; display-capture; fullscreen"`, so the same header blocks it unless you delegate those to the Unisphere origin ([host-integration.md](docs/host-integration.md#recorder-permissions)).
 - With an `action` prop, a component tells the agent about its errors and events. That context holds fixed names, codes and checked entry ids only, never the KS or text from a remote service or the page ([docs/host-api.md](docs/host-api.md#agent-feedback)).
 - CSV downloads neutralise spreadsheet formulas.
 

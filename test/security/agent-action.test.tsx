@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act } from 'react';
 import type { ActionPayload } from '@a2ui/web_core/v1_0';
 import { URL_A, loaderUrl, fakeWorkspaceModule, type MountedVisual } from '../lifecycle/harness';
-import { recorderRemote, type RecorderRemote } from '../helpers/recorder-remote';
+import { recorderFrame, type RecorderFrame } from '../helpers/recorder-frame';
 import { avatarRemote, LOADER_URL as AVATAR_LOADER_URL } from '../helpers/avatar-remote';
 import { playerRemote, ERROR_EVENT } from '../helpers/player-remote';
 import type { KalturaError, KalturaEvent } from '../../src/core/host-hooks';
@@ -18,14 +18,14 @@ const PLAYER = { id: 'root', component: 'KalturaPlayer', partnerId: 1, uiconfId:
 let actions: ActionPayload[];
 let errors: KalturaError[];
 let events: KalturaEvent[];
-let remote: RecorderRemote & { restore: () => void };
+let remote: RecorderFrame;
 
 beforeEach(() => {
   vi.resetModules();
   actions = [];
   errors = [];
   events = [];
-  remote = recorderRemote();
+  remote = recorderFrame();
 });
 afterEach(() => {
   remote.restore();
@@ -125,11 +125,14 @@ describe('F29: errors reach the agent as an action', () => {
     expect(leaks()).toEqual([false, false, false, false]);
   });
 
-  it('F29: a recorder error with hostile text sends the fixed code only', async () => {
+  it('F29: a recorder that never starts sends the fixed code only', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     await surface([{ id: 'root', component: 'KalturaRecorder', partnerId: 1, uiconfId: 2, action: ACTION }]);
-    await remote.ready();
-    act(() => remote.emit('error', { message: `${HOSTILE} ${KS}` }));
-    expect([actions.map(a => [a.context.event, a.context.code]), ...leaks()]).toEqual([[['error', 'render-failed']], false, false, false, false]);
+    await act(async () => {
+      vi.advanceTimersByTime(15_000);
+    });
+    vi.useRealTimers();
+    expect([actions.map(a => [a.context.event, a.context.code]), ...leaks()]).toEqual([[['error', 'load-failed']], false, false, false, false]);
   });
 
   it.each([
@@ -146,18 +149,9 @@ describe('F29: events reach the agent as an action', () => {
   it('F29: a recorder upload sends the checked entryId and drops a bad one', async () => {
     await surface([{ id: 'root', component: 'KalturaRecorder', partnerId: 1, uiconfId: 2, action: ACTION }]);
     await remote.ready();
-    act(() => remote.emit('mediaUploadEnded', { entryId: '0_abc123' }));
-    act(() => remote.emit('mediaUploadEnded', { entryId: HOSTILE }));
-    expect([actions.map(a => [a.context.event, a.context.entryId]), ...leaks()]).toEqual([
-      [
-        ['recorder-upload-ended', '0_abc123'],
-        ['recorder-upload-ended', undefined],
-      ],
-      false,
-      false,
-      false,
-      false,
-    ]);
+    act(() => remote.uploaded({ entryId: '0_abc123' }));
+    act(() => remote.uploaded({ entryId: HOSTILE }));
+    expect([actions.map(a => [a.context.event, a.context.entryId]), ...leaks()]).toEqual([[['recorder-upload-ended', '0_abc123']], false, false, false, false]);
   });
 
   it('F29: a media selection sends the entry id, never the remote name', async () => {
@@ -173,7 +167,7 @@ describe('F29: events reach the agent as an action', () => {
   it('F29: the host event handler gets the surfaceId', async () => {
     await surface([{ id: 'root', component: 'KalturaRecorder', partnerId: 1, uiconfId: 2 }]);
     await remote.ready();
-    act(() => remote.emit('mediaUploadEnded', { entryId: '0_abc123' }));
+    act(() => remote.uploaded({ entryId: '0_abc123' }));
     expect(events.map(e => e.surfaceId)).toEqual(['s']);
   });
 

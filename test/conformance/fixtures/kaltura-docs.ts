@@ -5,7 +5,7 @@
 //   Player        https://kaltura.md/KALTURA_PLAYER_EMBED_GUIDE/
 //   Captions      https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/
 //   Analytics     https://kaltura.md/KALTURA_ANALYTICS_EMBED_API/
-//   Recorder      https://kaltura.md/KALTURA_EXPRESS_RECORDER_API/
+//   Recorder      https://kaltura.md/KALTURA_EXPRESS_RECORDER_API/ (old script guide; the code uses the Unisphere frame, ADR 0011)
 //   Unisphere     https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/
 //   Session (KS)  https://kaltura.md/KALTURA_SESSION_GUIDE/
 // The Unisphere widget and runtime names match the manifest at

@@ -333,6 +333,8 @@ Element: `<kaltura-recorder>`. Needs a KS: Yes.
 | `allowScreenShare` | boolean |  |  | Allow screen recording. |
 | `maxRecordingTime` | integer |  |  | Longest recording in seconds. At most 86400. |
 | `region` | string |  |  | Optional. The Kaltura region of this widget's account: nvp1 (US), irp2 (EU), frp2 (DE), cap2 (CA), syp2 (AP), sgp2 (SG), or a name the host app defined. Leave it out to use the app's region. Lowercase letters, digits and hyphens. A region the host app does not allow is refused. sgp2 has no Unisphere host, so Genie, Media Manager, Content Lab, Agents Widget, VOD Avatar, Avatar and Captions Editor refuse it. With serverUrl, both must name the same region. |
+| `orientation` | "portrait" / "landscape" |  |  | Optional. Fixes the capture orientation and hides the user's control. Use portrait for vertical video. Leave it out to let the user choose. |
+| `prompterText` | string |  |  | Optional. A script that opens in the recorder's teleprompter. The user can edit it. Never invent one. |
 
 A2UI messages, sent after `createSurface`:
 

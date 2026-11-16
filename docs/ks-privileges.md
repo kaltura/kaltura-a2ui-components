@@ -23,7 +23,7 @@ Mint against the API of `request.scope.region`. It is a region code or the name 
 | `KalturaMediaManager` | `media-manager` | USER | Read-only select mode: content browsing. Manage mode with uploads: explicit content creation (`baseEntry`, `uploadToken`, `categoryEntry`, `category` access). Mint a USER KS with these rights | [Media Manager guide](https://kaltura.md/KALTURA_MEDIA_MANAGER_API/) |
 | `KalturaAnalytics` | `analytics` | ADMIN | Use an ADMIN KS (type=2) whose user has an analytics role. Narrow it with `setrole` and `iprestrict`, keep the expiry short and keep it off agent output | [Analytics guide](https://kaltura.md/KALTURA_ANALYTICS_EMBED_API/) |
 | `KalturaCaptionsEditor` | `captions-editor` | USER | Edit rights on the entry's caption assets. Set the expiry to cover the whole editing session. The editor does not renew the KS | [Captions guide](https://kaltura.md/KALTURA_CAPTIONS_EDITOR_API/) |
-| `KalturaRecorder` | `recorder` | USER | `editadmintags:*` | [Express Recorder guide](https://kaltura.md/KALTURA_EXPRESS_RECORDER_API/) |
+| `KalturaRecorder` | `recorder` | USER | `editadmintags:*` | Required. Checked live: without it the recorder shows "Upload failed" and sends no event |
 | `KalturaGenie` | `genie` | USER | `setrole:PLAYBACK_BASE_ROLE`, `sview:*`. To limit results to a category, add `enableentitlement` and `privacycontext` | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
 | `KalturaContentLab`, `KalturaAgentsWidget` | `content-lab`, `agents-widget` | USER | The privileges depend on the services the runtime calls. Mint `setrole:PLAYBACK_BASE_ROLE` and add only what the widget needs | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
 | `KalturaVodAvatar` | `vod-avatar` | USER | The privileges depend on the services the widget calls. Add only what it needs | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
@@ -36,7 +36,7 @@ Mint against the API of `request.scope.region`. It is a region code or the name 
 |---|---|
 | Player, flashcard clips | In the player config of the `embedPlaykitJs` script, with `useHeaderForKs: true`, which runs in your page. Your KS is in no URL. Kaltura's HLS manifest does carry its own token in subtitle URLs. It covers only caption serving for that entry and lasts up to 24 hours ([ADR 0008](adr/0008-in-page-player-and-captions-editor.md#captions-in-the-hls-manifest)). Every script on the page can read your KS. See [ADR 0008](adr/0008-in-page-player-and-captions-editor.md) |
 | Captions editor | In `data-*` attributes on a same-origin iframe (its page is loaded from a blob URL). The KS is in no script or iframe URL. The editor runs in your page origin and can read it. See [ADR 0008](adr/0008-in-page-player-and-captions-editor.md) |
-| Recorder | In the `create` options of the Express Recorder script, which runs in your page. The KS is visible to every script on that page. See [ADR 0005](adr/0005-analytics-and-recorder-integration.md) |
+| Recorder | In a `postMessage` to the Kaltura Express Recorder frame (Unisphere), never in the URL. The frame is cross-origin, so page scripts cannot read it from there. See [ADR 0011](adr/0011-recorder-in-iframe.md) |
 | Analytics | `postMessage` (`init`, then `updateConfig`) to the Kaltura Analytics origin only. Never in the iframe URL. The KS must belong to an admin user that has a role. See [ADR 0005](adr/0005-analytics-and-recorder-integration.md) |
 | Unisphere widgets | In the workspace config, in page memory |
 

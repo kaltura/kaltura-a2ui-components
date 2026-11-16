@@ -65,7 +65,7 @@ setKsProvider(widget => (widget === 'analytics' ? session.adminKs : session.user
 setRegion('irp2'); // nvp1 (default), irp2, frp2, cap2, syp2, sgp2
 ```
 
-It changes every Kaltura host the components build: player, flashcard clips and thumbnails, captions editor, Analytics and recorder. Unisphere widgets use the Unisphere host of the region when the agent sets no `serverUrl`. Unknown codes throw. The host table and the `sgp2` note: [host-api.md](host-api.md#regions).
+It changes every Kaltura host the components build: player, flashcard clips and thumbnails, captions editor and Analytics. Unisphere widgets and the recorder use the Unisphere host of the region when the agent sets no `serverUrl`. Unknown codes throw. The host table and the `sgp2` note: [host-api.md](host-api.md#regions).
 
 A widget can use another region than the default: the agent sets its `region`. To keep it on your regions, set `setAllowedRegions(['irp2'])`. For localhost, an IP or a private cloud, register [environments](host-api.md#environments) and add their hosts to your CSP. `http:` environments send the KS without encryption: use them for local development only.
 
@@ -197,7 +197,7 @@ style-src 'self' 'unsafe-inline' https://www.kaltura.com;
 font-src https://www.kaltura.com;
 img-src 'self' data: https://*.kaltura.com;
 media-src 'self' blob: data: https://*.kaltura.com;
-frame-src blob: https://kmc.kaltura.com;
+frame-src blob: https://kmc.kaltura.com https://unisphere.nvp1.ovp.kaltura.com/v1/ https://unisphere.irp2.ovp.kaltura.com/v1/ https://unisphere.frp2.ovp.kaltura.com/v1/ https://unisphere.cap2.ovp.kaltura.com/v1/ https://unisphere.syp2.ovp.kaltura.com/v1/;
 connect-src 'self' https://cdn.jsdelivr.net https://*.kaltura.com https://api.avatar.us.kaltura.ai;
 object-src 'none';
 base-uri https://www.kaltura.com;
@@ -206,13 +206,13 @@ form-action 'none';
 
 | Directive | Why |
 |---|---|
-| `script-src` | Your own script, the Kaltura scripts and the Unisphere loaders (only the regions you use). Sources have a path, so the JSONP endpoint of `api_v3` on the same host stays blocked. `/apps/` is the recorder script and the captions editor page. `/p/` is the Player script (`embedPlaykitJs`, also used by the Flashcards clips and by the recorder and the editor). `/v1/` is Unisphere, and the avatar loads through it. If you load the bundle from the CDN, add `https://cdn.jsdelivr.net` and use SRI |
+| `script-src` | Your own script, the Kaltura scripts and the Unisphere loaders (only the regions you use). Sources have a path, so the JSONP endpoint of `api_v3` on the same host stays blocked. `/apps/` is the captions editor page. `/p/` is the Player script (`embedPlaykitJs`, also used by the Flashcards clips and by the editor). `/v1/` is Unisphere, and the avatar loads through it. If you load the bundle from the CDN, add `https://cdn.jsdelivr.net` and use SRI |
 | `worker-src` | `blob:` for the timer worker of the Player analytics (KAVA). Do not add `blob:` to `script-src` |
-| `style-src` | `'unsafe-inline'` for the one `<style>` element the bundle injects, which has no nonce. All other styling of our components goes through the CSSOM, which CSP allows. The recorder and the captions editor need `'unsafe-inline'` too. The Kaltura host: the captions editor page loads its stylesheets from it. A stricter variant: [Style tiers](#style-tiers) |
+| `style-src` | `'unsafe-inline'` for the one `<style>` element the bundle injects, which has no nonce. All other styling of our components goes through the CSSOM, which CSP allows. The captions editor needs `'unsafe-inline'` too. The Kaltura host: the captions editor page loads its stylesheets from it. A stricter variant: [Style tiers](#style-tiers) |
 | `font-src` | The captions editor page loads its fonts from the `serviceUrl` host |
-| `img-src`, `media-src` | Flashcard thumbnails, markdown images and the basic media components. Add your `setExtraMediaOrigins` hosts. `blob:` in `media-src` is for the recorder preview. `data:` in `media-src` is for the autoplay check of the Player |
-| `frame-src` | `blob:` for the captions editor, whose page is fetched and loaded from a blob URL. Analytics (`kmc`; its KS goes by `postMessage` to that origin, not in the URL). The Player, the clips and the recorder have no iframe. A private cloud needs its own hosts |
-| `connect-src` | The geo map fetches `world-atlas` from jsDelivr. The captions editor fetches its page (`embed.php`) from the `serviceUrl` host. Unisphere widgets, the Player script and the recorder (uploads) call Kaltura APIs. The avatar calls `https://api.avatar.us.kaltura.ai` |
+| `img-src`, `media-src` | Flashcard thumbnails, markdown images and the basic media components. Add your `setExtraMediaOrigins` hosts. `data:` in `media-src` is for the autoplay check of the Player |
+| `frame-src` | `blob:` for the captions editor, whose page is fetched and loaded from a blob URL. Analytics (`kmc`; its KS goes by `postMessage` to that origin, not in the URL). The recorder frame (`https://unisphere.<region>.ovp.kaltura.com/v1/`, only the regions you use). The Player and the clips have no iframe. A private cloud needs its own hosts |
+| `connect-src` | The geo map fetches `world-atlas` from jsDelivr. The captions editor fetches its page (`embed.php`) from the `serviceUrl` host. Unisphere widgets and the Player script call Kaltura APIs. The recorder page makes its own calls from its frame, so they are not part of your policy. The avatar calls `https://api.avatar.us.kaltura.ai` |
 | `base-uri` | The `serviceUrl` host. The captions editor page has a `<base>` tag with that host, and a blob frame inherits this policy. With `'none'` the editor stays blank |
 | `object-src` | Not needed by any component |
 | `form-action` | No component submits a form, so `'none'` is safe |
@@ -229,7 +229,7 @@ Add only the rows for the widgets you use. US hosts are shown: for a region, use
 | Flashcards (markdown) | As Charts, plus `img-src https://www.kaltura.com https://cfvod.kaltura.com data:`. Strict variant: `style-src-attr 'unsafe-hashes'` and 3 `text-align` hashes ([Style tiers](#style-tiers)) |
 | Player, Flashcards clips | `script-src https://cdnapisec.kaltura.com/p/`, `media-src https://cdnapisec.kaltura.com https://cfvod.kaltura.com blob: data:`, `worker-src blob:`, `connect-src https://cdnapisec.kaltura.com https://analytics.kaltura.com https://cfvod.kaltura.com`, `style-src-elem 'unsafe-inline'` |
 | Captions editor | What the Player needs, plus `frame-src blob:`, `script-src https://www.kaltura.com/apps/`, `connect-src https://www.kaltura.com`, `base-uri https://www.kaltura.com`, `font-src https://www.kaltura.com` and `style-src-elem 'unsafe-inline'` (required). Do not use `'strict-dynamic'`: it blocks the `main.js` that the editor page inserts |
-| Recorder | What the Player needs, plus `script-src https://www.kaltura.com/apps/` and `style-src-elem 'unsafe-inline'` (required). Your `Permissions-Policy` must allow `camera`, `microphone` and `display-capture`. The upload goes to `www.kaltura.com` and `cdnapisec.kaltura.com`, covered by `connect-src https://*.kaltura.com` |
+| Recorder | `frame-src https://unisphere.<region>.ovp.kaltura.com/v1/` only. The recorder is a frame with its own policy. Your `Permissions-Policy` must let that origin use `camera`, `microphone`, `display-capture` and `fullscreen` (see [Recorder permissions](#recorder-permissions)) |
 | Analytics | `frame-src https://kmc.kaltura.com` only |
 | Unisphere widgets | `script-src` and `connect-src https://unisphere.<region>.ovp.kaltura.com/v1/`. Genie, Agents, VOD Avatar and Content Lab ask for fonts from `https://fonts.kaltura.com`. The Media Manager and VOD Avatar also ask for stylesheets from `https://fonts.googleapis.com`. The starting policy blocks these (CSP reports in Chromium, Firefox and WebKit) and every widget works with fallback fonts. To allow them, add `https://fonts.kaltura.com` and `https://fonts.googleapis.com` to `style-src` and `font-src`, and `https://fonts.gstatic.com` to `font-src` |
 | Avatar | What Unisphere needs, plus `connect-src https://api.avatar.us.kaltura.ai`. |
@@ -243,7 +243,7 @@ Add only the rows for the widgets you use. US hosts are shown: for a region, use
 | 1. Starting policy | `style-src 'self' 'unsafe-inline' https://www.kaltura.com` | All widgets |
 | 2. Hash | `style-src-elem 'sha256-<hash of the bundle <style>>' https://www.kaltura.com; style-src-attr 'none'` | Charts, GeoMap |
 | 3. Hash and markdown | Tier 2 with `style-src-attr 'unsafe-hashes' 'sha256-…'`, one hash for each of the 3 `text-align` styles that markdown tables use | Flashcards |
-| Always inline | `style-src-elem 'unsafe-inline'` | Recorder, captions editor and Player (required) |
+| Always inline | `style-src-elem 'unsafe-inline'` | Captions editor and Player (required) |
 
 The hash changes when our CSS changes. Read it from the console message in report-only mode, and check it again on each upgrade. The bundle sets no nonce on its `<style>` element.
 
@@ -251,25 +251,35 @@ The hash changes when our CSS changes. Read it from the console message in repor
 
 These hosts come from `src/core/region.ts` (`e2e/csp.spec.ts` checks the table against it). Details: [host-api.md](host-api.md#regions).
 
-| Region | `serviceUrl` | `cdn` (Player script) | `recorder` | `vod` | `kmc` |
-|---|---|---|---|---|---|
-| nvp1 | `https://www.kaltura.com` | `https://cdnapisec.kaltura.com` | `https://www.kaltura.com` | `https://cfvod.kaltura.com` | `https://kmc.kaltura.com` |
-| irp2 | `https://api.irp2.ovp.kaltura.com` | `https://api.irp2.ovp.kaltura.com` | `https://api.irp2.ovp.kaltura.com` | `https://cfvod.irp2.ovp.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` |
-| frp2 | `https://api.frp2.ovp.kaltura.com` | `https://api.frp2.ovp.kaltura.com` | `https://api.frp2.ovp.kaltura.com` | `https://cfvod.frp2.ovp.kaltura.com` | `https://kmc.frp2.ovp.kaltura.com` |
-| cap2 | `https://api.cap2.ovp.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://cfvod.cap2.ovp.kaltura.com` | `https://kmc.cap2.ovp.kaltura.com` |
-| syp2 | `https://api.syp2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | `https://cfvod.syp2.ovp.kaltura.com` | `https://kmc.syp2.ovp.kaltura.com` |
-| sgp2 | `https://api.sgp2.ovp.kaltura.com` | `https://api.sgp2.ovp.kaltura.com` | `https://api.sgp2.ovp.kaltura.com` | `https://cfvod.sgp2.ovp.kaltura.com` | `https://kmc.sg.kaltura.com` |
+| Region | `serviceUrl` | `cdn` (Player script) | `vod` | `kmc` |
+|---|---|---|---|---|
+| nvp1 | `https://www.kaltura.com` | `https://cdnapisec.kaltura.com` | `https://cfvod.kaltura.com` | `https://kmc.kaltura.com` |
+| irp2 | `https://api.irp2.ovp.kaltura.com` | `https://api.irp2.ovp.kaltura.com` | `https://cfvod.irp2.ovp.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` |
+| frp2 | `https://api.frp2.ovp.kaltura.com` | `https://api.frp2.ovp.kaltura.com` | `https://cfvod.frp2.ovp.kaltura.com` | `https://kmc.frp2.ovp.kaltura.com` |
+| cap2 | `https://api.cap2.ovp.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://cfvod.cap2.ovp.kaltura.com` | `https://kmc.cap2.ovp.kaltura.com` |
+| syp2 | `https://api.syp2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | `https://cfvod.syp2.ovp.kaltura.com` | `https://kmc.syp2.ovp.kaltura.com` |
+| sgp2 | `https://api.sgp2.ovp.kaltura.com` | `https://api.sgp2.ovp.kaltura.com` | `https://cfvod.sgp2.ovp.kaltura.com` | `https://kmc.sg.kaltura.com` |
 
 In a region, replace the hosts of the starting policy like this:
 
 | Directive | Source |
 |---|---|
-| `script-src` | `<cdn>/p/` (Player), `<recorder>/apps/` (recorder), `<serviceUrl>/apps/` (captions editor) |
+| `script-src` | `<cdn>/p/` (Player), `<serviceUrl>/apps/` (captions editor) |
 | `style-src`, `font-src`, `base-uri`, `connect-src` for `embed.php` | `<serviceUrl>` |
-| `frame-src` | `<kmc>` |
+| `frame-src` | `<kmc>` (Analytics) |
 | `img-src`, `media-src`, `connect-src` | `https://*.kaltura.com` already covers `<vod>`, `<cdn>` and `<serviceUrl>` |
 
-For `irp2`, `frp2`, `cap2`, `syp2` and `sgp2`, `serviceUrl`, `cdn` and `recorder` are one host. The Unisphere `script-src` entries use the region code (`https://unisphere.<region>.ovp.kaltura.com/v1/`). `sgp2` has none.
+For `irp2`, `frp2`, `cap2`, `syp2` and `sgp2`, `serviceUrl` and `cdn` are one host. The Unisphere `script-src` entries use the region code (`https://unisphere.<region>.ovp.kaltura.com/v1/`). `sgp2` has none.
+
+### Recorder permissions
+
+The recorder frame is cross-origin, so it needs your page to delegate the capture features. We set `allow="camera; microphone; display-capture; fullscreen"` and `sandbox="allow-scripts allow-same-origin allow-downloads"` on it. If your server sends a `Permissions-Policy`, add the Unisphere origin of each region you use:
+
+```text
+Permissions-Policy: camera=(self "https://unisphere.nvp1.ovp.kaltura.com"), microphone=(self "https://unisphere.nvp1.ovp.kaltura.com"), display-capture=(self "https://unisphere.nvp1.ovp.kaltura.com"), fullscreen=(self "https://unisphere.nvp1.ovp.kaltura.com")
+```
+
+`camera=()` or `camera=(self)` blocks the recorder. The page that embeds the components must be served over HTTPS (or `localhost`).
 
 ### Rollout
 
@@ -287,7 +297,7 @@ Server-to-server calls, such as minting a KS on your server, need no CSP entry.
 
 ### Not supported
 
-- **Trusted Types.** Do not set `require-trusted-types-for 'script'`. Our bundle and the player and recorder loaders write to HTML and script URL sinks without a named policy.
+- **Trusted Types.** Do not set `require-trusted-types-for 'script'`. Our bundle and the player loader write to HTML and script URL sinks without a named policy.
 - **`Integrity-Policy: blocked-destinations=(script)`.** Do not set it. The remote Kaltura scripts load without integrity metadata, and the browser would block them.
 - **`'strict-dynamic'`** with the captions editor, as above.
 
@@ -295,7 +305,7 @@ Server-to-server calls, such as minting a KS on your server, need no CSP entry.
 
 `e2e/csp.spec.ts` runs these checks under the exact starting policy:
 
-- Chart, Flashcards, the Player (stub), the avatar loader (stub), the recorder (stub script) and the captions editor page (stub) run with no violation.
+- Chart, Flashcards, the Player (stub), the avatar loader (stub), the recorder frame (stub page) and the captions editor page (stub) run with no violation.
 - A `data:` media element and a `blob:` worker are allowed.
 - A script from an unlisted host, a media URL from an unlisted host and a worker script from `'self'` are blocked.
 - The region table in this file matches `src/core/region.ts`.
@@ -304,22 +314,22 @@ Private cloud and on-prem Unisphere hosts also need entries in `script-src`, `co
 
 ## Remote code from Kaltura
 
-Most widgets run Kaltura code in your page origin. It can read the KS and your page. Any script on the page can read the KS too. Only Analytics keeps the KS in a cross-origin iframe. Use a short-lived KS with the least privilege each widget needs, and `editadmintags:*` only for the recorder.
+Most widgets run Kaltura code in your page origin. It can read the KS and your page. Any script on the page can read the KS too. Only Analytics and the recorder keep the KS in a cross-origin frame. Use a short-lived KS with the least privilege each widget needs, and see [ks-privileges.md](ks-privileges.md) for what each widget needs.
 
-Your KS is not in the script or iframe URL we build for the Player, the Flashcards clips, the recorder, Analytics or the Unisphere widgets. It goes in JavaScript: the recorder `create` options, the player config (`useHeaderForKs: true`) and `data-*` attributes. See [Rollout](#rollout) for CSP reports.
+Your KS is not in the script or iframe URL we build for the Player, the Flashcards clips, the recorder, Analytics or the Unisphere widgets. It goes in JavaScript: a `postMessage` to the recorder frame, the player config (`useHeaderForKs: true`) and `data-*` attributes. See [Rollout](#rollout) for CSP reports.
 
 | Code | Version you get | Integrity |
 |---|---|---|
 | Our bundle (jsDelivr) | The tag you pin | SRI hashes in each Release |
 | Player | The player version of the uiConf. The customer admin picks it per player instance in KMC, so the uiConf is the pin | None |
-| Express Recorder | Pinned to a fixed version (see `src/core/recorder-script.ts`) | None |
+| Recorder loader page | Pinned to a fixed `recorder-assets` version in `src/core/recorder.tsx`. The runtime inside the frame is not pinned | None |
 | Captions editor | Pinned to a fixed version (see `src/core/captions-editor.tsx`) | `embed.php` is fetched with `integrity`, and `main.js` and `main.css` get `integrity` before the blob page is built. A mismatch on `embed.php` shows an error and the KS is never sent. The KS is on the frame by then, but only code that matches the pinned hash can run |
 | Analytics iframe | `latest`, by design (Kaltura manages the version) | SRI does not apply to iframes. The controls are the cross-origin frame and the `postMessage` origin checks |
 | Unisphere widgets | The `/v1` loader. Kaltura sets the runtime list | None. You trust Kaltura here. `script-src` and `connect-src` limit where code can come from |
 
 - A pin gives change control. SRI gives integrity. The remote code that is not covered by SRI comes from Kaltura.
-- Set `setAllowedPartners` and `setAllowedUiconfs` ([above](#allowed-partners-and-uiconfs)). The agent chooses the ids, and the uiconf decides which player or recorder code runs in your page.
-- A host that needs isolation must embed the components in a page on a separate origin. See [ADR 0005](adr/0005-analytics-and-recorder-integration.md) and [ADR 0008](adr/0008-in-page-player-and-captions-editor.md).
+- Set `setAllowedPartners` and `setAllowedUiconfs` ([above](#allowed-partners-and-uiconfs)). The agent chooses the ids, and the uiconf decides which player code runs in your page.
+- A host that needs isolation must embed the components in a page on a separate origin. See [ADR 0008](adr/0008-in-page-player-and-captions-editor.md) and [ADR 0010](adr/0011-recorder-in-iframe.md).
 
 ### Player and Captions editor
 

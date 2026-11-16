@@ -5,7 +5,7 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { act } from 'react';
 import { playerRemote } from '../helpers/player-remote';
 import { captionsRemote } from '../helpers/captions-remote';
-import { recorderRemote } from '../helpers/recorder-remote';
+import { recorderFrame } from '../helpers/recorder-frame';
 import { renderSurface } from './surface-helper';
 import { setKsProvider } from '../../src/core/ks';
 import { kalturaReactCatalog } from '../../src/adapters/react/index';
@@ -32,13 +32,13 @@ vi.mock('https://unisphere.nvp1.ovp.kaltura.com/v1/loader/index.esm.js', () => (
 
 // Each fake script patches `document.head.append`, so install only the one a widget needs.
 const none = { created: [] as unknown[], restore() {} };
-let remotes: { player: ReturnType<typeof playerRemote> | typeof none; captions: ReturnType<typeof captionsRemote> | typeof none; recorder: ReturnType<typeof recorderRemote> | typeof none };
+let remotes: { player: ReturnType<typeof playerRemote> | typeof none; captions: ReturnType<typeof captionsRemote> | typeof none; recorder: ReturnType<typeof recorderFrame> | typeof none };
 
 function install(component: string) {
   remotes = {
     player: component === 'KalturaPlayer' || component === 'KalturaFlashcards' ? playerRemote() : none,
     captions: component === 'KalturaCaptionsEditor' ? captionsRemote() : none,
-    recorder: component === 'KalturaRecorder' ? recorderRemote() : none,
+    recorder: component === 'KalturaRecorder' ? recorderFrame() : none,
   };
 }
 
@@ -78,7 +78,7 @@ async function sinks(host: HTMLElement, hasKs: boolean): Promise<string> {
   const button = host.querySelector<HTMLButtonElement>('.flashcard-action-btn');
   if (button) await act(async () => button.click());
   if (remotes.player !== none) await (remotes.player as ReturnType<typeof playerRemote>).ready();
-  if (hasKs && remotes.recorder !== none) await (remotes.recorder as ReturnType<typeof recorderRemote>).ready();
+  if (hasKs && remotes.recorder !== none) await (remotes.recorder as ReturnType<typeof recorderFrame>).ready();
   await act(async () => {
     await new Promise(r => setTimeout(r, 30));
   });

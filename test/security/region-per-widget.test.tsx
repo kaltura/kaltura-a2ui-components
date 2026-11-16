@@ -6,7 +6,7 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { createElement, Fragment } from 'react';
 import { mount, afterQuietPeriod } from '../helpers/render';
 import { playerRemote } from '../helpers/player-remote';
-import { recorderRemote } from '../helpers/recorder-remote';
+import { recorderFrame } from '../helpers/recorder-frame';
 import { captionsRemote } from '../helpers/captions-remote';
 import type { KsProvider, KsRequest } from '../../src/core/ks';
 
@@ -85,26 +85,24 @@ describe('REG-02: one region per widget', () => {
 });
 
 describe('REG-02: recorder', () => {
-  let recorder: ReturnType<typeof recorderRemote>;
+  let recorder: ReturnType<typeof recorderFrame>;
 
   beforeEach(() => {
-    // Both fakes patch `document.head.append`, so the player fake goes first.
-    player.restore();
-    recorder = recorderRemote();
+    recorder = recorderFrame();
   });
 
   afterEach(() => recorder.restore());
 
-  it('the recorder takes the script, the API and the player host from its own region', async () => {
+  it('the recorder takes the loader, the API and the player host from its own region', async () => {
     await mount(m.RecorderCore, { partnerId: 1, ks: 'k', uiconfId: 2, region: 'irp2' });
     await recorder.ready();
-    expect([recorder.tags().map(tag => tag.src), recorder.created[0].options.serviceUrl]).toEqual([
-      ['https://api.irp2.ovp.kaltura.com/apps/expressrecorder/v2.2.10/express-recorder.js'],
+    expect([recorder.frames().map(frame => frame.src.split('?')[0]), recorder.created[0].options.serviceUrl]).toEqual([
+      ['https://unisphere.irp2.ovp.kaltura.com/v1/static/applications/recorder/recorder-assets/1.0.6/assets/loader/loader.html'],
       'https://api.irp2.ovp.kaltura.com',
     ]);
   });
 
-  it('a recorder in another region loads that region script, not the cached one', async () => {
+  it('a recorder in another region loads that region frame', async () => {
     await mount(m.RecorderCore, { partnerId: 1, ks: 'k', uiconfId: 2 });
     await recorder.ready();
     await mount(m.RecorderCore, { partnerId: 1, ks: 'k', uiconfId: 2, region: 'irp2' });
@@ -337,14 +335,12 @@ describe('REG-02: Unisphere URL from the region', () => {
 });
 
 describe('REG-02: recorder without a provider', () => {
-  it('a refused region loads no script', async () => {
-    player.restore();
-    const recorder = recorderRemote();
+  it('a refused region loads no frame', async () => {
+    const recorder = recorderFrame();
     try {
       m.setAllowedRegions(['nvp1']);
-      const before = recorder.tags().length;
       await mount(m.RecorderCore, { partnerId: 1, ks: 'k', uiconfId: 2, region: 'irp2' });
-      expect([recorder.tags().length - before, recorder.created]).toEqual([0, []]);
+      expect([recorder.frames().length, recorder.created]).toEqual([0, []]);
     } finally {
       recorder.restore();
     }

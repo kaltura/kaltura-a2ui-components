@@ -60,7 +60,7 @@ The uiconf sets the plugins. `autoplay` and `muted` reach the player only when t
 
 ## Allowed partners and uiconfs
 
-The agent picks `partnerId` and `uiconfId`. Both are literal integers in agent messages: a string such as `"123"` or a data binding gives `invalid-props`. A uiconf decides which player or recorder code runs in your page, with your KS. Set an allowlist so the agent can use only your accounts.
+The agent picks `partnerId` and `uiconfId`. Both are literal integers in agent messages: a string such as `"123"` or a data binding gives `invalid-props`. A uiconf decides which player code runs in your page, with your KS. Set an allowlist so the agent can use only your accounts.
 
 ```ts
 import { setAllowedPartners, setAllowedUiconfs } from '@kaltura/a2ui-react';
@@ -109,7 +109,7 @@ The widget shows `Failed to load <widget>: region is not allowed` and loads noth
 - the name is well formed but is not a code or a registered environment (a malformed name, such as capitals or a URL, shows `Invalid region` instead)
 - `setAllowedRegions` does not allow it
 - `region` and `serverUrl` name different regions
-- the widget is a Unisphere widget and the region has no Unisphere host (`sgp2`, or an environment without `unisphere`), or the widget is the Agents Widget and an environment has no `agents`
+- the widget is a Unisphere widget and the region has no Unisphere host (`sgp2`, or an environment without `unisphere`), or the widget is the Agents Widget and an environment has no `agents`, or the widget is the recorder and the region is not a built-in code (the recorder loader builds its host from a region code)
 
 `serverUrl` can be the bare origin, or end in `/v1` or `/v1/`. The Unisphere loader always gets `<origin>/v1`. For a built-in region the origin is `https://unisphere.<region>.ovp.kaltura.com`.
 
@@ -125,13 +125,12 @@ The Captions editor works only in a built-in region that has a pinned page (`nvp
 | vod | `https://cfvod.kaltura.com` | `https://cfvod.irp2.ovp.kaltura.com` | `https://cfvod.frp2.ovp.kaltura.com` | `https://cfvod.cap2.ovp.kaltura.com` | `https://cfvod.syp2.ovp.kaltura.com` | `https://cfvod.sgp2.ovp.kaltura.com` | Flashcards thumbnails |
 | cdn | `https://cdnapisec.kaltura.com` | `https://api.irp2.ovp.kaltura.com` | `https://api.frp2.ovp.kaltura.com` | `https://api.cap2.ovp.kaltura.com` | `https://api.syp2.ovp.kaltura.com` | `https://api.sgp2.ovp.kaltura.com` | Player script, flashcard clips, captions editor `cdnurl` |
 | kmc | `https://kmc.kaltura.com` | `https://kmc.irp2.ovp.kaltura.com` | `https://kmc.frp2.ovp.kaltura.com` | `https://kmc.cap2.ovp.kaltura.com` | `https://kmc.syp2.ovp.kaltura.com` | `https://kmc.sg.kaltura.com` | Analytics (`/apps/kmc-analytics/latest/index.html`, and the `postMessage` origin) |
-| recorder | `https://www.kaltura.com` | same as cdn | same as cdn | same as cdn | same as cdn | same as cdn | Express Recorder script (pinned to a fixed version, see `src/core/recorder-script.ts`) |
 
 Hosts follow the [Kaltura firewall guide](https://knowledge.kaltura.com/help/configuring-your-firewall-rules-to-access-kaltura-products) and use its `.ovp` hosts. KMC is `kmc.<region>.ovp.kaltura.com` for `irp2`, `frp2`, `cap2` and `syp2`, and `kmc.sg.kaltura.com` for `sgp2`. Add every host you use to your firewall allow-list.
 
-The player script loads from the regional API host shown in the cdn row. The recorder script loads from the recorder host. It gets the regional API host as `serviceUrl` and the cdn host as `playerUrl`.
+The player script loads from the regional API host shown in the cdn row. The recorder frame loads from the Unisphere host of the region and gets the serviceUrl host as `serviceUrl` and the cdn host as `playerUrl`.
 
-`sgp2` (Singapore) has no Unisphere host: the Unisphere widgets (Media Manager, Genie, Content Lab, Agents, VOD Avatar, Avatar) refuse it. The other widgets work, except the Captions editor (no pinned page).
+`sgp2` (Singapore) has no Unisphere host: the Unisphere widgets (Media Manager, Genie, Content Lab, Agents, VOD Avatar, Avatar) and the recorder refuse it. The other widgets work, except the Captions editor (no pinned page).
 
 ### Environments
 
@@ -149,7 +148,7 @@ setEnvironments({
 | Rule | Detail |
 |---|---|
 | Name | `a-z`, digits and `-`, 1 to 32 characters, starts with a letter, and is not a region code |
-| `serviceUrl` | Required. `cdn`, `vod`, `kmc` and `recorder` default to it |
+| `serviceUrl` | Required. `cdn`, `vod` and `kmc` default to it |
 | `unisphere` | Optional. Without it the Unisphere widgets refuse the environment. It is added to the Unisphere origin allowlist |
 | `agents` | Optional. The Agents Manager host, such as `https://agents.lab.example.com`. Without it the Agents Widget refuses the environment |
 | Values | An origin only: no path, query or userinfo |
@@ -179,9 +178,9 @@ setErrorHandler((error: KalturaError) => log(error.code, error.widget, error.mes
 | `invalid-props` | A prop has a bad value |
 | `invalid-ks` | The KS is one of the bad props |
 | `origin-not-allowed` | `serverUrl` is not an allowed Unisphere origin, or `partnerId` or `uiconfId` is refused by the [allowlist](#allowed-partners-and-uiconfs) |
-| `load-failed` | A remote module, SDK or workspace failed to load |
+| `load-failed` | A remote module, SDK or workspace failed to load, or the recorder page did not report ready in 15 seconds (fixed text `Recorder could not start`) |
 | `url-rejected` | A basic Image, Video or AudioPlayer `url` was refused |
-| `render-failed` | A chart threw while it rendered, or the recorder reported an error (fixed text `Recorder error`) |
+| `render-failed` | A chart threw while it rendered |
 
 `widget` is the `KsWidget` name (`player`, `analytics`, `recorder` …) or `flashcards`, `chart`, `image`, `video`, `audio-player`. `UnisphereWidgetCore` used directly reports `unisphere` unless you pass its `widget` prop.
 
@@ -200,7 +199,7 @@ setEventHandler(event => {
 | Type | Widget | `detail` |
 |---|---|---|
 | `entry-selected` | `media-manager` | `{ entryId, name, instanceId, entries? }`, the same as the `kaltura-entry-selected` DOM event below |
-| `recorder-upload-ended` | `recorder` | `{ entryId?, instanceId }`. `entryId` is there only when the recorder sent a valid entry id. `instanceId` is the recorder container id |
+| `recorder-upload-ended` | `recorder` | `{ entryId, entries?, instanceId }`. `entryId` is the main entry. `entries` is there when a take made more than one entry (camera and screen): `{ entryId, source: 'camera' \| 'screen', role: 'primary' \| 'secondary' }`. Only valid entry ids are sent. `instanceId` is the recorder container id |
 | `avatar-disconnected` | `avatar` | `{ reason, instanceId }`. `reason` is a name such as `ConversationEnded`, or `UnknownReason`. `instanceId` is the avatar container id |
 
 Each event also has `surfaceId`, as in `KalturaError`. A handler that throws is ignored.
@@ -268,7 +267,7 @@ The action handler gets `{ name, surfaceId, sourceComponentId, timestamp, contex
 | `code` | The [error code](#errors), on `error` only |
 | `invalidProps` | The failed prop names, on `error` with `invalid-props` or `invalid-ks` |
 | `entryId` | On `entry-selected` (one entry) and `recorder-upload-ended`, only in the `1_abc12345` form (digit, underscore, up to 16 lowercase letters or digits) |
-| `entryIds` | On `entry-selected` with `multiSelect`, ids in that form only, 5 at most |
+| `entryIds` | On `entry-selected` with `multiSelect` and on `recorder-upload-ended` when a take made more than one entry, ids in that form only, 5 at most |
 
 One full action for each event:
 
@@ -303,7 +302,7 @@ One full action for each event:
 | `error`, `invalid-ks` | Do not retry. The host owns the KS. Tell the user the session is not valid |
 | `error`, `load-failed` or `render-failed` | Show the answer another way, such as text. Retry later, not in a loop |
 | `entry-selected` | Treat `entryId` or `entryIds` as the user's choice and go to the next step. The name is not sent |
-| `recorder-upload-ended` | Use `entryId` to show or process the new entry. If it is missing, ask the user to check the upload |
+| `recorder-upload-ended` | Use `entryId` to show or process the new entry. `entryIds` lists all entries of a camera and screen take. If `entryId` is missing, ask the user to check the upload |
 | `avatar-disconnected` | The session ended. Ask the user before it starts again |
 
 With `functionCall`, the function runs on the client on each error and event, and the agent gets nothing.

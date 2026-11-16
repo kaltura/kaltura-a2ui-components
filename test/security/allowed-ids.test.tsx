@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vite
 import { act } from 'react';
 import { mount } from '../helpers/render';
 import { playerRemote, scriptUrl } from '../helpers/player-remote';
-import { recorderRemote } from '../helpers/recorder-remote';
+import { recorderFrame } from '../helpers/recorder-frame';
 import { captionsRemote } from '../helpers/captions-remote';
 import { URL_A, loaderUrl } from '../lifecycle/harness';
 import type { KalturaError } from '../../src/core/host-hooks';
@@ -155,13 +155,13 @@ describe('F11: Player', () => {
     expect(remote.urls).toEqual([scriptUrl(123, 456)]);
   });
 
-  it('F11: a refused partner loads no script', async () => {
+  it('F11: a refused partner loads no frame', async () => {
     (await host()).setAllowedPartners([1]);
     await mountPlayer();
     expect([remote.urls, remote.created]).toEqual([[], []]);
   });
 
-  it('F11: a refused uiconf loads no script', async () => {
+  it('F11: a refused uiconf loads no frame', async () => {
     (await host()).setAllowedUiconfs([1]);
     await mountPlayer();
     expect([remote.urls, remote.created]).toEqual([[], []]);
@@ -246,9 +246,9 @@ describe('F11: Flashcards clips', () => {
 });
 
 describe('F11: Recorder', () => {
-  let remote: ReturnType<typeof recorderRemote>;
+  let remote: ReturnType<typeof recorderFrame>;
   beforeEach(() => {
-    remote = recorderRemote();
+    remote = recorderFrame();
   });
   afterEach(() => remote.restore());
 
@@ -267,10 +267,10 @@ describe('F11: Recorder', () => {
   it.each([
     ['partner', (ids: Awaited<ReturnType<typeof host>>) => ids.setAllowedPartners([1]), 'partnerId'],
     ['uiconf', (ids: Awaited<ReturnType<typeof host>>) => ids.setAllowedUiconfs([1]), 'uiconfId'],
-  ])('F11: a refused %s loads no script', async (_name, refuse, prop) => {
+  ])('F11: a refused %s loads no frame', async (_name, refuse, prop) => {
     refuse(await host());
     const { container } = await mountRecorder();
-    expect([remote.tags().length, remote.created.length, container.querySelector('[role="alert"]')?.textContent]).toEqual([
+    expect([remote.frames().length, remote.created.length, container.querySelector('[role="alert"]')?.textContent]).toEqual([
       0,
       0,
       `${REFUSED} recorder: ${prop} is not allowed`,
@@ -430,7 +430,7 @@ describe('F11: web component and A2UI paths', () => {
     expect([typeof react.setAllowedPartners, typeof react.setAllowedUiconfs]).toEqual(['function', 'function']);
   });
 
-  it('F11: a player element with a refused partner loads no script', async () => {
+  it('F11: a player element with a refused partner loads no frame', async () => {
     const remote = playerRemote();
     try {
       wc.setKsProvider(() => KS);
@@ -447,7 +447,7 @@ describe('F11: web component and A2UI paths', () => {
     }
   });
 
-  it('F11: an A2UI surface with a refused partner loads no script', async () => {
+  it('F11: an A2UI surface with a refused partner loads no frame', async () => {
     const remote = playerRemote();
     try {
       const { buildKalturaCatalog } = await import('../../src/adapters/react/index');

@@ -2,7 +2,7 @@
 // Needs NVP1_DEMO_TEST_PARTNER_ID and NVP1_DEMO_TEST_ADMIN_SECRET in .env. Skipped without them. Never runs in CI.
 // Tests that use media also read NVP1_DEMO_TEST_UICONF_ID, _ENTRY_ID, _PLAYLIST_ID, _CAPTIONS_ENTRY_ID
 // and _FRENCH_ASSET_ID. Analytics and the hosted widgets read NVP1_DEMO_TEST_ADMIN_USER_ID.
-// The one account also needs the Genie, Avatar agents and the Agents Manager (LIVE-16 to LIVE-21).
+// The one account also needs the Genie, Avatar agents and the Agents Manager (LIVE-16 to LIVE-21). LIVE-28 records and uploads one take and needs LIVE_RECORDER_UPLOAD=1..
 // Each test skips when its variables are missing.
 // The page loads the real built bundle and the real Player script. A KS is minted in this process
 // and handed over with setKsProvider only. It must never appear in a URL.
@@ -385,17 +385,18 @@ test('LIVE-10: the provider gets the scope of a playlist player and mints a KS l
 
 // The hosted widgets load from the real Unisphere host. Each gets a USER KS of an admin user from the
 // provider, and is found by text that only the loaded widget shows. The Agents Widget has its own test (LIVE-21).
-const HOSTED_WIDGETS: { id: string; tag: string; widget: string; props: Record<string, unknown>; scope: Record<string, unknown>; text: string }[] = [
+const HOSTED_WIDGETS: { id: string; tag: string; widget: string; props: Record<string, unknown>; scope: Record<string, unknown>; text: string; frame?: string }[] = [
   // The category id is arbitrary: the widget loads with any digits.
   { id: 'LIVE-11', tag: 'kaltura-genie-widget', widget: 'genie', props: { partnerId, uiconfId: UICONF_ID, categoryId: '1' }, scope: { partnerId, categoryId: '1' }, text: 'Ask me anything' },
   { id: 'LIVE-12', tag: 'kaltura-media-manager', widget: 'media-manager', props: { partnerId }, scope: { partnerId }, text: 'Upload' },
   { id: 'LIVE-13', tag: 'kaltura-content-lab', widget: 'content-lab', props: { partnerId, uiconfId: UICONF_ID, entryId: ENTRY_ID }, scope: { partnerId, entryId: ENTRY_ID }, text: 'Captions & Translations' },
   { id: 'LIVE-14', tag: 'kaltura-vod-avatar-wc', widget: 'vod-avatar', props: { partnerId }, scope: { partnerId }, text: 'My Avatar Videos' },
   // Chromium runs with fake camera and microphone (playwright.live.config.ts). Other browsers have none.
-  { id: 'LIVE-15', tag: 'kaltura-recorder', widget: 'recorder', props: { partnerId, uiconfId: UICONF_ID }, scope: { partnerId }, text: 'Camera Settings' },
+  // The recorder is a frame, so its text is read there.
+  { id: 'LIVE-15', tag: 'kaltura-recorder', widget: 'recorder', props: { partnerId, uiconfId: UICONF_ID }, scope: { partnerId }, text: 'Start Recording', frame: 'iframe[title="Kaltura recorder"]' },
 ];
 
-for (const { id, tag, widget, props, scope, text } of HOSTED_WIDGETS) {
+for (const { id, tag, widget, props, scope, text, frame } of HOSTED_WIDGETS) {
   test(`${id}: ${widget} loads with the KS the provider mints for its scope`, async ({ live, browserName }) => {
     test.skip(!adminUserId, 'Needs NVP1_DEMO_TEST_ADMIN_USER_ID in .env: an admin user that has a role.');
     test.skip(Boolean(props.uiconfId) && !UICONF_ID, 'Needs NVP1_DEMO_TEST_UICONF_ID in .env.');
@@ -403,7 +404,8 @@ for (const { id, tag, widget, props, scope, text } of HOSTED_WIDGETS) {
     test.skip(widget === 'recorder' && browserName !== 'chromium', 'Needs the fake media devices of the Chromium project.');
     const calls = await live.useScopedProvider(adminUserId);
     await live.mount(tag, props);
-    await expect.poll(() => live.pageText(), { timeout: PLAY_TIMEOUT, message: `the ${widget} shows its UI` }).toContain(text);
+    const shown = () => (frame ? live.page.frameLocator(frame).locator('body').innerText() : live.pageText());
+    await expect.poll(shown, { timeout: PLAY_TIMEOUT, message: `the ${widget} shows its UI` }).toContain(text);
     expect(calls).toEqual([{ widget, scope: { region: 'nvp1', ...scope } }]);
     // Media Manager can ask for thumbnails that some entries do not have.
     const thumbnail404 = /status of 404/;
@@ -532,4 +534,37 @@ test('LIVE-26: editors replace each other, and the latest request is the one tha
   expect(await live.pageText()).not.toContain('Agentic Workflows');
   expect(live.consoleErrors).toEqual([]);
   expectNoKsInUrls(live);
+});
+
+// A full take with the fake camera and microphone. It creates an entry in the account, so it runs only on request.
+// The recorder needs `editadmintags:*` in the KS: without it the upload fails. The test deletes the entry it made.
+test('LIVE-28: the recorder records a take and reports the new entry', async ({ live, browserName }) => {
+  test.skip(process.env.LIVE_RECORDER_UPLOAD !== '1', 'Creates an entry in the account. Set LIVE_RECORDER_UPLOAD=1 to run it.');
+  test.skip(!adminUserId || !UICONF_ID, 'Needs NVP1_DEMO_TEST_ADMIN_USER_ID and NVP1_DEMO_TEST_UICONF_ID in .env.');
+  test.skip(browserName !== 'chromium', 'Needs the fake media devices of the Chromium project.');
+  test.setTimeout(180_000);
+  await live.useScopedProvider(adminUserId, () => mintKs(partnerId, adminSecret ?? '', adminUserId ?? '', { type: 0, privileges: 'editadmintags:*' }));
+  await live.page.evaluate(() => {
+    const w = window as unknown as { __events: unknown[]; KalturaA2UIWebComponents: { setEventHandler(handler: (event: unknown) => void): void } };
+    w.__events = [];
+    w.KalturaA2UIWebComponents.setEventHandler((event) => w.__events.push(event));
+  });
+  await live.mount('kaltura-recorder', { partnerId, uiconfId: UICONF_ID, entryName: 'a2ui live test take', maxRecordingTime: 30 });
+  const frame = live.page.frameLocator('iframe[title="Kaltura recorder"]');
+  await frame.getByRole('button', { name: 'Start Recording' }).click({ timeout: PLAY_TIMEOUT });
+  await live.page.waitForTimeout(2000);
+  await frame.getByRole('button', { name: 'Stop Recording' }).click();
+  await frame.getByRole('button', { name: 'Use This' }).click({ timeout: PLAY_TIMEOUT });
+  const events = () => live.page.evaluate(() => (window as unknown as { __events: { detail: { entryId: string } }[] }).__events);
+  await expect.poll(async () => (await events()).length, { timeout: 90_000, message: 'the recorder reports the upload' }).toBe(1);
+  const [event] = await events();
+  try {
+    expect(event).toEqual({ type: 'recorder-upload-ended', widget: 'recorder', detail: { entryId: expect.stringMatching(/^\d_[a-z0-9]{8}$/), instanceId: expect.stringMatching(/^kaltura-recorder-/) } });
+    expect(live.consoleErrors).toEqual([]);
+    expectNoKsInUrls(live);
+  } finally {
+    // Only the entry this test created, by the id the recorder reported.
+    const adminKs = await mintKs(partnerId, adminSecret ?? '', adminUserId ?? '');
+    await fetch('https://www.kaltura.com/api_v3/service/baseEntry/action/delete', { method: 'POST', body: new URLSearchParams({ format: '1', ks: adminKs, entryId: event.detail.entryId }) });
+  }
 });
