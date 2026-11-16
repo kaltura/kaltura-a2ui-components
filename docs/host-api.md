@@ -53,7 +53,7 @@ Both run in your page. The KS goes in JavaScript, never in the URL of a script o
 
 | Widget | How it loads | Where the KS goes |
 |---|---|---|
-| Player, flashcard clips | The `embedPlaykitJs` script of the `uiconfId` from the `cdn` host ([Regions](#regions)), then `KalturaPlayer.setup` | The player config, with `useHeaderForKs: true`. Not in any URL |
+| Player, flashcard clips | The `embedPlaykitJs` script of the `uiconfId` from the `cdn` host ([Regions](#regions)), then `KalturaPlayer.setup` | The player config, with `useHeaderForKs: true`. Your KS is in no URL we build or the Player requests. Kaltura's own subtitle URLs hold a separate token ([ADR 0008](adr/0008-in-page-player-and-captions-editor.md#captions-in-the-hls-manifest)) |
 | Captions editor | The editor page (`embed.php`, pinned to a fixed version, see `src/core/captions-editor.tsx`) is fetched from the `serviceUrl` host with `integrity` into a blob URL iframe | `data-*` attributes on that iframe |
 
 The uiconf sets the plugins. `autoplay` and `muted` reach the player only when the prop is set, so the uiconf defaults apply otherwise.

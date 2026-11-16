@@ -24,6 +24,10 @@ Both use `PlayerEmbed`.
 
 `useHeaderForKs: true` sends the KS in a request header, so no request URL holds it.
 
+### Captions in the HLS manifest
+
+The exception is not our KS. For an entry with captions, Kaltura's HLS manifest lists subtitle URLs (`caption_captionasset/action/serveWebVTT/.../ks/<token>/a.m3u8`). The server writes the token. It does not depend on `useHeaderForKs`, and it is the same with no KS header. It is a USER KS limited to the entry's captions: privileges `caption:<entryId>`, `disableentitlementforentry:<entryId>` and a URI restriction to `serveWebVTT`. It lasts up to 24 hours. Checked live: it works on every caption asset of the entry and the API rejects it for other calls (`INVALID_KS`, `EXCEEDED_RESTRICTED_URI`). Other entries and the exact lifetime are not tested. The live suite allows only these URLs (`SERVER_CAPTION_URL` in `e2e/live/player.live.spec.ts`) and fails on any URL that holds our KS.
+
 The KS comes from `setKsProvider` only. Flashcards ask the provider for `flashcards`. `autoplay` and `muted` go to `playback` only when the prop is set, so the uiconf defaults apply otherwise. The plugin set comes from the uiconf. The old `plugins=` URL parameter is gone.
 
 ### Captions editor

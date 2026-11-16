@@ -306,7 +306,7 @@ Private cloud and on-prem Unisphere hosts also need entries in `script-src`, `co
 
 Most widgets run Kaltura code in your page origin. It can read the KS and your page. Any script on the page can read the KS too. Only Analytics keeps the KS in a cross-origin iframe. Use a short-lived KS with the least privilege each widget needs, and `editadmintags:*` only for the recorder.
 
-The KS is not in the script or iframe URL we build for the Player, the Flashcards clips, the recorder, Analytics or the Unisphere widgets. It goes in JavaScript: the recorder `create` options, the player config (`useHeaderForKs: true`) and `data-*` attributes. See [Rollout](#rollout) for CSP reports.
+Your KS is not in the script or iframe URL we build for the Player, the Flashcards clips, the recorder, Analytics or the Unisphere widgets. It goes in JavaScript: the recorder `create` options, the player config (`useHeaderForKs: true`) and `data-*` attributes. See [Rollout](#rollout) for CSP reports.
 
 | Code | Version you get | Integrity |
 |---|---|---|

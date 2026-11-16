@@ -27,14 +27,14 @@ Mint against the API of `request.scope.region`. It is a region code or the name 
 | `KalturaGenie` | `genie` | USER | `setrole:PLAYBACK_BASE_ROLE`, `sview:*`. To limit results to a category, add `enableentitlement` and `privacycontext` | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
 | `KalturaContentLab`, `KalturaAgentsWidget` | `content-lab`, `agents-widget` | USER | The privileges depend on the services the runtime calls. Mint `setrole:PLAYBACK_BASE_ROLE` and add only what the widget needs | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
 | `KalturaVodAvatar` | `vod-avatar` | USER | The privileges depend on the services the widget calls. Add only what it needs | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
-| `KalturaAvatar` | `avatar` | USER | `agentid:<agentId>` selects the agent. Required. It comes from the provider only, never a `ks` prop | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
+| `KalturaAvatar` | `avatar` | USER | `agentid:<agentId>` selects the agent. Required. It comes from the provider only, never a `ks` prop. Kaltura's Genie runtime (the Avatar module) sends the KS in the query of `POST api.avatar.us.kaltura.ai/client-logs` (`?ks=`). The Kaltura Security team is tracking it. Use a short-lived USER KS with only `agentid:` | [Unisphere guide](https://kaltura.md/KALTURA_UNISPHERE_FRAMEWORK_API/) |
 | `KalturaChart` | none | none | Renders the data it is given | not applicable |
 
 ## Where the KS goes
 
 | Widget | Transport |
 |---|---|
-| Player, flashcard clips | In the player config of the `embedPlaykitJs` script, with `useHeaderForKs: true`, which runs in your page. The KS is in no URL. Every script on the page can read it. See [ADR 0008](adr/0008-in-page-player-and-captions-editor.md) |
+| Player, flashcard clips | In the player config of the `embedPlaykitJs` script, with `useHeaderForKs: true`, which runs in your page. Your KS is in no URL. Kaltura's HLS manifest does carry its own token in subtitle URLs. It covers only caption serving for that entry and lasts up to 24 hours ([ADR 0008](adr/0008-in-page-player-and-captions-editor.md#captions-in-the-hls-manifest)). Every script on the page can read your KS. See [ADR 0008](adr/0008-in-page-player-and-captions-editor.md) |
 | Captions editor | In `data-*` attributes on a same-origin iframe (its page is loaded from a blob URL). The KS is in no script or iframe URL. The editor runs in your page origin and can read it. See [ADR 0008](adr/0008-in-page-player-and-captions-editor.md) |
 | Recorder | In the `create` options of the Express Recorder script, which runs in your page. The KS is visible to every script on that page. See [ADR 0005](adr/0005-analytics-and-recorder-integration.md) |
 | Analytics | `postMessage` (`init`, then `updateConfig`) to the Kaltura Analytics origin only. Never in the iframe URL. The KS must belong to an admin user that has a role. See [ADR 0005](adr/0005-analytics-and-recorder-integration.md) |
