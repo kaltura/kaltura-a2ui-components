@@ -22,6 +22,7 @@ New here? Start with the [README](../README.md). Then pick a table.
 | [theming.md](theming.md) | Light and dark rules and the Chart colour tokens |
 | [roadmap.md](roadmap.md) | Anyone who asks what comes next |
 | [plan-a2ui-1.0-upgrade.md](plan-a2ui-1.0-upgrade.md) | Maintainers: the plan and status of the A2UI 1.0 work |
+| [upstream-tracking.md](upstream-tracking.md) | Maintainers: our upstream PRs and issues, why, and how to fast-track them |
 
 ## Trust and release
 
