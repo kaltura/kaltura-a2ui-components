@@ -22,6 +22,8 @@ Status: accepted (2026-11-21)
 
 The 0.16 key rename ships as `v4`. `v3` stays online and frozen.
 
+Deprecated, 2026-11-21: `v1` and `v2` (A2UI 0.9 and older). They stay online unchanged. They get no fixes, no new components and no compatibility work. Nothing we ship supports them.
+
 Not built yet: a CI check in kaltura/a2ui that fails when a pull request changes an existing `vN` folder in a breaking way.
 
 ## Consequences
