@@ -85,8 +85,6 @@ try {
         name: 'consumer',
         private: true,
         type: 'module',
-        // @a2ui/markdown-it 0.2.2 still peers @a2ui/web_core ^0.14. A host on 0.15 needs this until it publishes a 0.15 range.
-        overrides: { '@a2ui/markdown-it': { '@a2ui/web_core': '$@a2ui/web_core' } },
       }));
     return run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', ...args], dir);
   };

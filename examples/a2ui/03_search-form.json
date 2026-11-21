@@ -13,7 +13,7 @@
       "version": "1.0",
       "createSurface": {
         "surfaceId": "search",
-        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+        "catalogId": "https://kaltura.github.io/a2ui/v4/catalog.json"
       }
     },
     {

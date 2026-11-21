@@ -96,7 +96,7 @@ describe('CONF-04: same shape as the A2UI basic catalog', () => {
   });
 
   it('CONF-04: the catalog id equals its $id and sits under /v3/', () => {
-    expect([catalog.catalogId === catalog.$id, catalog.$id]).toEqual([true, 'https://kaltura.github.io/a2ui/v3/catalog.json']);
+    expect([catalog.catalogId === catalog.$id, catalog.$id]).toEqual([true, 'https://kaltura.github.io/a2ui/v4/catalog.json']);
   });
 
   it('CONF-04: the protocol version is "1.0"', () => {

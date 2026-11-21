@@ -5,7 +5,7 @@ The agent sends JSON, your page renders the real widget.
 
 [A2UI](https://a2ui.org) is the open protocol that lets an agent describe a UI as JSON. This package is the Kaltura catalog for it.
 
-Built for A2UI 1.0 (`@a2ui/web_core` and `@a2ui/react` 0.15.x).
+Built for A2UI 1.0 (`@a2ui/web_core` and `@a2ui/react` 0.16.x).
 
 **[Try the live demo](https://kaltura.github.io/kaltura-a2ui-components/)**: 12 recorded agent conversations, the wire messages and light and dark themes. No account needed.
 
@@ -78,7 +78,7 @@ Gotchas:
 - **Server-side rendering.** In Node, import `@kaltura/a2ui-react` before `@a2ui/react` ([why](docs/host-integration.md#server-imports-ssr)).
 - **One pre-bundled file.** There is no tree-shaking: all 12 components load.
 - **Pin the full tag**, such as `v0.8.0`. `@latest` changes under you. Add the `integrity` value from the [Release notes](https://github.com/kaltura/kaltura-a2ui-components/releases). Check a release: [SECURITY.md](SECURITY.md#releases).
-- **Peers:** `@a2ui/react ^0.15.0`, `@a2ui/web_core ^0.15.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`.
+- **Peers:** `@a2ui/react ^0.16.0`, `@a2ui/web_core ^0.16.0`, `zod ^3.25.76`, `react ^19` and `react-dom ^19`.
 
 ### React or A2UI client
 
@@ -131,7 +131,7 @@ if (surface) createRoot(document.getElementById('root')!).render(createElement(A
 
 Your server mints the KS ([docs/ks-privileges.md](docs/ks-privileges.md)). A working server-side check: [examples/ks-server/privileges.ts](examples/ks-server/privileges.ts). Chart needs no KS, and Flashcards need one only for protected clips.
 
-- The catalog id `https://kaltura.github.io/a2ui/v3/catalog.json` is a name, and the file is also served there (copy of the release asset). Pin the one from [Catalog JSON](#catalog-json). `v3` is the A2UI 1.0 catalog.
+- The catalog id `https://kaltura.github.io/a2ui/v4/catalog.json` is a name, and the file is also served there (copy of the release asset). Pin the one from [Catalog JSON](#catalog-json). `v3` is the A2UI 1.0 catalog.
 - Send `processor.getRendererCapabilities({ versions: ['1.0'] })` to your agent as `a2uiRendererCapabilities`, so it picks a catalog you registered.
 - `buildKalturaCatalog(id?)` builds the same catalog under another id. `loadKalturaCatalog(url)` fetches a catalog JSON and keys it by its `catalogId`.
 

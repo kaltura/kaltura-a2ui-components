@@ -32,7 +32,7 @@ removeHtmlElementStub();
  * The catalog id the agent puts in `createSurface`.
  * @example { createSurface: { surfaceId: 's1', catalogId: KALTURA_CATALOG_ID } }
  */
-export const KALTURA_CATALOG_ID = 'https://kaltura.github.io/a2ui/v3/catalog.json';
+export const KALTURA_CATALOG_ID = 'https://kaltura.github.io/a2ui/v4/catalog.json';
 
 // basicCatalog is the host's own copy (a peer), and 0.1.x told hosts to
 // register it next to ours. Guard it in place, so an agent that picks it by

@@ -13,7 +13,7 @@
       "version": "1.0",
       "createSurface": {
         "surfaceId": "study",
-        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+        "catalogId": "https://kaltura.github.io/a2ui/v4/catalog.json"
       }
     },
     {
@@ -111,7 +111,7 @@
                 "content": "Reads mRNA and builds proteins."
               }
             ],
-            "accessibility": {
+            "@accessibility": {
               "label": "Flashcards for the cell biology lecture"
             }
           },

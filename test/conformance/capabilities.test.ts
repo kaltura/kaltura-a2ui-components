@@ -9,11 +9,11 @@ const processor = () => new MessageProcessor([buildKalturaCatalog()] as never);
 
 describe('T13: getRendererCapabilities', () => {
   it('T13: for "1.0" it lists the v3 catalog id', () => {
-    expect(processor().getRendererCapabilities({ versions: ['1.0'] })).toEqual({ '1.0': { supportedCatalogIds: ['https://kaltura.github.io/a2ui/v3/catalog.json'] } });
+    expect(processor().getRendererCapabilities({ versions: ['1.0'] })).toEqual({ '1.0': { supportedCatalogIds: ['https://kaltura.github.io/a2ui/v4/catalog.json'] } });
   });
 
   it('T13: the id is the catalog JSON id and the exported constant', () => {
-    expect([KALTURA_CATALOG_ID, loadCatalog().catalogId]).toEqual(['https://kaltura.github.io/a2ui/v3/catalog.json', KALTURA_CATALOG_ID]);
+    expect([KALTURA_CATALOG_ID, loadCatalog().catalogId]).toEqual(['https://kaltura.github.io/a2ui/v4/catalog.json', KALTURA_CATALOG_ID]);
   });
 });
 

@@ -17,9 +17,9 @@ interface RawAccessibility {
 type DynamicKey = 'label' | 'description' | 'hidden';
 const DYNAMIC_KEYS: DynamicKey[] = ['label', 'description', 'hidden'];
 
-/** The component's `accessibility` values, kept current as the data model changes. */
+/** The component's `@accessibility` values, kept current as the data model changes. */
 function useAccessibility(context: ComponentContext): Partial<Record<DynamicKey, unknown>> & Pick<RawAccessibility, 'live'> {
-  const raw = context.componentModel.properties.accessibility as RawAccessibility | undefined;
+  const raw = context.componentModel.properties['@accessibility'] as RawAccessibility | undefined;
   const key = JSON.stringify(raw ?? null);
   const [values, setValues] = useState<Partial<Record<DynamicKey, unknown>>>({});
   useEffect(() => {
@@ -61,7 +61,7 @@ export function AgentAction({ context, action, children }: { context: ComponentC
   const { path: dataPath } = context.dataContext;
   const identity = useMemo(() => ({ surfaceId, componentId, dataPath }), [surfaceId, componentId, dataPath]);
   const { label, description, live, hidden } = useAccessibility(context);
-  // The wrapper is always there, so a changing `accessibility` never restarts the widget.
+  // The wrapper is always there, so a changing `@accessibility` never restarts the widget.
   // `display: contents` keeps it out of the layout.
   return (
     <div
