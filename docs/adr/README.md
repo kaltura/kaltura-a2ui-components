@@ -15,6 +15,7 @@ Short records of decisions that affect security or the public contract. One file
 | [0009](0009-per-instance-ks-scope.md) | Per-instance KS scope | accepted |
 | [0010](0010-a2ui-1-0.md) | Move to A2UI 1.0 | accepted |
 | [0011](0011-recorder-in-iframe.md) | Recorder in a Unisphere iframe | accepted |
+| [0012](0012-catalog-versioning.md) | Catalog versioning | accepted |
 
 ## Template
 
