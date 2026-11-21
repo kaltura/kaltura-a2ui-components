@@ -350,7 +350,7 @@ On 2026-11-12 the owner accepted every default below and told me to proceed with
 
 | # | Item | Trigger |
 |---|---|---|
-| F1 | Switch to `@accessibility`, `@metadata`, `@checks`, `@catalogId` envelope keys and add `@child`, `@action`, `@functionCall` if #4171 lands | New `web_core` release that accepts them. T8 fails on the bump |
+| F1 | Switch to `@accessibility`, `@metadata`, `@checks`, `@catalogId` envelope keys and add `@child`, `@action`, `@functionCall` if #4171 lands. Decided 2026-11-21: ships as catalog id `v4`, `v3` stays online ([ADR 0012](adr/0012-catalog-versioning.md)) | New `web_core` release that accepts them. T8 fails on the bump |
 | F2 | Move to `accessibilityRef` and `validationErrorsRef`, drop `element.context` use, retest light-DOM guard styles | HEAD changes released (G3) |
 | F3 | Drop the markdown-it override | G1 clear |
 | F4 | Re-check the Node import of `@a2ui/react` and remove the stub if fixed | #3158 closed |
