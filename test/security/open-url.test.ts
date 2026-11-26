@@ -47,8 +47,6 @@ describe('SEC-02: openUrl in the merged Kaltura catalog', () => {
     ['mixed case', 'JaVaScRiPt:alert(1)'],
     ['leading space', '   javascript:alert(1)'],
     ['leading control char', '\u0001javascript:alert(1)'],
-    ['tab inside scheme', 'java\tscript:alert(1)'],
-    ['newline inside scheme', 'java\nscript:alert(1)'],
     ['data', 'data:text/html,<script>alert(1)</script>'],
     ['vbscript', 'vbscript:msgbox(1)'],
     ['blob', 'blob:https://example.com/00000000-0000-0000-0000-000000000000'],
@@ -59,12 +57,21 @@ describe('SEC-02: openUrl in the merged Kaltura catalog', () => {
     ['relative path', '/path'],
     ['percent-encoded scheme', '%6Aavascript:alert(1)'],
     ['full-width scheme', 'ｊavascript:alert(1)'],
-    ['empty', ''],
-    ['not a URL', 'not a url'],
   ])('SEC-02: ignores %s URL and warns', (_label, url) => {
     callOpenUrl(kalturaReactCatalog, url);
     expect(open).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  // Since @a2ui/web_core 0.16 the function schema rejects these before our handler runs, and the error goes to the agent.
+  it.each([
+    ['tab inside scheme', 'java\tscript:alert(1)'],
+    ['newline inside scheme', 'java\nscript:alert(1)'],
+    ['empty', ''],
+    ['not a URL', 'not a url'],
+  ])('SEC-02: rejects %s URL as invalid arguments and opens nothing', (_label, url) => {
+    expect(() => callOpenUrl(kalturaReactCatalog, url)).toThrow(/Invalid URI/);
+    expect(open).not.toHaveBeenCalled();
   });
 
   it('SEC-02: does not echo the blocked URL in the warning', () => {

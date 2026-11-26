@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kaltura.github.io/a2ui/v3/catalog.json",
+  "$id": "https://kaltura.github.io/a2ui/v4/catalog.json",
   "protocolVersion": "1.0",
   "title": "Kaltura Experience Components Catalog",
   "description": "A2UI 1.0 catalog for Kaltura Experience Components: Player v7, Flashcards, Media Manager, and more. Lists the A2UI basic components and functions (copied from the A2UI basic catalog), the 12 Kaltura components and the Kaltura function copyToClipboard. A surface uses one catalog, so register only this one. Refs point at common_types.json, which ships next to this file.",
-  "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json",
+  "catalogId": "https://kaltura.github.io/a2ui/v4/catalog.json",
   "metadata": {
     "extensions": {
       "com_kaltura_adapters": {
@@ -583,7 +583,8 @@
           },
           "required": [
             "component",
-            "label"
+            "label",
+            "value"
           ]
         }
       ]
@@ -1140,7 +1141,11 @@
           "enum": ["portrait", "landscape"],
           "description": "Optional. Fixes the capture orientation and hides the user's control. Use portrait for vertical video. Leave it out to let the user choose."
         },
-        "prompterText": { "type": "string", "maxLength": 27000, "description": "Optional. A script that opens in the recorder's teleprompter. The user can edit it. Never invent one." }
+        "prompterText": {
+          "type": "string",
+          "maxLength": 27000,
+          "description": "Optional. A script that opens in the recorder's teleprompter. The user can edit it. Never invent one."
+        }
       },
       "required": ["component", "partnerId", "uiconfId"]
     },
@@ -1442,7 +1447,7 @@
             },
             "pattern": {
               "type": "string",
-              "description": "The regex pattern to match against."
+              "description": "The regular expression to search for in the value. Uses the A2UI regex dialect: a portable subset of ECMAScript pattern syntax in Unicode mode with no flags. Matching is case-sensitive, '.' excludes line terminators, and '^' and '$' match only at the ends of the value. Backreferences, lookbehind, named groups and '\\p{...}' are not allowed. Patterns longer than 256 code points or that could backtrack catastrophically are rejected."
             }
           },
           "required": [

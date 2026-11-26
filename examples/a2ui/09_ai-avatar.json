@@ -12,7 +12,7 @@
       "version": "1.0",
       "createSurface": {
         "surfaceId": "avatar",
-        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+        "catalogId": "https://kaltura.github.io/a2ui/v4/catalog.json"
       }
     },
     {
@@ -46,7 +46,7 @@
             "captions": true,
             "theme": "light",
             "openingPhrase": "Hi, how can I help with your course?",
-            "accessibility": {
+            "@accessibility": {
               "label": "AI avatar"
             }
           }

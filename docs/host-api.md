@@ -371,13 +371,13 @@ agent.send({
 The field holds the ids of the catalogs you registered:
 
 ```json
-{ "1.0": { "supportedCatalogIds": ["https://kaltura.github.io/a2ui/v3/catalog.json"] } }
+{ "1.0": { "supportedCatalogIds": ["https://kaltura.github.io/a2ui/v4/catalog.json"] } }
 ```
 
 The agent answers with a `createSurface` that names one of them:
 
 ```json
-{ "version": "1.0", "createSurface": { "surfaceId": "s", "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json" } }
+{ "version": "1.0", "createSurface": { "surfaceId": "s", "catalogId": "https://kaltura.github.io/a2ui/v4/catalog.json" } }
 ```
 
 - An id you did not register makes `processMessages` throw (`Catalog not found`).

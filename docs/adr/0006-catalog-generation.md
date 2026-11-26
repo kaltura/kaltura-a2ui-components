@@ -37,7 +37,7 @@ An A2UI surface binds to one catalog id, and `kalturaReactCatalog` serves the 18
 
 [ADR 0010](0010-a2ui-1-0.md) sets the protocol. The generator rules above hold. The catalog has:
 
-- The id `https://kaltura.github.io/a2ui/v3/catalog.json`.
+- The id `https://kaltura.github.io/a2ui/v4/catalog.json` (v3 until 0.8.x; see [ADR 0012](0012-catalog-versioning.md)).
 - `common_types.json` copied byte for byte from `@a2ui/web_core`, shipped next to the catalog. The catalog refers to it with relative refs (`common_types.json#/$defs/DynamicString`), so the asset folder is self-contained.
 - A root with `protocolVersion: "1.0"`, `catalogId` equal to `$id`, and `instructions`. The extension block is `metadata.extensions.com_kaltura_adapters`.
 - Flat components with no root `oneOf` or `anyOf`. "Exactly one of `entryId` and `playlistId`" lives in the Player descriptions and is enforced at run time.

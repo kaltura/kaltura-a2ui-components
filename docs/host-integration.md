@@ -151,16 +151,6 @@ This makes the import work. It does not make surfaces render on the server: `A2u
 
 If you load `kaltura-react.mjs` from jsDelivr with an import map and `integrity`, pin `dist/html-element-stub.mjs` too. The bundle imports it. The catalog `metadata.extensions.com_kaltura_adapters.react` gives `stubCdn` and `stubIntegrity` for it, next to `cdn` and `integrity` (0.4.0 and later). For older releases, take the hash from the Release's `hashes.json`.
 
-## DOMPurify override
-
-`@a2ui/react` depends on `@a2ui/markdown-it`, which pins an older `dompurify` (3.4.11). Your install gets it through `@a2ui/react`, with or without this package. Our ESM bundle carries its own copy (3.4.17). Your app uses yours, for example in the markdown renderer you pass to `MarkdownContext`. Override it in `package.json`, to the range this repo uses:
-
-```json
-{ "overrides": { "dompurify": "^3.4.17" } }
-```
-
-pnpm: `"pnpm": { "overrides": { "dompurify": "^3.4.17" } }`. Yarn: `"resolutions": { "dompurify": "^3.4.17" }`. Check with `npm ls dompurify`.
-
 ## Theming
 
 The components read page tokens, so they match your design system. A token you do not set uses its default. Set tokens on `:root` or on any ancestor. Source: `src/styles/components.css`.

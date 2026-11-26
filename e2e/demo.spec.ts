@@ -88,7 +88,7 @@ test('search form: typed values go to the agent, and the reply fills the list', 
 
 test('study kit: tabs switch and the flashcards render', async ({ page }) => {
   await open(page, '02_study-kit');
-  await page.getByTestId('stage').getByRole('button', { name: 'Flashcards' }).click();
+  await page.getByTestId('stage').getByRole('tab', { name: 'Flashcards' }).click();
   await expect(page.getByTestId('stage').getByText('Mitochondria').first()).toBeVisible();
 });
 
@@ -97,7 +97,7 @@ for (const theme of ['light', 'dark']) {
   test(`study kit: the open flashcards have no serious axe violation in the ${theme} theme`, async ({ page }) => {
     await open(page, '02_study-kit');
     await page.getByLabel('Theme').selectOption(theme);
-    await page.getByTestId('stage').getByRole('button', { name: 'Flashcards' }).click();
+    await page.getByTestId('stage').getByRole('tab', { name: 'Flashcards' }).click();
     await expect(page.getByTestId('stage').getByText('Mitochondria').first()).toBeVisible();
     await page.waitForTimeout(400);
     const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze();

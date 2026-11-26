@@ -24,7 +24,7 @@ const ALL_COMPONENTS = [
 
 describe('kaltura_catalog.json', () => {
   it('is keyed by the canonical catalog id in both $id and catalogId', () => {
-    const id = 'https://kaltura.github.io/a2ui/v3/catalog.json';
+    const id = 'https://kaltura.github.io/a2ui/v4/catalog.json';
     expect(catalog.$id).toBe(id);
     expect(catalog.catalogId).toBe(id);
   });

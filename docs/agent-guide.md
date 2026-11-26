@@ -15,7 +15,7 @@ A surface needs one component with the id `root`. Props for each component: [com
 
 ```json
 [
-  { "version": "1.0", "createSurface": { "surfaceId": "s1", "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json" } },
+  { "version": "1.0", "createSurface": { "surfaceId": "s1", "catalogId": "https://kaltura.github.io/a2ui/v4/catalog.json" } },
   { "version": "1.0", "updateComponents": { "surfaceId": "s1", "components": [
     { "id": "root", "component": "KalturaPlayer", "partnerId": 1234567, "uiconfId": 7654321, "entryId": "1_abc12345" } ] } }
 ]

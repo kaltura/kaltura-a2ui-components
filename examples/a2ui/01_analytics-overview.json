@@ -15,7 +15,7 @@
       "version": "1.0",
       "createSurface": {
         "surfaceId": "analytics",
-        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+        "catalogId": "https://kaltura.github.io/a2ui/v4/catalog.json"
       }
     },
     {
@@ -111,7 +111,7 @@
               }
             ],
             "height": 280,
-            "accessibility": {
+            "@accessibility": {
               "label": "Bar chart of plays per day for the last 7 days",
               "description": "Plays peak on Friday at 330 and fall to 154 on Sunday."
             }
@@ -218,7 +218,7 @@
                 }
               ],
               "height": 280,
-              "accessibility": {
+              "@accessibility": {
                 "label": "Line chart of plays per week for the last 30 days",
                 "description": "Plays rise from 1,410 in week 1 to 1,880 in week 3, then dip to 1,735."
               }

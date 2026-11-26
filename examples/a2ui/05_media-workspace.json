@@ -15,7 +15,7 @@
       "version": "1.0",
       "createSurface": {
         "surfaceId": "workspace",
-        "catalogId": "https://kaltura.github.io/a2ui/v3/catalog.json"
+        "catalogId": "https://kaltura.github.io/a2ui/v4/catalog.json"
       }
     },
     {
@@ -67,7 +67,7 @@
             "uiconfId": 7654321,
             "entryId": "0_abc12345",
             "autoplay": false,
-            "accessibility": {
+            "@accessibility": {
               "label": "Lecture video"
             }
           },
@@ -75,7 +75,7 @@
             "id": "manager",
             "component": "KalturaMediaManager",
             "partnerId": 1234567,
-            "accessibility": {
+            "@accessibility": {
               "label": "Media library"
             }
           },
@@ -84,7 +84,7 @@
             "component": "KalturaGenie",
             "partnerId": 1234567,
             "uiconfId": 7654321,
-            "accessibility": {
+            "@accessibility": {
               "label": "Genie chat"
             }
           }

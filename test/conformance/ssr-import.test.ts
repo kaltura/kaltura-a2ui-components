@@ -16,9 +16,9 @@ function node(code: string) {
 }
 
 describe('CONF-17: the HTMLElement stub for a2ui#3158', () => {
-  it('CONF-17: @a2ui/react alone still fails in Node, so the stub is still needed', () => {
-    const { err } = node("await import('@a2ui/react')");
-    expect(err, 'a2ui#3158 is fixed in the installed @a2ui/react. Remove the stub: see ADR 0007.').toMatch(/HTMLElement is not defined/);
+  it('CONF-17: @a2ui/react alone imports in Node (a2ui#3158 is fixed from 0.16), so the stub is redundant', () => {
+    const { status, err } = node("await import('@a2ui/react')");
+    expect([status, err]).toEqual([0, '']);
   });
 
   it('CONF-17: with the stub first, @a2ui/react loads in Node and the stub is gone after', () => {
