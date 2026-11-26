@@ -199,13 +199,13 @@ export const props: PlayerCoreProps = { partnerId: 1, uiconfId: 2, entryId: '0_a
   // names the peer, instead of a second copy of the renderer.
   let conflict = '';
   try {
-    install(join(work, 'conflict'), ['@a2ui/react@0.14.0', tarball]);
-    fail('npm installed the package next to @a2ui/react@0.14.0 without a peer conflict.');
+    install(join(work, 'conflict'), ['@a2ui/react@0.15.0', tarball]);
+    fail('npm installed the package next to @a2ui/react@0.15.0 without a peer conflict.');
   } catch (error) {
     conflict = String(error.stderr ?? error);
   }
-  if (conflict !== '' && !/ERESOLVE[\s\S]*peer @a2ui\/react@"\^0\.15/.test(conflict)) {
-    fail(`The peer conflict message does not name @a2ui/react ^0.15: ${conflict.split('\n').slice(0, 6).join(' | ')}`);
+  if (conflict !== '' && !/ERESOLVE[\s\S]*peer @a2ui\/react@"\^0\.16/.test(conflict)) {
+    fail(`The peer conflict message does not name @a2ui/react ^0.16: ${conflict.split('\n').slice(0, 6).join(' | ')}`);
   }
 } finally {
   rmSync(work, { recursive: true, force: true });
